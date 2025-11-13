@@ -10,10 +10,10 @@ const Index = () => {
         <div className="text-center mb-12">
           <div className="flex items-center justify-center mb-4">
             <PawPrint className="h-12 w-12 text-blue-600 mr-3" />
-            <h1 className="text-4xl font-bold text-gray-900">Sistema de Cadastro de Animais</h1>
+            <h1 className="text-4xl font-bold text-gray-900">Sistema de Cadastro de Animais - Valentão ao Resgate</h1>
           </div>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Gerencie o cadastro completo dos animais da associação, incluindo histórico médico, 
+            Gerencie o cadastro completo dos animais da Valentão ao Resgate, incluindo histórico médico,
             intervenções e eventos importantes da vida de cada animal.
           </p>
         </div>
