@@ -95,7 +95,7 @@ const NovoAnimal = () => {
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Cadastrar Novo Animal</h1>
+            <h1 className="text-3xl font-bold text-gray-900">Cadastrar Novo Animal - Valentão ao Resgate</h1>
             <p className="text-gray-600 mt-2">Preencha as informações do animal</p>
           </div>
         </div>
