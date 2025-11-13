@@ -24,6 +24,8 @@ const AnimalDetail = () => {
   const [eventos, setEventos] = useState<Evento[]>([]);
   const [tiposIntervencoes, setTiposIntervencoes] = useState<TipoIntervencao[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editMode, setEditMode] = useState(false);
+  const [editData, setEditData] = useState<Partial<Animal>>({});
   
   // Estados para formulários
   const [novaIntervencao, setNovaIntervencao] = useState({
@@ -198,6 +200,66 @@ const AnimalDetail = () => {
     }
   };
 
+  const handleEditAnimal = () => {
+    if (animal) {
+      setEditData({
+        nome: animal.nome,
+        especie: animal.especie,
+        raca: animal.raca || '',
+        sexo: animal.sexo,
+        data_nascimento: animal.data_nascimento || '',
+        idade_estimada: animal.idade_estimada || '',
+        peso: animal.peso || 0,
+        cor: animal.cor || '',
+        caracteristicas_fisicas: animal.caracteristicas_fisicas || '',
+        transponder: animal.transponder || '',
+        numero_registo: animal.numero_registo || '',
+        estado: animal.estado,
+        origem: animal.origem || '',
+        observacoes: animal.observacoes || '',
+        foto_url: animal.foto_url || ''
+      });
+      setEditMode(true);
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    try {
+      if (!editData.nome || !editData.especie || !editData.sexo) {
+        throw new Error("Nome, espécie e sexo são obrigatórios");
+      }
+
+      const dataToUpdate = {
+        ...editData,
+        peso: editData.peso ? parseFloat(editData.peso.toString()) : null,
+        data_nascimento: editData.data_nascimento || null,
+        transponder: editData.transponder || null,
+        numero_registo: editData.numero_registo || null,
+      };
+
+      const { error } = await supabase
+        .from('animais_2025_11_13_03_23')
+        .update(dataToUpdate)
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Animal atualizado com sucesso!",
+        description: `${editData.nome} foi atualizado.`,
+      });
+
+      setEditMode(false);
+      fetchAnimalData();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao atualizar animal",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -255,7 +317,7 @@ const AnimalDetail = () => {
             <Badge variant={getEstadoBadgeVariant(animal.estado)} className="text-sm">
               {animal.estado}
             </Badge>
-            <Button variant="outline">
+            <Button variant="outline" onClick={handleEditAnimal}>
               <Edit className="h-4 w-4 mr-2" />
               Editar
             </Button>
@@ -679,6 +741,186 @@ const AnimalDetail = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Modal de Edição */}
+      <Dialog open={editMode} onOpenChange={setEditMode}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar Animal - {animal?.nome}</DialogTitle>
+            <DialogDescription>
+              Modifique as informações do animal
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid lg:grid-cols-2 gap-6">
+            {/* Informações Básicas */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Informações Básicas</h3>
+              <div className="grid gap-4">
+                <div>
+                  <Label htmlFor="edit_nome">Nome *</Label>
+                  <Input
+                    id="edit_nome"
+                    value={editData.nome || ''}
+                    onChange={(e) => setEditData(prev => ({...prev, nome: e.target.value}))}
+                    placeholder="Nome do animal"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit_especie">Espécie *</Label>
+                  <Select 
+                    value={editData.especie || ''} 
+                    onValueChange={(value) => setEditData(prev => ({...prev, especie: value}))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione a espécie" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Cão">Cão</SelectItem>
+                      <SelectItem value="Gato">Gato</SelectItem>
+                      <SelectItem value="Coelho">Coelho</SelectItem>
+                      <SelectItem value="Ave">Ave</SelectItem>
+                      <SelectItem value="Outro">Outro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="edit_raca">Raça</Label>
+                  <Input
+                    id="edit_raca"
+                    value={editData.raca || ''}
+                    onChange={(e) => setEditData(prev => ({...prev, raca: e.target.value}))}
+                    placeholder="Raça do animal"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit_sexo">Sexo *</Label>
+                  <Select 
+                    value={editData.sexo || ''} 
+                    onValueChange={(value) => setEditData(prev => ({...prev, sexo: value as 'Macho' | 'Fêmea'}))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o sexo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Macho">Macho</SelectItem>
+                      <SelectItem value="Fêmea">Fêmea</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="edit_idade">Idade Estimada</Label>
+                  <Input
+                    id="edit_idade"
+                    value={editData.idade_estimada || ''}
+                    onChange={(e) => setEditData(prev => ({...prev, idade_estimada: e.target.value}))}
+                    placeholder="Ex: 2 anos, 6 meses"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit_peso">Peso (kg)</Label>
+                  <Input
+                    id="edit_peso"
+                    type="number"
+                    step="0.1"
+                    value={editData.peso || ''}
+                    onChange={(e) => setEditData(prev => ({...prev, peso: parseFloat(e.target.value) || 0}))}
+                    placeholder="0.0"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit_cor">Cor</Label>
+                  <Input
+                    id="edit_cor"
+                    value={editData.cor || ''}
+                    onChange={(e) => setEditData(prev => ({...prev, cor: e.target.value}))}
+                    placeholder="Cor predominante"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Identificação e Estado */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Identificação e Estado</h3>
+              <div className="grid gap-4">
+                <div>
+                  <Label htmlFor="edit_transponder">Transponder/Microchip</Label>
+                  <Input
+                    id="edit_transponder"
+                    value={editData.transponder || ''}
+                    onChange={(e) => setEditData(prev => ({...prev, transponder: e.target.value}))}
+                    placeholder="Número do microchip"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit_numero_registo">Número de Registro</Label>
+                  <Input
+                    id="edit_numero_registo"
+                    value={editData.numero_registo || ''}
+                    onChange={(e) => setEditData(prev => ({...prev, numero_registo: e.target.value}))}
+                    placeholder="Número de registro oficial"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit_estado">Estado</Label>
+                  <Select 
+                    value={editData.estado || ''} 
+                    onValueChange={(value) => setEditData(prev => ({...prev, estado: value as 'Ativo' | 'Adotado' | 'Óbito' | 'Transferido'}))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Ativo">Ativo</SelectItem>
+                      <SelectItem value="Adotado">Adotado</SelectItem>
+                      <SelectItem value="Óbito">Óbito</SelectItem>
+                      <SelectItem value="Transferido">Transferido</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="edit_origem">Origem</Label>
+                  <Input
+                    id="edit_origem"
+                    value={editData.origem || ''}
+                    onChange={(e) => setEditData(prev => ({...prev, origem: e.target.value}))}
+                    placeholder="De onde veio o animal"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit_caracteristicas">Características Físicas</Label>
+                  <Textarea
+                    id="edit_caracteristicas"
+                    value={editData.caracteristicas_fisicas || ''}
+                    onChange={(e) => setEditData(prev => ({...prev, caracteristicas_fisicas: e.target.value}))}
+                    placeholder="Características distintivas, marcas, cicatrizes, etc."
+                    rows={3}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit_observacoes">Observações</Label>
+                  <Textarea
+                    id="edit_observacoes"
+                    value={editData.observacoes || ''}
+                    onChange={(e) => setEditData(prev => ({...prev, observacoes: e.target.value}))}
+                    placeholder="Observações gerais"
+                    rows={3}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex justify-end gap-4 mt-6">
+            <Button variant="outline" onClick={() => setEditMode(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveEdit}>
+              Salvar Alterações
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
