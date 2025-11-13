@@ -71,9 +71,11 @@ const Index = () => {
               <CardDescription>Estatísticas e relatórios</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full" variant="outline" disabled>
-                Em Breve
-              </Button>
+              <Link to="/relatorios">
+                <Button className="w-full" variant="outline">
+                  Ver Relatórios
+                </Button>
+              </Link>
             </CardContent>
           </Card>
         </div>
