@@ -8,6 +8,15 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="container mx-auto px-4 py-8">
         <div className="text-center mb-12">
+          {/* Logótipo da Associação */}
+          <div className="flex justify-center mb-6">
+            <img 
+              src="/images/valentao_ao_resgate_logo_20251114_013705.png" 
+              alt="Valentão ao Resgate - Logótipo" 
+              className="h-24 w-auto object-contain"
+            />
+          </div>
+          
           <div className="flex items-center justify-center mb-4">
             <PawPrint className="h-12 w-12 text-blue-600 mr-3" />
             <h1 className="text-4xl font-bold text-gray-900">Sistema de Cadastro de Animais - Valentão ao Resgate</h1>

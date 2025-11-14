@@ -249,6 +249,11 @@ ${stats.intervencoesPorTipo.slice(0, 10).map(i => `${i.nome} (${i.categoria}): $
                 Voltar
               </Button>
             </Link>
+            <img 
+              src="/images/valentao_ao_resgate_logo_20251114_013705.png" 
+              alt="Valentão ao Resgate" 
+              className="h-12 w-auto object-contain mr-4"
+            />
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Relatórios - Valentão ao Resgate</h1>
               <p className="text-gray-600 mt-2">Estatísticas e análises dos animais da associação</p>

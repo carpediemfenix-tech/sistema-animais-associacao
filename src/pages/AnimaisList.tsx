@@ -84,11 +84,18 @@ const AnimaisList = () => {
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Lista de Animais - Valentão ao Resgate</h1>
+          <div className="flex items-center">
+            <img 
+              src="/images/valentao_ao_resgate_logo_20251114_013705.png" 
+              alt="Valentão ao Resgate" 
+              className="h-12 w-auto object-contain mr-4"
+            />
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Lista de Animais - Valentão ao Resgate</h1>
             <p className="text-gray-600 mt-2">
               {filteredAnimais.length} de {animais.length} animais
             </p>
+            </div>
           </div>
           <div className="flex gap-4">
             <Link to="/">
