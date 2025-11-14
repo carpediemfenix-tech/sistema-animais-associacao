@@ -11,9 +11,9 @@ const Index = () => {
           {/* Logótipo da Associação */}
           <div className="flex justify-center mb-6">
             <img 
-              src="/images/valentao_ao_resgate_logo_20251114_013705.png" 
-              alt="Valentão ao Resgate - Logótipo" 
-              className="h-24 w-auto object-contain"
+              src="/images/BackgroundEraser_20250411_205630024.png" 
+              alt="Valentão ao Resgate - Logótipo Oficial" 
+              className="h-32 w-auto object-contain max-w-md"
             />
           </div>
           

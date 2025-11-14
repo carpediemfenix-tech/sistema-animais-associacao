@@ -86,9 +86,9 @@ const AnimaisList = () => {
         <div className="flex justify-between items-center mb-8">
           <div className="flex items-center">
             <img 
-              src="/images/valentao_ao_resgate_logo_20251114_013705.png" 
-              alt="Valentão ao Resgate" 
-              className="h-12 w-auto object-contain mr-4"
+              src="/images/BackgroundEraser_20250411_205630024.png" 
+              alt="Valentão ao Resgate - Logótipo Oficial" 
+              className="h-16 w-auto object-contain mr-4"
             />
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Lista de Animais - Valentão ao Resgate</h1>
