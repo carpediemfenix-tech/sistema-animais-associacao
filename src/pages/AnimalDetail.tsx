@@ -45,6 +45,25 @@ const AnimalDetail = () => {
     observacoes: ""
   });
 
+  // Estados para edição de intervenções e eventos
+  const [editingIntervencao, setEditingIntervencao] = useState<Intervencao | null>(null);
+  const [editingEvento, setEditingEvento] = useState<Evento | null>(null);
+  const [editIntervencaoData, setEditIntervencaoData] = useState({
+    tipo_intervencao_id: "",
+    data_intervencao: "",
+    veterinario: "",
+    clinica: "",
+    observacoes: "",
+    custo: "",
+    proxima_data: ""
+  });
+  const [editEventoData, setEditEventoData] = useState({
+    tipo_evento: "",
+    data_evento: "",
+    descricao: "",
+    observacoes: ""
+  });
+
   useEffect(() => {
     if (id) {
       fetchAnimalData();
@@ -254,6 +273,143 @@ const AnimalDetail = () => {
     } catch (error: any) {
       toast({
         title: "Erro ao atualizar animal",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Funções para editar intervenções
+  const handleEditIntervencao = (intervencao: Intervencao) => {
+    setEditingIntervencao(intervencao);
+    setEditIntervencaoData({
+      tipo_intervencao_id: intervencao.tipo_intervencao_id,
+      data_intervencao: intervencao.data_intervencao,
+      veterinario: intervencao.veterinario || '',
+      clinica: intervencao.clinica || '',
+      observacoes: intervencao.observacoes || '',
+      custo: intervencao.custo?.toString() || '',
+      proxima_data: intervencao.proxima_data || ''
+    });
+  };
+
+  const handleSaveIntervencao = async () => {
+    try {
+      if (!editIntervencaoData.tipo_intervencao_id || !editIntervencaoData.data_intervencao) {
+        throw new Error("Tipo de intervenção e data são obrigatórios");
+      }
+
+      const dataToUpdate = {
+        ...editIntervencaoData,
+        custo: editIntervencaoData.custo ? parseFloat(editIntervencaoData.custo) : null,
+        proxima_data: editIntervencaoData.proxima_data || null
+      };
+
+      const { error } = await supabase
+        .from('intervencoes_2025_11_13_03_23')
+        .update(dataToUpdate)
+        .eq('id', editingIntervencao?.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Intervenção atualizada",
+        description: "Intervenção foi atualizada com sucesso",
+      });
+
+      setEditingIntervencao(null);
+      fetchAnimalData();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao atualizar intervenção",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteIntervencao = async (intervencaoId: string) => {
+    try {
+      const { error } = await supabase
+        .from('intervencoes_2025_11_13_03_23')
+        .delete()
+        .eq('id', intervencaoId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Intervenção removida",
+        description: "Intervenção foi removida com sucesso",
+      });
+
+      fetchAnimalData();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao remover intervenção",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Funções para editar eventos
+  const handleEditEvento = (evento: Evento) => {
+    setEditingEvento(evento);
+    setEditEventoData({
+      tipo_evento: evento.tipo_evento,
+      data_evento: evento.data_evento,
+      descricao: evento.descricao,
+      observacoes: evento.observacoes || ''
+    });
+  };
+
+  const handleSaveEvento = async () => {
+    try {
+      if (!editEventoData.tipo_evento || !editEventoData.data_evento || !editEventoData.descricao) {
+        throw new Error("Todos os campos são obrigatórios");
+      }
+
+      const { error } = await supabase
+        .from('eventos_2025_11_13_03_23')
+        .update(editEventoData)
+        .eq('id', editingEvento?.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Evento atualizado",
+        description: "Evento foi atualizado com sucesso",
+      });
+
+      setEditingEvento(null);
+      fetchAnimalData();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao atualizar evento",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteEvento = async (eventoId: string) => {
+    try {
+      const { error } = await supabase
+        .from('eventos_2025_11_13_03_23')
+        .delete()
+        .eq('id', eventoId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Evento removido",
+        description: "Evento foi removido com sucesso",
+      });
+
+      fetchAnimalData();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao remover evento",
         description: error.message,
         variant: "destructive",
       });
@@ -554,6 +710,24 @@ const AnimalDetail = () => {
                           {intervencao.custo && (
                             <p className="font-semibold text-lg">€{intervencao.custo}</p>
                           )}
+                          <div className="flex gap-2 mt-2">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleEditIntervencao(intervencao)}
+                            >
+                              <Edit className="h-3 w-3 mr-1" />
+                              Editar
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="destructive"
+                              onClick={() => handleDeleteIntervencao(intervencao.id)}
+                            >
+                              <Trash2 className="h-3 w-3 mr-1" />
+                              Remover
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     </CardContent>
@@ -672,6 +846,24 @@ const AnimalDetail = () => {
                               <strong>Observações:</strong> {evento.observacoes}
                             </p>
                           )}
+                        </div>
+                        <div className="flex gap-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleEditEvento(evento)}
+                          >
+                            <Edit className="h-3 w-3 mr-1" />
+                            Editar
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="destructive"
+                            onClick={() => handleDeleteEvento(evento.id)}
+                          >
+                            <Trash2 className="h-3 w-3 mr-1" />
+                            Remover
+                          </Button>
                         </div>
                       </div>
                     </CardContent>
@@ -918,6 +1110,176 @@ const AnimalDetail = () => {
             <Button onClick={handleSaveEdit}>
               Salvar Alterações
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Edição de Intervenção */}
+      <Dialog open={!!editingIntervencao} onOpenChange={() => setEditingIntervencao(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar Intervenção</DialogTitle>
+            <DialogDescription>
+              Modifique os dados da intervenção
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="edit_tipo_intervencao">Tipo de Intervenção *</Label>
+              <Select 
+                value={editIntervencaoData.tipo_intervencao_id} 
+                onValueChange={(value) => setEditIntervencaoData(prev => ({...prev, tipo_intervencao_id: value}))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {tiposIntervencoes.map((tipo) => (
+                    <SelectItem key={tipo.id} value={tipo.id}>
+                      {tipo.nome} ({tipo.categoria})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="edit_data_intervencao">Data *</Label>
+              <Input
+                id="edit_data_intervencao"
+                type="date"
+                value={editIntervencaoData.data_intervencao}
+                onChange={(e) => setEditIntervencaoData(prev => ({...prev, data_intervencao: e.target.value}))}
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="edit_veterinario">Veterinário</Label>
+              <Input
+                id="edit_veterinario"
+                value={editIntervencaoData.veterinario}
+                onChange={(e) => setEditIntervencaoData(prev => ({...prev, veterinario: e.target.value}))}
+                placeholder="Nome do veterinário"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="edit_clinica">Clínica</Label>
+              <Input
+                id="edit_clinica"
+                value={editIntervencaoData.clinica}
+                onChange={(e) => setEditIntervencaoData(prev => ({...prev, clinica: e.target.value}))}
+                placeholder="Nome da clínica"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="edit_custo">Custo (€)</Label>
+              <Input
+                id="edit_custo"
+                type="number"
+                step="0.01"
+                value={editIntervencaoData.custo}
+                onChange={(e) => setEditIntervencaoData(prev => ({...prev, custo: e.target.value}))}
+                placeholder="0.00"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="edit_observacoes_intervencao">Observações</Label>
+              <Textarea
+                id="edit_observacoes_intervencao"
+                value={editIntervencaoData.observacoes}
+                onChange={(e) => setEditIntervencaoData(prev => ({...prev, observacoes: e.target.value}))}
+                placeholder="Observações sobre a intervenção"
+                rows={3}
+              />
+            </div>
+            
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setEditingIntervencao(null)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleSaveIntervencao}>
+                Salvar Alterações
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Edição de Evento */}
+      <Dialog open={!!editingEvento} onOpenChange={() => setEditingEvento(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar Evento</DialogTitle>
+            <DialogDescription>
+              Modifique os dados do evento
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="edit_tipo_evento">Tipo de Evento *</Label>
+              <Select 
+                value={editEventoData.tipo_evento} 
+                onValueChange={(value) => setEditEventoData(prev => ({...prev, tipo_evento: value}))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Adoção">Adoção</SelectItem>
+                  <SelectItem value="Resgate">Resgate</SelectItem>
+                  <SelectItem value="Transferência">Transferência</SelectItem>
+                  <SelectItem value="Fuga">Fuga</SelectItem>
+                  <SelectItem value="Retorno">Retorno</SelectItem>
+                  <SelectItem value="Comportamento">Comportamento</SelectItem>
+                  <SelectItem value="Socialização">Socialização</SelectItem>
+                  <SelectItem value="Outro">Outro</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="edit_data_evento">Data *</Label>
+              <Input
+                id="edit_data_evento"
+                type="date"
+                value={editEventoData.data_evento}
+                onChange={(e) => setEditEventoData(prev => ({...prev, data_evento: e.target.value}))}
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="edit_descricao_evento">Descrição *</Label>
+              <Textarea
+                id="edit_descricao_evento"
+                value={editEventoData.descricao}
+                onChange={(e) => setEditEventoData(prev => ({...prev, descricao: e.target.value}))}
+                placeholder="Descreva o evento"
+                rows={3}
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="edit_observacoes_evento">Observações</Label>
+              <Textarea
+                id="edit_observacoes_evento"
+                value={editEventoData.observacoes}
+                onChange={(e) => setEditEventoData(prev => ({...prev, observacoes: e.target.value}))}
+                placeholder="Observações adicionais"
+                rows={2}
+              />
+            </div>
+            
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setEditingEvento(null)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleSaveEvento}>
+                Salvar Alterações
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
