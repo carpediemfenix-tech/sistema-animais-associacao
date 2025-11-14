@@ -40,6 +40,48 @@ const NovoAnimal = () => {
     }));
   };
 
+  // Função para gerar o próximo número de processo
+  const generateNextProcessNumber = async (): Promise<string> => {
+    try {
+      const currentYear = new Date().getFullYear();
+      const yearSuffix = currentYear.toString().slice(-2); // Últimos 2 dígitos do ano
+      const yearPattern = `P${yearSuffix}%`;
+
+      // Buscar o último número de processo do ano atual
+      const { data, error } = await supabase
+        .from('animais_2025_11_13_03_23')
+        .select('numero_registo')
+        .like('numero_registo', yearPattern)
+        .order('numero_registo', { ascending: false })
+        .limit(1);
+
+      if (error) throw error;
+
+      let nextSequence = 1;
+      
+      if (data && data.length > 0 && data[0].numero_registo) {
+        // Extrair o número da sequência do último registro
+        const lastNumber = data[0].numero_registo;
+        const sequenceMatch = lastNumber.match(/P\d{2}(\d{3})/);
+        
+        if (sequenceMatch) {
+          nextSequence = parseInt(sequenceMatch[1]) + 1;
+        }
+      }
+
+      // Formatar o número com 3 dígitos
+      const formattedSequence = nextSequence.toString().padStart(3, '0');
+      return `P${yearSuffix}${formattedSequence}`;
+    } catch (error) {
+      console.error('Erro ao gerar número de processo:', error);
+      // Fallback: gerar um número baseado no timestamp
+      const currentYear = new Date().getFullYear();
+      const yearSuffix = currentYear.toString().slice(-2);
+      const timestamp = Date.now().toString().slice(-3);
+      return `P${yearSuffix}${timestamp}`;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -50,13 +92,16 @@ const NovoAnimal = () => {
         throw new Error("Nome, espécie e sexo são obrigatórios");
       }
 
+      // Gerar número de processo automático
+      const numeroProcesso = await generateNextProcessNumber();
+
       // Preparar dados para inserção
       const dataToInsert = {
         ...formData,
         peso: formData.peso ? parseFloat(formData.peso) : null,
         data_nascimento: formData.data_nascimento || null,
         transponder: formData.transponder || null,
-        numero_registo: formData.numero_registo || null,
+        numero_registo: numeroProcesso, // Número de processo gerado automaticamente
       };
 
       const { data, error } = await supabase
@@ -69,7 +114,7 @@ const NovoAnimal = () => {
 
       toast({
         title: "Animal cadastrado com sucesso!",
-        description: `${formData.nome} foi adicionado ao sistema.`,
+        description: `${formData.nome} foi adicionado ao sistema com o número de processo ${numeroProcesso}.`,
       });
 
       navigate(`/animal/${data.id}`);
@@ -234,13 +279,13 @@ const NovoAnimal = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="numero_registo">Número de Registro</Label>
-                  <Input
-                    id="numero_registo"
-                    value={formData.numero_registo}
-                    onChange={(e) => handleInputChange("numero_registo", e.target.value)}
-                    placeholder="Número de registro oficial"
-                  />
+                  <Label htmlFor="numero_processo">Número de Processo</Label>
+                  <div className="bg-gray-50 border border-gray-200 rounded-md px-3 py-2 text-sm text-gray-600">
+                    🅰️ Será gerado automaticamente (ex: P25001)
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    O número é gerado automaticamente no formato: P + ano + sequência
+                  </p>
                 </div>
 
                 <div>

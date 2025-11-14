@@ -557,8 +557,15 @@ const AnimalDetail = () => {
                     <p className="text-lg font-mono">{animal.transponder || "Não informado"}</p>
                   </div>
                   <div>
-                    <Label className="text-sm font-medium text-gray-500">Número de Registro</Label>
-                    <p className="text-lg font-mono">{animal.numero_registo || "Não informado"}</p>
+                    <Label className="text-sm font-medium text-gray-500">Número de Processo</Label>
+                    <div className="flex items-center gap-2">
+                      <p className="text-lg font-mono font-bold text-blue-600">{animal.numero_registo || "Não informado"}</p>
+                      {animal.numero_registo && animal.numero_registo.startsWith('P') && (
+                        <Badge variant="outline" className="text-xs">
+                          Processo Oficial
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                   <div>
                     <Label className="text-sm font-medium text-gray-500">Origem</Label>

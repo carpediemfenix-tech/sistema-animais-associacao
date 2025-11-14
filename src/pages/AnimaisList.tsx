@@ -188,6 +188,9 @@ const AnimaisList = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2 text-sm text-gray-600">
+                  {animal.numero_registo && (
+                    <div><strong>Processo:</strong> <span className="font-mono text-blue-600">{animal.numero_registo}</span></div>
+                  )}
                   <div><strong>Sexo:</strong> {animal.sexo}</div>
                   {animal.idade_estimada && (
                     <div><strong>Idade:</strong> {animal.idade_estimada}</div>
