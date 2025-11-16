@@ -13,6 +13,9 @@ import GestaoAnimais from "./pages/GestaoAnimais";
 import AlertasPage from "./pages/AlertasPage";
 import GestaoVoluntarios from "./pages/GestaoVoluntarios";
 import GestaoFinanceira from "./pages/GestaoFinanceira";
+import DashboardAvancado from "./pages/DashboardAvancado";
+import RelatoriosAvancados from "./pages/RelatoriosAvancados";
+import ConfiguracoesSistema from "./pages/ConfiguracoesSistema";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +35,9 @@ const App = () => (
           <Route path="/alertas" element={<AlertasPage />} />
           <Route path="/voluntarios" element={<GestaoVoluntarios />} />
           <Route path="/financeiro" element={<GestaoFinanceira />} />
+          <Route path="/dashboard" element={<DashboardAvancado />} />
+          <Route path="/relatorios-avancados" element={<RelatoriosAvancados />} />
+          <Route path="/configuracoes" element={<ConfiguracoesSistema />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

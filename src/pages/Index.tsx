@@ -1,8 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { PawPrint, Plus, List, FileText, Activity, Settings, Users, Euro } from "lucide-react";
+import { PawPrint, Plus, List, FileText, Activity, Settings, Users, Euro, BarChart3, Cog } from "lucide-react";
 import { Link } from "react-router-dom";
 import AlertasDashboard from "@/components/AlertasDashboard";
+import PesquisaGlobal from "@/components/PesquisaGlobal";
 import { useAlertas } from "@/hooks/useAlertas";
 
 const Index = () => {
@@ -29,6 +30,32 @@ const Index = () => {
             Gerencie o cadastro completo dos animais da Valentão ao Resgate, incluindo histórico médico,
             intervenções e eventos importantes da vida de cada animal.
           </p>
+        </div>
+
+        {/* Barra de Pesquisa Global */}
+        <div className="flex justify-center mb-8">
+          <PesquisaGlobal />
+        </div>
+
+        {/* Botão Dashboard Avançado */}
+        <div className="mb-8">
+          <Card className="bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:shadow-xl transition-shadow cursor-pointer">
+            <CardHeader className="text-center">
+              <BarChart3 className="h-12 w-12 mx-auto mb-4" />
+              <CardTitle className="text-2xl">Dashboard Avançado</CardTitle>
+              <CardDescription className="text-blue-100">
+                Visão completa com gráficos e métricas em tempo real
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link to="/dashboard">
+                <Button className="w-full bg-white text-blue-600 hover:bg-blue-50">
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  Abrir Dashboard
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -109,6 +136,21 @@ const Index = () => {
 
           <Card className="hover:shadow-lg transition-shadow cursor-pointer">
             <CardHeader className="text-center">
+              <BarChart3 className="h-8 w-8 text-indigo-600 mx-auto mb-2" />
+              <CardTitle className="text-lg">Relatórios Avançados</CardTitle>
+              <CardDescription>Análises detalhadas e tendências</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link to="/relatorios-avancados">
+                <Button className="w-full" variant="outline">
+                  Relatórios Avançados
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardHeader className="text-center">
               <Users className="h-8 w-8 text-blue-600 mx-auto mb-2" />
               <CardTitle className="text-lg">Voluntários</CardTitle>
               <CardDescription>Gerir voluntários e especialidades</CardDescription>
@@ -132,6 +174,21 @@ const Index = () => {
               <Link to="/financeiro">
                 <Button className="w-full" variant="outline">
                   Gestão Financeira
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardHeader className="text-center">
+              <Cog className="h-8 w-8 text-gray-600 mx-auto mb-2" />
+              <CardTitle className="text-lg">Configurações</CardTitle>
+              <CardDescription>Personalizar sistema e preferências</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link to="/configuracoes">
+                <Button className="w-full" variant="outline">
+                  Configurações
                 </Button>
               </Link>
             </CardContent>
