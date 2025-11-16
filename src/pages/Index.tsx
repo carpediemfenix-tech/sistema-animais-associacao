@@ -2,8 +2,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PawPrint, Plus, List, FileText, Activity, Settings } from "lucide-react";
 import { Link } from "react-router-dom";
+import AlertasDashboard from "@/components/AlertasDashboard";
+import { useAlertas } from "@/hooks/useAlertas";
 
 const Index = () => {
+  const { alertas, loading } = useAlertas();
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="container mx-auto px-4 py-8">
@@ -128,6 +132,11 @@ const Index = () => {
               </ul>
             </div>
           </div>
+        </div>
+        
+        {/* Dashboard de Alertas */}
+        <div className="mb-8">
+          <AlertasDashboard alertas={alertas} loading={loading} />
         </div>
       </div>
     </div>
