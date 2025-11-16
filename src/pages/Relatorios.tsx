@@ -62,7 +62,7 @@ const Relatorios = () => {
         .from('intervencoes_2025_11_13_03_23')
         .select(`
           *,
-          tipo_intervencao:tipos_intervencoes_2025_11_13_03_23(nome, categoria)
+          tipo_intervencao:tipos_intervencoes_2025_11_13_03_23(nome, descricao)
         `);
 
       if (intervencoesError) throw intervencoesError;
@@ -85,7 +85,7 @@ const Relatorios = () => {
           if (existing) {
             existing.count++;
           } else {
-            acc.push({ nome: tipo.nome, categoria: tipo.categoria, count: 1 });
+            acc.push({ nome: tipo.nome, count: 1 });
           }
         }
         return acc;

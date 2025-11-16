@@ -646,7 +646,7 @@ const AnimalDetail = () => {
                           <SelectContent>
                             {tiposIntervencoes.map((tipo) => (
                               <SelectItem key={tipo.id} value={tipo.id}>
-                                {tipo.nome} ({tipo.categoria})
+                                {tipo.nome}
                               </SelectItem>
                             ))}
                           </SelectContent>

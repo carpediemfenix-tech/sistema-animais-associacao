@@ -24,7 +24,6 @@ export interface Animal {
 export interface TipoIntervencao {
   id: string;
   nome: string;
-  categoria: string;
   descricao?: string;
   created_at: string;
 }
