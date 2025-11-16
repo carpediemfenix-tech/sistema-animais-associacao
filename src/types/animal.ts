@@ -39,8 +39,10 @@ export interface Intervencao {
   observacoes?: string;
   custo?: number;
   proxima_data?: string;
+  voluntario_id?: string;
   created_at: string;
   tipo_intervencao?: TipoIntervencao;
+  voluntario?: Voluntario;
 }
 
 export interface Evento {
@@ -62,4 +64,34 @@ export interface HistoricoLocalizacao {
   observacoes?: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface Voluntario {
+  id: string;
+  nome: string;
+  email?: string;
+  telefone?: string;
+  especialidade: 'Veterinário' | 'Cuidador' | 'Transporte' | 'Administrativo' | 'Geral';
+  ativo: boolean;
+  data_inicio: string;
+  observacoes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MovimentoFinanceiro {
+  id: string;
+  animal_id?: string;
+  tipo_movimento: 'Receita' | 'Despesa';
+  categoria: 'Veterinário' | 'Medicação' | 'Alimentação' | 'Transporte' | 'Doação' | 'Adoção' | 'Outros';
+  descricao: string;
+  valor: number;
+  data_movimento: string;
+  voluntario_id?: string;
+  intervencao_id?: string;
+  observacoes?: string;
+  created_at: string;
+  updated_at: string;
+  animal?: Animal;
+  voluntario?: Voluntario;
 }

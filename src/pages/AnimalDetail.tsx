@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ArrowLeft, Edit, Plus, Calendar, Activity, FileText, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Animal, Intervencao, Evento, TipoIntervencao, HistoricoLocalizacao } from "@/types/animal";
+import { Animal, Intervencao, Evento, TipoIntervencao, HistoricoLocalizacao, Voluntario } from "@/types/animal";
 import { useToast } from "@/hooks/use-toast";
 
 const AnimalDetail = () => {
@@ -24,6 +24,7 @@ const AnimalDetail = () => {
   const [eventos, setEventos] = useState<Evento[]>([]);
   const [localizacoes, setLocalizacoes] = useState<HistoricoLocalizacao[]>([]);
   const [tiposIntervencoes, setTiposIntervencoes] = useState<TipoIntervencao[]>([]);
+  const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
   const [editData, setEditData] = useState<Partial<Animal>>({});
@@ -36,7 +37,8 @@ const AnimalDetail = () => {
     clinica: "",
     observacoes: "",
     custo: "",
-    proxima_data: ""
+    proxima_data: "",
+    voluntario_id: ""
   });
   
   const [novoEvento, setNovoEvento] = useState({
@@ -69,6 +71,7 @@ const AnimalDetail = () => {
     if (id) {
       fetchAnimalData();
       fetchTiposIntervencoes();
+      fetchVoluntarios();
     }
   }, [id]);
 
@@ -143,6 +146,21 @@ const AnimalDetail = () => {
     }
   };
 
+  const fetchVoluntarios = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('voluntarios_2025_11_16_18_00')
+        .select('*')
+        .eq('ativo', true)
+        .order('nome');
+
+      if (error) throw error;
+      setVoluntarios(data || []);
+    } catch (error: any) {
+      console.error('Erro ao carregar voluntários:', error);
+    }
+  };
+
   const handleAddIntervencao = async () => {
     try {
       if (!novaIntervencao.tipo_intervencao_id || !novaIntervencao.data_intervencao) {
@@ -153,7 +171,8 @@ const AnimalDetail = () => {
         animal_id: id,
         ...novaIntervencao,
         custo: novaIntervencao.custo ? parseFloat(novaIntervencao.custo) : null,
-        proxima_data: novaIntervencao.proxima_data || null
+        proxima_data: novaIntervencao.proxima_data || null,
+        voluntario_id: novaIntervencao.voluntario_id || null
       };
 
       const { error } = await supabase
@@ -175,7 +194,8 @@ const AnimalDetail = () => {
         clinica: "",
         observacoes: "",
         custo: "",
-        proxima_data: ""
+        proxima_data: "",
+        voluntario_id: ""
       });
 
       // Recarregar dados
@@ -686,6 +706,25 @@ const AnimalDetail = () => {
                         />
                       </div>
                       
+                      <div>
+                        <Label htmlFor="voluntario_intervencao">Voluntário</Label>
+                        <Select value={novaIntervencao.voluntario_id} onValueChange={(value) => 
+                          setNovaIntervencao(prev => ({...prev, voluntario_id: value}))
+                        }>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecionar voluntário" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="">Nenhum voluntário</SelectItem>
+                            {voluntarios.map((voluntario) => (
+                              <SelectItem key={voluntario.id} value={voluntario.id}>
+                                {voluntario.nome} - {voluntario.especialidade}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
                       <Button onClick={handleAddIntervencao} className="w-full">
                         Adicionar Intervenção
                       </Button>
@@ -717,6 +756,11 @@ const AnimalDetail = () => {
                           {intervencao.clinica && (
                             <p className="text-sm text-gray-600">
                               <strong>Clínica:</strong> {intervencao.clinica}
+                            </p>
+                          )}
+                          {intervencao.voluntario && (
+                            <p className="text-sm text-gray-600">
+                              <strong>Voluntário:</strong> {intervencao.voluntario.nome}
                             </p>
                           )}
                           {intervencao.observacoes && (

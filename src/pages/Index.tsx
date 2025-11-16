@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { PawPrint, Plus, List, FileText, Activity, Settings } from "lucide-react";
+import { PawPrint, Plus, List, FileText, Activity, Settings, Users, Euro } from "lucide-react";
 import { Link } from "react-router-dom";
 import AlertasDashboard from "@/components/AlertasDashboard";
 import { useAlertas } from "@/hooks/useAlertas";
@@ -102,6 +102,36 @@ const Index = () => {
               <Link to="/relatorios">
                 <Button className="w-full" variant="outline">
                   Ver Relatórios
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardHeader className="text-center">
+              <Users className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+              <CardTitle className="text-lg">Voluntários</CardTitle>
+              <CardDescription>Gerir voluntários e especialidades</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link to="/voluntarios">
+                <Button className="w-full" variant="outline">
+                  Gerir Voluntários
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardHeader className="text-center">
+              <Euro className="h-8 w-8 text-green-600 mx-auto mb-2" />
+              <CardTitle className="text-lg">Financeiro</CardTitle>
+              <CardDescription>Controlo de receitas e despesas</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link to="/financeiro">
+                <Button className="w-full" variant="outline">
+                  Gestão Financeira
                 </Button>
               </Link>
             </CardContent>
