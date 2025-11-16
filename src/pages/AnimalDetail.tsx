@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ArrowLeft, Edit, Plus, Calendar, Activity, FileText, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Animal, Intervencao, Evento, TipoIntervencao } from "@/types/animal";
+import { Animal, Intervencao, Evento, TipoIntervencao, HistoricoLocalizacao } from "@/types/animal";
 import { useToast } from "@/hooks/use-toast";
 
 const AnimalDetail = () => {
@@ -22,6 +22,7 @@ const AnimalDetail = () => {
   const [animal, setAnimal] = useState<Animal | null>(null);
   const [intervencoes, setIntervencoes] = useState<Intervencao[]>([]);
   const [eventos, setEventos] = useState<Evento[]>([]);
+  const [localizacoes, setLocalizacoes] = useState<HistoricoLocalizacao[]>([]);
   const [tiposIntervencoes, setTiposIntervencoes] = useState<TipoIntervencao[]>([]);
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
@@ -105,6 +106,16 @@ const AnimalDetail = () => {
 
       if (eventosError) throw eventosError;
       setEventos(eventosData || []);
+
+      // Buscar histórico de localizações
+      const { data: localizacoesData, error: localizacoesError } = await supabase
+        .from('historico_localizacoes_2025_11_16_18_00')
+        .select('*')
+        .eq('animal_id', id)
+        .order('data_entrada', { ascending: false });
+
+      if (localizacoesError) throw localizacoesError;
+      setLocalizacoes(localizacoesData || []);
 
     } catch (error: any) {
       toast({
@@ -481,10 +492,11 @@ const AnimalDetail = () => {
         </div>
 
         <Tabs defaultValue="info" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="info">Informações</TabsTrigger>
             <TabsTrigger value="intervencoes">Intervenções</TabsTrigger>
             <TabsTrigger value="eventos">Eventos</TabsTrigger>
+            <TabsTrigger value="localizacoes">Localizações</TabsTrigger>
             <TabsTrigger value="historico">Histórico</TabsTrigger>
           </TabsList>
 
@@ -938,6 +950,50 @@ const AnimalDetail = () => {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* Nova aba para Histórico de Localizações */}
+          <TabsContent value="localizacoes">
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold">Histórico de Localizações</h3>
+              </div>
+              
+              {localizacoes.length === 0 ? (
+                <p className="text-muted-foreground text-center py-8">
+                  Nenhuma localização registada ainda.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {localizacoes.map((localizacao) => (
+                    <Card key={localizacao.id}>
+                      <CardContent className="pt-4">
+                        <div className="flex justify-between items-start">
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline">{localizacao.localizacao}</Badge>
+                              <span className="text-sm text-muted-foreground">
+                                Entrada: {new Date(localizacao.data_entrada).toLocaleDateString('pt-PT')}
+                              </span>
+                              {localizacao.data_saida && (
+                                <span className="text-sm text-muted-foreground">
+                                  Saída: {new Date(localizacao.data_saida).toLocaleDateString('pt-PT')}
+                                </span>
+                              )}
+                            </div>
+                            {localizacao.observacoes && (
+                              <p className="text-sm text-muted-foreground">
+                                {localizacao.observacoes}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
+          </TabsContent>
         </Tabs>
       </div>
 
@@ -1074,6 +1130,7 @@ const AnimalDetail = () => {
                       <SelectItem value="Adotado">Adotado</SelectItem>
                       <SelectItem value="Óbito">Óbito</SelectItem>
                       <SelectItem value="Transferido">Transferido</SelectItem>
+                      <SelectItem value="Não Adotável">Não Adotável</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

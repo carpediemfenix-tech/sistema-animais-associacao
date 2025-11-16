@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { PawPrint, Plus, List, FileText, Activity } from "lucide-react";
+import { PawPrint, Plus, List, FileText, Activity, Settings } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Index = () => {
@@ -68,6 +68,21 @@ const Index = () => {
               <Link to="/animais">
                 <Button className="w-full" variant="outline">
                   Ver Histórico
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardHeader className="text-center">
+              <Settings className="h-8 w-8 text-purple-600 mx-auto mb-2" />
+              <CardTitle className="text-lg">Gestão de Animais</CardTitle>
+              <CardDescription>Arquivar e gerir localizações</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link to="/gestao-animais">
+                <Button className="w-full" variant="outline">
+                  Gerir Animais
                 </Button>
               </Link>
             </CardContent>

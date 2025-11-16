@@ -298,6 +298,7 @@ const NovoAnimal = () => {
                       <SelectItem value="Ativo">Ativo</SelectItem>
                       <SelectItem value="Adotado">Adotado</SelectItem>
                       <SelectItem value="Óbito">Óbito</SelectItem>
+                      <SelectItem value="Não Adotável">Não Adotável</SelectItem>
                       <SelectItem value="Transferido">Transferido</SelectItem>
                     </SelectContent>
                   </Select>

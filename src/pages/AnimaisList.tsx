@@ -33,6 +33,7 @@ const AnimaisList = () => {
       const { data, error } = await supabase
         .from('animais_2025_11_13_03_23')
         .select('*')
+        .eq('arquivado', false)
         .order('created_at', { ascending: false });
 
       if (error) throw error;

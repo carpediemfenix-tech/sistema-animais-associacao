@@ -11,7 +11,8 @@ export interface Animal {
   caracteristicas_fisicas?: string;
   transponder?: string;
   numero_registo?: string;
-  estado: 'Ativo' | 'Adotado' | 'Óbito' | 'Transferido';
+  estado: 'Ativo' | 'Adotado' | 'Óbito' | 'Transferido' | 'Não Adotável';
+  arquivado?: boolean;
   data_entrada: string;
   origem?: string;
   observacoes?: string;
@@ -50,4 +51,15 @@ export interface Evento {
   descricao: string;
   observacoes?: string;
   created_at: string;
+}
+
+export interface HistoricoLocalizacao {
+  id: string;
+  animal_id: string;
+  localizacao: 'Canil' | 'CRO' | 'FAT' | 'Rua' | 'Outro';
+  data_entrada: string;
+  data_saida?: string;
+  observacoes?: string;
+  created_at: string;
+  updated_at: string;
 }
