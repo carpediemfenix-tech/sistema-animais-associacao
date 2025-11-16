@@ -43,42 +43,62 @@ const NovoAnimal = () => {
   // Função para gerar o próximo número de processo
   const generateNextProcessNumber = async (): Promise<string> => {
     try {
+      console.log('Gerando número de processo...');
+      
       const currentYear = new Date().getFullYear();
       const yearSuffix = currentYear.toString().slice(-2); // Últimos 2 dígitos do ano
-      const yearPattern = `P${yearSuffix}%`;
+      
+      console.log('Ano atual:', currentYear, 'Sufixo:', yearSuffix);
 
-      // Buscar o último número de processo do ano atual
+      // Buscar todos os animais para encontrar o último número
       const { data, error } = await supabase
         .from('animais_2025_11_13_03_23')
         .select('numero_processo')
-        .like('numero_processo', yearPattern)
-        .order('numero_processo', { ascending: false })
-        .limit(1);
+        .not('numero_processo', 'is', null)
+        .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao buscar animais:', error);
+        throw error;
+      }
 
+      console.log('Animais encontrados:', data?.length || 0);
+      
       let nextSequence = 1;
       
-      if (data && data.length > 0 && data[0].numero_processo) {
-        // Extrair o número da sequência do último registro
-        const lastNumber = data[0].numero_processo;
-        const sequenceMatch = lastNumber.match(/P\d{2}(\d{3})/);
+      if (data && data.length > 0) {
+        // Filtrar apenas os números do ano atual e encontrar o maior
+        const currentYearNumbers = data
+          .filter(animal => animal.numero_processo && animal.numero_processo.startsWith(`P${yearSuffix}`))
+          .map(animal => {
+            const match = animal.numero_processo.match(/P\d{2}(\d{3})/);
+            return match ? parseInt(match[1]) : 0;
+          })
+          .filter(num => num > 0);
         
-        if (sequenceMatch) {
-          nextSequence = parseInt(sequenceMatch[1]) + 1;
+        console.log('Números do ano atual:', currentYearNumbers);
+        
+        if (currentYearNumbers.length > 0) {
+          nextSequence = Math.max(...currentYearNumbers) + 1;
         }
       }
 
       // Formatar o número com 3 dígitos
       const formattedSequence = nextSequence.toString().padStart(3, '0');
-      return `P${yearSuffix}${formattedSequence}`;
+      const numeroProcesso = `P${yearSuffix}${formattedSequence}`;
+      
+      console.log('Número de processo gerado:', numeroProcesso);
+      return numeroProcesso;
+      
     } catch (error) {
       console.error('Erro ao gerar número de processo:', error);
       // Fallback: gerar um número baseado no timestamp
       const currentYear = new Date().getFullYear();
       const yearSuffix = currentYear.toString().slice(-2);
       const timestamp = Date.now().toString().slice(-3);
-      return `P${yearSuffix}${timestamp}`;
+      const fallbackNumber = `P${yearSuffix}${timestamp}`;
+      console.log('Usando número fallback:', fallbackNumber);
+      return fallbackNumber;
     }
   };
 

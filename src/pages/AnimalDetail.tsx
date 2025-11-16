@@ -591,8 +591,8 @@ const AnimalDetail = () => {
                   <div>
                     <Label className="text-sm font-medium text-gray-500">Número de Processo</Label>
                     <div className="flex items-center gap-2">
-                      <p className="text-lg font-mono font-bold text-blue-600">{animal.numero_registo || "Não informado"}</p>
-                      {animal.numero_registo && animal.numero_registo.startsWith('P') && (
+                      <p className="text-lg font-mono font-bold text-blue-600">{animal.numero_processo || "Não informado"}</p>
+                      {animal.numero_processo && animal.numero_processo.startsWith('P') && (
                         <Badge variant="outline" className="text-xs">
                           Processo Oficial
                         </Badge>

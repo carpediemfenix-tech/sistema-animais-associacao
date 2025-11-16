@@ -10,7 +10,7 @@ export interface Animal {
   cor?: string;
   caracteristicas_fisicas?: string;
   transponder?: string;
-  numero_registo?: string;
+  numero_processo?: string;
   estado: 'Ativo' | 'Adotado' | 'Óbito' | 'Transferido' | 'Não Adotável';
   arquivado?: boolean;
   data_entrada: string;
