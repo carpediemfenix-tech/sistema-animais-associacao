@@ -50,18 +50,18 @@ const NovoAnimal = () => {
       // Buscar o último número de processo do ano atual
       const { data, error } = await supabase
         .from('animais_2025_11_13_03_23')
-        .select('numero_registo')
-        .like('numero_registo', yearPattern)
-        .order('numero_registo', { ascending: false })
+        .select('numero_processo')
+        .like('numero_processo', yearPattern)
+        .order('numero_processo', { ascending: false })
         .limit(1);
 
       if (error) throw error;
 
       let nextSequence = 1;
       
-      if (data && data.length > 0 && data[0].numero_registo) {
+      if (data && data.length > 0 && data[0].numero_processo) {
         // Extrair o número da sequência do último registro
-        const lastNumber = data[0].numero_registo;
+        const lastNumber = data[0].numero_processo;
         const sequenceMatch = lastNumber.match(/P\d{2}(\d{3})/);
         
         if (sequenceMatch) {
@@ -97,11 +97,21 @@ const NovoAnimal = () => {
 
       // Preparar dados para inserção
       const dataToInsert = {
-        ...formData,
+        nome: formData.nome,
+        especie: formData.especie,
+        raca: formData.raca || null,
+        sexo: formData.sexo,
+        idade_estimada: formData.idade_estimada ? parseInt(formData.idade_estimada) : null,
         peso: formData.peso ? parseFloat(formData.peso) : null,
-        data_nascimento: formData.data_nascimento || null,
+        cor: formData.cor || null,
+        caracteristicas_fisicas: formData.caracteristicas_fisicas || null,
         transponder: formData.transponder || null,
-        numero_registo: numeroProcesso, // Número de processo gerado automaticamente
+        data_entrada: formData.data_entrada,
+        local_encontrado: formData.origem || null,
+        estado: formData.estado,
+        observacoes: formData.observacoes || null,
+        numero_processo: numeroProcesso, // Número de processo gerado automaticamente
+        arquivado: false
       };
 
       const { data, error } = await supabase
@@ -174,8 +184,6 @@ const NovoAnimal = () => {
                       <SelectContent>
                         <SelectItem value="Cão">Cão</SelectItem>
                         <SelectItem value="Gato">Gato</SelectItem>
-                        <SelectItem value="Coelho">Coelho</SelectItem>
-                        <SelectItem value="Ave">Ave</SelectItem>
                         <SelectItem value="Outro">Outro</SelectItem>
                       </SelectContent>
                     </Select>
@@ -217,12 +225,13 @@ const NovoAnimal = () => {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="idade_estimada">Idade Estimada</Label>
+                    <Label htmlFor="idade_estimada">Idade Estimada (meses)</Label>
                     <Input
                       id="idade_estimada"
+                      type="number"
                       value={formData.idade_estimada}
                       onChange={(e) => handleInputChange("idade_estimada", e.target.value)}
-                      placeholder="Ex: 2 anos, 6 meses"
+                      placeholder="Ex: 24 (para 2 anos)"
                     />
                   </div>
                   <div>

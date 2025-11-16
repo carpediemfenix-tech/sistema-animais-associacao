@@ -51,11 +51,17 @@ const GestaoAnimais = () => {
       const { data, error } = await supabase
         .from('animais_2025_11_13_03_23')
         .select('*')
-        .eq('arquivado', showArchived)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setAnimais(data || []);
+      
+      // Filtrar por arquivado no frontend se a coluna existir
+      const animaisFiltrados = data?.filter(animal => {
+        const isArchived = animal.arquivado || false;
+        return showArchived ? isArchived : !isArchived;
+      }) || data || [];
+      
+      setAnimais(animaisFiltrados);
     } catch (error: any) {
       toast({
         title: "Erro ao carregar animais",

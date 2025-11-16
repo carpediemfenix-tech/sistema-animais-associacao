@@ -44,12 +44,18 @@ const Relatorios = () => {
   const fetchRelatorios = async () => {
     try {
       // Buscar dados dos animais (excluindo arquivados)
-      const { data: animais, error: animaisError } = await supabase
+      const { data: animaisData, error: animaisError } = await supabase
         .from('animais_2025_11_13_03_23')
-        .select('*')
-        .eq('arquivado', false);
+        .select('*');
+      
+      if (animaisError) {
+        console.error('Erro ao buscar animais:', animaisError);
+        throw animaisError;
+      }
+      
+      // Filtrar animais não arquivados no frontend
+      const animais = animaisData?.filter(animal => !animal.arquivado) || animaisData || [];
 
-      if (animaisError) throw animaisError;
 
       // Buscar intervenções com tipos
       const { data: intervencoes, error: intervencoesError } = await supabase

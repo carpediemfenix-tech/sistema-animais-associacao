@@ -14,10 +14,16 @@ export const useAlertas = () => {
       // Buscar animais ativos (não arquivados)
       const { data: animais, error: animaisError } = await supabase
         .from('animais_2025_11_13_03_23')
-        .select('*')
-        .eq('arquivado', false);
+        .select('*');
 
-      if (animaisError) throw animaisError;
+      if (animaisError) {
+        console.error('Erro ao buscar animais para alertas:', animaisError);
+        setAlertas([]);
+        return;
+      }
+      
+      // Filtrar animais ativos no frontend
+      const animaisAtivos = animais?.filter(animal => !animal.arquivado && animal.estado === 'Ativo') || [];
 
       // Buscar intervenções
       const { data: intervencoes, error: intervencoesError } = await supabase
@@ -27,25 +33,28 @@ export const useAlertas = () => {
           tipo_intervencao:tipos_intervencoes_2025_11_13_03_23(*)
         `);
 
-      if (intervencoesError) throw intervencoesError;
+      if (intervencoesError) {
+        console.error('Erro ao buscar intervenções para alertas:', intervencoesError);
+        // Continuar sem intervenções se houver erro
+      }
 
       const alertasCalculados: AlertaSistema[] = [];
       const hoje = new Date();
 
       // 1. Alertas de vacinas em atraso
-      const vacinasAtraso = calcularVacinasAtraso(animais || [], intervencoes || [], hoje);
+      const vacinasAtraso = calcularVacinasAtraso(animaisAtivos, intervencoes || [], hoje);
       alertasCalculados.push(...vacinasAtraso);
 
       // 2. Alertas de consultas pendentes
-      const consultasPendentes = calcularConsultasPendentes(animais || [], intervencoes || [], hoje);
+      const consultasPendentes = calcularConsultasPendentes(animaisAtivos, intervencoes || [], hoje);
       alertasCalculados.push(...consultasPendentes);
 
       // 3. Alertas de animais sem adoção há muito tempo
-      const semAdocao = calcularAnimaisSemAdocao(animais || [], hoje);
+      const semAdocao = calcularAnimaisSemAdocao(animaisAtivos, hoje);
       alertasCalculados.push(...semAdocao);
 
       // 4. Alertas de medicação contínua
-      const medicacaoContinua = calcularMedicacaoContinua(animais || [], intervencoes || [], hoje);
+      const medicacaoContinua = calcularMedicacaoContinua(animaisAtivos, intervencoes || [], hoje);
       alertasCalculados.push(...medicacaoContinua);
 
       setAlertas(alertasCalculados);

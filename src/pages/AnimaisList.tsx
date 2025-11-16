@@ -33,11 +33,13 @@ const AnimaisList = () => {
       const { data, error } = await supabase
         .from('animais_2025_11_13_03_23')
         .select('*')
-        .eq('arquivado', false)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setAnimais(data || []);
+      
+      // Filtrar animais não arquivados no frontend se a coluna existir
+      const animaisAtivos = data?.filter(animal => !animal.arquivado) || data || [];
+      setAnimais(animaisAtivos);
     } catch (error: any) {
       toast({
         title: "Erro ao carregar animais",

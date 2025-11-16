@@ -49,18 +49,38 @@ const DashboardAvancado = () => {
     try {
       setLoading(true);
 
+      // Verificar se as tabelas existem antes de fazer queries
+      const { data: tablesCheck } = await supabase
+        .from('animais_2025_11_13_03_23')
+        .select('id')
+        .limit(1);
+      
+      if (!tablesCheck) {
+        throw new Error('Tabelas não encontradas. Execute o reset da base de dados.');
+      }
+
       // Buscar animais
-      const { data: animais } = await supabase
+      const { data: animais, error: animaisError } = await supabase
         .from('animais_2025_11_13_03_23')
         .select('*');
+      
+      if (animaisError) {
+        console.error('Erro ao buscar animais:', animaisError);
+        throw new Error('Erro ao carregar dados dos animais');
+      }
 
       // Buscar voluntários
-      const { data: voluntarios } = await supabase
+      const { data: voluntarios, error: voluntariosError } = await supabase
         .from('voluntarios_2025_11_16_18_00')
         .select('*');
+      
+      if (voluntariosError) {
+        console.error('Erro ao buscar voluntários:', voluntariosError);
+        // Não falhar se não houver voluntários
+      }
 
       // Buscar movimentos financeiros
-      const { data: movimentos } = await supabase
+      const { data: movimentos, error: movimentosError } = await supabase
         .from('movimentos_financeiros_2025_11_16_18_00')
         .select(`
           *,
@@ -69,17 +89,27 @@ const DashboardAvancado = () => {
         `)
         .order('data_movimento', { ascending: false })
         .limit(10);
+      
+      if (movimentosError) {
+        console.error('Erro ao buscar movimentos:', movimentosError);
+        // Não falhar se não houver movimentos
+      }
 
       // Buscar intervenções do mês atual
       const inicioMes = new Date();
       inicioMes.setDate(1);
-      const { data: intervencoesMes } = await supabase
+      const { data: intervencoesMes, error: intervencoesError } = await supabase
         .from('intervencoes_2025_11_13_03_23')
         .select(`
           *,
           voluntario:voluntarios_2025_11_16_18_00(nome)
         `)
         .gte('data_intervencao', inicioMes.toISOString().split('T')[0]);
+      
+      if (intervencoesError) {
+        console.error('Erro ao buscar intervenções:', intervencoesError);
+        // Não falhar se não houver intervenções
+      }
 
       // Calcular estatísticas
       const animaisAtivos = animais?.filter(a => !a.arquivado) || [];
@@ -138,8 +168,23 @@ const DashboardAvancado = () => {
         voluntariosMaisAtivos
       });
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao carregar dashboard:', error);
+      setStats({
+        totalAnimais: 0,
+        animaisAtivos: 0,
+        animaisAdotados: 0,
+        totalVoluntarios: 0,
+        voluntariosAtivos: 0,
+        totalReceitas: 0,
+        totalDespesas: 0,
+        saldoAtual: 0,
+        intervencoesMes: 0,
+        adocoesMes: 0,
+        animaisPorEspecie: [],
+        movimentosRecentes: [],
+        voluntariosMaisAtivos: []
+      });
     } finally {
       setLoading(false);
     }
