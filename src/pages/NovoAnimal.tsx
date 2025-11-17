@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { useNavigate, Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Save } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { ArrowLeft, Save, AlertCircle, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -14,45 +14,35 @@ const NovoAnimal = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [numeroProcesso, setNumeroProcesso] = useState<string>("");
+
   const [formData, setFormData] = useState({
     nome: "",
     especie: "",
     raca: "",
     sexo: "",
-    data_nascimento: "",
     idade_estimada: "",
     peso: "",
     cor: "",
     caracteristicas_fisicas: "",
     transponder: "",
-    numero_registo: "",
-    estado: "Ativo",
-    data_entrada: new Date().toISOString().split('T')[0],
-    origem: "",
+    local_encontrado: "",
     observacoes: "",
-    foto_url: ""
+    data_entrada: new Date().toISOString().split('T')[0]
   });
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Função para gerar o próximo número de processo
   const generateNextProcessNumber = async (): Promise<string> => {
     try {
       console.log('Gerando número de processo...');
       
       const currentYear = new Date().getFullYear();
-      const yearSuffix = currentYear.toString().slice(-2); // Últimos 2 dígitos do ano
+      const yearSuffix = currentYear.toString().slice(-2);
       
-      console.log('Ano atual:', currentYear, 'Sufixo:', yearSuffix);
-
       // Buscar todos os animais para encontrar o último número
       const { data, error } = await supabase
-        .from('animais_2025_11_13_03_23')
+        .from('animais')
         .select('numero_processo')
         .not('numero_processo', 'is', null)
         .order('created_at', { ascending: false });
@@ -83,7 +73,6 @@ const NovoAnimal = () => {
         }
       }
 
-      // Formatar o número com 3 dígitos
       const formattedSequence = nextSequence.toString().padStart(3, '0');
       const numeroProcesso = `P${yearSuffix}${formattedSequence}`;
       
@@ -102,56 +91,103 @@ const NovoAnimal = () => {
     }
   };
 
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.nome.trim()) {
+      newErrors.nome = "Nome é obrigatório";
+    }
+
+    if (!formData.especie) {
+      newErrors.especie = "Espécie é obrigatória";
+    }
+
+    if (!formData.sexo) {
+      newErrors.sexo = "Sexo é obrigatório";
+    }
+
+    if (!formData.data_entrada) {
+      newErrors.data_entrada = "Data de entrada é obrigatória";
+    }
+
+    if (formData.idade_estimada && (isNaN(Number(formData.idade_estimada)) || Number(formData.idade_estimada) < 0)) {
+      newErrors.idade_estimada = "Idade deve ser um número válido";
+    }
+
+    if (formData.peso && (isNaN(Number(formData.peso)) || Number(formData.peso) <= 0)) {
+      newErrors.peso = "Peso deve ser um número válido maior que zero";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      toast({
+        title: "Erro de validação",
+        description: "Por favor, corrija os campos em destaque",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
-      // Validações básicas
-      if (!formData.nome || !formData.especie || !formData.sexo) {
-        throw new Error("Nome, espécie e sexo são obrigatórios");
-      }
-
       // Gerar número de processo automático
-      const numeroProcesso = await generateNextProcessNumber();
+      const numeroProcessoGerado = await generateNextProcessNumber();
+      setNumeroProcesso(numeroProcessoGerado);
 
       // Preparar dados para inserção
       const dataToInsert = {
-        nome: formData.nome,
+        numero_processo: numeroProcessoGerado,
+        nome: formData.nome.trim(),
         especie: formData.especie,
-        raca: formData.raca || null,
+        raca: formData.raca.trim() || null,
         sexo: formData.sexo,
         idade_estimada: formData.idade_estimada ? parseInt(formData.idade_estimada) : null,
         peso: formData.peso ? parseFloat(formData.peso) : null,
-        cor: formData.cor || null,
-        caracteristicas_fisicas: formData.caracteristicas_fisicas || null,
-        transponder: formData.transponder || null,
+        cor: formData.cor.trim() || null,
+        caracteristicas_fisicas: formData.caracteristicas_fisicas.trim() || null,
+        transponder: formData.transponder.trim() || null,
         data_entrada: formData.data_entrada,
-        local_encontrado: formData.origem || null,
-        estado: formData.estado,
-        observacoes: formData.observacoes || null,
-        numero_processo: numeroProcesso, // Número de processo gerado automaticamente
+        local_encontrado: formData.local_encontrado.trim() || null,
+        observacoes: formData.observacoes.trim() || null,
+        estado: 'Ativo',
         arquivado: false
       };
 
+      console.log('Dados para inserção:', dataToInsert);
+
       const { data, error } = await supabase
-        .from('animais_2025_11_13_03_23')
+        .from('animais')
         .insert([dataToInsert])
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao inserir animal:', error);
+        throw error;
+      }
+
+      console.log('Animal inserido com sucesso:', data);
 
       toast({
         title: "Animal cadastrado com sucesso!",
-        description: `${formData.nome} foi adicionado ao sistema com o número de processo ${numeroProcesso}.`,
+        description: `${formData.nome} foi registado com o processo ${numeroProcessoGerado}`,
       });
 
+      // Redirecionar para a página de detalhes do animal
       navigate(`/animal/${data.id}`);
+
     } catch (error: any) {
+      console.error('Erro ao cadastrar animal:', error);
       toast({
         title: "Erro ao cadastrar animal",
-        description: error.message,
+        description: error.message || "Ocorreu um erro inesperado",
         variant: "destructive",
       });
     } finally {
@@ -159,239 +195,281 @@ const NovoAnimal = () => {
     }
   };
 
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    // Limpar erro do campo quando o usuário começar a digitar
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: "" }));
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center mb-8">
-          <Link to="/animais">
-            <Button variant="outline" className="mr-4">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Voltar
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Cadastrar Novo Animal - Valentão ao Resgate</h1>
-            <p className="text-gray-600 mt-2">Preencha as informações do animal</p>
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center space-x-4">
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/animais">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Voltar à Lista
+                </Link>
+              </Button>
+              <div className="flex items-center space-x-3">
+                <img 
+                  src="/images/BackgroundEraser_20250411_205630024.png" 
+                  alt="Valentão ao Resgate" 
+                  className="h-8 w-8 object-contain"
+                />
+                <div>
+                  <h1 className="text-xl font-bold text-gray-900">Cadastrar Novo Animal</h1>
+                  <p className="text-sm text-gray-500">Preencha as informações do animal</p>
+                </div>
+              </div>
+            </div>
+            {numeroProcesso && (
+              <div className="flex items-center space-x-2 bg-green-50 px-3 py-1 rounded-full">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <span className="text-sm font-medium text-green-700">Processo: {numeroProcesso}</span>
+              </div>
+            )}
           </div>
         </div>
+      </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="grid lg:grid-cols-3 gap-6">
-            {/* Informações Básicas */}
-            <Card className="lg:col-span-2">
-              <CardHeader>
-                <CardTitle>Informações Básicas</CardTitle>
-                <CardDescription>Dados principais do animal</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="nome">Nome *</Label>
-                    <Input
-                      id="nome"
-                      value={formData.nome}
-                      onChange={(e) => handleInputChange("nome", e.target.value)}
-                      placeholder="Nome do animal"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="especie">Espécie *</Label>
-                    <Select value={formData.especie} onValueChange={(value) => handleInputChange("especie", value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione a espécie" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Cão">Cão</SelectItem>
-                        <SelectItem value="Gato">Gato</SelectItem>
-                        <SelectItem value="Outro">Outro</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Informações Básicas */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Informações Básicas</CardTitle>
+              <CardDescription>
+                Dados essenciais do animal (campos obrigatórios marcados com *)
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="nome">Nome *</Label>
+                  <Input
+                    id="nome"
+                    value={formData.nome}
+                    onChange={(e) => handleInputChange("nome", e.target.value)}
+                    placeholder="Nome do animal"
+                    className={errors.nome ? "border-red-500" : ""}
+                  />
+                  {errors.nome && (
+                    <p className="text-sm text-red-500 mt-1 flex items-center">
+                      <AlertCircle className="h-4 w-4 mr-1" />
+                      {errors.nome}
+                    </p>
+                  )}
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="raca">Raça</Label>
-                    <Input
-                      id="raca"
-                      value={formData.raca}
-                      onChange={(e) => handleInputChange("raca", e.target.value)}
-                      placeholder="Raça do animal"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="sexo">Sexo *</Label>
-                    <Select value={formData.sexo} onValueChange={(value) => handleInputChange("sexo", value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o sexo" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Macho">Macho</SelectItem>
-                        <SelectItem value="Fêmea">Fêmea</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div>
+                  <Label htmlFor="especie">Espécie *</Label>
+                  <Select value={formData.especie} onValueChange={(value) => handleInputChange("especie", value)}>
+                    <SelectTrigger className={errors.especie ? "border-red-500" : ""}>
+                      <SelectValue placeholder="Selecione a espécie" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Cão">Cão</SelectItem>
+                      <SelectItem value="Gato">Gato</SelectItem>
+                      <SelectItem value="Outro">Outro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {errors.especie && (
+                    <p className="text-sm text-red-500 mt-1 flex items-center">
+                      <AlertCircle className="h-4 w-4 mr-1" />
+                      {errors.especie}
+                    </p>
+                  )}
                 </div>
 
-                <div className="grid md:grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="data_nascimento">Data de Nascimento</Label>
-                    <Input
-                      id="data_nascimento"
-                      type="date"
-                      value={formData.data_nascimento}
-                      onChange={(e) => handleInputChange("data_nascimento", e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="idade_estimada">Idade Estimada (meses)</Label>
-                    <Input
-                      id="idade_estimada"
-                      type="number"
-                      value={formData.idade_estimada}
-                      onChange={(e) => handleInputChange("idade_estimada", e.target.value)}
-                      placeholder="Ex: 24 (para 2 anos)"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="peso">Peso (kg)</Label>
-                    <Input
-                      id="peso"
-                      type="number"
-                      step="0.1"
-                      value={formData.peso}
-                      onChange={(e) => handleInputChange("peso", e.target.value)}
-                      placeholder="0.0"
-                    />
-                  </div>
+                <div>
+                  <Label htmlFor="raca">Raça</Label>
+                  <Input
+                    id="raca"
+                    value={formData.raca}
+                    onChange={(e) => handleInputChange("raca", e.target.value)}
+                    placeholder="Raça do animal (opcional)"
+                  />
                 </div>
 
+                <div>
+                  <Label htmlFor="sexo">Sexo *</Label>
+                  <Select value={formData.sexo} onValueChange={(value) => handleInputChange("sexo", value)}>
+                    <SelectTrigger className={errors.sexo ? "border-red-500" : ""}>
+                      <SelectValue placeholder="Selecione o sexo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Macho">Macho</SelectItem>
+                      <SelectItem value="Fêmea">Fêmea</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {errors.sexo && (
+                    <p className="text-sm text-red-500 mt-1 flex items-center">
+                      <AlertCircle className="h-4 w-4 mr-1" />
+                      {errors.sexo}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="idade_estimada">Idade Estimada (meses)</Label>
+                  <Input
+                    id="idade_estimada"
+                    type="number"
+                    min="0"
+                    value={formData.idade_estimada}
+                    onChange={(e) => handleInputChange("idade_estimada", e.target.value)}
+                    placeholder="Ex: 24 (para 2 anos)"
+                    className={errors.idade_estimada ? "border-red-500" : ""}
+                  />
+                  {errors.idade_estimada && (
+                    <p className="text-sm text-red-500 mt-1 flex items-center">
+                      <AlertCircle className="h-4 w-4 mr-1" />
+                      {errors.idade_estimada}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="peso">Peso (kg)</Label>
+                  <Input
+                    id="peso"
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    value={formData.peso}
+                    onChange={(e) => handleInputChange("peso", e.target.value)}
+                    placeholder="Ex: 15.5"
+                    className={errors.peso ? "border-red-500" : ""}
+                  />
+                  {errors.peso && (
+                    <p className="text-sm text-red-500 mt-1 flex items-center">
+                      <AlertCircle className="h-4 w-4 mr-1" />
+                      {errors.peso}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Características Físicas */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Características Físicas</CardTitle>
+              <CardDescription>
+                Descrição física e identificação do animal
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="cor">Cor</Label>
                   <Input
                     id="cor"
                     value={formData.cor}
                     onChange={(e) => handleInputChange("cor", e.target.value)}
-                    placeholder="Cor predominante do animal"
+                    placeholder="Ex: Preto e branco"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="caracteristicas_fisicas">Características Físicas</Label>
-                  <Textarea
-                    id="caracteristicas_fisicas"
-                    value={formData.caracteristicas_fisicas}
-                    onChange={(e) => handleInputChange("caracteristicas_fisicas", e.target.value)}
-                    placeholder="Descreva características distintivas, marcas, cicatrizes, etc."
-                    rows={3}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Identificação e Estado */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Identificação e Estado</CardTitle>
-                <CardDescription>Registros e situação atual</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="transponder">Transponder/Microchip</Label>
+                  <Label htmlFor="transponder">Transponder/Chip</Label>
                   <Input
                     id="transponder"
                     value={formData.transponder}
                     onChange={(e) => handleInputChange("transponder", e.target.value)}
-                    placeholder="Número do microchip"
+                    placeholder="Número do chip (se aplicável)"
                   />
                 </div>
+              </div>
 
-                <div>
-                  <Label htmlFor="numero_processo">Número de Processo</Label>
-                  <div className="bg-gray-50 border border-gray-200 rounded-md px-3 py-2 text-sm text-gray-600">
-                    🅰️ Será gerado automaticamente (ex: P25001)
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    O número é gerado automaticamente no formato: P + ano + sequência
-                  </p>
-                </div>
+              <div>
+                <Label htmlFor="caracteristicas_fisicas">Características Físicas</Label>
+                <Textarea
+                  id="caracteristicas_fisicas"
+                  value={formData.caracteristicas_fisicas}
+                  onChange={(e) => handleInputChange("caracteristicas_fisicas", e.target.value)}
+                  placeholder="Descreva características distintivas, cicatrizes, marcas especiais..."
+                  rows={3}
+                />
+              </div>
+            </CardContent>
+          </Card>
 
+          {/* Informações de Entrada */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Informações de Entrada</CardTitle>
+              <CardDescription>
+                Dados sobre como o animal chegou à associação
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="estado">Estado</Label>
-                  <Select value={formData.estado} onValueChange={(value) => handleInputChange("estado", value)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Ativo">Ativo</SelectItem>
-                      <SelectItem value="Adotado">Adotado</SelectItem>
-                      <SelectItem value="Óbito">Óbito</SelectItem>
-                      <SelectItem value="Não Adotável">Não Adotável</SelectItem>
-                      <SelectItem value="Transferido">Transferido</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="data_entrada">Data de Entrada</Label>
+                  <Label htmlFor="data_entrada">Data de Entrada *</Label>
                   <Input
                     id="data_entrada"
                     type="date"
                     value={formData.data_entrada}
                     onChange={(e) => handleInputChange("data_entrada", e.target.value)}
+                    className={errors.data_entrada ? "border-red-500" : ""}
                   />
+                  {errors.data_entrada && (
+                    <p className="text-sm text-red-500 mt-1 flex items-center">
+                      <AlertCircle className="h-4 w-4 mr-1" />
+                      {errors.data_entrada}
+                    </p>
+                  )}
                 </div>
 
                 <div>
-                  <Label htmlFor="origem">Origem</Label>
+                  <Label htmlFor="local_encontrado">Local Encontrado</Label>
                   <Input
-                    id="origem"
-                    value={formData.origem}
-                    onChange={(e) => handleInputChange("origem", e.target.value)}
-                    placeholder="De onde veio o animal"
+                    id="local_encontrado"
+                    value={formData.local_encontrado}
+                    onChange={(e) => handleInputChange("local_encontrado", e.target.value)}
+                    placeholder="Ex: Rua das Flores, Lisboa"
                   />
                 </div>
+              </div>
 
-                <div>
-                  <Label htmlFor="foto_url">URL da Foto</Label>
-                  <Input
-                    id="foto_url"
-                    value={formData.foto_url}
-                    onChange={(e) => handleInputChange("foto_url", e.target.value)}
-                    placeholder="Link para foto do animal"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Observações */}
-          <Card className="mt-6">
-            <CardHeader>
-              <CardTitle>Observações Gerais</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Textarea
-                id="observacoes"
-                value={formData.observacoes}
-                onChange={(e) => handleInputChange("observacoes", e.target.value)}
-                placeholder="Observações adicionais sobre o animal, comportamento, necessidades especiais, etc."
-                rows={4}
-              />
+              <div>
+                <Label htmlFor="observacoes">Observações</Label>
+                <Textarea
+                  id="observacoes"
+                  value={formData.observacoes}
+                  onChange={(e) => handleInputChange("observacoes", e.target.value)}
+                  placeholder="Informações adicionais, comportamento, estado de saúde inicial..."
+                  rows={4}
+                />
+              </div>
             </CardContent>
           </Card>
 
           {/* Botões de Ação */}
-          <div className="flex justify-end gap-4 mt-6">
-            <Link to="/animais">
-              <Button type="button" variant="outline">
-                Cancelar
-              </Button>
-            </Link>
+          <div className="flex justify-end space-x-4">
+            <Button type="button" variant="outline" asChild>
+              <Link to="/animais">Cancelar</Link>
+            </Button>
             <Button type="submit" disabled={loading}>
-              <Save className="h-4 w-4 mr-2" />
-              {loading ? "Salvando..." : "Salvar Animal"}
+              {loading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  A cadastrar...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Cadastrar Animal
+                </>
+              )}
             </Button>
           </div>
         </form>
