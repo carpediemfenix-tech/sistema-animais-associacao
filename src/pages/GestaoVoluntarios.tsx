@@ -34,7 +34,7 @@ const GestaoVoluntarios = () => {
   const fetchVoluntarios = async () => {
     try {
       const { data, error } = await supabase
-        .from('voluntarios_2025_11_16_18_00')
+        .from('voluntarios')
         .select('*')
         .order('nome');
 
@@ -87,7 +87,7 @@ const GestaoVoluntarios = () => {
       } else {
         // Criar novo voluntário
         const { error } = await supabase
-          .from('voluntarios_2025_11_16_18_00')
+          .from('voluntarios')
           .insert({
             nome: formData.nome,
             email: formData.email || null,
@@ -132,7 +132,7 @@ const GestaoVoluntarios = () => {
   const toggleAtivo = async (voluntario: Voluntario) => {
     try {
       const { error } = await supabase
-        .from('voluntarios_2025_11_16_18_00')
+        .from('voluntarios')
         .update({ 
           ativo: !voluntario.ativo,
           updated_at: new Date().toISOString()

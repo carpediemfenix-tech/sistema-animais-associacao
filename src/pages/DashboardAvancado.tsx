@@ -69,7 +69,7 @@ const DashboardAvancado = () => {
 
       // Buscar animais
       const { data: animais, error: animaisError } = await supabase
-        .from('animais_2025_11_13_03_23')
+        .from('animais')
         .select('*');
       
       if (animaisError) {
@@ -81,7 +81,7 @@ const DashboardAvancado = () => {
 
       // Buscar voluntários
       const { data: voluntarios, error: voluntariosError } = await supabase
-        .from('voluntarios_2025_11_16_18_00')
+        .from('voluntarios')
         .select('*');
       
       if (voluntariosError) {
@@ -91,11 +91,11 @@ const DashboardAvancado = () => {
 
       // Buscar movimentos financeiros
       const { data: movimentos, error: movimentosError } = await supabase
-        .from('movimentos_financeiros_2025_11_16_18_00')
+        .from('movimentos_financeiros')
         .select(`
           *,
-          animal:animais_2025_11_13_03_23(nome),
-          voluntario:voluntarios_2025_11_16_18_00(nome)
+          animal:animais(nome),
+          voluntario:voluntarios(nome)
         `)
         .order('data_movimento', { ascending: false })
         .limit(10);
@@ -109,10 +109,10 @@ const DashboardAvancado = () => {
       const inicioMes = new Date();
       inicioMes.setDate(1);
       const { data: intervencoesMes, error: intervencoesError } = await supabase
-        .from('intervencoes_2025_11_13_03_23')
+        .from('intervencoes')
         .select(`
           *,
-          voluntario:voluntarios_2025_11_16_18_00(nome)
+          voluntario:voluntarios(nome)
         `)
         .gte('data_intervencao', inicioMes.toISOString().split('T')[0]);
       

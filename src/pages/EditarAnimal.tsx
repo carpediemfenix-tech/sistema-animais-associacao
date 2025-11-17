@@ -1,20 +1,23 @@
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Save, AlertCircle, CheckCircle } from "lucide-react";
+import { ArrowLeft, Save, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { Animal } from "@/types/animal";
 import { useToast } from "@/hooks/use-toast";
 
-const NovoAnimal = () => {
+const EditarAnimal = () => {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [numeroProcesso, setNumeroProcesso] = useState<string>("");
+  const [loadingData, setLoadingData] = useState(true);
+  const [animal, setAnimal] = useState<Animal | null>(null);
 
   const [formData, setFormData] = useState({
     nome: "",
@@ -28,67 +31,75 @@ const NovoAnimal = () => {
     caracteristicas_fisicas: "",
     transponder: "",
     local_encontrado: "",
+    estado: "",
+    data_adocao: "",
+    adotante_nome: "",
+    adotante_contacto: "",
     observacoes: "",
-    data_entrada: new Date().toISOString().split('T')[0]
+    data_entrada: ""
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const generateNextProcessNumber = async (): Promise<string> => {
+  useEffect(() => {
+    if (id) {
+      fetchAnimal();
+    }
+  }, [id]);
+
+  const fetchAnimal = async () => {
     try {
-      console.log('Gerando número de processo...');
+      setLoadingData(true);
       
-      const currentYear = new Date().getFullYear();
-      const yearSuffix = currentYear.toString().slice(-2);
-      
-      // Buscar todos os animais para encontrar o último número
       const { data, error } = await supabase
         .from('animais')
-        .select('numero_processo')
-        .not('numero_processo', 'is', null)
-        .order('created_at', { ascending: false });
+        .select('*')
+        .eq('id', id)
+        .single();
 
-      if (error) {
-        console.error('Erro ao buscar animais:', error);
-        throw error;
+      if (error) throw error;
+
+      setAnimal(data);
+      
+      // Calcular data de nascimento aproximada se só temos idade
+      let dataNascimento = "";
+      if (data.idade_estimada && !data.data_nascimento) {
+        const hoje = new Date();
+        const nascimento = new Date(hoje);
+        nascimento.setMonth(nascimento.getMonth() - data.idade_estimada);
+        dataNascimento = nascimento.toISOString().split('T')[0];
       }
 
-      console.log('Animais encontrados:', data?.length || 0);
-      
-      let nextSequence = 1;
-      
-      if (data && data.length > 0) {
-        // Filtrar apenas os números do ano atual e encontrar o maior
-        const currentYearNumbers = data
-          .filter(animal => animal.numero_processo && animal.numero_processo.startsWith(`P${yearSuffix}`))
-          .map(animal => {
-            const match = animal.numero_processo.match(/P\d{2}(\d{3})/);
-            return match ? parseInt(match[1]) : 0;
-          })
-          .filter(num => num > 0);
-        
-        console.log('Números do ano atual:', currentYearNumbers);
-        
-        if (currentYearNumbers.length > 0) {
-          nextSequence = Math.max(...currentYearNumbers) + 1;
-        }
-      }
+      setFormData({
+        nome: data.nome || "",
+        especie: data.especie || "",
+        raca: data.raca || "",
+        sexo: data.sexo || "",
+        idade_estimada: data.idade_estimada?.toString() || "",
+        data_nascimento: data.data_nascimento || dataNascimento,
+        peso: data.peso?.toString() || "",
+        cor: data.cor || "",
+        caracteristicas_fisicas: data.caracteristicas_fisicas || "",
+        transponder: data.transponder || "",
+        local_encontrado: data.local_encontrado || "",
+        estado: data.estado || "",
+        data_adocao: data.data_adocao || "",
+        adotante_nome: data.adotante_nome || "",
+        adotante_contacto: data.adotante_contacto || "",
+        observacoes: data.observacoes || "",
+        data_entrada: data.data_entrada || ""
+      });
 
-      const formattedSequence = nextSequence.toString().padStart(3, '0');
-      const numeroProcesso = `P${yearSuffix}${formattedSequence}`;
-      
-      console.log('Número de processo gerado:', numeroProcesso);
-      return numeroProcesso;
-      
-    } catch (error) {
-      console.error('Erro ao gerar número de processo:', error);
-      // Fallback: gerar um número baseado no timestamp
-      const currentYear = new Date().getFullYear();
-      const yearSuffix = currentYear.toString().slice(-2);
-      const timestamp = Date.now().toString().slice(-3);
-      const fallbackNumber = `P${yearSuffix}${timestamp}`;
-      console.log('Usando número fallback:', fallbackNumber);
-      return fallbackNumber;
+    } catch (error: any) {
+      console.error('Erro ao carregar animal:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar os dados do animal",
+        variant: "destructive",
+      });
+      navigate('/animais');
+    } finally {
+      setLoadingData(false);
     }
   };
 
@@ -138,10 +149,6 @@ const NovoAnimal = () => {
     setLoading(true);
 
     try {
-      // Gerar número de processo automático
-      const numeroProcessoGerado = await generateNextProcessNumber();
-      setNumeroProcesso(numeroProcessoGerado);
-
       // Calcular idade estimada se temos data de nascimento
       let idadeEstimada = formData.idade_estimada ? parseInt(formData.idade_estimada) : null;
       if (formData.data_nascimento && !formData.idade_estimada) {
@@ -152,9 +159,7 @@ const NovoAnimal = () => {
         idadeEstimada = diffMonths;
       }
 
-      // Preparar dados para inserção
-      const dataToInsert = {
-        numero_processo: numeroProcessoGerado,
+      const dataToUpdate = {
         nome: formData.nome.trim(),
         especie: formData.especie,
         raca: formData.raca.trim() || null,
@@ -166,38 +171,35 @@ const NovoAnimal = () => {
         transponder: formData.transponder.trim() || null,
         data_entrada: formData.data_entrada,
         local_encontrado: formData.local_encontrado.trim() || null,
+        estado: formData.estado,
+        data_adocao: formData.data_adocao || null,
+        adotante_nome: formData.adotante_nome.trim() || null,
+        adotante_contacto: formData.adotante_contacto.trim() || null,
         observacoes: formData.observacoes.trim() || null,
-        estado: 'Ativo',
-        arquivado: false
+        updated_at: new Date().toISOString()
       };
 
-      console.log('Dados para inserção:', dataToInsert);
-
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('animais')
-        .insert([dataToInsert])
-        .select()
-        .single();
+        .update(dataToUpdate)
+        .eq('id', id);
 
       if (error) {
-        console.error('Erro ao inserir animal:', error);
+        console.error('Erro ao atualizar animal:', error);
         throw error;
       }
 
-      console.log('Animal inserido com sucesso:', data);
-
       toast({
-        title: "Animal cadastrado com sucesso!",
-        description: `${formData.nome} foi registado com o processo ${numeroProcessoGerado}`,
+        title: "Animal atualizado com sucesso!",
+        description: `${formData.nome} foi atualizado com sucesso`,
       });
 
-      // Redirecionar para a página de detalhes do animal
-      navigate(`/animal/${data.id}`);
+      navigate(`/animal/${id}`);
 
     } catch (error: any) {
-      console.error('Erro ao cadastrar animal:', error);
+      console.error('Erro ao atualizar animal:', error);
       toast({
-        title: "Erro ao cadastrar animal",
+        title: "Erro ao atualizar animal",
         description: error.message || "Ocorreu um erro inesperado",
         variant: "destructive",
       });
@@ -214,6 +216,31 @@ const NovoAnimal = () => {
     }
   };
 
+  if (loadingData) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-lg text-gray-600">A carregar dados do animal...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!animal) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Animal não encontrado</h2>
+          <p className="text-gray-600 mb-4">O animal solicitado não existe ou foi removido.</p>
+          <Button asChild>
+            <Link to="/animais">Voltar à Lista</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -222,9 +249,9 @@ const NovoAnimal = () => {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
               <Button variant="ghost" size="sm" asChild>
-                <Link to="/animais">
+                <Link to={`/animal/${id}`}>
                   <ArrowLeft className="h-4 w-4 mr-2" />
-                  Voltar à Lista
+                  Voltar aos Detalhes
                 </Link>
               </Button>
               <div className="flex items-center space-x-3">
@@ -234,17 +261,11 @@ const NovoAnimal = () => {
                   className="h-8 w-8 object-contain"
                 />
                 <div>
-                  <h1 className="text-xl font-bold text-gray-900">Cadastrar Novo Animal</h1>
-                  <p className="text-sm text-gray-500">Preencha as informações do animal</p>
+                  <h1 className="text-xl font-bold text-gray-900">Editar Animal</h1>
+                  <p className="text-sm text-gray-500">{animal.nome} - {animal.numero_processo}</p>
                 </div>
               </div>
             </div>
-            {numeroProcesso && (
-              <div className="flex items-center space-x-2 bg-green-50 px-3 py-1 rounded-full">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <span className="text-sm font-medium text-green-700">Processo: {numeroProcesso}</span>
-              </div>
-            )}
           </div>
         </div>
       </div>
@@ -328,6 +349,16 @@ const NovoAnimal = () => {
                 </div>
 
                 <div>
+                  <Label htmlFor="data_nascimento">Data de Nascimento</Label>
+                  <Input
+                    id="data_nascimento"
+                    type="date"
+                    value={formData.data_nascimento}
+                    onChange={(e) => handleInputChange("data_nascimento", e.target.value)}
+                  />
+                </div>
+
+                <div>
                   <Label htmlFor="idade_estimada">Idade Estimada (meses)</Label>
                   <Input
                     id="idade_estimada"
@@ -344,17 +375,6 @@ const NovoAnimal = () => {
                       {errors.idade_estimada}
                     </p>
                   )}
-                </div>
-
-                <div>
-                  <Label htmlFor="data_nascimento">Data de Nascimento</Label>
-                  <Input
-                    id="data_nascimento"
-                    type="date"
-                    value={formData.data_nascimento}
-                    onChange={(e) => handleInputChange("data_nascimento", e.target.value)}
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Se informada, a idade será calculada automaticamente</p>
                 </div>
 
                 <div>
@@ -375,6 +395,21 @@ const NovoAnimal = () => {
                       {errors.peso}
                     </p>
                   )}
+                </div>
+
+                <div>
+                  <Label htmlFor="estado">Estado</Label>
+                  <Select value={formData.estado} onValueChange={(value) => handleInputChange("estado", value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o estado" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Ativo">Ativo</SelectItem>
+                      <SelectItem value="Adotado">Adotado</SelectItem>
+                      <SelectItem value="Óbito">Óbito</SelectItem>
+                      <SelectItem value="Não Adotável">Não Adotável</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </CardContent>
@@ -427,9 +462,9 @@ const NovoAnimal = () => {
           {/* Informações de Entrada */}
           <Card>
             <CardHeader>
-              <CardTitle>Informações de Entrada</CardTitle>
+              <CardTitle>Informações de Entrada e Estado</CardTitle>
               <CardDescription>
-                Dados sobre como o animal chegou à associação
+                Dados sobre como o animal chegou à associação e estado atual
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -462,13 +497,48 @@ const NovoAnimal = () => {
                 </div>
               </div>
 
+              {/* Campos de adoção - só mostrar se estado for "Adotado" */}
+              {formData.estado === 'Adotado' && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-green-50 rounded-lg">
+                  <div>
+                    <Label htmlFor="data_adocao">Data de Adoção</Label>
+                    <Input
+                      id="data_adocao"
+                      type="date"
+                      value={formData.data_adocao}
+                      onChange={(e) => handleInputChange("data_adocao", e.target.value)}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="adotante_nome">Nome do Adotante</Label>
+                    <Input
+                      id="adotante_nome"
+                      value={formData.adotante_nome}
+                      onChange={(e) => handleInputChange("adotante_nome", e.target.value)}
+                      placeholder="Nome completo"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="adotante_contacto">Contacto do Adotante</Label>
+                    <Input
+                      id="adotante_contacto"
+                      value={formData.adotante_contacto}
+                      onChange={(e) => handleInputChange("adotante_contacto", e.target.value)}
+                      placeholder="Telefone ou email"
+                    />
+                  </div>
+                </div>
+              )}
+
               <div>
                 <Label htmlFor="observacoes">Observações</Label>
                 <Textarea
                   id="observacoes"
                   value={formData.observacoes}
                   onChange={(e) => handleInputChange("observacoes", e.target.value)}
-                  placeholder="Informações adicionais, comportamento, estado de saúde inicial..."
+                  placeholder="Informações adicionais, comportamento, estado de saúde..."
                   rows={4}
                 />
               </div>
@@ -478,18 +548,18 @@ const NovoAnimal = () => {
           {/* Botões de Ação */}
           <div className="flex justify-end space-x-4">
             <Button type="button" variant="outline" asChild>
-              <Link to="/animais">Cancelar</Link>
+              <Link to={`/animal/${id}`}>Cancelar</Link>
             </Button>
             <Button type="submit" disabled={loading}>
               {loading ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  A cadastrar...
+                  A atualizar...
                 </>
               ) : (
                 <>
                   <Save className="h-4 w-4 mr-2" />
-                  Cadastrar Animal
+                  Salvar Alterações
                 </>
               )}
             </Button>
@@ -500,4 +570,4 @@ const NovoAnimal = () => {
   );
 };
 
-export default NovoAnimal;
+export default EditarAnimal;

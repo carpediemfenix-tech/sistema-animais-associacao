@@ -8,6 +8,7 @@ import NotFound from "./pages/NotFound";
 import AnimaisList from "./pages/AnimaisList";
 import AnimalDetail from "./pages/AnimalDetail";
 import NovoAnimal from "./pages/NovoAnimal";
+import EditarAnimal from "./pages/EditarAnimal";
 import IntervencoesPage from "./pages/IntervencoesPage";
 import EventosPage from "./pages/EventosPage";
 import GestaoVoluntarios from "./pages/GestaoVoluntarios";
@@ -27,6 +28,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/animais" element={<AnimaisList />} />
           <Route path="/animal/:id" element={<AnimalDetail />} />
+          <Route path="/animal/:id/editar" element={<EditarAnimal />} />
           <Route path="/novo-animal" element={<NovoAnimal />} />
           <Route path="/intervencoes" element={<IntervencoesPage />} />
           <Route path="/eventos" element={<EventosPage />} />
