@@ -490,9 +490,9 @@ const DashboardAvancado = () => {
               </Link>
             </Button>
             <Button asChild variant="outline" className="h-20 flex-col">
-              <Link to="/gestao-animais">
+              <Link to="/animais">
                 <PawPrint className="h-6 w-6 mb-2" />
-                Gerir Animais
+                Ver Animais
               </Link>
             </Button>
             <Button asChild variant="outline" className="h-20 flex-col">

@@ -40,11 +40,11 @@ const GestaoFinanceira = () => {
     try {
       // Buscar movimentos financeiros
       const { data: movimentosData, error: movimentosError } = await supabase
-        .from('movimentos_financeiros_2025_11_16_18_00')
+        .from('movimentos_financeiros')
         .select(`
           *,
-          animal:animais_2025_11_13_03_23(nome),
-          voluntario:voluntarios_2025_11_16_18_00(nome)
+          animal:animais(nome),
+          voluntario:voluntarios(nome)
         `)
         .order('data_movimento', { ascending: false });
 
@@ -52,7 +52,7 @@ const GestaoFinanceira = () => {
 
       // Buscar animais ativos
       const { data: animaisData, error: animaisError } = await supabase
-        .from('animais_2025_11_13_03_23')
+        .from('animais')
         .select('id, nome')
         .eq('arquivado', false)
         .order('nome');
@@ -61,7 +61,7 @@ const GestaoFinanceira = () => {
 
       // Buscar voluntários ativos
       const { data: voluntariosData, error: voluntariosError } = await supabase
-        .from('voluntarios_2025_11_16_18_00')
+        .from('voluntarios')
         .select('id, nome')
         .eq('ativo', true)
         .order('nome');
@@ -96,7 +96,7 @@ const GestaoFinanceira = () => {
 
     try {
       const { error } = await supabase
-        .from('movimentos_financeiros_2025_11_16_18_00')
+        .from('movimentos_financeiros')
         .insert({
           animal_id: formData.animal_id || null,
           tipo_movimento: formData.tipo_movimento,

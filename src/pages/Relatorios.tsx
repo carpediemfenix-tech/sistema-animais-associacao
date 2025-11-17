@@ -45,7 +45,7 @@ const Relatorios = () => {
     try {
       // Buscar dados dos animais (excluindo arquivados)
       const { data: animaisData, error: animaisError } = await supabase
-        .from('animais_2025_11_13_03_23')
+        .from('animais')
         .select('*');
       
       if (animaisError) {
@@ -59,10 +59,10 @@ const Relatorios = () => {
 
       // Buscar intervenções com tipos
       const { data: intervencoes, error: intervencoesError } = await supabase
-        .from('intervencoes_2025_11_13_03_23')
+        .from('intervencoes')
         .select(`
           *,
-          tipo_intervencao:tipos_intervencoes_2025_11_13_03_23(nome, descricao)
+          tipo_intervencao:tipos_intervencoes(nome, descricao)
         `);
 
       if (intervencoesError) throw intervencoesError;
