@@ -1,31 +1,17 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Heart, 
-  PlusCircle, 
-  Users, 
-  Euro, 
-  BarChart3, 
-  Settings,
-  Search,
-  Bell,
-  Calendar,
-  Activity,
-  TrendingUp,
-  AlertTriangle,
-  CheckCircle
-} from "lucide-react";
+import { PawPrint, Users, Activity, TrendingUp, Calendar, FileText, Settings, Bell, Plus, Eye, DollarSign } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { DashboardStats } from "@/types/animal";
+import { DashboardStats, PerfilUsuario } from "@/types/animal";
 import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [perfilUsuario] = useState<'consulta' | 'edicao' | 'admin'>('edicao'); // Por agora, perfil de edição
+  const [perfilUsuario] = useState<PerfilUsuario>('edicao'); // Pode ser carregado do localStorage
   const { toast } = useToast();
 
   useEffect(() => {
@@ -57,25 +43,31 @@ const Index = () => {
 
       const { data: intervencoes, error: intervencoesError } = await supabase
         .from('intervencoes')
-        .select('*')
-        .gte('data_intervencao', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]);
+        .select('*');
 
       if (intervencoesError) throw intervencoesError;
 
       // Calcular estatísticas
-      const animaisAtivos = animais?.filter(a => !a.arquivado && a.estado === 'Ativo').length || 0;
+      const animaisAtivos = animais?.filter(a => a.estado === 'Ativo' && !a.arquivado).length || 0;
       const animaisAdotados = animais?.filter(a => a.estado === 'Adotado').length || 0;
       const voluntariosAtivos = voluntarios?.filter(v => v.ativo).length || 0;
-      
-      const totalReceitas = movimentos?.filter(m => m.tipo_movimento === 'Receita').reduce((sum, m) => sum + m.valor, 0) || 0;
-      const totalDespesas = movimentos?.filter(m => m.tipo_movimento === 'Despesa').reduce((sum, m) => sum + m.valor, 0) || 0;
-      
-      const adocoesMes = animais?.filter(a => {
-        if (!a.data_adocao) return false;
-        const dataAdocao = new Date(a.data_adocao);
-        const agora = new Date();
-        return dataAdocao.getMonth() === agora.getMonth() && dataAdocao.getFullYear() === agora.getFullYear();
-      }).length || 0;
+
+      const totalReceitas = movimentos?.filter(m => m.tipo_movimento === 'Receita')
+        .reduce((sum, m) => sum + (m.valor || 0), 0) || 0;
+      const totalDespesas = movimentos?.filter(m => m.tipo_movimento === 'Despesa')
+        .reduce((sum, m) => sum + (m.valor || 0), 0) || 0;
+
+      // Intervenções do mês atual
+      const inicioMes = new Date();
+      inicioMes.setDate(1);
+      const intervencoesMes = intervencoes?.filter(i => 
+        new Date(i.data_intervencao) >= inicioMes
+      ).length || 0;
+
+      // Adoções do mês atual
+      const adocoesMes = animais?.filter(a => 
+        a.data_adocao && new Date(a.data_adocao) >= inicioMes
+      ).length || 0;
 
       setStats({
         animais_ativos: animaisAtivos,
@@ -85,7 +77,7 @@ const Index = () => {
         total_receitas: totalReceitas,
         total_despesas: totalDespesas,
         saldo_atual: totalReceitas - totalDespesas,
-        intervencoes_mes: intervencoes?.length || 0,
+        intervencoes_mes: intervencoesMes,
         adocoes_mes: adocoesMes
       });
 
@@ -115,18 +107,20 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+          <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
-              <img 
-                src="/images/BackgroundEraser_20250411_205630024.png" 
-                alt="Valentão ao Resgate" 
-                className="h-10 w-10 object-contain"
-              />
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">Valentão ao Resgate</h1>
-                <p className="text-sm text-gray-500">Sistema de Gestão v2.0</p>
+              <div className="flex items-center space-x-3">
+                <img 
+                  src="/images/BackgroundEraser_20250411_205630024.png" 
+                  alt="Valentão ao Resgate" 
+                  className="h-10 w-10 object-contain"
+                />
+                <div>
+                  <h1 className="text-xl font-bold text-gray-900">Valentão ao Resgate</h1>
+                  <p className="text-sm text-gray-500">Sistema de Gestão de Animais</p>
+                </div>
               </div>
             </div>
             <div className="flex items-center space-x-4">
@@ -137,8 +131,10 @@ const Index = () => {
               <Button variant="ghost" size="sm">
                 <Bell className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="sm">
-                <Settings className="h-4 w-4" />
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/configuracoes">
+                  <Settings className="h-4 w-4" />
+                </Link>
               </Button>
             </div>
           </div>
@@ -154,9 +150,8 @@ const Index = () => {
                 <div>
                   <p className="text-blue-100 text-sm font-medium">Animais Ativos</p>
                   <p className="text-3xl font-bold">{stats?.animais_ativos || 0}</p>
-                  <p className="text-blue-100 text-xs">Disponíveis para adoção</p>
                 </div>
-                <Heart className="h-12 w-12 text-blue-200" />
+                <PawPrint className="h-8 w-8 text-blue-200" />
               </div>
             </CardContent>
           </Card>
@@ -165,11 +160,10 @@ const Index = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-green-100 text-sm font-medium">Adoções</p>
+                  <p className="text-green-100 text-sm font-medium">Animais Adotados</p>
                   <p className="text-3xl font-bold">{stats?.animais_adotados || 0}</p>
-                  <p className="text-green-100 text-xs">Total de sucessos</p>
                 </div>
-                <CheckCircle className="h-12 w-12 text-green-200" />
+                <Activity className="h-8 w-8 text-green-200" />
               </div>
             </CardContent>
           </Card>
@@ -178,11 +172,10 @@ const Index = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-purple-100 text-sm font-medium">Voluntários</p>
+                  <p className="text-purple-100 text-sm font-medium">Voluntários Ativos</p>
                   <p className="text-3xl font-bold">{stats?.voluntarios_ativos || 0}</p>
-                  <p className="text-purple-100 text-xs">Ativos no sistema</p>
                 </div>
-                <Users className="h-12 w-12 text-purple-200" />
+                <Users className="h-8 w-8 text-purple-200" />
               </div>
             </CardContent>
           </Card>
@@ -191,214 +184,219 @@ const Index = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-orange-100 text-sm font-medium">Saldo</p>
-                  <p className="text-3xl font-bold">€{stats?.saldo_atual?.toFixed(2) || '0.00'}</p>
-                  <p className="text-orange-100 text-xs">Situação financeira</p>
+                  <p className="text-orange-100 text-sm font-medium">Saldo Atual</p>
+                  <p className="text-3xl font-bold">
+                    €{stats?.saldo_atual?.toFixed(2) || '0.00'}
+                  </p>
                 </div>
-                <Euro className="h-12 w-12 text-orange-200" />
+                <TrendingUp className="h-8 w-8 text-orange-200" />
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Métricas do Mês */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        {/* Estatísticas Mensais */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600 text-sm font-medium">Intervenções (Mês)</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats?.intervencoes_mes || 0}</p>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Calendar className="h-5 w-5 text-blue-600" />
+                <span>Este Mês</span>
+              </CardTitle>
+              <CardDescription>Atividades do mês atual</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <Activity className="h-5 w-5 text-blue-600" />
+                    <span className="font-medium">Intervenções</span>
+                  </div>
+                  <Badge variant="secondary">{stats?.intervencoes_mes || 0}</Badge>
                 </div>
-                <Activity className="h-8 w-8 text-blue-600" />
+                <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <PawPrint className="h-5 w-5 text-green-600" />
+                    <span className="font-medium">Adoções</span>
+                  </div>
+                  <Badge variant="secondary">{stats?.adocoes_mes || 0}</Badge>
+                </div>
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600 text-sm font-medium">Adoções (Mês)</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats?.adocoes_mes || 0}</p>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <DollarSign className="h-5 w-5 text-green-600" />
+                <span>Financeiro</span>
+              </CardTitle>
+              <CardDescription>Resumo financeiro</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                  <span className="font-medium text-green-800">Total Receitas</span>
+                  <span className="font-bold text-green-600">
+                    €{stats?.total_receitas?.toFixed(2) || '0.00'}
+                  </span>
                 </div>
-                <TrendingUp className="h-8 w-8 text-green-600" />
+                <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                  <span className="font-medium text-red-800">Total Despesas</span>
+                  <span className="font-bold text-red-600">
+                    €{stats?.total_despesas?.toFixed(2) || '0.00'}
+                  </span>
+                </div>
               </div>
             </CardContent>
           </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600 text-sm font-medium">Alertas</p>
-                  <p className="text-2xl font-bold text-gray-900">0</p>
-                </div>
-                <AlertTriangle className="h-8 w-8 text-orange-600" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Ações Rápidas */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Ações Rápidas</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {perfilUsuario !== 'consulta' && (
-              <Button asChild className="h-20 bg-blue-600 hover:bg-blue-700">
-                <Link to="/novo-animal" className="flex flex-col items-center space-y-2">
-                  <PlusCircle className="h-6 w-6" />
-                  <span>Novo Animal</span>
-                </Link>
-              </Button>
-            )}
-            
-            <Button asChild variant="outline" className="h-20">
-              <Link to="/animais" className="flex flex-col items-center space-y-2">
-                <Search className="h-6 w-6" />
-                <span>Ver Animais</span>
-              </Link>
-            </Button>
-
-            <Button asChild variant="outline" className="h-20">
-              <Link to="/dashboard" className="flex flex-col items-center space-y-2">
-                <BarChart3 className="h-6 w-6" />
-                <span>Dashboard</span>
-              </Link>
-            </Button>
-
-            <Button asChild variant="outline" className="h-20">
-              <Link to="/voluntarios" className="flex flex-col items-center space-y-2">
-                <Users className="h-6 w-6" />
-                <span>Voluntários</span>
-              </Link>
-            </Button>
-          </div>
         </div>
 
         {/* Módulos do Sistema */}
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Módulos do Sistema</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Heart className="h-5 w-5 text-blue-600" />
-                  <span>Gestão de Animais</span>
-                </CardTitle>
-                <CardDescription>
-                  Cadastro, acompanhamento e gestão completa dos animais
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex space-x-2">
-                  <Button asChild size="sm">
-                    <Link to="/animais">Ver Lista</Link>
-                  </Button>
-                  {perfilUsuario !== 'consulta' && (
-                    <Button asChild size="sm" variant="outline">
-                      <Link to="/novo-animal">Cadastrar</Link>
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <PawPrint className="h-6 w-6 text-blue-600" />
+                <span>Gestão de Animais</span>
+              </CardTitle>
+              <CardDescription>
+                Cadastro, edição e acompanhamento de animais
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex space-x-2">
+                <Button asChild size="sm" className="flex-1">
+                  <Link to="/animais">
+                    <Eye className="h-4 w-4 mr-2" />
+                    Ver Animais
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" size="sm" className="flex-1">
+                  <Link to="/novo-animal">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Novo Animal
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Activity className="h-5 w-5 text-green-600" />
-                  <span>Intervenções Médicas</span>
-                </CardTitle>
-                <CardDescription>
-                  Histórico médico, tratamentos e acompanhamento veterinário
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex space-x-2">
-                  <Button asChild size="sm">
-                    <Link to="/intervencoes">Ver Histórico</Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Activity className="h-6 w-6 text-green-600" />
+                <span>Intervenções Médicas</span>
+              </CardTitle>
+              <CardDescription>
+                Histórico médico e procedimentos veterinários
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex space-x-2">
+                <Button asChild size="sm" className="flex-1">
+                  <Link to="/intervencoes">
+                    <Eye className="h-4 w-4 mr-2" />
+                    Ver Intervenções
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Users className="h-5 w-5 text-purple-600" />
-                  <span>Voluntários</span>
-                </CardTitle>
-                <CardDescription>
-                  Gestão da equipa de voluntários e especialidades
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex space-x-2">
-                  <Button asChild size="sm">
-                    <Link to="/voluntarios">Ver Equipa</Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Users className="h-6 w-6 text-purple-600" />
+                <span>Voluntários</span>
+              </CardTitle>
+              <CardDescription>
+                Gestão de voluntários e responsáveis
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex space-x-2">
+                <Button asChild size="sm" className="flex-1">
+                  <Link to="/voluntarios">
+                    <Eye className="h-4 w-4 mr-2" />
+                    Ver Voluntários
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Euro className="h-5 w-5 text-orange-600" />
-                  <span>Gestão Financeira</span>
-                </CardTitle>
-                <CardDescription>
-                  Controlo de receitas, despesas e movimentos financeiros
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex space-x-2">
-                  <Button asChild size="sm">
-                    <Link to="/financeiro">Ver Finanças</Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <TrendingUp className="h-6 w-6 text-orange-600" />
+                <span>Gestão Financeira</span>
+              </CardTitle>
+              <CardDescription>
+                Controlo de receitas, despesas e custos
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex space-x-2">
+                <Button asChild size="sm" className="flex-1">
+                  <Link to="/financeiro">
+                    <Eye className="h-4 w-4 mr-2" />
+                    Ver Financeiro
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <BarChart3 className="h-5 w-5 text-indigo-600" />
-                  <span>Relatórios</span>
-                </CardTitle>
-                <CardDescription>
-                  Análises, estatísticas e relatórios detalhados
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex space-x-2">
-                  <Button asChild size="sm">
-                    <Link to="/relatorios">Ver Relatórios</Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <FileText className="h-6 w-6 text-indigo-600" />
+                <span>Relatórios</span>
+              </CardTitle>
+              <CardDescription>
+                Estatísticas e relatórios detalhados
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex space-x-2">
+                <Button asChild size="sm" className="flex-1">
+                  <Link to="/relatorios">
+                    <Eye className="h-4 w-4 mr-2" />
+                    Ver Relatórios
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" size="sm" className="flex-1">
+                  <Link to="/dashboard">
+                    <Activity className="h-4 w-4 mr-2" />
+                    Dashboard
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Calendar className="h-5 w-5 text-red-600" />
-                  <span>Eventos & Alertas</span>
-                </CardTitle>
-                <CardDescription>
-                  Gestão de eventos, lembretes e notificações
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex space-x-2">
-                  <Button asChild size="sm">
-                    <Link to="/eventos">Ver Eventos</Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Calendar className="h-6 w-6 text-red-600" />
+                <span>Eventos</span>
+              </CardTitle>
+              <CardDescription>
+                Histórico de eventos e ocorrências
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex space-x-2">
+                <Button asChild size="sm" className="flex-1">
+                  <Link to="/eventos">
+                    <Eye className="h-4 w-4 mr-2" />
+                    Ver Eventos
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

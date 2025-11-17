@@ -70,12 +70,11 @@ export interface Evento {
 export interface Localizacao {
   id: string;
   animal_id: string;
-  localizacao: 'Canil' | 'CRO' | 'FAT' | 'Rua' | 'Casa Temporária' | 'Outro';
-  endereco?: string;
-  data_entrada: string;
-  data_saida?: string;
+  tipo_localizacao: string;
+  endereco: string;
+  data_inicio: string;
+  data_fim?: string;
   observacoes?: string;
-  ativo: boolean;
   created_at: string;
 }
 

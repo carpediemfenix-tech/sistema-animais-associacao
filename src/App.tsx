@@ -15,6 +15,7 @@ import GestaoVoluntarios from "./pages/GestaoVoluntarios";
 import GestaoFinanceira from "./pages/GestaoFinanceira";
 import DashboardAvancado from "./pages/DashboardAvancado";
 import Relatorios from "./pages/Relatorios";
+import Configuracoes from "./pages/Configuracoes";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +37,7 @@ const App = () => (
           <Route path="/financeiro" element={<GestaoFinanceira />} />
           <Route path="/dashboard" element={<DashboardAvancado />} />
           <Route path="/relatorios" element={<Relatorios />} />
+          <Route path="/configuracoes" element={<Configuracoes />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
