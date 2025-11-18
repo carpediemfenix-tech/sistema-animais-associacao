@@ -20,7 +20,8 @@ import {
   RefreshCw,
   AlertCircle,
   CheckCircle,
-  Loader2
+  Loader2,
+  X
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -75,9 +76,10 @@ const GestaoFinanceira = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      console.log('🔄 Carregando dados financeiros...');
+      console.log('🔄 [FINANCEIRO] Iniciando carregamento de dados...');
 
       // Buscar movimentos financeiros
+      console.log('📊 [FINANCEIRO] Buscando movimentos...');
       const { data: movimentosData, error: movimentosError } = await supabase
         .from('movimentos_financeiros')
         .select(`
@@ -88,13 +90,14 @@ const GestaoFinanceira = () => {
         .order('data_movimento', { ascending: false });
 
       if (movimentosError) {
-        console.error('❌ Erro ao carregar movimentos:', movimentosError);
+        console.error('❌ [FINANCEIRO] Erro ao buscar movimentos:', movimentosError);
         throw movimentosError;
       }
 
-      console.log('✅ Movimentos carregados:', movimentosData?.length || 0);
+      console.log('✅ [FINANCEIRO] Movimentos carregados:', movimentosData?.length || 0);
 
       // Buscar animais ativos
+      console.log('🐕 [FINANCEIRO] Buscando animais...');
       const { data: animaisData, error: animaisError } = await supabase
         .from('animais')
         .select('id, nome')
@@ -102,13 +105,14 @@ const GestaoFinanceira = () => {
         .order('nome');
 
       if (animaisError) {
-        console.error('❌ Erro ao carregar animais:', animaisError);
+        console.error('❌ [FINANCEIRO] Erro ao buscar animais:', animaisError);
         throw animaisError;
       }
 
-      console.log('✅ Animais carregados:', animaisData?.length || 0);
+      console.log('✅ [FINANCEIRO] Animais carregados:', animaisData?.length || 0);
 
       // Buscar voluntários ativos
+      console.log('👤 [FINANCEIRO] Buscando voluntários...');
       const { data: voluntariosData, error: voluntariosError } = await supabase
         .from('voluntarios')
         .select('id, nome')
@@ -116,20 +120,22 @@ const GestaoFinanceira = () => {
         .order('nome');
 
       if (voluntariosError) {
-        console.error('❌ Erro ao carregar voluntários:', voluntariosError);
+        console.error('❌ [FINANCEIRO] Erro ao buscar voluntários:', voluntariosError);
         throw voluntariosError;
       }
 
-      console.log('✅ Voluntários carregados:', voluntariosData?.length || 0);
+      console.log('✅ [FINANCEIRO] Voluntários carregados:', voluntariosData?.length || 0);
 
       setMovimentos(movimentosData || []);
       setAnimais(animaisData || []);
       setVoluntarios(voluntariosData || []);
 
+      console.log('🎉 [FINANCEIRO] Todos os dados carregados com sucesso!');
+
     } catch (error: any) {
-      console.error('❌ Erro geral ao carregar dados:', error);
+      console.error('💥 [FINANCEIRO] Erro geral:', error);
       toast({
-        title: "Erro ao carregar dados",
+        title: "❌ Erro ao carregar dados",
         description: error.message || "Não foi possível carregar os dados financeiros",
         variant: "destructive",
       });
@@ -138,34 +144,57 @@ const GestaoFinanceira = () => {
     }
   };
 
+  const resetForm = () => {
+    setFormData({
+      animal_id: "",
+      tipo_movimento: "",
+      categoria: "",
+      descricao: "",
+      valor: "",
+      data_movimento: new Date().toISOString().split('T')[0],
+      voluntario_id: "",
+      observacoes: ""
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // CORREÇÃO: Validar campos obrigatórios e valores
-    if (!formData.tipo_movimento || !formData.categoria || !formData.descricao || !formData.valor) {
+    console.log('💰 [FINANCEIRO] Iniciando submissão do formulário...');
+    console.log('📝 [FINANCEIRO] Dados do formulário:', formData);
+    
+    // Validação básica
+    if (!formData.tipo_movimento) {
       toast({
-        title: "Campos obrigatórios",
-        description: "Tipo, categoria, descrição e valor são obrigatórios.",
+        title: "❌ Campo obrigatório",
+        description: "Selecione o tipo de movimento (Receita ou Despesa)",
         variant: "destructive",
       });
       return;
     }
 
-    // CORREÇÃO: Validar valor financeiro
-    const valorNumerico = parseFloat(formData.valor);
-    if (isNaN(valorNumerico) || valorNumerico <= 0) {
+    if (!formData.categoria) {
       toast({
-        title: "Valor inválido",
-        description: "O valor deve ser um número positivo maior que zero.",
+        title: "❌ Campo obrigatório", 
+        description: "Selecione uma categoria",
         variant: "destructive",
       });
       return;
     }
 
-    if (valorNumerico > 999999.99) {
+    if (!formData.descricao.trim()) {
       toast({
-        title: "Valor muito alto",
-        description: "O valor não pode exceder €999.999,99.",
+        title: "❌ Campo obrigatório",
+        description: "Insira uma descrição",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.valor || parseFloat(formData.valor) <= 0) {
+      toast({
+        title: "❌ Valor inválido",
+        description: "Insira um valor positivo maior que zero",
         variant: "destructive",
       });
       return;
@@ -173,25 +202,26 @@ const GestaoFinanceira = () => {
 
     try {
       setSubmitting(true);
-      console.log('💰 Inserindo movimento financeiro:', {
-        ...formData,
-        valor: valorNumerico
-      });
+      console.log('🚀 [FINANCEIRO] Preparando dados para inserção...');
       
-      const movimentoData = {
+      const valorNumerico = parseFloat(formData.valor);
+      
+      const dadosParaInserir = {
         animal_id: formData.animal_id || null,
         tipo_movimento: formData.tipo_movimento,
         categoria: formData.categoria,
-        descricao: formData.descricao,
+        descricao: formData.descricao.trim(),
         valor: valorNumerico,
         data_movimento: formData.data_movimento,
         voluntario_id: formData.voluntario_id || null,
-        observacoes: formData.observacoes || null
+        observacoes: formData.observacoes?.trim() || null
       };
+
+      console.log('📤 [FINANCEIRO] Dados a inserir:', dadosParaInserir);
 
       const { data, error } = await supabase
         .from('movimentos_financeiros')
-        .insert(movimentoData)
+        .insert(dadosParaInserir)
         .select(`
           *,
           animal:animais(nome),
@@ -199,41 +229,41 @@ const GestaoFinanceira = () => {
         `);
 
       if (error) {
-        console.error('❌ Erro ao inserir movimento:', error);
+        console.error('💥 [FINANCEIRO] Erro na inserção:', error);
         throw error;
       }
 
-      console.log('✅ Movimento inserido com sucesso:', data);
+      console.log('🎉 [FINANCEIRO] Movimento inserido com sucesso:', data);
 
       toast({
-        title: "✅ Movimento registado",
-        description: `${formData.tipo_movimento} de €${valorNumerico.toFixed(2)} registada com sucesso.`,
+        title: "✅ Movimento registado!",
+        description: `${formData.tipo_movimento} de €${valorNumerico.toFixed(2)} registada com sucesso`,
       });
 
-      // Resetar formulário
-      setFormData({
-        animal_id: "",
-        tipo_movimento: "",
-        categoria: "",
-        descricao: "",
-        valor: "",
-        data_movimento: new Date().toISOString().split('T')[0],
-        voluntario_id: "",
-        observacoes: ""
-      });
-      
-      // Fechar diálogo
+      // Fechar diálogo e resetar formulário
       setDialogOpen(false);
+      resetForm();
       
       // Recarregar dados
-      console.log('🔄 Recarregando dados após inserção...');
+      console.log('🔄 [FINANCEIRO] Recarregando dados...');
       await fetchData();
 
     } catch (error: any) {
-      console.error('❌ Erro ao registar movimento:', error);
+      console.error('💥 [FINANCEIRO] Erro ao registar movimento:', error);
+      
+      let mensagemErro = "Não foi possível registar o movimento";
+      
+      if (error.message?.includes('violates check constraint')) {
+        mensagemErro = "Dados inválidos. Verifique os valores inseridos.";
+      } else if (error.message?.includes('duplicate key')) {
+        mensagemErro = "Este movimento já existe no sistema.";
+      } else if (error.message) {
+        mensagemErro = error.message;
+      }
+
       toast({
-        title: "Erro ao registar movimento",
-        description: error.message || "Não foi possível registar o movimento financeiro",
+        title: "❌ Erro ao registar movimento",
+        description: mensagemErro,
         variant: "destructive",
       });
     } finally {
@@ -310,22 +340,31 @@ const GestaoFinanceira = () => {
                     Novo Movimento
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
-                    <DialogTitle>Registar Novo Movimento</DialogTitle>
+                    <DialogTitle className="flex items-center justify-between">
+                      Registar Novo Movimento
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setDialogOpen(false)}
+                        className="h-6 w-6 p-0"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </DialogTitle>
                     <DialogDescription>
                       Adicione uma nova receita ou despesa ao sistema financeiro
                     </DialogDescription>
                   </DialogHeader>
                   
                   <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="grid md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="tipo_movimento">Tipo de Movimento *</Label>
                         <Select 
                           value={formData.tipo_movimento} 
                           onValueChange={(value) => setFormData(prev => ({ ...prev, tipo_movimento: value }))}
-                          required
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione o tipo" />
@@ -352,7 +391,6 @@ const GestaoFinanceira = () => {
                         <Select 
                           value={formData.categoria} 
                           onValueChange={(value) => setFormData(prev => ({ ...prev, categoria: value }))}
-                          required
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione a categoria" />
@@ -377,12 +415,11 @@ const GestaoFinanceira = () => {
                         id="descricao"
                         value={formData.descricao}
                         onChange={(e) => setFormData(prev => ({ ...prev, descricao: e.target.value }))}
-                        placeholder="Descrição do movimento"
-                        required
+                        placeholder="Descrição do movimento financeiro"
                       />
                     </div>
                     
-                    <div className="grid md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="valor">Valor (€) *</Label>
                         <Input
@@ -393,25 +430,22 @@ const GestaoFinanceira = () => {
                           max="999999.99"
                           value={formData.valor}
                           onChange={(e) => setFormData(prev => ({ ...prev, valor: e.target.value }))}
-                          placeholder="0.00 (apenas valores positivos)"
-                          required
+                          placeholder="0.00"
                         />
-                        <p className="text-xs text-gray-500 mt-1">Máximo: €999.999,99</p>
                       </div>
                       
                       <div>
-                        <Label htmlFor="data_movimento">Data do Movimento *</Label>
+                        <Label htmlFor="data_movimento">Data *</Label>
                         <Input
                           id="data_movimento"
                           type="date"
                           value={formData.data_movimento}
                           onChange={(e) => setFormData(prev => ({ ...prev, data_movimento: e.target.value }))}
-                          required
                         />
                       </div>
                     </div>
                     
-                    <div className="grid md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="animal_id">Animal (Opcional)</Label>
                         <Select 
@@ -464,11 +498,14 @@ const GestaoFinanceira = () => {
                       />
                     </div>
                     
-                    <div className="flex justify-end space-x-2 pt-4">
+                    <div className="flex justify-end space-x-2 pt-4 border-t">
                       <Button 
                         type="button" 
                         variant="outline" 
-                        onClick={() => setDialogOpen(false)}
+                        onClick={() => {
+                          setDialogOpen(false);
+                          resetForm();
+                        }}
                         disabled={submitting}
                       >
                         Cancelar

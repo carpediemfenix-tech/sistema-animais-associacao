@@ -7,6 +7,7 @@ import { PawPrint, Users, Activity, TrendingUp, Calendar, FileText, Settings, Be
 import { supabase } from "@/integrations/supabase/client";
 import { DashboardStats, PerfilUsuario } from "@/types/animal";
 import { useToast } from "@/hooks/use-toast";
+import AgendaDashboard from "@/components/AgendaDashboard";
 
 const Index = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -98,7 +99,7 @@ const Index = () => {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-lg text-gray-600">A carregar sistema...</p>
+          <p className="text-lg text-gray-600">A carregar dashboard...</p>
         </div>
       </div>
     );
@@ -107,24 +108,22 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
+      <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-3">
-                <img 
-                  src="/images/BackgroundEraser_20250411_205630024.png" 
-                  alt="Valentão ao Resgate" 
-                  className="h-10 w-10 object-contain"
-                />
-                <div>
-                  <h1 className="text-xl font-bold text-gray-900">Valentão ao Resgate</h1>
-                  <p className="text-sm text-gray-500">Sistema de Gestão de Animais</p>
-                </div>
+              <img 
+                src="/images/BackgroundEraser_20250411_205630024.png" 
+                alt="Valentão ao Resgate" 
+                className="h-10 w-10 object-contain"
+              />
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">Valentão ao Resgate</h1>
+                <p className="text-sm text-gray-500">Sistema de Gestão de Animais</p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
                 {perfilUsuario === 'admin' ? 'Administrador' : 
                  perfilUsuario === 'edicao' ? 'Editor' : 'Consulta'}
               </Badge>
@@ -139,7 +138,7 @@ const Index = () => {
             </div>
           </div>
         </div>
-      </header>
+      </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Estatísticas Principais */}
@@ -198,58 +197,96 @@ const Index = () => {
         {/* Estatísticas Mensais */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Calendar className="h-5 w-5 text-blue-600" />
-                <span>Este Mês</span>
-              </CardTitle>
-              <CardDescription>Atividades do mês atual</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <Activity className="h-5 w-5 text-blue-600" />
-                    <span className="font-medium">Intervenções</span>
-                  </div>
-                  <Badge variant="secondary">{stats?.intervencoes_mes || 0}</Badge>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-600 text-sm font-medium">Intervenções este Mês</p>
+                  <p className="text-2xl font-bold text-blue-600">{stats?.intervencoes_mes || 0}</p>
                 </div>
-                <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <PawPrint className="h-5 w-5 text-green-600" />
-                    <span className="font-medium">Adoções</span>
-                  </div>
-                  <Badge variant="secondary">{stats?.adocoes_mes || 0}</Badge>
-                </div>
+                <Activity className="h-8 w-8 text-blue-500" />
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <DollarSign className="h-5 w-5 text-green-600" />
-                <span>Financeiro</span>
-              </CardTitle>
-              <CardDescription>Resumo financeiro</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                  <span className="font-medium text-green-800">Total Receitas</span>
-                  <span className="font-bold text-green-600">
-                    €{stats?.total_receitas?.toFixed(2) || '0.00'}
-                  </span>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-600 text-sm font-medium">Adoções este Mês</p>
+                  <p className="text-2xl font-bold text-green-600">{stats?.adocoes_mes || 0}</p>
                 </div>
-                <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
-                  <span className="font-medium text-red-800">Total Despesas</span>
-                  <span className="font-bold text-red-600">
-                    €{stats?.total_despesas?.toFixed(2) || '0.00'}
-                  </span>
-                </div>
+                <Calendar className="h-8 w-8 text-green-500" />
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        {/* NOVA SEÇÃO: Agenda e Módulos */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          {/* Agenda - Ocupa 1 coluna */}
+          <div className="lg:col-span-1">
+            <AgendaDashboard />
+          </div>
+
+          {/* Ações Rápidas - Ocupa 2 colunas */}
+          <div className="lg:col-span-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Plus className="h-5 w-5 text-blue-600" />
+                  <span>Ações Rápidas</span>
+                </CardTitle>
+                <CardDescription>
+                  Acesso direto às funcionalidades mais utilizadas
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <Button asChild className="h-20 flex-col space-y-2">
+                    <Link to="/novo-animal">
+                      <Plus className="h-6 w-6" />
+                      <span className="text-sm">Novo Animal</span>
+                    </Link>
+                  </Button>
+                  
+                  <Button asChild variant="outline" className="h-20 flex-col space-y-2">
+                    <Link to="/animais">
+                      <PawPrint className="h-6 w-6" />
+                      <span className="text-sm">Ver Animais</span>
+                    </Link>
+                  </Button>
+                  
+                  <Button asChild variant="outline" className="h-20 flex-col space-y-2">
+                    <Link to="/intervencoes">
+                      <Activity className="h-6 w-6" />
+                      <span className="text-sm">Intervenções</span>
+                    </Link>
+                  </Button>
+                  
+                  <Button asChild variant="outline" className="h-20 flex-col space-y-2">
+                    <Link to="/voluntarios">
+                      <Users className="h-6 w-6" />
+                      <span className="text-sm">Voluntários</span>
+                    </Link>
+                  </Button>
+                  
+                  <Button asChild variant="outline" className="h-20 flex-col space-y-2">
+                    <Link to="/financeiro">
+                      <DollarSign className="h-6 w-6" />
+                      <span className="text-sm">Financeiro</span>
+                    </Link>
+                  </Button>
+                  
+                  <Button asChild variant="outline" className="h-20 flex-col space-y-2">
+                    <Link to="/relatorios">
+                      <FileText className="h-6 w-6" />
+                      <span className="text-sm">Relatórios</span>
+                    </Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         {/* Módulos do Sistema */}
@@ -308,10 +345,10 @@ const Index = () => {
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Users className="h-6 w-6 text-purple-600" />
-                <span>Voluntários</span>
+                <span>Gestão de Voluntários</span>
               </CardTitle>
               <CardDescription>
-                Gestão de voluntários e responsáveis
+                Cadastro e gestão da equipa de voluntários
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -329,11 +366,11 @@ const Index = () => {
           <Card className="hover:shadow-lg transition-shadow cursor-pointer">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
-                <TrendingUp className="h-6 w-6 text-orange-600" />
+                <DollarSign className="h-6 w-6 text-green-600" />
                 <span>Gestão Financeira</span>
               </CardTitle>
               <CardDescription>
-                Controlo de receitas, despesas e custos
+                Controlo de receitas, despesas e movimentos
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -366,12 +403,6 @@ const Index = () => {
                     Ver Relatórios
                   </Link>
                 </Button>
-                <Button asChild variant="outline" size="sm" className="flex-1">
-                  <Link to="/dashboard">
-                    <Activity className="h-4 w-4 mr-2" />
-                    Dashboard
-                  </Link>
-                </Button>
               </div>
             </CardContent>
           </Card>
@@ -379,19 +410,19 @@ const Index = () => {
           <Card className="hover:shadow-lg transition-shadow cursor-pointer">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
-                <Calendar className="h-6 w-6 text-red-600" />
-                <span>Eventos</span>
+                <Settings className="h-6 w-6 text-gray-600" />
+                <span>Configurações</span>
               </CardTitle>
               <CardDescription>
-                Histórico de eventos e ocorrências
+                Configurações do sistema e perfil
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex space-x-2">
                 <Button asChild size="sm" className="flex-1">
-                  <Link to="/eventos">
-                    <Eye className="h-4 w-4 mr-2" />
-                    Ver Eventos
+                  <Link to="/configuracoes">
+                    <Settings className="h-4 w-4 mr-2" />
+                    Configurar
                   </Link>
                 </Button>
               </div>
