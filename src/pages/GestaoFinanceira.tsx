@@ -85,10 +85,31 @@ const GestaoFinanceira = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // CORREÇÃO: Validar campos obrigatórios e valores
     if (!formData.tipo_movimento || !formData.categoria || !formData.descricao || !formData.valor) {
       toast({
         title: "Campos obrigatórios",
         description: "Tipo, categoria, descrição e valor são obrigatórios.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // CORREÇÃO: Validar valor financeiro
+    const valorNumerico = parseFloat(formData.valor);
+    if (isNaN(valorNumerico) || valorNumerico <= 0) {
+      toast({
+        title: "Valor inválido",
+        description: "O valor deve ser um número positivo maior que zero.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (valorNumerico > 999999.99) {
+      toast({
+        title: "Valor muito alto",
+        description: "O valor não pode exceder €999.999,99.",
         variant: "destructive",
       });
       return;
@@ -279,12 +300,14 @@ const GestaoFinanceira = () => {
                       id="valor"
                       type="number"
                       step="0.01"
-                      min="0"
+                      min="0.01"
+                      max="999999.99"
                       value={formData.valor}
                       onChange={(e) => setFormData(prev => ({ ...prev, valor: e.target.value }))}
-                      placeholder="0.00"
+                      placeholder="0.00 (apenas valores positivos)"
                       required
                     />
+                    <p className="text-xs text-gray-500 mt-1">Máximo: €999.999,99</p>
                   </div>
                   
                   <div>

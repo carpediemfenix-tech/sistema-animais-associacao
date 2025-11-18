@@ -205,6 +205,28 @@ const AnimalDetail = () => {
       return;
     }
 
+    // CORREÇÃO: Validar custo se fornecido
+    if (intervencaoForm.custo && intervencaoForm.custo.trim() !== '') {
+      const custoNumerico = parseFloat(intervencaoForm.custo);
+      if (isNaN(custoNumerico) || custoNumerico < 0) {
+        toast({
+          title: "Custo inválido",
+          description: "O custo deve ser um número positivo ou zero",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (custoNumerico > 99999.99) {
+        toast({
+          title: "Custo muito alto",
+          description: "O custo não pode exceder €99.999,99",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     try {
       const dataToSubmit = {
         animal_id: id,
@@ -838,10 +860,12 @@ const AnimalDetail = () => {
                               type="number"
                               step="0.01"
                               min="0"
+                              max="99999.99"
                               value={intervencaoForm.custo}
                               onChange={(e) => setIntervencaoForm(prev => ({...prev, custo: e.target.value}))}
-                              placeholder="0.00"
+                              placeholder="0.00 (opcional)"
                             />
+                            <p className="text-xs text-gray-500 mt-1">Máximo: €99.999,99</p>
                           </div>
                           <div>
                             <Label htmlFor="voluntario_id">Voluntário Responsável</Label>

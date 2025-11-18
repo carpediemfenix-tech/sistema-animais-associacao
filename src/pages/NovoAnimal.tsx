@@ -115,8 +115,38 @@ const NovoAnimal = () => {
       newErrors.idade_estimada = "Idade deve ser um número válido";
     }
 
+    // CORREÇÃO: Validar data de nascimento não pode ser futura
+    if (formData.data_nascimento) {
+      const dataNascimento = new Date(formData.data_nascimento);
+      const hoje = new Date();
+      hoje.setHours(0, 0, 0, 0); // Zerar horas para comparação apenas de data
+      
+      if (dataNascimento > hoje) {
+        newErrors.data_nascimento = "Data de nascimento não pode ser no futuro";
+      }
+      
+      // Verificar se a data não é muito antiga (mais de 30 anos)
+      const trintaAnosAtras = new Date();
+      trintaAnosAtras.setFullYear(trintaAnosAtras.getFullYear() - 30);
+      
+      if (dataNascimento < trintaAnosAtras) {
+        newErrors.data_nascimento = "Data de nascimento muito antiga (máximo 30 anos)";
+      }
+    }
+
     if (formData.peso && (isNaN(Number(formData.peso)) || Number(formData.peso) <= 0)) {
       newErrors.peso = "Peso deve ser um número válido maior que zero";
+    }
+
+    // CORREÇÃO: Validar data de entrada não pode ser futura
+    if (formData.data_entrada) {
+      const dataEntrada = new Date(formData.data_entrada);
+      const hoje = new Date();
+      hoje.setHours(23, 59, 59, 999); // Permitir data de hoje
+      
+      if (dataEntrada > hoje) {
+        newErrors.data_entrada = "Data de entrada não pode ser no futuro";
+      }
     }
 
     setErrors(newErrors);
@@ -353,7 +383,14 @@ const NovoAnimal = () => {
                     type="date"
                     value={formData.data_nascimento}
                     onChange={(e) => handleInputChange("data_nascimento", e.target.value)}
+                    className={errors.data_nascimento ? "border-red-500" : ""}
                   />
+                  {errors.data_nascimento && (
+                    <p className="text-sm text-red-500 mt-1 flex items-center">
+                      <AlertCircle className="h-4 w-4 mr-1" />
+                      {errors.data_nascimento}
+                    </p>
+                  )}
                   <p className="text-xs text-gray-500 mt-1">Se informada, a idade será calculada automaticamente</p>
                 </div>
 
