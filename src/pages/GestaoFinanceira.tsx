@@ -1,24 +1,60 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Euro, Plus, TrendingUp, TrendingDown, DollarSign, PiggyBank } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { 
+  ArrowLeft, 
+  Plus, 
+  DollarSign, 
+  TrendingUp, 
+  TrendingDown, 
+  Calendar,
+  FileText,
+  RefreshCw,
+  AlertCircle,
+  CheckCircle,
+  Loader2
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { MovimentoFinanceiro, Animal, Voluntario } from "@/types/animal";
 import { useToast } from "@/hooks/use-toast";
+
+interface MovimentoFinanceiro {
+  id: string;
+  animal_id?: string;
+  tipo_movimento: 'Receita' | 'Despesa';
+  categoria: string;
+  descricao: string;
+  valor: number;
+  data_movimento: string;
+  voluntario_id?: string;
+  observacoes?: string;
+  animal?: { nome: string };
+  voluntario?: { nome: string };
+}
+
+interface Animal {
+  id: string;
+  nome: string;
+}
+
+interface Voluntario {
+  id: string;
+  nome: string;
+}
 
 const GestaoFinanceira = () => {
   const [movimentos, setMovimentos] = useState<MovimentoFinanceiro[]>([]);
   const [animais, setAnimais] = useState<Animal[]>([]);
   const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     animal_id: "",
@@ -38,6 +74,9 @@ const GestaoFinanceira = () => {
 
   const fetchData = async () => {
     try {
+      setLoading(true);
+      console.log('🔄 Carregando dados financeiros...');
+
       // Buscar movimentos financeiros
       const { data: movimentosData, error: movimentosError } = await supabase
         .from('movimentos_financeiros')
@@ -48,7 +87,12 @@ const GestaoFinanceira = () => {
         `)
         .order('data_movimento', { ascending: false });
 
-      if (movimentosError) throw movimentosError;
+      if (movimentosError) {
+        console.error('❌ Erro ao carregar movimentos:', movimentosError);
+        throw movimentosError;
+      }
+
+      console.log('✅ Movimentos carregados:', movimentosData?.length || 0);
 
       // Buscar animais ativos
       const { data: animaisData, error: animaisError } = await supabase
@@ -57,7 +101,12 @@ const GestaoFinanceira = () => {
         .eq('arquivado', false)
         .order('nome');
 
-      if (animaisError) throw animaisError;
+      if (animaisError) {
+        console.error('❌ Erro ao carregar animais:', animaisError);
+        throw animaisError;
+      }
+
+      console.log('✅ Animais carregados:', animaisData?.length || 0);
 
       // Buscar voluntários ativos
       const { data: voluntariosData, error: voluntariosError } = await supabase
@@ -66,15 +115,22 @@ const GestaoFinanceira = () => {
         .eq('ativo', true)
         .order('nome');
 
-      if (voluntariosError) throw voluntariosError;
+      if (voluntariosError) {
+        console.error('❌ Erro ao carregar voluntários:', voluntariosError);
+        throw voluntariosError;
+      }
+
+      console.log('✅ Voluntários carregados:', voluntariosData?.length || 0);
 
       setMovimentos(movimentosData || []);
       setAnimais(animaisData || []);
       setVoluntarios(voluntariosData || []);
+
     } catch (error: any) {
+      console.error('❌ Erro geral ao carregar dados:', error);
       toast({
         title: "Erro ao carregar dados",
-        description: error.message,
+        description: error.message || "Não foi possível carregar os dados financeiros",
         variant: "destructive",
       });
     } finally {
@@ -116,27 +172,45 @@ const GestaoFinanceira = () => {
     }
 
     try {
-      const { error } = await supabase
-        .from('movimentos_financeiros')
-        .insert({
-          animal_id: formData.animal_id || null,
-          tipo_movimento: formData.tipo_movimento,
-          categoria: formData.categoria,
-          descricao: formData.descricao,
-          valor: parseFloat(formData.valor),
-          data_movimento: formData.data_movimento,
-          voluntario_id: formData.voluntario_id || null,
-          observacoes: formData.observacoes || null
-        });
+      setSubmitting(true);
+      console.log('💰 Inserindo movimento financeiro:', {
+        ...formData,
+        valor: valorNumerico
+      });
+      
+      const movimentoData = {
+        animal_id: formData.animal_id || null,
+        tipo_movimento: formData.tipo_movimento,
+        categoria: formData.categoria,
+        descricao: formData.descricao,
+        valor: valorNumerico,
+        data_movimento: formData.data_movimento,
+        voluntario_id: formData.voluntario_id || null,
+        observacoes: formData.observacoes || null
+      };
 
-      if (error) throw error;
+      const { data, error } = await supabase
+        .from('movimentos_financeiros')
+        .insert(movimentoData)
+        .select(`
+          *,
+          animal:animais(nome),
+          voluntario:voluntarios(nome)
+        `);
+
+      if (error) {
+        console.error('❌ Erro ao inserir movimento:', error);
+        throw error;
+      }
+
+      console.log('✅ Movimento inserido com sucesso:', data);
 
       toast({
-        title: "Movimento registado",
-        description: `${formData.tipo_movimento} de €${formData.valor} registada com sucesso.`,
+        title: "✅ Movimento registado",
+        description: `${formData.tipo_movimento} de €${valorNumerico.toFixed(2)} registada com sucesso.`,
       });
 
-      setDialogOpen(false);
+      // Resetar formulário
       setFormData({
         animal_id: "",
         tipo_movimento: "",
@@ -147,13 +221,23 @@ const GestaoFinanceira = () => {
         voluntario_id: "",
         observacoes: ""
       });
-      fetchData();
+      
+      // Fechar diálogo
+      setDialogOpen(false);
+      
+      // Recarregar dados
+      console.log('🔄 Recarregando dados após inserção...');
+      await fetchData();
+
     } catch (error: any) {
+      console.error('❌ Erro ao registar movimento:', error);
       toast({
-        title: "Erro",
-        description: error.message,
+        title: "Erro ao registar movimento",
+        description: error.message || "Não foi possível registar o movimento financeiro",
         variant: "destructive",
       });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -166,388 +250,381 @@ const GestaoFinanceira = () => {
     .filter(m => m.tipo_movimento === 'Despesa')
     .reduce((sum, m) => sum + m.valor, 0);
 
-  const saldo = totalReceitas - totalDespesas;
+  const saldoAtual = totalReceitas - totalDespesas;
 
-  // Movimentos por categoria
-  const movimentosPorCategoria = movimentos.reduce((acc, movimento) => {
-    const key = movimento.categoria;
-    if (!acc[key]) {
-      acc[key] = { receitas: 0, despesas: 0 };
-    }
-    if (movimento.tipo_movimento === 'Receita') {
-      acc[key].receitas += movimento.valor;
-    } else {
-      acc[key].despesas += movimento.valor;
-    }
-    return acc;
-  }, {} as Record<string, { receitas: number; despesas: number }>);
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-PT', {
+      style: 'currency',
+      currency: 'EUR'
+    }).format(value);
+  };
 
-  // Movimentos dos últimos 30 dias
-  const trintaDiasAtras = new Date();
-  trintaDiasAtras.setDate(trintaDiasAtras.getDate() - 30);
-  
-  const movimentosRecentes = movimentos.filter(m => 
-    new Date(m.data_movimento) >= trintaDiasAtras
-  );
-
-  const getCategoriaColor = (categoria: string) => {
-    switch (categoria) {
-      case "Veterinário": return "bg-red-500 text-white";
-      case "Medicação": return "bg-blue-500 text-white";
-      case "Alimentação": return "bg-green-500 text-white";
-      case "Transporte": return "bg-yellow-500 text-white";
-      case "Doação": return "bg-purple-500 text-white";
-      case "Adoção": return "bg-pink-500 text-white";
-      default: return "bg-gray-500 text-white";
-    }
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('pt-PT');
   };
 
   if (loading) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-lg">A carregar dados financeiros...</div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-16 w-16 animate-spin mx-auto mb-4 text-blue-600" />
+          <p className="text-lg text-gray-600">A carregar gestão financeira...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <img 
-            src="/images/BackgroundEraser_20250411_205630024.png" 
-            alt="Valentão ao Resgate" 
-            className="h-12 w-12 object-contain"
-          />
-          <div>
-            <h1 className="text-3xl font-bold">Gestão Financeira - Valentão ao Resgate</h1>
-            <p className="text-muted-foreground">
-              Controlo de receitas e despesas da associação
-            </p>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center space-x-4">
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Voltar ao Dashboard
+                </Link>
+              </Button>
+              <div className="flex items-center space-x-3">
+                <DollarSign className="h-6 w-6 text-green-600" />
+                <div>
+                  <h1 className="text-xl font-bold text-gray-900">Gestão Financeira</h1>
+                  <p className="text-sm text-gray-500">
+                    {movimentos.length} movimentos registados
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-4">
+              <Button onClick={fetchData} variant="outline" size="sm" disabled={loading}>
+                <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                Atualizar
+              </Button>
+              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Novo Movimento
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Registar Novo Movimento</DialogTitle>
+                    <DialogDescription>
+                      Adicione uma nova receita ou despesa ao sistema financeiro
+                    </DialogDescription>
+                  </DialogHeader>
+                  
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="tipo_movimento">Tipo de Movimento *</Label>
+                        <Select 
+                          value={formData.tipo_movimento} 
+                          onValueChange={(value) => setFormData(prev => ({ ...prev, tipo_movimento: value }))}
+                          required
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o tipo" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Receita">
+                              <div className="flex items-center space-x-2">
+                                <TrendingUp className="h-4 w-4 text-green-600" />
+                                <span>Receita</span>
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="Despesa">
+                              <div className="flex items-center space-x-2">
+                                <TrendingDown className="h-4 w-4 text-red-600" />
+                                <span>Despesa</span>
+                              </div>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="categoria">Categoria *</Label>
+                        <Select 
+                          value={formData.categoria} 
+                          onValueChange={(value) => setFormData(prev => ({ ...prev, categoria: value }))}
+                          required
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione a categoria" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Veterinário">Veterinário</SelectItem>
+                            <SelectItem value="Medicação">Medicação</SelectItem>
+                            <SelectItem value="Alimentação">Alimentação</SelectItem>
+                            <SelectItem value="Transporte">Transporte</SelectItem>
+                            <SelectItem value="Doação">Doação</SelectItem>
+                            <SelectItem value="Adoção">Adoção</SelectItem>
+                            <SelectItem value="Equipamento">Equipamento</SelectItem>
+                            <SelectItem value="Outros">Outros</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="descricao">Descrição *</Label>
+                      <Input
+                        id="descricao"
+                        value={formData.descricao}
+                        onChange={(e) => setFormData(prev => ({ ...prev, descricao: e.target.value }))}
+                        placeholder="Descrição do movimento"
+                        required
+                      />
+                    </div>
+                    
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="valor">Valor (€) *</Label>
+                        <Input
+                          id="valor"
+                          type="number"
+                          step="0.01"
+                          min="0.01"
+                          max="999999.99"
+                          value={formData.valor}
+                          onChange={(e) => setFormData(prev => ({ ...prev, valor: e.target.value }))}
+                          placeholder="0.00 (apenas valores positivos)"
+                          required
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Máximo: €999.999,99</p>
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="data_movimento">Data do Movimento *</Label>
+                        <Input
+                          id="data_movimento"
+                          type="date"
+                          value={formData.data_movimento}
+                          onChange={(e) => setFormData(prev => ({ ...prev, data_movimento: e.target.value }))}
+                          required
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="animal_id">Animal (Opcional)</Label>
+                        <Select 
+                          value={formData.animal_id} 
+                          onValueChange={(value) => setFormData(prev => ({ ...prev, animal_id: value }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione um animal" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="">Nenhum animal específico</SelectItem>
+                            {animais.map((animal) => (
+                              <SelectItem key={animal.id} value={animal.id}>
+                                {animal.nome}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="voluntario_id">Voluntário (Opcional)</Label>
+                        <Select 
+                          value={formData.voluntario_id} 
+                          onValueChange={(value) => setFormData(prev => ({ ...prev, voluntario_id: value }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione um voluntário" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="">Nenhum voluntário específico</SelectItem>
+                            {voluntarios.map((voluntario) => (
+                              <SelectItem key={voluntario.id} value={voluntario.id}>
+                                {voluntario.nome}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="observacoes">Observações</Label>
+                      <Textarea
+                        id="observacoes"
+                        value={formData.observacoes}
+                        onChange={(e) => setFormData(prev => ({ ...prev, observacoes: e.target.value }))}
+                        placeholder="Observações adicionais (opcional)"
+                        rows={3}
+                      />
+                    </div>
+                    
+                    <div className="flex justify-end space-x-2 pt-4">
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={() => setDialogOpen(false)}
+                        disabled={submitting}
+                      >
+                        Cancelar
+                      </Button>
+                      <Button 
+                        type="submit" 
+                        className="bg-green-600 hover:bg-green-700"
+                        disabled={submitting}
+                      >
+                        {submitting ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            A registar...
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                            Registar Movimento
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
         </div>
-        <div className="flex gap-2">
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Novo Movimento
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Registar Movimento Financeiro</DialogTitle>
-                <DialogDescription>
-                  Adicionar nova receita ou despesa
-                </DialogDescription>
-              </DialogHeader>
-              
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="tipo_movimento">Tipo *</Label>
-                    <Select value={formData.tipo_movimento} onValueChange={(value) => 
-                      setFormData(prev => ({ ...prev, tipo_movimento: value }))
-                    }>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecionar tipo" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Receita">Receita</SelectItem>
-                        <SelectItem value="Despesa">Despesa</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="categoria">Categoria *</Label>
-                    <Select value={formData.categoria} onValueChange={(value) => 
-                      setFormData(prev => ({ ...prev, categoria: value }))
-                    }>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecionar categoria" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Veterinário">Veterinário</SelectItem>
-                        <SelectItem value="Medicação">Medicação</SelectItem>
-                        <SelectItem value="Alimentação">Alimentação</SelectItem>
-                        <SelectItem value="Transporte">Transporte</SelectItem>
-                        <SelectItem value="Doação">Doação</SelectItem>
-                        <SelectItem value="Adoção">Adoção</SelectItem>
-                        <SelectItem value="Outros">Outros</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                
-                <div>
-                  <Label htmlFor="descricao">Descrição *</Label>
-                  <Input
-                    id="descricao"
-                    value={formData.descricao}
-                    onChange={(e) => setFormData(prev => ({ ...prev, descricao: e.target.value }))}
-                    placeholder="Descrição do movimento"
-                    required
-                  />
-                </div>
-                
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="valor">Valor (€) *</Label>
-                    <Input
-                      id="valor"
-                      type="number"
-                      step="0.01"
-                      min="0.01"
-                      max="999999.99"
-                      value={formData.valor}
-                      onChange={(e) => setFormData(prev => ({ ...prev, valor: e.target.value }))}
-                      placeholder="0.00 (apenas valores positivos)"
-                      required
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Máximo: €999.999,99</p>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="data_movimento">Data</Label>
-                    <Input
-                      id="data_movimento"
-                      type="date"
-                      value={formData.data_movimento}
-                      onChange={(e) => setFormData(prev => ({ ...prev, data_movimento: e.target.value }))}
-                    />
-                  </div>
-                </div>
-                
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="animal_id">Animal (opcional)</Label>
-                    <Select value={formData.animal_id} onValueChange={(value) => 
-                      setFormData(prev => ({ ...prev, animal_id: value }))
-                    }>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecionar animal" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="">Nenhum animal específico</SelectItem>
-                        {animais.map((animal) => (
-                          <SelectItem key={animal.id} value={animal.id}>
-                            {animal.nome}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="voluntario_id">Voluntário (opcional)</Label>
-                    <Select value={formData.voluntario_id} onValueChange={(value) => 
-                      setFormData(prev => ({ ...prev, voluntario_id: value }))
-                    }>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecionar voluntário" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="">Nenhum voluntário</SelectItem>
-                        {voluntarios.map((voluntario) => (
-                          <SelectItem key={voluntario.id} value={voluntario.id}>
-                            {voluntario.nome}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                
-                <div>
-                  <Label htmlFor="observacoes">Observações</Label>
-                  <Textarea
-                    id="observacoes"
-                    value={formData.observacoes}
-                    onChange={(e) => setFormData(prev => ({ ...prev, observacoes: e.target.value }))}
-                    placeholder="Informações adicionais"
-                    rows={3}
-                  />
-                </div>
-                
-                <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                    Cancelar
-                  </Button>
-                  <Button type="submit">
-                    Registar
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
-          
-          <Button variant="outline" asChild>
-            <Link to="/">Voltar</Link>
-          </Button>
-        </div>
       </div>
 
-      {/* Resumo Financeiro */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Receitas</p>
-                <p className="text-2xl font-bold text-green-600">€{totalReceitas.toFixed(2)}</p>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Resumo Financeiro */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-green-100 text-sm font-medium">Total Receitas</p>
+                  <p className="text-2xl font-bold">{formatCurrency(totalReceitas)}</p>
+                </div>
+                <TrendingUp className="h-8 w-8 text-green-200" />
               </div>
-              <TrendingUp className="h-8 w-8 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Despesas</p>
-                <p className="text-2xl font-bold text-red-600">€{totalDespesas.toFixed(2)}</p>
-              </div>
-              <TrendingDown className="h-8 w-8 text-red-600" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Saldo</p>
-                <p className={`text-2xl font-bold ${saldo >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  €{saldo.toFixed(2)}
-                </p>
-              </div>
-              <PiggyBank className={`h-8 w-8 ${saldo >= 0 ? 'text-green-600' : 'text-red-600'}`} />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Movimentos (30d)</p>
-                <p className="text-2xl font-bold">{movimentosRecentes.length}</p>
-              </div>
-              <DollarSign className="h-8 w-8 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
 
-      <Tabs defaultValue="movimentos" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="movimentos">Movimentos</TabsTrigger>
-          <TabsTrigger value="categorias">Por Categoria</TabsTrigger>
-        </TabsList>
+          <Card className="bg-gradient-to-r from-red-500 to-red-600 text-white">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-red-100 text-sm font-medium">Total Despesas</p>
+                  <p className="text-2xl font-bold">{formatCurrency(totalDespesas)}</p>
+                </div>
+                <TrendingDown className="h-8 w-8 text-red-200" />
+              </div>
+            </CardContent>
+          </Card>
 
-        <TabsContent value="movimentos">
-          <Card>
-            <CardHeader>
-              <CardTitle>Movimentos Recentes</CardTitle>
-              <CardDescription>
-                Últimos movimentos financeiros registados
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {movimentos.length === 0 ? (
-                <div className="text-center py-8">
-                  <Euro className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">Nenhum movimento registado</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Comece registando receitas e despesas da associação.
+          <Card className={`bg-gradient-to-r ${saldoAtual >= 0 ? 'from-blue-500 to-blue-600' : 'from-orange-500 to-orange-600'} text-white`}>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className={`${saldoAtual >= 0 ? 'text-blue-100' : 'text-orange-100'} text-sm font-medium`}>
+                    Saldo Atual
                   </p>
-                  <Button onClick={() => setDialogOpen(true)}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Registar Primeiro Movimento
-                  </Button>
+                  <p className="text-2xl font-bold">{formatCurrency(saldoAtual)}</p>
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  {movimentos.slice(0, 10).map((movimento) => (
-                    <div key={movimento.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center gap-4">
-                        <div className={`p-2 rounded-full ${movimento.tipo_movimento === 'Receita' ? 'bg-green-100' : 'bg-red-100'}`}>
-                          {movimento.tipo_movimento === 'Receita' ? (
-                            <TrendingUp className="h-4 w-4 text-green-600" />
-                          ) : (
-                            <TrendingDown className="h-4 w-4 text-red-600" />
-                          )}
-                        </div>
-                        <div>
-                          <p className="font-medium">{movimento.descricao}</p>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Badge className={getCategoriaColor(movimento.categoria)}>
-                              {movimento.categoria}
-                            </Badge>
-                            <span>{new Date(movimento.data_movimento).toLocaleDateString('pt-PT')}</span>
-                            {movimento.animal && (
-                              <span>• {movimento.animal.nome}</span>
-                            )}
-                            {movimento.voluntario && (
-                              <span>• {movimento.voluntario.nome}</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      <div className={`text-lg font-bold ${movimento.tipo_movimento === 'Receita' ? 'text-green-600' : 'text-red-600'}`}>
-                        {movimento.tipo_movimento === 'Receita' ? '+' : '-'}€{movimento.valor.toFixed(2)}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="categorias">
-          <Card>
-            <CardHeader>
-              <CardTitle>Resumo por Categoria</CardTitle>
-              <CardDescription>
-                Receitas e despesas organizadas por categoria
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {Object.entries(movimentosPorCategoria).map(([categoria, valores]) => (
-                  <div key={categoria} className="p-4 border rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <Badge className={getCategoriaColor(categoria)}>
-                        {categoria}
-                      </Badge>
-                      <div className="text-sm text-muted-foreground">
-                        Saldo: <span className={`font-bold ${(valores.receitas - valores.despesas) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          €{(valores.receitas - valores.despesas).toFixed(2)}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div className="flex justify-between">
-                        <span>Receitas:</span>
-                        <span className="font-bold text-green-600">€{valores.receitas.toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Despesas:</span>
-                        <span className="font-bold text-red-600">€{valores.despesas.toFixed(2)}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                <DollarSign className={`h-8 w-8 ${saldoAtual >= 0 ? 'text-blue-200' : 'text-orange-200'}`} />
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
+        </div>
+
+        {/* Lista de Movimentos */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <FileText className="h-5 w-5" />
+              <span>Movimentos Financeiros</span>
+            </CardTitle>
+            <CardDescription>
+              Histórico completo de receitas e despesas
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {movimentos.length === 0 ? (
+              <div className="text-center py-8">
+                <DollarSign className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  Nenhum movimento registado
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  Comece registando o primeiro movimento financeiro
+                </p>
+                <Button onClick={() => setDialogOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Registar Primeiro Movimento
+                </Button>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Data</TableHead>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead>Categoria</TableHead>
+                      <TableHead>Descrição</TableHead>
+                      <TableHead>Animal</TableHead>
+                      <TableHead>Voluntário</TableHead>
+                      <TableHead className="text-right">Valor</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {movimentos.map((movimento) => (
+                      <TableRow key={movimento.id}>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <Calendar className="h-4 w-4 text-gray-400" />
+                            <span>{formatDate(movimento.data_movimento)}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge 
+                            className={
+                              movimento.tipo_movimento === 'Receita' 
+                                ? 'bg-green-100 text-green-800 border-green-200' 
+                                : 'bg-red-100 text-red-800 border-red-200'
+                            }
+                          >
+                            {movimento.tipo_movimento}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{movimento.categoria}</TableCell>
+                        <TableCell className="max-w-xs truncate">
+                          {movimento.descricao}
+                        </TableCell>
+                        <TableCell>
+                          {movimento.animal?.nome || '-'}
+                        </TableCell>
+                        <TableCell>
+                          {movimento.voluntario?.nome || '-'}
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                          <span className={movimento.tipo_movimento === 'Receita' ? 'text-green-600' : 'text-red-600'}>
+                            {movimento.tipo_movimento === 'Receita' ? '+' : '-'}{formatCurrency(movimento.valor)}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

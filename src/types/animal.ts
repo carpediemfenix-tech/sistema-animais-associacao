@@ -1,16 +1,13 @@
-// =====================================================
-// TIPOS PARA SISTEMA VALENTÃO AO RESGATE v2.0
-// Sistema profissional de gestão de animais
-// =====================================================
-
+// Tipos para o sistema de gestão de animais
 export interface Animal {
   id: string;
-  numero_processo: string;
+  numero_processo?: string;
   nome: string;
   especie: 'Cão' | 'Gato' | 'Outro';
   raca?: string;
   sexo: 'Macho' | 'Fêmea';
   idade_estimada?: number; // em meses
+  data_nascimento?: string;
   peso?: number;
   cor?: string;
   caracteristicas_fisicas?: string;
@@ -52,9 +49,9 @@ export interface Intervencao {
   concluida: boolean;
   created_at: string;
   updated_at: string;
+  animal?: Animal;
   tipo_intervencao?: TipoIntervencao;
   voluntario?: Voluntario;
-  animal?: Animal;
 }
 
 export interface Evento {
@@ -67,14 +64,16 @@ export interface Evento {
   created_at: string;
 }
 
+// CORREÇÃO: Atualizar interface Localizacao para usar data_saida em vez de data_fim
 export interface Localizacao {
   id: string;
   animal_id: string;
-  tipo_localizacao: string;
-  endereco: string;
-  data_inicio: string;
-  data_fim?: string;
+  localizacao: 'Canil' | 'CRO' | 'FAT' | 'Rua' | 'Casa Temporária' | 'Outro';
+  endereco?: string;
+  data_entrada: string;
+  data_saida?: string; // CORRIGIDO: era data_fim, agora é data_saida
   observacoes?: string;
+  ativo: boolean;
   created_at: string;
 }
 
@@ -121,12 +120,17 @@ export interface DashboardStats {
   adocoes_mes: number;
 }
 
-// Tipos para perfis de usuário
-export type PerfilUsuario = 'consulta' | 'edicao' | 'admin';
+// Tipos para perfis de utilizador
+export type PerfilUsuario = 'admin' | 'edicao' | 'consulta';
 
-export interface ConfiguracaoSistema {
-  perfil_usuario: PerfilUsuario;
-  tema: 'claro' | 'escuro' | 'sistema';
-  notificacoes: boolean;
-  idioma: 'pt';
+// Tipos para alertas
+export interface Alerta {
+  id: string;
+  tipo: 'info' | 'warning' | 'error' | 'success';
+  titulo: string;
+  mensagem: string;
+  data_criacao: string;
+  lido: boolean;
+  animal_id?: string;
+  intervencao_id?: string;
 }

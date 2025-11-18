@@ -2,71 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Valentão Desktop - Design System Profissional
-Todas as cores, gradientes, fontes, etc devem ser definidas aqui.
-Todas as cores DEVEM ser HSL.
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
 */
-
-/* Estilos específicos para Desktop/PWA */
-.desktop-mode {
-  user-select: none; /* Prevenir seleção de texto acidental */
-  -webkit-app-region: drag; /* Permitir arrastar janela (Electron) */
-}
-
-.desktop-mode button,
-.desktop-mode input,
-.desktop-mode textarea,
-.desktop-mode select {
-  -webkit-app-region: no-drag; /* Elementos interativos não devem arrastar */
-}
-
-/* Scrollbars personalizadas para desktop */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: hsl(var(--muted));
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground) / 0.3);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground) / 0.5);
-}
-
-/* Animações suaves para desktop */
-@media (prefers-reduced-motion: no-preference) {
-  * {
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-}
-
-/* Impressão - ocultar elementos desnecessários */
-@media print {
-  .no-print {
-    display: none !important;
-  }
-  
-  body {
-    background: white !important;
-    color: black !important;
-  }
-}
-
-/* Tela cheia - remover margens */
-.fullscreen {
-  margin: 0;
-  padding: 0;
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
-}
 
 @layer base {
   :root {

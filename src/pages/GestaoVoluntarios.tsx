@@ -1,14 +1,30 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Users, Plus, Edit, Trash2, UserCheck, UserX } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { 
+  ArrowLeft, 
+  Plus, 
+  Users, 
+  Edit, 
+  Trash2, 
+  UserCheck, 
+  UserX,
+  Phone,
+  Mail,
+  Calendar,
+  AlertCircle,
+  CheckCircle,
+  Loader2
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Voluntario } from "@/types/animal";
 import { useToast } from "@/hooks/use-toast";
@@ -16,6 +32,7 @@ import { useToast } from "@/hooks/use-toast";
 const GestaoVoluntarios = () => {
   const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingVoluntario, setEditingVoluntario] = useState<Voluntario | null>(null);
   const [formData, setFormData] = useState({
@@ -33,17 +50,27 @@ const GestaoVoluntarios = () => {
 
   const fetchVoluntarios = async () => {
     try {
+      setLoading(true);
+      console.log('🔄 Carregando voluntários...');
+
+      // CORREÇÃO: Usar nome correto da tabela 'voluntarios'
       const { data, error } = await supabase
         .from('voluntarios')
         .select('*')
         .order('nome');
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro ao carregar voluntários:', error);
+        throw error;
+      }
+
+      console.log('✅ Voluntários carregados:', data?.length || 0);
       setVoluntarios(data || []);
     } catch (error: any) {
+      console.error('❌ Erro geral ao carregar voluntários:', error);
       toast({
         title: "Erro ao carregar voluntários",
-        description: error.message,
+        description: error.message || "Não foi possível carregar a lista de voluntários",
         variant: "destructive",
       });
     } finally {
@@ -64,10 +91,14 @@ const GestaoVoluntarios = () => {
     }
 
     try {
+      setSubmitting(true);
+      console.log('👤 Processando voluntário:', formData);
+
       if (editingVoluntario) {
-        // Atualizar voluntário existente
+        // CORREÇÃO: Usar nome correto da tabela 'voluntarios'
+        console.log('✏️ Atualizando voluntário:', editingVoluntario.id);
         const { error } = await supabase
-          .from('voluntarios_2025_11_16_18_00')
+          .from('voluntarios')
           .update({
             nome: formData.nome,
             email: formData.email || null,
@@ -78,14 +109,19 @@ const GestaoVoluntarios = () => {
           })
           .eq('id', editingVoluntario.id);
 
-        if (error) throw error;
+        if (error) {
+          console.error('❌ Erro ao atualizar voluntário:', error);
+          throw error;
+        }
 
+        console.log('✅ Voluntário atualizado com sucesso');
         toast({
-          title: "Voluntário atualizado",
+          title: "✅ Voluntário atualizado",
           description: `${formData.nome} foi atualizado com sucesso.`,
         });
       } else {
         // Criar novo voluntário
+        console.log('➕ Criando novo voluntário');
         const { error } = await supabase
           .from('voluntarios')
           .insert({
@@ -96,24 +132,40 @@ const GestaoVoluntarios = () => {
             observacoes: formData.observacoes || null
           });
 
-        if (error) throw error;
+        if (error) {
+          console.error('❌ Erro ao criar voluntário:', error);
+          throw error;
+        }
 
+        console.log('✅ Voluntário criado com sucesso');
         toast({
-          title: "Voluntário cadastrado",
-          description: `${formData.nome} foi cadastrado com sucesso.`,
+          title: "✅ Voluntário registado",
+          description: `${formData.nome} foi registado com sucesso.`,
         });
       }
 
       setDialogOpen(false);
       setEditingVoluntario(null);
-      setFormData({ nome: "", email: "", telefone: "", especialidade: "", observacoes: "" });
-      fetchVoluntarios();
+      setFormData({
+        nome: "",
+        email: "",
+        telefone: "",
+        especialidade: "",
+        observacoes: ""
+      });
+      
+      console.log('🔄 Recarregando lista de voluntários...');
+      await fetchVoluntarios();
+
     } catch (error: any) {
+      console.error('❌ Erro ao processar voluntário:', error);
       toast({
-        title: "Erro",
-        description: error.message,
+        title: "Erro ao processar voluntário",
+        description: error.message || "Não foi possível processar o voluntário",
         variant: "destructive",
       });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -129,8 +181,11 @@ const GestaoVoluntarios = () => {
     setDialogOpen(true);
   };
 
-  const toggleAtivo = async (voluntario: Voluntario) => {
+  const handleToggleStatus = async (voluntario: Voluntario) => {
     try {
+      console.log(`🔄 Alterando status do voluntário ${voluntario.nome}...`);
+      
+      // CORREÇÃO: Usar nome correto da tabela 'voluntarios'
       const { error } = await supabase
         .from('voluntarios')
         .update({ 
@@ -139,18 +194,55 @@ const GestaoVoluntarios = () => {
         })
         .eq('id', voluntario.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro ao alterar status:', error);
+        throw error;
+      }
 
+      console.log('✅ Status alterado com sucesso');
       toast({
-        title: voluntario.ativo ? "Voluntário desativado" : "Voluntário ativado",
-        description: `${voluntario.nome} foi ${voluntario.ativo ? 'desativado' : 'ativado'} com sucesso.`,
+        title: "Status alterado",
+        description: `${voluntario.nome} foi ${!voluntario.ativo ? 'ativado' : 'desativado'} com sucesso.`,
       });
 
-      fetchVoluntarios();
+      await fetchVoluntarios();
     } catch (error: any) {
+      console.error('❌ Erro ao alterar status:', error);
       toast({
         title: "Erro",
-        description: error.message,
+        description: "Não foi possível alterar o status do voluntário",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDelete = async (voluntario: Voluntario) => {
+    try {
+      console.log(`🗑️ Eliminando voluntário ${voluntario.nome}...`);
+      
+      // CORREÇÃO: Usar nome correto da tabela 'voluntarios'
+      const { error } = await supabase
+        .from('voluntarios')
+        .delete()
+        .eq('id', voluntario.id);
+
+      if (error) {
+        console.error('❌ Erro ao eliminar voluntário:', error);
+        throw error;
+      }
+
+      console.log('✅ Voluntário eliminado com sucesso');
+      toast({
+        title: "Voluntário eliminado",
+        description: `${voluntario.nome} foi eliminado com sucesso.`,
+      });
+
+      await fetchVoluntarios();
+    } catch (error: any) {
+      console.error('❌ Erro ao eliminar voluntário:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível eliminar o voluntário",
         variant: "destructive",
       });
     }
@@ -158,275 +250,391 @@ const GestaoVoluntarios = () => {
 
   const getEspecialidadeColor = (especialidade: string) => {
     switch (especialidade) {
-      case "Veterinário": return "bg-red-500 text-white";
-      case "Cuidador": return "bg-green-500 text-white";
-      case "Transporte": return "bg-blue-500 text-white";
-      case "Administrativo": return "bg-purple-500 text-white";
-      case "Geral": return "bg-gray-500 text-white";
-      default: return "bg-gray-500 text-white";
+      case 'Veterinário': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'Cuidador': return 'bg-green-100 text-green-800 border-green-200';
+      case 'Transporte': return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'Administrativo': return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 'Geral': return 'bg-gray-100 text-gray-800 border-gray-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('pt-PT');
   };
 
   if (loading) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-lg">A carregar voluntários...</div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-16 w-16 animate-spin mx-auto mb-4 text-blue-600" />
+          <p className="text-lg text-gray-600">A carregar gestão de voluntários...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <img 
-            src="/images/BackgroundEraser_20250411_205630024.png" 
-            alt="Valentão ao Resgate" 
-            className="h-12 w-12 object-contain"
-          />
-          <div>
-            <h1 className="text-3xl font-bold">Gestão de Voluntários - Valentão ao Resgate</h1>
-            <p className="text-muted-foreground">
-              Gerir voluntários e suas especialidades - Total: {voluntarios.length}
-            </p>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center space-x-4">
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Voltar ao Dashboard
+                </Link>
+              </Button>
+              <div className="flex items-center space-x-3">
+                <Users className="h-6 w-6 text-blue-600" />
+                <div>
+                  <h1 className="text-xl font-bold text-gray-900">Gestão de Voluntários</h1>
+                  <p className="text-sm text-gray-500">
+                    {voluntarios.length} voluntários registados • {voluntarios.filter(v => v.ativo).length} ativos
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-4">
+              <Button onClick={fetchVoluntarios} variant="outline" size="sm" disabled={loading}>
+                <Loader2 className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : 'hidden'}`} />
+                Atualizar
+              </Button>
+              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Novo Voluntário
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>
+                      {editingVoluntario ? 'Editar Voluntário' : 'Novo Voluntário'}
+                    </DialogTitle>
+                    <DialogDescription>
+                      {editingVoluntario 
+                        ? 'Atualize as informações do voluntário'
+                        : 'Adicione um novo voluntário ao sistema'
+                      }
+                    </DialogDescription>
+                  </DialogHeader>
+                  
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                      <Label htmlFor="nome">Nome *</Label>
+                      <Input
+                        id="nome"
+                        value={formData.nome}
+                        onChange={(e) => setFormData(prev => ({ ...prev, nome: e.target.value }))}
+                        placeholder="Nome completo do voluntário"
+                        required
+                      />
+                    </div>
+                    
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="email">Email</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          value={formData.email}
+                          onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                          placeholder="email@exemplo.com"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="telefone">Telefone</Label>
+                        <Input
+                          id="telefone"
+                          value={formData.telefone}
+                          onChange={(e) => setFormData(prev => ({ ...prev, telefone: e.target.value }))}
+                          placeholder="912 345 678"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="especialidade">Especialidade *</Label>
+                      <Select 
+                        value={formData.especialidade} 
+                        onValueChange={(value) => setFormData(prev => ({ ...prev, especialidade: value }))}
+                        required
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione a especialidade" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Veterinário">Veterinário</SelectItem>
+                          <SelectItem value="Cuidador">Cuidador</SelectItem>
+                          <SelectItem value="Transporte">Transporte</SelectItem>
+                          <SelectItem value="Administrativo">Administrativo</SelectItem>
+                          <SelectItem value="Geral">Geral</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="observacoes">Observações</Label>
+                      <Textarea
+                        id="observacoes"
+                        value={formData.observacoes}
+                        onChange={(e) => setFormData(prev => ({ ...prev, observacoes: e.target.value }))}
+                        placeholder="Observações adicionais sobre o voluntário"
+                        rows={3}
+                      />
+                    </div>
+                    
+                    <div className="flex justify-end space-x-2 pt-4">
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={() => {
+                          setDialogOpen(false);
+                          setEditingVoluntario(null);
+                          setFormData({
+                            nome: "",
+                            email: "",
+                            telefone: "",
+                            especialidade: "",
+                            observacoes: ""
+                          });
+                        }}
+                        disabled={submitting}
+                      >
+                        Cancelar
+                      </Button>
+                      <Button 
+                        type="submit" 
+                        className="bg-blue-600 hover:bg-blue-700"
+                        disabled={submitting}
+                      >
+                        {submitting ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            {editingVoluntario ? 'A atualizar...' : 'A registar...'}
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                            {editingVoluntario ? 'Atualizar' : 'Registar'}
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
         </div>
-        <div className="flex gap-2">
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={() => {
-                setEditingVoluntario(null);
-                setFormData({ nome: "", email: "", telefone: "", especialidade: "", observacoes: "" });
-              }}>
-                <Plus className="h-4 w-4 mr-2" />
-                Novo Voluntário
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>
-                  {editingVoluntario ? "Editar Voluntário" : "Novo Voluntário"}
-                </DialogTitle>
-                <DialogDescription>
-                  {editingVoluntario ? "Atualizar informações do voluntário" : "Cadastrar novo voluntário na associação"}
-                </DialogDescription>
-              </DialogHeader>
-              
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <Label htmlFor="nome">Nome *</Label>
-                  <Input
-                    id="nome"
-                    value={formData.nome}
-                    onChange={(e) => setFormData(prev => ({ ...prev, nome: e.target.value }))}
-                    placeholder="Nome completo do voluntário"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                    placeholder="email@exemplo.com"
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="telefone">Telefone</Label>
-                  <Input
-                    id="telefone"
-                    value={formData.telefone}
-                    onChange={(e) => setFormData(prev => ({ ...prev, telefone: e.target.value }))}
-                    placeholder="Número de telefone"
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="especialidade">Especialidade *</Label>
-                  <Select value={formData.especialidade} onValueChange={(value) => 
-                    setFormData(prev => ({ ...prev, especialidade: value }))
-                  }>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecionar especialidade" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Veterinário">Veterinário</SelectItem>
-                      <SelectItem value="Cuidador">Cuidador</SelectItem>
-                      <SelectItem value="Transporte">Transporte</SelectItem>
-                      <SelectItem value="Administrativo">Administrativo</SelectItem>
-                      <SelectItem value="Geral">Geral</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div>
-                  <Label htmlFor="observacoes">Observações</Label>
-                  <Textarea
-                    id="observacoes"
-                    value={formData.observacoes}
-                    onChange={(e) => setFormData(prev => ({ ...prev, observacoes: e.target.value }))}
-                    placeholder="Informações adicionais sobre o voluntário"
-                    rows={3}
-                  />
-                </div>
-                
-                <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                    Cancelar
-                  </Button>
-                  <Button type="submit">
-                    {editingVoluntario ? "Atualizar" : "Cadastrar"}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
-          
-          <Button variant="outline" asChild>
-            <Link to="/">Voltar</Link>
-          </Button>
-        </div>
       </div>
 
-      {/* Estatísticas rápidas */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">
-                {voluntarios.filter(v => v.ativo).length}
-              </div>
-              <p className="text-sm text-muted-foreground">Ativos</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-red-600">
-                {voluntarios.filter(v => v.especialidade === 'Veterinário').length}
-              </div>
-              <p className="text-sm text-muted-foreground">Veterinários</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">
-                {voluntarios.filter(v => v.especialidade === 'Cuidador').length}
-              </div>
-              <p className="text-sm text-muted-foreground">Cuidadores</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">
-                {voluntarios.filter(v => v.especialidade === 'Transporte').length}
-              </div>
-              <p className="text-sm text-muted-foreground">Transporte</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <div className="text-2xl font-bold">
-                {voluntarios.length}
-              </div>
-              <p className="text-sm text-muted-foreground">Total</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Lista de Voluntários */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {voluntarios.map((voluntario) => (
-          <Card key={voluntario.id} className={`hover:shadow-lg transition-shadow ${!voluntario.ativo ? 'opacity-75' : ''}`}>
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Estatísticas */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-lg">{voluntario.nome}</CardTitle>
-                  <CardDescription>
-                    {voluntario.email && (
-                      <div className="text-sm">{voluntario.email}</div>
-                    )}
-                    {voluntario.telefone && (
-                      <div className="text-sm">{voluntario.telefone}</div>
-                    )}
-                  </CardDescription>
+                  <p className="text-sm font-medium text-gray-600">Total</p>
+                  <p className="text-2xl font-bold text-gray-900">{voluntarios.length}</p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Badge className={getEspecialidadeColor(voluntario.especialidade)}>
-                    {voluntario.especialidade}
-                  </Badge>
-                  {voluntario.ativo ? (
-                    <UserCheck className="h-4 w-4 text-green-500" />
-                  ) : (
-                    <UserX className="h-4 w-4 text-red-500" />
-                  )}
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2 text-sm">
-                <p><strong>Início:</strong> {new Date(voluntario.data_inicio).toLocaleDateString('pt-PT')}</p>
-                {voluntario.observacoes && (
-                  <p><strong>Observações:</strong> {voluntario.observacoes}</p>
-                )}
-              </div>
-              
-              <div className="flex gap-2 mt-4">
-                <Button variant="outline" size="sm" onClick={() => handleEdit(voluntario)}>
-                  <Edit className="h-4 w-4 mr-1" />
-                  Editar
-                </Button>
-                
-                <Button
-                  variant={voluntario.ativo ? "destructive" : "default"}
-                  size="sm"
-                  onClick={() => toggleAtivo(voluntario)}
-                >
-                  {voluntario.ativo ? (
-                    <>
-                      <UserX className="h-4 w-4 mr-1" />
-                      Desativar
-                    </>
-                  ) : (
-                    <>
-                      <UserCheck className="h-4 w-4 mr-1" />
-                      Ativar
-                    </>
-                  )}
-                </Button>
+                <Users className="h-8 w-8 text-blue-500" />
               </div>
             </CardContent>
           </Card>
-        ))}
-      </div>
 
-      {voluntarios.length === 0 && (
-        <div className="text-center py-12">
-          <Users className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold mb-2">Nenhum voluntário cadastrado</h3>
-          <p className="text-muted-foreground mb-4">
-            Comece cadastrando os voluntários da associação.
-          </p>
-          <Button onClick={() => setDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Cadastrar Primeiro Voluntário
-          </Button>
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Ativos</p>
+                  <p className="text-2xl font-bold text-green-600">
+                    {voluntarios.filter(v => v.ativo).length}
+                  </p>
+                </div>
+                <UserCheck className="h-8 w-8 text-green-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Inativos</p>
+                  <p className="text-2xl font-bold text-red-600">
+                    {voluntarios.filter(v => !v.ativo).length}
+                  </p>
+                </div>
+                <UserX className="h-8 w-8 text-red-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Veterinários</p>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {voluntarios.filter(v => v.especialidade === 'Veterinário').length}
+                  </p>
+                </div>
+                <Users className="h-8 w-8 text-blue-500" />
+              </div>
+            </CardContent>
+          </Card>
         </div>
-      )}
+
+        {/* Lista de Voluntários */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Lista de Voluntários</CardTitle>
+            <CardDescription>
+              Gestão completa dos voluntários da associação
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {voluntarios.length === 0 ? (
+              <div className="text-center py-8">
+                <Users className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  Nenhum voluntário registado
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  Comece adicionando o primeiro voluntário ao sistema
+                </p>
+                <Button onClick={() => setDialogOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Adicionar Primeiro Voluntário
+                </Button>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Contacto</TableHead>
+                      <TableHead>Especialidade</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Data Início</TableHead>
+                      <TableHead className="w-32">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {voluntarios.map((voluntario) => (
+                      <TableRow key={voluntario.id}>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">{voluntario.nome}</div>
+                            {voluntario.observacoes && (
+                              <div className="text-sm text-gray-500 truncate max-w-xs">
+                                {voluntario.observacoes}
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            {voluntario.email && (
+                              <div className="flex items-center text-sm text-gray-600">
+                                <Mail className="h-3 w-3 mr-1" />
+                                {voluntario.email}
+                              </div>
+                            )}
+                            {voluntario.telefone && (
+                              <div className="flex items-center text-sm text-gray-600">
+                                <Phone className="h-3 w-3 mr-1" />
+                                {voluntario.telefone}
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={getEspecialidadeColor(voluntario.especialidade)}>
+                            {voluntario.especialidade}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge 
+                            className={
+                              voluntario.ativo 
+                                ? 'bg-green-100 text-green-800 border-green-200' 
+                                : 'bg-red-100 text-red-800 border-red-200'
+                            }
+                          >
+                            {voluntario.ativo ? 'Ativo' : 'Inativo'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center text-sm text-gray-600">
+                            <Calendar className="h-3 w-3 mr-1" />
+                            {formatDate(voluntario.data_inicio)}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEdit(voluntario)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleToggleStatus(voluntario)}
+                            >
+                              {voluntario.ativo ? (
+                                <UserX className="h-4 w-4 text-red-500" />
+                              ) : (
+                                <UserCheck className="h-4 w-4 text-green-500" />
+                              )}
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                  <Trash2 className="h-4 w-4 text-red-500" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Eliminar Voluntário</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Tem certeza que deseja eliminar {voluntario.nome}? 
+                                    Esta ação não pode ser desfeita.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleDelete(voluntario)}
+                                    className="bg-red-600 hover:bg-red-700"
+                                  >
+                                    Eliminar
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
