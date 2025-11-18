@@ -18,10 +18,10 @@ import {
   Calendar,
   FileText,
   RefreshCw,
-  AlertCircle,
   CheckCircle,
   Loader2,
-  X
+  X,
+  AlertCircle
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -40,103 +40,52 @@ interface MovimentoFinanceiro {
   voluntario?: { nome: string };
 }
 
-interface Animal {
-  id: string;
-  nome: string;
-}
-
-interface Voluntario {
-  id: string;
-  nome: string;
-}
-
 const GestaoFinanceira = () => {
   const [movimentos, setMovimentos] = useState<MovimentoFinanceiro[]>([]);
-  const [animais, setAnimais] = useState<Animal[]>([]);
-  const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    animal_id: "",
-    tipo_movimento: "",
-    categoria: "",
-    descricao: "",
-    valor: "",
-    data_movimento: new Date().toISOString().split('T')[0],
-    voluntario_id: "",
-    observacoes: ""
-  });
+  const [error, setError] = useState<string | null>(null);
+  
+  // Formulário simplificado - apenas campos essenciais
+  const [tipoMovimento, setTipoMovimento] = useState("");
+  const [categoria, setCategoria] = useState("");
+  const [descricao, setDescricao] = useState("");
+  const [valor, setValor] = useState("");
+  const [dataMovimento, setDataMovimento] = useState(new Date().toISOString().split('T')[0]);
+  const [observacoes, setObservacoes] = useState("");
+  
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchData();
+    fetchMovimentos();
   }, []);
 
-  const fetchData = async () => {
+  const fetchMovimentos = async () => {
     try {
       setLoading(true);
-      console.log('🔄 [FINANCEIRO] Iniciando carregamento de dados...');
+      setError(null);
+      console.log('💰 [FINANCEIRO] Carregando movimentos...');
 
-      // Buscar movimentos financeiros
-      console.log('📊 [FINANCEIRO] Buscando movimentos...');
-      const { data: movimentosData, error: movimentosError } = await supabase
+      const { data, error } = await supabase
         .from('movimentos_financeiros')
-        .select(`
-          *,
-          animal:animais(nome),
-          voluntario:voluntarios(nome)
-        `)
+        .select('*')
         .order('data_movimento', { ascending: false });
 
-      if (movimentosError) {
-        console.error('❌ [FINANCEIRO] Erro ao buscar movimentos:', movimentosError);
-        throw movimentosError;
+      if (error) {
+        console.error('❌ [FINANCEIRO] Erro:', error);
+        throw error;
       }
 
-      console.log('✅ [FINANCEIRO] Movimentos carregados:', movimentosData?.length || 0);
-
-      // Buscar animais ativos
-      console.log('🐕 [FINANCEIRO] Buscando animais...');
-      const { data: animaisData, error: animaisError } = await supabase
-        .from('animais')
-        .select('id, nome')
-        .eq('arquivado', false)
-        .order('nome');
-
-      if (animaisError) {
-        console.error('❌ [FINANCEIRO] Erro ao buscar animais:', animaisError);
-        throw animaisError;
-      }
-
-      console.log('✅ [FINANCEIRO] Animais carregados:', animaisData?.length || 0);
-
-      // Buscar voluntários ativos
-      console.log('👤 [FINANCEIRO] Buscando voluntários...');
-      const { data: voluntariosData, error: voluntariosError } = await supabase
-        .from('voluntarios')
-        .select('id, nome')
-        .eq('ativo', true)
-        .order('nome');
-
-      if (voluntariosError) {
-        console.error('❌ [FINANCEIRO] Erro ao buscar voluntários:', voluntariosError);
-        throw voluntariosError;
-      }
-
-      console.log('✅ [FINANCEIRO] Voluntários carregados:', voluntariosData?.length || 0);
-
-      setMovimentos(movimentosData || []);
-      setAnimais(animaisData || []);
-      setVoluntarios(voluntariosData || []);
-
-      console.log('🎉 [FINANCEIRO] Todos os dados carregados com sucesso!');
+      console.log('✅ [FINANCEIRO] Movimentos carregados:', data?.length || 0);
+      setMovimentos(data || []);
 
     } catch (error: any) {
       console.error('💥 [FINANCEIRO] Erro geral:', error);
+      setError(error.message);
       toast({
         title: "❌ Erro ao carregar dados",
-        description: error.message || "Não foi possível carregar os dados financeiros",
+        description: error.message || "Não foi possível carregar os movimentos financeiros",
         variant: "destructive",
       });
     } finally {
@@ -145,35 +94,38 @@ const GestaoFinanceira = () => {
   };
 
   const resetForm = () => {
-    setFormData({
-      animal_id: "",
-      tipo_movimento: "",
-      categoria: "",
-      descricao: "",
-      valor: "",
-      data_movimento: new Date().toISOString().split('T')[0],
-      voluntario_id: "",
-      observacoes: ""
-    });
+    setTipoMovimento("");
+    setCategoria("");
+    setDescricao("");
+    setValor("");
+    setDataMovimento(new Date().toISOString().split('T')[0]);
+    setObservacoes("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('💰 [FINANCEIRO] Iniciando submissão do formulário...');
-    console.log('📝 [FINANCEIRO] Dados do formulário:', formData);
+    console.log('🚀 [FINANCEIRO] INICIANDO SUBMISSÃO...');
+    console.log('📝 [FINANCEIRO] Dados do formulário:', {
+      tipoMovimento,
+      categoria,
+      descricao,
+      valor,
+      dataMovimento,
+      observacoes
+    });
     
     // Validação básica
-    if (!formData.tipo_movimento) {
+    if (!tipoMovimento) {
       toast({
         title: "❌ Campo obrigatório",
-        description: "Selecione o tipo de movimento (Receita ou Despesa)",
+        description: "Selecione o tipo de movimento",
         variant: "destructive",
       });
       return;
     }
 
-    if (!formData.categoria) {
+    if (!categoria) {
       toast({
         title: "❌ Campo obrigatório", 
         description: "Selecione uma categoria",
@@ -182,7 +134,7 @@ const GestaoFinanceira = () => {
       return;
     }
 
-    if (!formData.descricao.trim()) {
+    if (!descricao.trim()) {
       toast({
         title: "❌ Campo obrigatório",
         description: "Insira uma descrição",
@@ -191,7 +143,8 @@ const GestaoFinanceira = () => {
       return;
     }
 
-    if (!formData.valor || parseFloat(formData.valor) <= 0) {
+    const valorNumerico = parseFloat(valor);
+    if (!valor || valorNumerico <= 0) {
       toast({
         title: "❌ Valor inválido",
         description: "Insira um valor positivo maior que zero",
@@ -202,68 +155,62 @@ const GestaoFinanceira = () => {
 
     try {
       setSubmitting(true);
-      console.log('🚀 [FINANCEIRO] Preparando dados para inserção...');
+      console.log('💾 [FINANCEIRO] Preparando inserção...');
       
-      const valorNumerico = parseFloat(formData.valor);
-      
-      const dadosParaInserir = {
-        animal_id: formData.animal_id || null,
-        tipo_movimento: formData.tipo_movimento,
-        categoria: formData.categoria,
-        descricao: formData.descricao.trim(),
+      // Dados mínimos para inserção
+      const dadosInserir = {
+        tipo_movimento: tipoMovimento,
+        categoria: categoria,
+        descricao: descricao.trim(),
         valor: valorNumerico,
-        data_movimento: formData.data_movimento,
-        voluntario_id: formData.voluntario_id || null,
-        observacoes: formData.observacoes?.trim() || null
+        data_movimento: dataMovimento,
+        observacoes: observacoes.trim() || null
       };
 
-      console.log('📤 [FINANCEIRO] Dados a inserir:', dadosParaInserir);
+      console.log('📤 [FINANCEIRO] Dados para inserir:', dadosInserir);
 
+      // Inserção simples sem JOINs
       const { data, error } = await supabase
         .from('movimentos_financeiros')
-        .insert(dadosParaInserir)
-        .select(`
-          *,
-          animal:animais(nome),
-          voluntario:voluntarios(nome)
-        `);
+        .insert([dadosInserir])
+        .select('*');
 
       if (error) {
         console.error('💥 [FINANCEIRO] Erro na inserção:', error);
         throw error;
       }
 
-      console.log('🎉 [FINANCEIRO] Movimento inserido com sucesso:', data);
+      console.log('🎉 [FINANCEIRO] Inserção bem-sucedida:', data);
 
       toast({
         title: "✅ Movimento registado!",
-        description: `${formData.tipo_movimento} de €${valorNumerico.toFixed(2)} registada com sucesso`,
+        description: `${tipoMovimento} de €${valorNumerico.toFixed(2)} registada com sucesso`,
       });
 
-      // Fechar diálogo e resetar formulário
+      // Fechar modal e resetar
       setDialogOpen(false);
       resetForm();
       
-      // Recarregar dados
-      console.log('🔄 [FINANCEIRO] Recarregando dados...');
-      await fetchData();
+      // Recarregar lista
+      console.log('🔄 [FINANCEIRO] Recarregando lista...');
+      await fetchMovimentos();
 
     } catch (error: any) {
-      console.error('💥 [FINANCEIRO] Erro ao registar movimento:', error);
+      console.error('💥 [FINANCEIRO] Erro ao registar:', error);
       
-      let mensagemErro = "Não foi possível registar o movimento";
+      let mensagem = "Não foi possível registar o movimento";
       
-      if (error.message?.includes('violates check constraint')) {
-        mensagemErro = "Dados inválidos. Verifique os valores inseridos.";
-      } else if (error.message?.includes('duplicate key')) {
-        mensagemErro = "Este movimento já existe no sistema.";
+      if (error.message?.includes('check constraint')) {
+        mensagem = "Valores inválidos. Verifique o tipo de movimento e categoria.";
+      } else if (error.message?.includes('not-null')) {
+        mensagem = "Todos os campos obrigatórios devem ser preenchidos.";
       } else if (error.message) {
-        mensagemErro = error.message;
+        mensagem = error.message;
       }
 
       toast({
-        title: "❌ Erro ao registar movimento",
-        description: mensagemErro,
+        title: "❌ Erro ao registar",
+        description: mensagem,
         variant: "destructive",
       });
     } finally {
@@ -304,6 +251,22 @@ const GestaoFinanceira = () => {
     );
   }
 
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <AlertCircle className="h-16 w-16 mx-auto mb-4 text-red-500" />
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Erro ao carregar dados</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <Button onClick={fetchMovimentos}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Tentar Novamente
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -329,10 +292,11 @@ const GestaoFinanceira = () => {
             </div>
 
             <div className="flex items-center space-x-4">
-              <Button onClick={fetchData} variant="outline" size="sm" disabled={loading}>
+              <Button onClick={fetchMovimentos} variant="outline" size="sm" disabled={loading}>
                 <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
                 Atualizar
               </Button>
+              
               <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogTrigger asChild>
                   <Button size="sm" className="bg-green-600 hover:bg-green-700">
@@ -340,10 +304,10 @@ const GestaoFinanceira = () => {
                     Novo Movimento
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+                <DialogContent className="sm:max-w-md">
                   <DialogHeader>
                     <DialogTitle className="flex items-center justify-between">
-                      Registar Novo Movimento
+                      Novo Movimento Financeiro
                       <Button
                         variant="ghost"
                         size="sm"
@@ -354,68 +318,60 @@ const GestaoFinanceira = () => {
                       </Button>
                     </DialogTitle>
                     <DialogDescription>
-                      Adicione uma nova receita ou despesa ao sistema financeiro
+                      Registar nova receita ou despesa
                     </DialogDescription>
                   </DialogHeader>
                   
                   <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="tipo_movimento">Tipo de Movimento *</Label>
-                        <Select 
-                          value={formData.tipo_movimento} 
-                          onValueChange={(value) => setFormData(prev => ({ ...prev, tipo_movimento: value }))}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione o tipo" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Receita">
-                              <div className="flex items-center space-x-2">
-                                <TrendingUp className="h-4 w-4 text-green-600" />
-                                <span>Receita</span>
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="Despesa">
-                              <div className="flex items-center space-x-2">
-                                <TrendingDown className="h-4 w-4 text-red-600" />
-                                <span>Despesa</span>
-                              </div>
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="categoria">Categoria *</Label>
-                        <Select 
-                          value={formData.categoria} 
-                          onValueChange={(value) => setFormData(prev => ({ ...prev, categoria: value }))}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione a categoria" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Veterinário">Veterinário</SelectItem>
-                            <SelectItem value="Medicação">Medicação</SelectItem>
-                            <SelectItem value="Alimentação">Alimentação</SelectItem>
-                            <SelectItem value="Transporte">Transporte</SelectItem>
-                            <SelectItem value="Doação">Doação</SelectItem>
-                            <SelectItem value="Adoção">Adoção</SelectItem>
-                            <SelectItem value="Equipamento">Equipamento</SelectItem>
-                            <SelectItem value="Outros">Outros</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+                    <div>
+                      <Label htmlFor="tipo_movimento">Tipo *</Label>
+                      <Select value={tipoMovimento} onValueChange={setTipoMovimento}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o tipo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Receita">
+                            <div className="flex items-center space-x-2">
+                              <TrendingUp className="h-4 w-4 text-green-600" />
+                              <span>Receita</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="Despesa">
+                            <div className="flex items-center space-x-2">
+                              <TrendingDown className="h-4 w-4 text-red-600" />
+                              <span>Despesa</span>
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="categoria">Categoria *</Label>
+                      <Select value={categoria} onValueChange={setCategoria}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione a categoria" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Veterinário">Veterinário</SelectItem>
+                          <SelectItem value="Medicação">Medicação</SelectItem>
+                          <SelectItem value="Alimentação">Alimentação</SelectItem>
+                          <SelectItem value="Transporte">Transporte</SelectItem>
+                          <SelectItem value="Doação">Doação</SelectItem>
+                          <SelectItem value="Adoção">Adoção</SelectItem>
+                          <SelectItem value="Equipamento">Equipamento</SelectItem>
+                          <SelectItem value="Outros">Outros</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     
                     <div>
                       <Label htmlFor="descricao">Descrição *</Label>
                       <Input
                         id="descricao"
-                        value={formData.descricao}
-                        onChange={(e) => setFormData(prev => ({ ...prev, descricao: e.target.value }))}
-                        placeholder="Descrição do movimento financeiro"
+                        value={descricao}
+                        onChange={(e) => setDescricao(e.target.value)}
+                        placeholder="Descrição do movimento"
                       />
                     </div>
                     
@@ -428,8 +384,8 @@ const GestaoFinanceira = () => {
                           step="0.01"
                           min="0.01"
                           max="999999.99"
-                          value={formData.valor}
-                          onChange={(e) => setFormData(prev => ({ ...prev, valor: e.target.value }))}
+                          value={valor}
+                          onChange={(e) => setValor(e.target.value)}
                           placeholder="0.00"
                         />
                       </div>
@@ -439,51 +395,9 @@ const GestaoFinanceira = () => {
                         <Input
                           id="data_movimento"
                           type="date"
-                          value={formData.data_movimento}
-                          onChange={(e) => setFormData(prev => ({ ...prev, data_movimento: e.target.value }))}
+                          value={dataMovimento}
+                          onChange={(e) => setDataMovimento(e.target.value)}
                         />
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="animal_id">Animal (Opcional)</Label>
-                        <Select 
-                          value={formData.animal_id} 
-                          onValueChange={(value) => setFormData(prev => ({ ...prev, animal_id: value }))}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione um animal" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="">Nenhum animal específico</SelectItem>
-                            {animais.map((animal) => (
-                              <SelectItem key={animal.id} value={animal.id}>
-                                {animal.nome}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="voluntario_id">Voluntário (Opcional)</Label>
-                        <Select 
-                          value={formData.voluntario_id} 
-                          onValueChange={(value) => setFormData(prev => ({ ...prev, voluntario_id: value }))}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione um voluntário" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="">Nenhum voluntário específico</SelectItem>
-                            {voluntarios.map((voluntario) => (
-                              <SelectItem key={voluntario.id} value={voluntario.id}>
-                                {voluntario.nome}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
                       </div>
                     </div>
                     
@@ -491,8 +405,8 @@ const GestaoFinanceira = () => {
                       <Label htmlFor="observacoes">Observações</Label>
                       <Textarea
                         id="observacoes"
-                        value={formData.observacoes}
-                        onChange={(e) => setFormData(prev => ({ ...prev, observacoes: e.target.value }))}
+                        value={observacoes}
+                        onChange={(e) => setObservacoes(e.target.value)}
                         placeholder="Observações adicionais (opcional)"
                         rows={3}
                       />
@@ -523,7 +437,7 @@ const GestaoFinanceira = () => {
                         ) : (
                           <>
                             <CheckCircle className="h-4 w-4 mr-2" />
-                            Registar Movimento
+                            Registar
                           </>
                         )}
                       </Button>
@@ -586,7 +500,7 @@ const GestaoFinanceira = () => {
               <span>Movimentos Financeiros</span>
             </CardTitle>
             <CardDescription>
-              Histórico completo de receitas e despesas
+              Histórico de receitas e despesas
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -613,8 +527,6 @@ const GestaoFinanceira = () => {
                       <TableHead>Tipo</TableHead>
                       <TableHead>Categoria</TableHead>
                       <TableHead>Descrição</TableHead>
-                      <TableHead>Animal</TableHead>
-                      <TableHead>Voluntário</TableHead>
                       <TableHead className="text-right">Valor</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -639,14 +551,15 @@ const GestaoFinanceira = () => {
                           </Badge>
                         </TableCell>
                         <TableCell>{movimento.categoria}</TableCell>
-                        <TableCell className="max-w-xs truncate">
-                          {movimento.descricao}
-                        </TableCell>
-                        <TableCell>
-                          {movimento.animal?.nome || '-'}
-                        </TableCell>
-                        <TableCell>
-                          {movimento.voluntario?.nome || '-'}
+                        <TableCell className="max-w-xs">
+                          <div>
+                            <div className="font-medium">{movimento.descricao}</div>
+                            {movimento.observacoes && (
+                              <div className="text-sm text-gray-500 truncate">
+                                {movimento.observacoes}
+                              </div>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell className="text-right font-medium">
                           <span className={movimento.tipo_movimento === 'Receita' ? 'text-green-600' : 'text-red-600'}>
