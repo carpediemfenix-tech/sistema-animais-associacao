@@ -74,6 +74,7 @@ const AnimalDetail = () => {
   const fetchAnimalData = async () => {
     try {
       setLoading(true);
+      console.log('Carregando dados do animal ID:', id);
 
       // Buscar dados do animal
       const { data: animalData, error: animalError } = await supabase
@@ -82,22 +83,32 @@ const AnimalDetail = () => {
         .eq('id', id)
         .single();
 
-      if (animalError) throw animalError;
+      if (animalError) {
+        console.error('Erro ao buscar animal:', animalError);
+        throw new Error(`Erro ao carregar animal: ${animalError.message}`);
+      }
+
+      if (!animalData) {
+        throw new Error('Animal não encontrado');
+      }
+
+      console.log('Animal carregado:', animalData);
       setAnimal(animalData);
 
-      // Buscar intervenções
+      // Buscar intervenções (sem JOIN para evitar erros)
       const { data: intervencoesData, error: intervencoesError } = await supabase
         .from('intervencoes')
-        .select(`
-          *,
-          tipo_intervencao:tipos_intervencoes(nome, cor),
-          voluntario:voluntarios(nome)
-        `)
+        .select('*')
         .eq('animal_id', id)
         .order('data_intervencao', { ascending: false });
 
-      if (intervencoesError) throw intervencoesError;
-      setIntervencoes(intervencoesData || []);
+      if (intervencoesError) {
+        console.error('Erro ao buscar intervenções:', intervencoesError);
+        // Não falhar se não conseguir carregar intervenções
+      } else {
+        console.log('Intervenções carregadas:', intervencoesData?.length || 0);
+        setIntervencoes(intervencoesData || []);
+      }
 
       // Buscar eventos
       const { data: eventosData, error: eventosError } = await supabase
@@ -106,8 +117,13 @@ const AnimalDetail = () => {
         .eq('animal_id', id)
         .order('data_evento', { ascending: false });
 
-      if (eventosError) throw eventosError;
-      setEventos(eventosData || []);
+      if (eventosError) {
+        console.error('Erro ao buscar eventos:', eventosError);
+        // Não falhar se não conseguir carregar eventos
+      } else {
+        console.log('Eventos carregados:', eventosData?.length || 0);
+        setEventos(eventosData || []);
+      }
 
       // Buscar localizações
       const { data: localizacoesData, error: localizacoesError } = await supabase
@@ -116,17 +132,22 @@ const AnimalDetail = () => {
         .eq('animal_id', id)
         .order('data_inicio', { ascending: false });
 
-      if (localizacoesError) throw localizacoesError;
-      setLocalizacoes(localizacoesData || []);
+      if (localizacoesError) {
+        console.error('Erro ao buscar localizações:', localizacoesError);
+        // Não falhar se não conseguir carregar localizações
+      } else {
+        console.log('Localizações carregadas:', localizacoesData?.length || 0);
+        setLocalizacoes(localizacoesData || []);
+      }
 
     } catch (error: any) {
       console.error('Erro ao carregar dados do animal:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível carregar os dados do animal",
+        description: error.message || "Não foi possível carregar os dados do animal",
         variant: "destructive",
       });
-      navigate('/animais');
+      // Não redirecionar automaticamente, deixar o usuário decidir
     } finally {
       setLoading(false);
     }
@@ -139,7 +160,12 @@ const AnimalDetail = () => {
         .select('*')
         .order('nome');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao carregar tipos de intervenções:', error);
+        return;
+      }
+      
+      console.log('Tipos de intervenções carregados:', data?.length || 0);
       setTiposIntervencoes(data || []);
     } catch (error: any) {
       console.error('Erro ao carregar tipos de intervenções:', error);
@@ -154,7 +180,12 @@ const AnimalDetail = () => {
         .eq('ativo', true)
         .order('nome');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao carregar voluntários:', error);
+        return;
+      }
+      
+      console.log('Voluntários carregados:', data?.length || 0);
       setVoluntarios(data || []);
     } catch (error: any) {
       console.error('Erro ao carregar voluntários:', error);
@@ -184,7 +215,9 @@ const AnimalDetail = () => {
         custo: intervencaoForm.custo ? parseFloat(intervencaoForm.custo) : null,
         observacoes: intervencaoForm.observacoes || null,
         proxima_data: intervencaoForm.proxima_data || null,
-        voluntario_id: intervencaoForm.voluntario_id || null
+        voluntario_id: intervencaoForm.voluntario_id || null,
+        urgente: false,
+        concluida: true
       };
 
       if (editingIntervencao) {
@@ -521,6 +554,16 @@ const AnimalDetail = () => {
     }
   };
 
+  const getTipoIntervencaoNome = (tipoId: string) => {
+    const tipo = tiposIntervencoes.find(t => t.id === tipoId);
+    return tipo?.nome || "Tipo não especificado";
+  };
+
+  const getVoluntarioNome = (voluntarioId: string) => {
+    const voluntario = voluntarios.find(v => v.id === voluntarioId);
+    return voluntario?.nome || "Voluntário não especificado";
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -537,10 +580,15 @@ const AnimalDetail = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Animal não encontrado</h2>
-          <p className="text-gray-600 mb-4">O animal solicitado não existe ou foi removido.</p>
-          <Button asChild>
-            <Link to="/animais">Voltar à Lista</Link>
-          </Button>
+          <p className="text-gray-600 mb-4">O animal solicitado não existe ou não foi possível carregar os dados.</p>
+          <div className="space-x-4">
+            <Button asChild>
+              <Link to="/animais">Voltar à Lista</Link>
+            </Button>
+            <Button variant="outline" onClick={() => window.location.reload()}>
+              Tentar Novamente
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -578,8 +626,10 @@ const AnimalDetail = () => {
                   Editar
                 </Link>
               </Button>
-              <Button variant="ghost" size="sm">
-                <Settings className="h-4 w-4" />
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/configuracoes">
+                  <Settings className="h-4 w-4" />
+                </Link>
               </Button>
             </div>
           </div>
@@ -861,15 +911,8 @@ const AnimalDetail = () => {
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <div className="flex items-center space-x-3 mb-2">
-                              <Badge 
-                                variant="outline" 
-                                style={{ 
-                                  backgroundColor: intervencao.tipo_intervencao?.cor + '20',
-                                  borderColor: intervencao.tipo_intervencao?.cor,
-                                  color: intervencao.tipo_intervencao?.cor
-                                }}
-                              >
-                                {intervencao.tipo_intervencao?.nome || "Tipo não especificado"}
+                              <Badge variant="outline">
+                                {getTipoIntervencaoNome(intervencao.tipo_intervencao_id)}
                               </Badge>
                               <span className="text-sm text-gray-600">
                                 {formatDate(intervencao.data_intervencao)}
@@ -888,8 +931,8 @@ const AnimalDetail = () => {
                               {intervencao.clinica && (
                                 <div>Clínica: {intervencao.clinica}</div>
                               )}
-                              {intervencao.voluntario?.nome && (
-                                <div>Responsável: {intervencao.voluntario.nome}</div>
+                              {intervencao.voluntario_id && (
+                                <div>Responsável: {getVoluntarioNome(intervencao.voluntario_id)}</div>
                               )}
                               {intervencao.proxima_data && (
                                 <div>Próxima: {formatDate(intervencao.proxima_data)}</div>
