@@ -1,25 +1,41 @@
 import { useState, useEffect } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Edit, Calendar, Activity, FileText, MapPin, Heart, Phone, User, Plus, Trash2, Settings } from "lucide-react";
+import { 
+  ArrowLeft, 
+  Edit, 
+  Trash2, 
+  Plus, 
+  Calendar, 
+  MapPin, 
+  Activity, 
+  DollarSign,
+  User,
+  Stethoscope,
+  Heart,
+  Home,
+  Phone,
+  Mail,
+  Clock,
+  AlertTriangle,
+  CheckCircle,
+  Loader2
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Animal, Intervencao, Evento, Localizacao, TipoIntervencao, Voluntario } from "@/types/animal";
 import { useToast } from "@/hooks/use-toast";
 
 const AnimalDetail = () => {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  
+  const { id } = useParams();
   const [animal, setAnimal] = useState<Animal | null>(null);
   const [intervencoes, setIntervencoes] = useState<Intervencao[]>([]);
   const [eventos, setEventos] = useState<Evento[]>([]);
@@ -27,16 +43,20 @@ const AnimalDetail = () => {
   const [tiposIntervencoes, setTiposIntervencoes] = useState<TipoIntervencao[]>([]);
   const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
-  // Estados para modais
+  // Estados dos modais
   const [intervencaoDialogOpen, setIntervencaoDialogOpen] = useState(false);
   const [eventoDialogOpen, setEventoDialogOpen] = useState(false);
   const [localizacaoDialogOpen, setLocalizacaoDialogOpen] = useState(false);
+
+  // Estados de edição
   const [editingIntervencao, setEditingIntervencao] = useState<Intervencao | null>(null);
   const [editingEvento, setEditingEvento] = useState<Evento | null>(null);
   const [editingLocalizacao, setEditingLocalizacao] = useState<Localizacao | null>(null);
 
-  // Estados para formulários
+  // Estados dos formulários
   const [intervencaoForm, setIntervencaoForm] = useState({
     tipo_intervencao_id: "",
     data_intervencao: new Date().toISOString().split('T')[0],
@@ -55,6 +75,7 @@ const AnimalDetail = () => {
     observacoes: ""
   });
 
+  // CORRIGIDO: Estado do formulário de localização
   const [localizacaoForm, setLocalizacaoForm] = useState({
     localizacao: "",
     endereco: "",
@@ -75,7 +96,8 @@ const AnimalDetail = () => {
   const fetchAnimalData = async () => {
     try {
       setLoading(true);
-      console.log('Carregando dados do animal ID:', id);
+      setError(null);
+      console.log('🐕 [ANIMAL] Carregando dados do animal ID:', id);
 
       // Buscar dados do animal
       const { data: animalData, error: animalError } = await supabase
@@ -85,7 +107,7 @@ const AnimalDetail = () => {
         .single();
 
       if (animalError) {
-        console.error('Erro ao buscar animal:', animalError);
+        console.error('❌ [ANIMAL] Erro ao buscar animal:', animalError);
         throw new Error(`Erro ao carregar animal: ${animalError.message}`);
       }
 
@@ -93,10 +115,11 @@ const AnimalDetail = () => {
         throw new Error('Animal não encontrado');
       }
 
-      console.log('Animal carregado:', animalData);
+      console.log('✅ [ANIMAL] Animal carregado:', animalData);
       setAnimal(animalData);
 
-      // Buscar intervenções (sem JOIN para evitar erros)
+      // Buscar intervenções
+      console.log('🏥 [INTERVENÇÕES] Buscando intervenções...');
       const { data: intervencoesData, error: intervencoesError } = await supabase
         .from('intervencoes')
         .select('*')
@@ -104,14 +127,14 @@ const AnimalDetail = () => {
         .order('data_intervencao', { ascending: false });
 
       if (intervencoesError) {
-        console.error('Erro ao buscar intervenções:', intervencoesError);
-        // Não falhar se não conseguir carregar intervenções
+        console.error('❌ [INTERVENÇÕES] Erro ao buscar intervenções:', intervencoesError);
       } else {
-        console.log('Intervenções carregadas:', intervencoesData?.length || 0);
+        console.log('✅ [INTERVENÇÕES] Intervenções carregadas:', intervencoesData?.length || 0);
         setIntervencoes(intervencoesData || []);
       }
 
       // Buscar eventos
+      console.log('📅 [EVENTOS] Buscando eventos...');
       const { data: eventosData, error: eventosError } = await supabase
         .from('eventos')
         .select('*')
@@ -119,36 +142,35 @@ const AnimalDetail = () => {
         .order('data_evento', { ascending: false });
 
       if (eventosError) {
-        console.error('Erro ao buscar eventos:', eventosError);
-        // Não falhar se não conseguir carregar eventos
+        console.error('❌ [EVENTOS] Erro ao buscar eventos:', eventosError);
       } else {
-        console.log('Eventos carregados:', eventosData?.length || 0);
+        console.log('✅ [EVENTOS] Eventos carregados:', eventosData?.length || 0);
         setEventos(eventosData || []);
       }
 
-      // Buscar localizações
+      // CORRIGIDO: Buscar localizações com campo correto
+      console.log('📍 [LOCALIZAÇÕES] Buscando localizações...');
       const { data: localizacoesData, error: localizacoesError } = await supabase
         .from('localizacoes')
         .select('*')
         .eq('animal_id', id)
-        .order('data_inicio', { ascending: false });
+        .order('data_entrada', { ascending: false }); // CORRIGIDO: era data_inicio
 
       if (localizacoesError) {
-        console.error('Erro ao buscar localizações:', localizacoesError);
-        // Não falhar se não conseguir carregar localizações
+        console.error('❌ [LOCALIZAÇÕES] Erro ao buscar localizações:', localizacoesError);
       } else {
-        console.log('Localizações carregadas:', localizacoesData?.length || 0);
+        console.log('✅ [LOCALIZAÇÕES] Localizações carregadas:', localizacoesData?.length || 0);
         setLocalizacoes(localizacoesData || []);
       }
 
     } catch (error: any) {
-      console.error('Erro ao carregar dados do animal:', error);
+      console.error('💥 [ANIMAL] Erro geral ao carregar dados:', error);
+      setError(error.message);
       toast({
-        title: "Erro",
+        title: "❌ Erro",
         description: error.message || "Não foi possível carregar os dados do animal",
         variant: "destructive",
       });
-      // Não redirecionar automaticamente, deixar o usuário decidir
     } finally {
       setLoading(false);
     }
@@ -156,25 +178,27 @@ const AnimalDetail = () => {
 
   const fetchTiposIntervencoes = async () => {
     try {
+      console.log('🏥 [TIPOS] Buscando tipos de intervenções...');
       const { data, error } = await supabase
         .from('tipos_intervencoes')
         .select('*')
         .order('nome');
 
       if (error) {
-        console.error('Erro ao carregar tipos de intervenções:', error);
-        return;
+        console.error('❌ [TIPOS] Erro ao buscar tipos:', error);
+        throw error;
       }
-      
-      console.log('Tipos de intervenções carregados:', data?.length || 0);
+
+      console.log('✅ [TIPOS] Tipos carregados:', data?.length || 0);
       setTiposIntervencoes(data || []);
     } catch (error: any) {
-      console.error('Erro ao carregar tipos de intervenções:', error);
+      console.error('💥 [TIPOS] Erro geral:', error);
     }
   };
 
   const fetchVoluntarios = async () => {
     try {
+      console.log('👥 [VOLUNTÁRIOS] Buscando voluntários...');
       const { data, error } = await supabase
         .from('voluntarios')
         .select('*')
@@ -182,18 +206,100 @@ const AnimalDetail = () => {
         .order('nome');
 
       if (error) {
-        console.error('Erro ao carregar voluntários:', error);
-        return;
+        console.error('❌ [VOLUNTÁRIOS] Erro ao buscar voluntários:', error);
+        throw error;
       }
-      
-      console.log('Voluntários carregados:', data?.length || 0);
+
+      console.log('✅ [VOLUNTÁRIOS] Voluntários carregados:', data?.length || 0);
       setVoluntarios(data || []);
     } catch (error: any) {
-      console.error('Erro ao carregar voluntários:', error);
+      console.error('💥 [VOLUNTÁRIOS] Erro geral:', error);
     }
   };
 
-  // Funções para Intervenções
+  // CORRIGIDO: Função para submeter localização
+  const handleLocalizacaoSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    console.log('📍 [LOCALIZAÇÃO] Iniciando submissão...');
+    console.log('📝 [LOCALIZAÇÃO] Dados do formulário:', localizacaoForm);
+    
+    if (!localizacaoForm.localizacao || !localizacaoForm.endereco || !localizacaoForm.data_entrada) {
+      toast({
+        title: "❌ Campos obrigatórios",
+        description: "Localização, endereço e data de entrada são obrigatórios",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const dataToSubmit = {
+        animal_id: id,
+        localizacao: localizacaoForm.localizacao,
+        endereco: localizacaoForm.endereco,
+        data_entrada: localizacaoForm.data_entrada,
+        data_saida: localizacaoForm.data_saida || null,
+        observacoes: localizacaoForm.observacoes || null,
+        ativo: localizacaoForm.ativo !== undefined ? localizacaoForm.ativo : true
+      };
+
+      console.log('📤 [LOCALIZAÇÃO] Dados para submeter:', dataToSubmit);
+
+      if (editingLocalizacao) {
+        console.log('✏️ [LOCALIZAÇÃO] Atualizando localização:', editingLocalizacao.id);
+        const { error } = await supabase
+          .from('localizacoes')
+          .update(dataToSubmit)
+          .eq('id', editingLocalizacao.id);
+
+        if (error) {
+          console.error('❌ [LOCALIZAÇÃO] Erro na atualização:', error);
+          throw error;
+        }
+
+        console.log('✅ [LOCALIZAÇÃO] Localização atualizada com sucesso');
+        toast({
+          title: "✅ Localização atualizada",
+          description: "A localização foi atualizada com sucesso",
+        });
+      } else {
+        console.log('➕ [LOCALIZAÇÃO] Inserindo nova localização');
+        const { data, error } = await supabase
+          .from('localizacoes')
+          .insert([dataToSubmit])
+          .select('*');
+
+        if (error) {
+          console.error('❌ [LOCALIZAÇÃO] Erro na inserção:', error);
+          throw error;
+        }
+
+        console.log('✅ [LOCALIZAÇÃO] Nova localização inserida:', data);
+        toast({
+          title: "✅ Localização adicionada",
+          description: "A nova localização foi registada com sucesso",
+        });
+      }
+
+      setLocalizacaoDialogOpen(false);
+      setEditingLocalizacao(null);
+      resetLocalizacaoForm();
+      
+      console.log('🔄 [LOCALIZAÇÃO] Recarregando dados do animal...');
+      await fetchAnimalData();
+
+    } catch (error: any) {
+      console.error('💥 [LOCALIZAÇÃO] Erro ao processar localização:', error);
+      toast({
+        title: "❌ Erro ao processar localização",
+        description: error.message || "Não foi possível processar a localização",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Outras funções de submissão (mantidas como estavam)
   const handleIntervencaoSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -206,22 +312,13 @@ const AnimalDetail = () => {
       return;
     }
 
-    // CORREÇÃO: Validar custo se fornecido
-    if (intervencaoForm.custo && intervencaoForm.custo.trim() !== '') {
+    // Validar custo se fornecido
+    if (intervencaoForm.custo) {
       const custoNumerico = parseFloat(intervencaoForm.custo);
-      if (isNaN(custoNumerico) || custoNumerico < 0) {
+      if (isNaN(custoNumerico) || custoNumerico < 0 || custoNumerico > 99999.99) {
         toast({
           title: "Custo inválido",
-          description: "O custo deve ser um número positivo ou zero",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      if (custoNumerico > 99999.99) {
-        toast({
-          title: "Custo muito alto",
-          description: "O custo não pode exceder €99.999,99",
+          description: "O custo deve ser um número entre 0 e €99.999,99",
           variant: "destructive",
         });
         return;
@@ -238,9 +335,7 @@ const AnimalDetail = () => {
         custo: intervencaoForm.custo ? parseFloat(intervencaoForm.custo) : null,
         observacoes: intervencaoForm.observacoes || null,
         proxima_data: intervencaoForm.proxima_data || null,
-        voluntario_id: intervencaoForm.voluntario_id || null,
-        urgente: false,
-        concluida: true
+        voluntario_id: intervencaoForm.voluntario_id || null
       };
 
       if (editingIntervencao) {
@@ -274,41 +369,15 @@ const AnimalDetail = () => {
       fetchAnimalData();
 
     } catch (error: any) {
-      console.error('Erro ao salvar intervenção:', error);
+      console.error('Erro ao processar intervenção:', error);
       toast({
-        title: "Erro",
-        description: error.message || "Não foi possível salvar a intervenção",
+        title: "Erro ao processar intervenção",
+        description: error.message || "Não foi possível processar a intervenção",
         variant: "destructive",
       });
     }
   };
 
-  const handleDeleteIntervencao = async (intervencaoId: string) => {
-    try {
-      const { error } = await supabase
-        .from('intervencoes')
-        .delete()
-        .eq('id', intervencaoId);
-
-      if (error) throw error;
-
-      toast({
-        title: "Intervenção eliminada",
-        description: "A intervenção foi eliminada com sucesso",
-      });
-
-      fetchAnimalData();
-    } catch (error: any) {
-      console.error('Erro ao eliminar intervenção:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível eliminar a intervenção",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Funções para Eventos
   const handleEventoSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -361,10 +430,36 @@ const AnimalDetail = () => {
       fetchAnimalData();
 
     } catch (error: any) {
-      console.error('Erro ao salvar evento:', error);
+      console.error('Erro ao processar evento:', error);
+      toast({
+        title: "Erro ao processar evento",
+        description: error.message || "Não foi possível processar o evento",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Funções de eliminação
+  const handleDeleteIntervencao = async (intervencaoId: string) => {
+    try {
+      const { error } = await supabase
+        .from('intervencoes')
+        .delete()
+        .eq('id', intervencaoId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Intervenção eliminada",
+        description: "A intervenção foi eliminada com sucesso",
+      });
+
+      fetchAnimalData();
+    } catch (error: any) {
+      console.error('Erro ao eliminar intervenção:', error);
       toast({
         title: "Erro",
-        description: error.message || "Não foi possível salvar o evento",
+        description: "Não foi possível eliminar a intervenção",
         variant: "destructive",
       });
     }
@@ -395,96 +490,38 @@ const AnimalDetail = () => {
     }
   };
 
-  // Funções para Localizações
-  const handleLocalizacaoSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!localizacaoForm.localizacao || !localizacaoForm.endereco || !localizacaoForm.data_entrada) {
-      toast({
-        title: "Campos obrigatórios",
-        description: "Localização, endereço e data de entrada são obrigatórios",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const dataToSubmit = {
-        animal_id: id,
-        localizacao: localizacaoForm.localizacao,
-        endereco: localizacaoForm.endereco,
-        data_entrada: localizacaoForm.data_entrada,
-        data_saida: localizacaoForm.data_saida || null,
-        observacoes: localizacaoForm.observacoes || null,
-        ativo: localizacaoForm.ativo !== undefined ? localizacaoForm.ativo : true
-      };
-
-      if (editingLocalizacao) {
-        const { error } = await supabase
-          .from('localizacoes')
-          .update(dataToSubmit)
-          .eq('id', editingLocalizacao.id);
-
-        if (error) throw error;
-
-        toast({
-          title: "Localização atualizada",
-          description: "A localização foi atualizada com sucesso",
-        });
-      } else {
-        const { error } = await supabase
-          .from('localizacoes')
-          .insert([dataToSubmit]);
-
-        if (error) throw error;
-
-        toast({
-          title: "Localização adicionada",
-          description: "A nova localização foi registada com sucesso",
-        });
-      }
-
-      setLocalizacaoDialogOpen(false);
-      setEditingLocalizacao(null);
-      resetLocalizacaoForm();
-      fetchAnimalData();
-
-    } catch (error: any) {
-      console.error('Erro ao salvar localização:', error);
-      toast({
-        title: "Erro",
-        description: error.message || "Não foi possível salvar a localização",
-        variant: "destructive",
-      });
-    }
-  };
-
   const handleDeleteLocalizacao = async (localizacaoId: string) => {
     try {
+      console.log('🗑️ [LOCALIZAÇÃO] Eliminando localização:', localizacaoId);
+      
       const { error } = await supabase
         .from('localizacoes')
         .delete()
         .eq('id', localizacaoId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ [LOCALIZAÇÃO] Erro ao eliminar:', error);
+        throw error;
+      }
 
+      console.log('✅ [LOCALIZAÇÃO] Localização eliminada com sucesso');
       toast({
-        title: "Localização eliminada",
+        title: "✅ Localização eliminada",
         description: "A localização foi eliminada com sucesso",
       });
 
-      fetchAnimalData();
+      await fetchAnimalData();
     } catch (error: any) {
-      console.error('Erro ao eliminar localização:', error);
+      console.error('💥 [LOCALIZAÇÃO] Erro ao eliminar localização:', error);
       toast({
-        title: "Erro",
+        title: "❌ Erro",
         description: "Não foi possível eliminar a localização",
         variant: "destructive",
       });
     }
   };
 
-  // Funções auxiliares
+  // CORRIGIDO: Funções auxiliares
   const resetIntervencaoForm = () => {
     setIntervencaoForm({
       tipo_intervencao_id: "",
@@ -544,6 +581,7 @@ const AnimalDetail = () => {
     setEventoDialogOpen(true);
   };
 
+  // CORRIGIDO: Função de edição de localização
   const openEditLocalizacao = (localizacao: Localizacao) => {
     setEditingLocalizacao(localizacao);
     setLocalizacaoForm({
@@ -582,37 +620,42 @@ const AnimalDetail = () => {
 
   const getTipoIntervencaoNome = (tipoId: string) => {
     const tipo = tiposIntervencoes.find(t => t.id === tipoId);
-    return tipo?.nome || "Tipo não especificado";
+    return tipo?.nome || 'Tipo não encontrado';
   };
 
   const getVoluntarioNome = (voluntarioId: string) => {
     const voluntario = voluntarios.find(v => v.id === voluntarioId);
-    return voluntario?.nome || "Voluntário não especificado";
+    return voluntario?.nome || 'Voluntário não encontrado';
   };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <Loader2 className="h-16 w-16 animate-spin mx-auto mb-4 text-blue-600" />
           <p className="text-lg text-gray-600">A carregar dados do animal...</p>
         </div>
       </div>
     );
   }
 
-  if (!animal) {
+  if (error || !animal) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Animal não encontrado</h2>
-          <p className="text-gray-600 mb-4">O animal solicitado não existe ou não foi possível carregar os dados.</p>
+        <div className="text-center max-w-md">
+          <AlertTriangle className="h-16 w-16 mx-auto mb-4 text-red-500" />
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Erro ao carregar animal</h2>
+          <p className="text-gray-600 mb-4">{error || "Animal não encontrado"}</p>
           <div className="space-x-4">
-            <Button asChild>
-              <Link to="/animais">Voltar à Lista</Link>
-            </Button>
-            <Button variant="outline" onClick={() => window.location.reload()}>
+            <Button onClick={fetchAnimalData}>
+              <Loader2 className="h-4 w-4 mr-2" />
               Tentar Novamente
+            </Button>
+            <Button variant="outline" asChild>
+              <Link to="/animais">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Voltar à Lista
+              </Link>
             </Button>
           </div>
         </div>
@@ -624,7 +667,7 @@ const AnimalDetail = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
               <Button variant="ghost" size="sm" asChild>
@@ -634,142 +677,94 @@ const AnimalDetail = () => {
                 </Link>
               </Button>
               <div className="flex items-center space-x-3">
-                <img 
-                  src="/images/BackgroundEraser_20250411_205630024.png" 
-                  alt="Valentão ao Resgate" 
-                  className="h-8 w-8 object-contain"
-                />
+                <Heart className="h-6 w-6 text-red-500" />
                 <div>
                   <h1 className="text-xl font-bold text-gray-900">{animal.nome}</h1>
-                  <p className="text-sm text-gray-500">{animal.numero_processo}</p>
+                  <p className="text-sm text-gray-500">
+                    {animal.especie} • {animal.raca} • {animal.sexo}
+                  </p>
                 </div>
               </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <Button variant="outline" size="sm" asChild>
-                <Link to={`/animal/${id}/editar`}>
-                  <Edit className="h-4 w-4 mr-2" />
-                  Editar
-                </Link>
-              </Button>
-              <Button variant="ghost" size="sm" asChild>
-                <Link to="/configuracoes">
-                  <Settings className="h-4 w-4" />
-                </Link>
-              </Button>
-            </div>
+            <Badge className={getEstadoBadgeColor(animal.estado)}>
+              {animal.estado}
+            </Badge>
           </div>
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Informações Básicas */}
-        <Card className="mb-6">
+        <Card className="mb-8">
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-2xl">{animal.nome}</CardTitle>
-                <CardDescription>
-                  {animal.especie} • {animal.raca || "Raça não especificada"} • {animal.sexo}
-                </CardDescription>
-              </div>
-              <Badge className={getEstadoBadgeColor(animal.estado || "")}>
-                {animal.estado}
-              </Badge>
-            </div>
+            <CardTitle className="flex items-center space-x-2">
+              <Heart className="h-5 w-5 text-red-500" />
+              <span>Informações do Animal</span>
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="space-y-3">
-                <div className="flex items-center space-x-2">
-                  <Calendar className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm text-gray-600">Idade: {animal.idade_estimada ? `${animal.idade_estimada} meses` : "N/A"}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Activity className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm text-gray-600">Peso: {animal.peso ? `${animal.peso} kg` : "N/A"}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <FileText className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm text-gray-600">Cor: {animal.cor || "N/A"}</span>
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div>
+                <Label className="text-sm font-medium text-gray-600">Nome</Label>
+                <p className="text-lg font-semibold">{animal.nome}</p>
               </div>
-              
-              <div className="space-y-3">
-                <div className="flex items-center space-x-2">
-                  <MapPin className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm text-gray-600">Encontrado: {animal.local_encontrado || "N/A"}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Calendar className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm text-gray-600">Entrada: {formatDate(animal.data_entrada)}</span>
-                </div>
-                {animal.transponder && (
-                  <div className="flex items-center space-x-2">
-                    <FileText className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm text-gray-600">Chip: {animal.transponder}</span>
-                  </div>
-                )}
+              <div>
+                <Label className="text-sm font-medium text-gray-600">Espécie</Label>
+                <p className="text-lg">{animal.especie}</p>
               </div>
-
-              {animal.estado === 'Adotado' && (
-                <div className="space-y-3 p-4 bg-green-50 rounded-lg">
-                  <h4 className="font-medium text-green-800 flex items-center">
-                    <Heart className="h-4 w-4 mr-2" />
-                    Informações de Adoção
-                  </h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center space-x-2">
-                      <Calendar className="h-3 w-3 text-green-600" />
-                      <span>Data: {formatDate(animal.data_adocao)}</span>
-                    </div>
-                    {animal.adotante_nome && (
-                      <div className="flex items-center space-x-2">
-                        <User className="h-3 w-3 text-green-600" />
-                        <span>Adotante: {animal.adotante_nome}</span>
-                      </div>
-                    )}
-                    {animal.adotante_contacto && (
-                      <div className="flex items-center space-x-2">
-                        <Phone className="h-3 w-3 text-green-600" />
-                        <span>Contacto: {animal.adotante_contacto}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
+              <div>
+                <Label className="text-sm font-medium text-gray-600">Raça</Label>
+                <p className="text-lg">{animal.raca}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-gray-600">Sexo</Label>
+                <p className="text-lg">{animal.sexo}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-gray-600">Idade</Label>
+                <p className="text-lg">{animal.idade} anos</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-gray-600">Peso</Label>
+                <p className="text-lg">{animal.peso} kg</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-gray-600">Cor</Label>
+                <p className="text-lg">{animal.cor}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-gray-600">Data de Entrada</Label>
+                <p className="text-lg">{formatDate(animal.data_entrada)}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-gray-600">Número de Processo</Label>
+                <p className="text-lg font-mono">{animal.numero_processo}</p>
+              </div>
             </div>
-
-            {animal.caracteristicas_fisicas && (
-              <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                <h4 className="font-medium text-gray-800 mb-2">Características Físicas</h4>
-                <p className="text-sm text-gray-600">{animal.caracteristicas_fisicas}</p>
-              </div>
-            )}
-
+            
             {animal.observacoes && (
-              <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                <h4 className="font-medium text-blue-800 mb-2">Observações</h4>
-                <p className="text-sm text-blue-700">{animal.observacoes}</p>
+              <div className="mt-6">
+                <Label className="text-sm font-medium text-gray-600">Observações</Label>
+                <p className="text-gray-900 bg-gray-50 p-3 rounded-lg mt-1">{animal.observacoes}</p>
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Tabs com Informações Detalhadas */}
+        {/* Tabs para diferentes seções */}
         <Tabs defaultValue="intervencoes" className="space-y-6">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="intervencoes" className="flex items-center space-x-2">
-              <Activity className="h-4 w-4" />
-              <span>Intervenções ({intervencoes.length})</span>
+              <Stethoscope className="h-4 w-4" />
+              <span>Intervenções</span>
             </TabsTrigger>
             <TabsTrigger value="eventos" className="flex items-center space-x-2">
               <Calendar className="h-4 w-4" />
-              <span>Eventos ({eventos.length})</span>
+              <span>Eventos</span>
             </TabsTrigger>
             <TabsTrigger value="localizacoes" className="flex items-center space-x-2">
               <MapPin className="h-4 w-4" />
-              <span>Localizações ({localizacoes.length})</span>
+              <span>Localizações</span>
             </TabsTrigger>
           </TabsList>
 
@@ -781,7 +776,7 @@ const AnimalDetail = () => {
                   <div>
                     <CardTitle>Intervenções Médicas</CardTitle>
                     <CardDescription>
-                      Histórico de procedimentos médicos e veterinários
+                      Histórico de procedimentos veterinários e cuidados médicos
                     </CardDescription>
                   </div>
                   <Dialog open={intervencaoDialogOpen} onOpenChange={setIntervencaoDialogOpen}>
@@ -794,7 +789,7 @@ const AnimalDetail = () => {
                         Nova Intervenção
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-2xl">
+                    <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
                       <DialogHeader>
                         <DialogTitle>
                           {editingIntervencao ? "Editar Intervenção" : "Nova Intervenção"}
@@ -902,21 +897,30 @@ const AnimalDetail = () => {
                         </div>
 
                         <div>
-                          <Label htmlFor="observacoes">Observações</Label>
+                          <Label htmlFor="observacoes_intervencao">Observações</Label>
                           <Textarea
-                            id="observacoes"
+                            id="observacoes_intervencao"
                             value={intervencaoForm.observacoes}
                             onChange={(e) => setIntervencaoForm(prev => ({...prev, observacoes: e.target.value}))}
-                            placeholder="Detalhes da intervenção, medicação, recomendações..."
+                            placeholder="Observações sobre a intervenção"
                             rows={3}
                           />
                         </div>
 
-                        <div className="flex justify-end space-x-2">
-                          <Button type="button" variant="outline" onClick={() => setIntervencaoDialogOpen(false)}>
+                        <div className="flex justify-end space-x-2 pt-4">
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            onClick={() => {
+                              setIntervencaoDialogOpen(false);
+                              setEditingIntervencao(null);
+                              resetIntervencaoForm();
+                            }}
+                          >
                             Cancelar
                           </Button>
                           <Button type="submit">
+                            <CheckCircle className="h-4 w-4 mr-2" />
                             {editingIntervencao ? "Atualizar" : "Adicionar"} Intervenção
                           </Button>
                         </div>
@@ -928,7 +932,7 @@ const AnimalDetail = () => {
               <CardContent>
                 {intervencoes.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
-                    <Activity className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <Stethoscope className="h-12 w-12 mx-auto mb-4 opacity-50" />
                     <p>Nenhuma intervenção registada</p>
                     <p className="text-sm">Clique em "Nova Intervenção" para adicionar</p>
                   </div>
@@ -1024,7 +1028,7 @@ const AnimalDetail = () => {
                   <div>
                     <CardTitle>Eventos</CardTitle>
                     <CardDescription>
-                      Histórico de eventos importantes na vida do animal
+                      Registro de eventos importantes na vida do animal
                     </CardDescription>
                   </div>
                   <Dialog open={eventoDialogOpen} onOpenChange={setEventoDialogOpen}>
@@ -1059,11 +1063,10 @@ const AnimalDetail = () => {
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="Resgate">Resgate</SelectItem>
-                                <SelectItem value="Chegada">Chegada</SelectItem>
-                                <SelectItem value="Transferência">Transferência</SelectItem>
                                 <SelectItem value="Adoção">Adoção</SelectItem>
+                                <SelectItem value="Transferência">Transferência</SelectItem>
                                 <SelectItem value="Fuga">Fuga</SelectItem>
-                                <SelectItem value="Recuperação">Recuperação</SelectItem>
+                                <SelectItem value="Retorno">Retorno</SelectItem>
                                 <SelectItem value="Óbito">Óbito</SelectItem>
                                 <SelectItem value="Outro">Outro</SelectItem>
                               </SelectContent>
@@ -1082,12 +1085,12 @@ const AnimalDetail = () => {
                         </div>
 
                         <div>
-                          <Label htmlFor="descricao">Descrição *</Label>
+                          <Label htmlFor="descricao_evento">Descrição *</Label>
                           <Input
-                            id="descricao"
+                            id="descricao_evento"
                             value={eventoForm.descricao}
                             onChange={(e) => setEventoForm(prev => ({...prev, descricao: e.target.value}))}
-                            placeholder="Breve descrição do evento"
+                            placeholder="Descrição breve do evento"
                             required
                           />
                         </div>
@@ -1098,16 +1101,25 @@ const AnimalDetail = () => {
                             id="observacoes_evento"
                             value={eventoForm.observacoes}
                             onChange={(e) => setEventoForm(prev => ({...prev, observacoes: e.target.value}))}
-                            placeholder="Detalhes adicionais sobre o evento..."
+                            placeholder="Observações detalhadas sobre o evento"
                             rows={3}
                           />
                         </div>
 
-                        <div className="flex justify-end space-x-2">
-                          <Button type="button" variant="outline" onClick={() => setEventoDialogOpen(false)}>
+                        <div className="flex justify-end space-x-2 pt-4">
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            onClick={() => {
+                              setEventoDialogOpen(false);
+                              setEditingEvento(null);
+                              resetEventoForm();
+                            }}
+                          >
                             Cancelar
                           </Button>
                           <Button type="submit">
+                            <CheckCircle className="h-4 w-4 mr-2" />
                             {editingEvento ? "Atualizar" : "Adicionar"} Evento
                           </Button>
                         </div>
@@ -1138,9 +1150,9 @@ const AnimalDetail = () => {
                               </span>
                             </div>
                             
-                            <h4 className="font-medium text-gray-900 mb-1">
-                              {evento.descricao}
-                            </h4>
+                            <div className="mb-2">
+                              <p className="font-medium text-gray-900">{evento.descricao}</p>
+                            </div>
 
                             {evento.observacoes && (
                               <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded">
@@ -1191,7 +1203,7 @@ const AnimalDetail = () => {
             </Card>
           </TabsContent>
 
-          {/* Tab Localizações */}
+          {/* CORRIGIDO: Tab Localizações */}
           <TabsContent value="localizacoes">
             <Card>
               <CardHeader>
@@ -1281,16 +1293,25 @@ const AnimalDetail = () => {
                             id="observacoes_localizacao"
                             value={localizacaoForm.observacoes}
                             onChange={(e) => setLocalizacaoForm(prev => ({...prev, observacoes: e.target.value}))}
-                            placeholder="Informações adicionais sobre a localização..."
+                            placeholder="Observações sobre a localização"
                             rows={3}
                           />
                         </div>
 
-                        <div className="flex justify-end space-x-2">
-                          <Button type="button" variant="outline" onClick={() => setLocalizacaoDialogOpen(false)}>
+                        <div className="flex justify-end space-x-2 pt-4">
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            onClick={() => {
+                              setLocalizacaoDialogOpen(false);
+                              setEditingLocalizacao(null);
+                              resetLocalizacaoForm();
+                            }}
+                          >
                             Cancelar
                           </Button>
                           <Button type="submit">
+                            <CheckCircle className="h-4 w-4 mr-2" />
                             {editingLocalizacao ? "Atualizar" : "Adicionar"} Localização
                           </Button>
                         </div>

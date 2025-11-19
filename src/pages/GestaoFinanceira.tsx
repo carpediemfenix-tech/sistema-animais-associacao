@@ -115,6 +115,31 @@ const GestaoFinanceira = () => {
       observacoes
     });
     
+    // Log do estado atual da tabela
+    console.log('🔍 [FINANCEIRO] Verificando conexão com Supabase...');
+    
+    try {
+      const { data: testData, error: testError } = await supabase
+        .from('movimentos_financeiros')
+        .select('count')
+        .limit(1);
+      
+      if (testError) {
+        console.error('❌ [FINANCEIRO] Erro de conexão:', testError);
+        throw new Error(`Erro de conexão: ${testError.message}`);
+      }
+      
+      console.log('✅ [FINANCEIRO] Conexão OK');
+    } catch (connectionError: any) {
+      console.error('💥 [FINANCEIRO] Falha na conexão:', connectionError);
+      toast({
+        title: "❌ Erro de Conexão",
+        description: "Não foi possível conectar à base de dados",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     // Validação básica
     if (!tipoMovimento) {
       toast({
