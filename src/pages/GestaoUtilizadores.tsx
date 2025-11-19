@@ -94,9 +94,8 @@ const GestaoUtilizadores = () => {
       setLoading(true);
       console.log('👥 [USER_MGMT] Carregando utilizadores...');
 
-      const { data, error } = await supabase.functions.invoke('user_management_fixed_2025_11_19_05_00', {
-        method: 'GET',
-        body: { current_user_id: user?.id }
+      const { data, error } = await supabase.functions.invoke('user_management_simple_2025_11_19_05_00', {
+        method: 'GET'
       });
 
       if (error) {
@@ -218,7 +217,7 @@ const GestaoUtilizadores = () => {
         // Atualizar utilizador
         console.log('✏️ [USER_MGMT] Atualizando utilizador:', editingUser.username);
         
-        const { data, error } = await supabase.functions.invoke('user_management_fixed_2025_11_19_05_00', {
+        const { data, error } = await supabase.functions.invoke('user_management_simple_2025_11_19_05_00', {
           method: 'PUT',
           body: {
             id: editingUser.id,
@@ -226,8 +225,7 @@ const GestaoUtilizadores = () => {
             email: formData.email,
             nome_completo: formData.nome_completo,
             perfil_acesso: formData.perfil_acesso,
-            ativo: formData.ativo,
-            current_user_id: user?.id
+            ativo: formData.ativo
           }
         });
 
@@ -243,12 +241,9 @@ const GestaoUtilizadores = () => {
         // Criar novo utilizador
         console.log('➕ [USER_MGMT] Criando utilizador:', formData.username);
         
-        const { data, error } = await supabase.functions.invoke('user_management_fixed_2025_11_19_05_00', {
+        const { data, error } = await supabase.functions.invoke('user_management_simple_2025_11_19_05_00', {
           method: 'POST',
-          body: {
-            ...formData,
-            current_user_id: user?.id
-          }
+          body: formData
         });
 
         if (error || !data.success) {
@@ -284,12 +279,11 @@ const GestaoUtilizadores = () => {
       setSubmitting(true);
       console.log('🔑 [USER_MGMT] Resetando password para:', selectedUserForReset.username);
 
-      const { data, error } = await supabase.functions.invoke('user_management_fixed_2025_11_19_05_00', {
+      const { data, error } = await supabase.functions.invoke('user_management_simple_2025_11_19_05_00', {
         method: 'PATCH',
         body: {
           user_id: selectedUserForReset.id,
-          new_password: newPassword,
-          current_user_id: user?.id
+          new_password: newPassword
         }
       });
 
