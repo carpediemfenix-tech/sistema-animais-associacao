@@ -3,7 +3,10 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HashRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "./contexts/AuthContext";
+import ProtectedRoute from "./components/ProtectedRoute";
 import Index from "./pages/Index";
+import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import AnimaisList from "./pages/AnimaisList";
 import AnimalDetail from "./pages/AnimalDetail";
@@ -16,33 +19,42 @@ import GestaoFinanceira from "./pages/GestaoFinanceira";
 import DashboardAvancado from "./pages/DashboardAvancado";
 import Relatorios from "./pages/Relatorios";
 import Configuracoes from "./pages/Configuracoes";
+import GestaoUtilizadores from "./pages/GestaoUtilizadores";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <HashRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/animais" element={<AnimaisList />} />
-          <Route path="/animal/:id" element={<AnimalDetail />} />
-          <Route path="/animal/:id/editar" element={<EditarAnimal />} />
-          <Route path="/novo-animal" element={<NovoAnimal />} />
-          <Route path="/intervencoes" element={<IntervencoesPage />} />
-          <Route path="/eventos" element={<EventosPage />} />
-          <Route path="/voluntarios" element={<GestaoVoluntarios />} />
-          <Route path="/financeiro" element={<GestaoFinanceira />} />
-          <Route path="/dashboard" element={<DashboardAvancado />} />
-          <Route path="/relatorios" element={<Relatorios />} />
-          <Route path="/configuracoes" element={<Configuracoes />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </HashRouter>
-    </TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <HashRouter>
+          <Routes>
+            {/* Rota pública de login */}
+            <Route path="/login" element={<Login />} />
+            
+            {/* Rotas protegidas */}
+            <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/animais" element={<ProtectedRoute><AnimaisList /></ProtectedRoute>} />
+            <Route path="/animal/:id" element={<ProtectedRoute><AnimalDetail /></ProtectedRoute>} />
+            <Route path="/animal/:id/editar" element={<ProtectedRoute><EditarAnimal /></ProtectedRoute>} />
+            <Route path="/novo-animal" element={<ProtectedRoute><NovoAnimal /></ProtectedRoute>} />
+            <Route path="/intervencoes" element={<ProtectedRoute><IntervencoesPage /></ProtectedRoute>} />
+            <Route path="/eventos" element={<ProtectedRoute><EventosPage /></ProtectedRoute>} />
+            <Route path="/voluntarios" element={<ProtectedRoute><GestaoVoluntarios /></ProtectedRoute>} />
+            <Route path="/financeiro" element={<ProtectedRoute><GestaoFinanceira /></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedRoute><DashboardAvancado /></ProtectedRoute>} />
+            <Route path="/relatorios" element={<ProtectedRoute><Relatorios /></ProtectedRoute>} />
+            <Route path="/configuracoes" element={<ProtectedRoute><Configuracoes /></ProtectedRoute>} />
+            <Route path="/utilizadores" element={<ProtectedRoute><GestaoUtilizadores /></ProtectedRoute>} />
+            
+            {/* Rota 404 */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </HashRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 
