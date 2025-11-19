@@ -36,7 +36,7 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
   const [perfilUsuario] = useState<PerfilUsuario>('edicao');
   const { toast } = useToast();
-  const { logout } = useAuth();
+  const { logout, hasPermission } = useAuth();
 
   useEffect(() => {
     fetchDashboardStats();
@@ -341,6 +341,20 @@ const Index = () => {
                       <span className="text-sm font-medium text-indigo-600">Relatórios</span>
                     </Link>
                   </Button>
+                  
+                  {/* Gestão de Utilizadores - Apenas para Administradores */}
+                  {hasPermission('admin') && (
+                    <Button 
+                      asChild 
+                      variant="outline" 
+                      className="h-20 flex-col space-y-2 hover-lift border-emerald-200 hover:bg-emerald-50"
+                    >
+                      <Link to="/utilizadores">
+                        <UserPlus className="h-6 w-6 text-emerald-600" />
+                        <span className="text-sm font-medium text-emerald-600">Utilizadores</span>
+                      </Link>
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -420,6 +434,14 @@ const Index = () => {
                       Voluntários
                     </Link>
                   </Button>
+                  {hasPermission('admin') && (
+                    <Button asChild variant="outline" size="sm" className="w-full border-emerald-200 hover:bg-emerald-50">
+                      <Link to="/utilizadores">
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        Utilizadores
+                      </Link>
+                    </Button>
+                  )}
                 </div>
               </div>
 
