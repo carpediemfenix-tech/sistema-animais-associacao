@@ -23,7 +23,8 @@ import {
   EyeOff,
   UserCheck,
   UserX,
-  ArrowLeft
+  ArrowLeft,
+  LogOut
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -94,9 +95,14 @@ const GestaoUtilizadores = () => {
       setLoading(true);
       console.log('👥 [USER_MGMT] Carregando utilizadores...');
 
-      const { data, error } = await supabase.functions.invoke('user_create_focused_2025_11_19_05_00', {
-        method: 'GET'
-      });
+      // SOLUÇÃO SIMPLES: Buscar diretamente da base de dados
+      const { data: users, error } = await supabase
+        .from('users')
+        .select('id, username, email, nome_completo, perfil_acesso, ativo, ultimo_login, tentativas_login, created_at')
+        .order('created_at', { ascending: false });
+      
+      // Simular resposta da Edge Function para compatibilidade
+      const data = { success: true, users };
 
       if (error) {
         console.error('❌ [USER_MGMT] Erro na Edge Function:', error);
@@ -242,12 +248,63 @@ const GestaoUtilizadores = () => {
         console.log('➕ [USER_MGMT] Criando utilizador:', formData.username);
         console.log('📝 [USER_MGMT] Dados do formulário:', formData);
         
-        const { data, error } = await supabase.functions.invoke('user_create_focused_2025_11_19_05_00', {
-          method: 'POST',
-          body: formData
-        });
+        // SOLUÇÃO SIMPLES: Inserção direta na base de dados
+        console.log('💾 [USER_MGMT] Inserindo diretamente na base de dados...');
         
-        console.log('📊 [USER_MGMT] Resposta da Edge Function:', { data, error });
+        // Verificar duplicados primeiro
+        const { data: existingUsers, error: checkError } = await supabase
+          .from('users')
+          .select('id, username, email')
+          .or(`username.eq.${formData.username},email.eq.${formData.email}`);
+        
+        if (checkError) {
+          console.error('❌ [USER_MGMT] Erro ao verificar duplicados:', checkError);
+          throw new Error('Erro ao verificar duplicados');
+        }
+        
+        if (existingUsers && existingUsers.length > 0) {
+          console.log('❌ [USER_MGMT] Duplicado encontrado:', existingUsers);
+          const duplicateField = existingUsers[0].username === formData.username ? 'Username' : 'Email';
+          throw new Error(`${duplicateField} já existe`);
+        }
+        
+        console.log('✅ [USER_MGMT] Nenhum duplicado encontrado');
+        
+        // Gerar hash simples da password (temporário para teste)
+        const passwordHash = `simple_hash_${formData.password}_${Date.now()}`;
+        console.log('🔐 [USER_MGMT] Hash gerado:', passwordHash.substring(0, 20) + '...');
+        
+        // Inserir utilizador diretamente
+        const { data: newUser, error: insertError } = await supabase
+          .from('users')
+          .insert({
+            username: formData.username,
+            email: formData.email,
+            password_hash: passwordHash,
+            nome_completo: formData.nome_completo,
+            perfil_acesso: formData.perfil_acesso,
+            ativo: formData.ativo ?? true,
+            tentativas_login: 0,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .select('id, username, email, nome_completo, perfil_acesso, ativo')
+          .single();
+        
+        console.log('📊 [USER_MGMT] Resultado da inserção:', { newUser, insertError });
+        
+        if (insertError) {
+          console.error('❌ [USER_MGMT] Erro ao inserir:', insertError);
+          throw new Error(`Erro ao criar utilizador: ${insertError.message}`);
+        }
+        
+        console.log('✅ [USER_MGMT] Utilizador criado com sucesso:', newUser.id);
+        
+        // Simular resposta da Edge Function para compatibilidade
+        const data = { success: true, user: newUser };
+        const error = null;
+        
+        console.log('📊 [USER_MGMT] Resposta simulada:', { data, error });
 
         if (error || !data.success) {
           throw new Error(data?.error || 'Erro ao criar utilizador');
@@ -370,14 +427,25 @@ const GestaoUtilizadores = () => {
               </div>
             </div>
             
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger asChild>
-                <Button onClick={resetForm}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Novo Utilizador
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
+            <div className="flex items-center space-x-4">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={logout}
+                className="hover:bg-red-100 text-red-600 hover:text-red-700"
+                title="Terminar Sessão"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+              
+              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button onClick={resetForm}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Novo Utilizador
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
                 <DialogHeader>
                   <DialogTitle>
                     {editingUser ? 'Editar Utilizador' : 'Novo Utilizador'}
@@ -509,7 +577,8 @@ const GestaoUtilizadores = () => {
                   </div>
                 </form>
               </DialogContent>
-            </Dialog>
+              </Dialog>
+            </div>
           </div>
         </div>
       </div>

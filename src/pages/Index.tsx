@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -21,7 +22,8 @@ import {
   MapPin,
   UserPlus,
   BarChart3,
-  Sparkles
+  Sparkles,
+  LogOut
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { DashboardStats, PerfilUsuario } from "@/types/animal";
@@ -34,6 +36,7 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
   const [perfilUsuario] = useState<PerfilUsuario>('edicao');
   const { toast } = useToast();
+  const { logout } = useAuth();
 
   useEffect(() => {
     fetchDashboardStats();
@@ -151,6 +154,15 @@ const Index = () => {
                 <Link to="/configuracoes">
                   <Settings className="h-5 w-5 text-orange-600" />
                 </Link>
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={logout}
+                className="hover:bg-red-100 text-red-600 hover:text-red-700"
+                title="Terminar Sessão"
+              >
+                <LogOut className="h-5 w-5" />
               </Button>
             </div>
           </div>
