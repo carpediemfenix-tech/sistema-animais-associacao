@@ -18,6 +18,11 @@ const Relatorios = () => {
                 </Link>
               </Button>
               <div className="flex items-center space-x-3">
+                <img 
+                  src="./images/BackgroundEraser_20250411_205630024.png" 
+                  alt="Associação Valentão" 
+                  className="h-10 w-auto object-contain"
+                />
                 <div className="bg-gradient-to-br from-indigo-500 to-purple-500 p-3 rounded-2xl shadow-lg">
                   <FileText className="h-8 w-8 text-white" />
                 </div>

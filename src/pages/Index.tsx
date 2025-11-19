@@ -127,14 +127,19 @@ const Index = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             <div className="flex items-center space-x-4">
-              <div className="bg-gradient-to-br from-orange-500 to-yellow-500 p-3 rounded-2xl shadow-lg">
-                <PawPrint className="h-8 w-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-yellow-600 bg-clip-text text-transparent">
-                  🐾 Sistema Valentão
-                </h1>
-                <p className="text-sm text-gray-600">Gestão de Animais da Associação</p>
+              {/* Logotipo da Associação Valentão */}
+              <div className="flex items-center space-x-3">
+                <img 
+                  src="./images/BackgroundEraser_20250411_205630024.png" 
+                  alt="Associação Valentão" 
+                  className="h-12 w-auto object-contain drop-shadow-md"
+                />
+                <div>
+                  <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-yellow-600 bg-clip-text text-transparent">
+                    Sistema Valentão
+                  </h1>
+                  <p className="text-sm text-gray-600">Gestão de Animais da Associação</p>
+                </div>
               </div>
             </div>
             

@@ -59,8 +59,13 @@ const Login = () => {
       <div className="w-full max-w-md">
         {/* Logo e Título */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full mb-4">
-            <Heart className="h-10 w-10 text-white" />
+          {/* Logotipo da Associação Valentão */}
+          <div className="inline-flex items-center justify-center mb-6">
+            <img 
+              src="./images/BackgroundEraser_20250411_205630024.png" 
+              alt="Associação Valentão" 
+              className="h-24 w-auto object-contain drop-shadow-lg"
+            />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Associação Valentão

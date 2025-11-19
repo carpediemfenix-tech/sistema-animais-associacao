@@ -306,7 +306,12 @@ const GestaoUtilizadores = () => {
                   Voltar
                 </Button>
               </Link>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-3">
+                <img 
+                  src="./images/BackgroundEraser_20250411_205630024.png" 
+                  alt="Associação Valentão" 
+                  className="h-8 w-auto object-contain"
+                />
                 <Users className="h-6 w-6 text-blue-600" />
                 <h1 className="text-xl font-semibold text-gray-900">
                   Gestão de Utilizadores

@@ -477,6 +477,11 @@ const GestaoFinanceira = () => {
                 </Link>
               </Button>
               <div className="flex items-center space-x-3">
+                <img 
+                  src="./images/BackgroundEraser_20250411_205630024.png" 
+                  alt="Associação Valentão" 
+                  className="h-8 w-auto object-contain"
+                />
                 <DollarSign className="h-6 w-6 text-green-600" />
                 <div>
                   <h1 className="text-xl font-bold text-gray-900">Gestão Financeira</h1>
