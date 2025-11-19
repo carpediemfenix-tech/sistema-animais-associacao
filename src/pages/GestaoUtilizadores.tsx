@@ -94,7 +94,7 @@ const GestaoUtilizadores = () => {
       setLoading(true);
       console.log('👥 [USER_MGMT] Carregando utilizadores...');
 
-      const { data, error } = await supabase.functions.invoke('user_management_2025_11_19_05_00', {
+      const { data, error } = await supabase.functions.invoke('user_management_fixed_2025_11_19_05_00', {
         method: 'GET',
         body: { current_user_id: user?.id }
       });
@@ -153,18 +153,72 @@ const GestaoUtilizadores = () => {
     setDialogOpen(true);
   };
 
+  // Validar formulário
+  const validateForm = () => {
+    const errors: string[] = [];
+    
+    if (!formData.username.trim()) {
+      errors.push('Username é obrigatório');
+    } else if (formData.username.length < 3) {
+      errors.push('Username deve ter pelo menos 3 caracteres');
+    }
+    
+    if (!formData.email.trim()) {
+      errors.push('Email é obrigatório');
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      errors.push('Email deve ter formato válido');
+    }
+    
+    if (!formData.nome_completo.trim()) {
+      errors.push('Nome completo é obrigatório');
+    } else if (formData.nome_completo.length < 2) {
+      errors.push('Nome completo deve ter pelo menos 2 caracteres');
+    }
+    
+    if (!editingUser && !formData.password.trim()) {
+      errors.push('Password é obrigatória');
+    } else if (!editingUser && formData.password.length < 6) {
+      errors.push('Password deve ter pelo menos 6 caracteres');
+    }
+    
+    if (!formData.perfil_acesso) {
+      errors.push('Perfil de acesso é obrigatório');
+    }
+    
+    return errors;
+  };
+
   // Criar/Atualizar utilizador
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validar formulário antes de enviar
+    const validationErrors = validateForm();
+    if (validationErrors.length > 0) {
+      toast({
+        title: "❌ Erro de validação",
+        description: validationErrors.join(', '),
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
       setSubmitting(true);
+      console.log('📝 [USER_MGMT] Dados do formulário validados:', {
+        username: formData.username,
+        email: formData.email,
+        nome_completo: formData.nome_completo,
+        perfil_acesso: formData.perfil_acesso,
+        ativo: formData.ativo,
+        hasPassword: !!formData.password
+      });
       
       if (editingUser) {
         // Atualizar utilizador
         console.log('✏️ [USER_MGMT] Atualizando utilizador:', editingUser.username);
         
-        const { data, error } = await supabase.functions.invoke('user_management_2025_11_19_05_00', {
+        const { data, error } = await supabase.functions.invoke('user_management_fixed_2025_11_19_05_00', {
           method: 'PUT',
           body: {
             id: editingUser.id,
@@ -189,7 +243,7 @@ const GestaoUtilizadores = () => {
         // Criar novo utilizador
         console.log('➕ [USER_MGMT] Criando utilizador:', formData.username);
         
-        const { data, error } = await supabase.functions.invoke('user_management_2025_11_19_05_00', {
+        const { data, error } = await supabase.functions.invoke('user_management_fixed_2025_11_19_05_00', {
           method: 'POST',
           body: {
             ...formData,
@@ -230,7 +284,7 @@ const GestaoUtilizadores = () => {
       setSubmitting(true);
       console.log('🔑 [USER_MGMT] Resetando password para:', selectedUserForReset.username);
 
-      const { data, error } = await supabase.functions.invoke('user_management_2025_11_19_05_00', {
+      const { data, error } = await supabase.functions.invoke('user_management_fixed_2025_11_19_05_00', {
         method: 'PATCH',
         body: {
           user_id: selectedUserForReset.id,
