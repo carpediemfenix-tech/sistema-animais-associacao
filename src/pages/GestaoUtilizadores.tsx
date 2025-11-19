@@ -251,11 +251,30 @@ const GestaoUtilizadores = () => {
         // SOLUÇÃO SIMPLES: Inserção direta na base de dados
         console.log('💾 [USER_MGMT] Inserindo diretamente na base de dados...');
         
-        // Verificar duplicados primeiro
-        const { data: existingUsers, error: checkError } = await supabase
+        // Verificar duplicados primeiro - buscar por username
+        const { data: usersByUsername, error: usernameError } = await supabase
           .from('users')
           .select('id, username, email')
-          .or(`username.eq.${formData.username},email.eq.${formData.email}`);
+          .eq('username', formData.username);
+        
+        if (usernameError) {
+          console.error('❌ [USER_MGMT] Erro ao verificar username:', usernameError);
+          throw new Error('Erro ao verificar duplicados');
+        }
+        
+        // Verificar duplicados - buscar por email
+        const { data: usersByEmail, error: emailError } = await supabase
+          .from('users')
+          .select('id, username, email')
+          .eq('email', formData.email);
+        
+        if (emailError) {
+          console.error('❌ [USER_MGMT] Erro ao verificar email:', emailError);
+          throw new Error('Erro ao verificar duplicados');
+        }
+        
+        const existingUsers = [...(usersByUsername || []), ...(usersByEmail || [])];
+        const checkError = null;
         
         if (checkError) {
           console.error('❌ [USER_MGMT] Erro ao verificar duplicados:', checkError);
