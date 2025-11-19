@@ -67,21 +67,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setLoading(true);
       console.log('🔐 [AUTH] Tentando login para:', username);
 
-      // Obter informações do cliente
-      const ip_address = await fetch('https://api.ipify.org?format=json')
-        .then(res => res.json())
-        .then(data => data.ip)
-        .catch(() => 'unknown');
-      
-      const user_agent = navigator.userAgent;
-
       // Chamar Edge Function de autenticação
-      const { data, error } = await supabase.functions.invoke('auth_login_fixed_2025_11_19_05_00', {
+      const { data, error } = await supabase.functions.invoke('auth_ultra_simple_2025_11_19_05_00', {
         body: {
           username,
-          password,
-          ip_address,
-          user_agent
+          password
         }
       });
 
