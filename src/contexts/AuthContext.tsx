@@ -76,7 +76,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const user_agent = navigator.userAgent;
 
       // Chamar Edge Function de autenticação
-      const { data, error } = await supabase.functions.invoke('auth_login_2025_11_19_05_00', {
+      const { data, error } = await supabase.functions.invoke('auth_login_fixed_2025_11_19_05_00', {
         body: {
           username,
           password,
@@ -85,11 +85,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
       });
 
+      console.log('📊 [AUTH] Resposta da Edge Function:', { data, error });
+
       if (error) {
         console.error('❌ [AUTH] Erro na Edge Function:', error);
         toast({
           title: "❌ Erro de autenticação",
-          description: "Erro interno do servidor",
+          description: `Erro interno: ${error.message || 'Desconhecido'}`,
           variant: "destructive",
         });
         return false;
