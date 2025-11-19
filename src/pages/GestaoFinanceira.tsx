@@ -43,9 +43,11 @@ interface MovimentoFinanceiro {
 const GestaoFinanceira = () => {
   const [movimentos, setMovimentos] = useState<MovimentoFinanceiro[]>([]);
   const [custosIntervencoes, setCustosIntervencoes] = useState(0);
+  const [historicoUnificado, setHistoricoUnificado] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editandoMovimento, setEditandoMovimento] = useState<MovimentoFinanceiro | null>(null);
   const [error, setError] = useState<string | null>(null);
   
   // Formulário simplificado - apenas campos essenciais
@@ -85,15 +87,61 @@ const GestaoFinanceira = () => {
       console.log('👩‍⚕️ [FINANCEIRO] Buscando custos de intervenções...');
       const { data: intervencoes, error: intervencoesError } = await supabase
         .from('intervencoes')
-        .select('custo')
-        .not('custo', 'is', null);
+        .select(`
+          id,
+          custo,
+          data_intervencao,
+          observacoes,
+          veterinario,
+          clinica,
+          animal_id,
+          animais!inner(nome, numero_processo)
+        `)
+        .not('custo', 'is', null)
+        .order('data_intervencao', { ascending: false });
 
       if (intervencoesError) {
         console.error('❌ [FINANCEIRO] Erro ao buscar intervenções:', intervencoesError);
+        setCustosIntervencoes(0);
+        setHistoricoUnificado([]);
       } else {
         const totalCustosIntervencoes = (intervencoes || []).reduce((sum, i) => sum + (i.custo || 0), 0);
         console.log('💰 [FINANCEIRO] Custos de intervenções:', totalCustosIntervencoes);
         setCustosIntervencoes(totalCustosIntervencoes);
+        
+        // Criar histórico unificado
+        const movimentosFormatados = (data || []).map(mov => ({
+          ...mov,
+          tipo: 'movimento',
+          data_referencia: mov.data_movimento,
+          origem: 'Movimento Manual'
+        }));
+        
+        const intervencoesFormatadas = (intervencoes || []).map(int => ({
+          id: `int_${int.id}`,
+          tipo_movimento: 'Despesa',
+          categoria: 'Custos Médicos',
+          descricao: `Intervenção - ${int.animais?.nome || 'Animal'} (${int.animais?.numero_processo || 'N/A'})`,
+          valor: int.custo,
+          data_movimento: int.data_intervencao,
+          data_referencia: int.data_intervencao,
+          observacoes: `Veterinário: ${int.veterinario || 'N/A'} | Clínica: ${int.clinica || 'N/A'} | ${int.observacoes || ''}`,
+          tipo: 'intervencao',
+          origem: 'Intervenção Médica',
+          animal_nome: int.animais?.nome,
+          animal_numero: int.animais?.numero_processo
+        }));
+        
+        const historicoCompleto = [...movimentosFormatados, ...intervencoesFormatadas]
+          .sort((a, b) => new Date(b.data_referencia).getTime() - new Date(a.data_referencia).getTime());
+        
+        console.log('📜 [FINANCEIRO] Histórico unificado criado:', {
+          movimentos: movimentosFormatados.length,
+          intervencoes: intervencoesFormatadas.length,
+          total: historicoCompleto.length
+        });
+        
+        setHistoricoUnificado(historicoCompleto);
       }
 
     } catch (error: any) {
@@ -116,10 +164,17 @@ const GestaoFinanceira = () => {
     setValor("");
     setDataMovimento(new Date().toISOString().split('T')[0]);
     setObservacoes("");
+    setEditandoMovimento(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Decidir se é criação ou edição
+    if (editandoMovimento) {
+      await atualizarMovimento(e);
+      return;
+    }
     
     console.log('🚀 [FINANCEIRO] INICIANDO SUBMISSÃO...');
     console.log('📝 [FINANCEIRO] Dados do formulário:', {
@@ -259,6 +314,97 @@ const GestaoFinanceira = () => {
     }
   };
 
+  // Funções de edição e exclusão
+  const abrirEdicao = (movimento: MovimentoFinanceiro) => {
+    setEditandoMovimento(movimento);
+    setTipoMovimento(movimento.tipo_movimento);
+    setCategoria(movimento.categoria);
+    setDescricao(movimento.descricao);
+    setValor(movimento.valor.toString());
+    setDataMovimento(movimento.data_movimento.split('T')[0]);
+    setObservacoes(movimento.observacoes || '');
+    setDialogOpen(true);
+  };
+
+  const excluirMovimento = async (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir este movimento?')) return;
+    
+    try {
+      console.log('🗑️ [FINANCEIRO] Excluindo movimento:', id);
+      
+      const { error } = await supabase
+        .from('movimentos_financeiros')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "✅ Movimento excluído",
+        description: "O movimento foi removido com sucesso",
+      });
+
+      await fetchMovimentos();
+    } catch (error: any) {
+      console.error('❌ [FINANCEIRO] Erro ao excluir:', error);
+      toast({
+        title: "❌ Erro",
+        description: "Não foi possível excluir o movimento",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const atualizarMovimento = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editandoMovimento) return;
+
+    try {
+      setSubmitting(true);
+      console.log('✏️ [FINANCEIRO] Atualizando movimento:', editandoMovimento.id);
+      
+      const valorNumerico = parseFloat(valor);
+      if (isNaN(valorNumerico) || valorNumerico <= 0) {
+        throw new Error('Valor deve ser um número positivo');
+      }
+
+      const dadosAtualizar = {
+        tipo_movimento: tipoMovimento,
+        categoria: categoria,
+        descricao: descricao.trim(),
+        valor: valorNumerico,
+        data_movimento: dataMovimento,
+        observacoes: observacoes.trim() || null
+      };
+
+      const { error } = await supabase
+        .from('movimentos_financeiros')
+        .update(dadosAtualizar)
+        .eq('id', editandoMovimento.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "✅ Movimento atualizado",
+        description: "As alterações foram salvas com sucesso",
+      });
+
+      setDialogOpen(false);
+      setEditandoMovimento(null);
+      resetForm();
+      await fetchMovimentos();
+    } catch (error: any) {
+      console.error('❌ [FINANCEIRO] Erro ao atualizar:', error);
+      toast({
+        title: "❌ Erro",
+        description: error.message || "Não foi possível atualizar o movimento",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   // Cálculos financeiros
   const totalReceitas = movimentos
     .filter(m => m.tipo_movimento === 'Receita')
@@ -357,18 +503,21 @@ const GestaoFinanceira = () => {
                 <DialogContent className="sm:max-w-md">
                   <DialogHeader>
                     <DialogTitle className="flex items-center justify-between">
-                      Novo Movimento Financeiro
+                      {editandoMovimento ? 'Editar Movimento Financeiro' : 'Novo Movimento Financeiro'}
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => setDialogOpen(false)}
+                        onClick={() => {
+                          setDialogOpen(false);
+                          resetForm();
+                        }}
                         className="h-6 w-6 p-0"
                       >
                         <X className="h-4 w-4" />
                       </Button>
                     </DialogTitle>
                     <DialogDescription>
-                      Registar nova receita ou despesa
+                      {editandoMovimento ? 'Alterar dados do movimento financeiro' : 'Registar nova receita ou despesa'}
                     </DialogDescription>
                   </DialogHeader>
                   
@@ -551,14 +700,14 @@ const GestaoFinanceira = () => {
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <FileText className="h-5 w-5" />
-              <span>Movimentos Financeiros</span>
+              <span>Histórico Financeiro Completo</span>
             </CardTitle>
             <CardDescription>
-              Histórico de receitas e despesas
+              Movimentos manuais e custos de intervenções médicas
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {movimentos.length === 0 ? (
+            {historicoUnificado.length === 0 ? (
               <div className="text-center py-8">
                 <DollarSign className="h-16 w-16 mx-auto mb-4 text-gray-400" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
@@ -581,44 +730,84 @@ const GestaoFinanceira = () => {
                       <TableHead>Tipo</TableHead>
                       <TableHead>Categoria</TableHead>
                       <TableHead>Descrição</TableHead>
+                      <TableHead>Origem</TableHead>
                       <TableHead className="text-right">Valor</TableHead>
+                      <TableHead className="text-center">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {movimentos.map((movimento) => (
-                      <TableRow key={movimento.id}>
+                    {historicoUnificado.map((item) => (
+                      <TableRow key={item.id}>
                         <TableCell>
                           <div className="flex items-center space-x-2">
                             <Calendar className="h-4 w-4 text-gray-400" />
-                            <span>{formatDate(movimento.data_movimento)}</span>
+                            <span>{formatDate(item.data_movimento)}</span>
                           </div>
                         </TableCell>
                         <TableCell>
                           <Badge 
                             className={
-                              movimento.tipo_movimento === 'Receita' 
+                              item.tipo_movimento === 'Receita' 
                                 ? 'bg-green-100 text-green-800 border-green-200' 
                                 : 'bg-red-100 text-red-800 border-red-200'
                             }
                           >
-                            {movimento.tipo_movimento}
+                            {item.tipo_movimento}
                           </Badge>
                         </TableCell>
-                        <TableCell>{movimento.categoria}</TableCell>
+                        <TableCell>{item.categoria}</TableCell>
                         <TableCell className="max-w-xs">
                           <div>
-                            <div className="font-medium">{movimento.descricao}</div>
-                            {movimento.observacoes && (
+                            <div className="font-medium">{item.descricao}</div>
+                            {item.observacoes && (
                               <div className="text-sm text-gray-500 truncate">
-                                {movimento.observacoes}
+                                {item.observacoes}
                               </div>
                             )}
                           </div>
                         </TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant="outline"
+                            className={
+                              item.tipo === 'movimento' 
+                                ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                : 'bg-purple-50 text-purple-700 border-purple-200'
+                            }
+                          >
+                            {item.origem}
+                          </Badge>
+                        </TableCell>
                         <TableCell className="text-right font-medium">
-                          <span className={movimento.tipo_movimento === 'Receita' ? 'text-green-600' : 'text-red-600'}>
-                            {movimento.tipo_movimento === 'Receita' ? '+' : '-'}{formatCurrency(movimento.valor)}
+                          <span className={item.tipo_movimento === 'Receita' ? 'text-green-600' : 'text-red-600'}>
+                            {item.tipo_movimento === 'Receita' ? '+' : '-'}{formatCurrency(item.valor)}
                           </span>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {item.tipo === 'movimento' ? (
+                            <div className="flex items-center justify-center space-x-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => abrirEdicao(item)}
+                                className="h-8 w-8 p-0 hover:bg-blue-100"
+                              >
+                                <FileText className="h-4 w-4 text-blue-600" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => excluirMovimento(item.id)}
+                                className="h-8 w-8 p-0 hover:bg-red-100"
+                              >
+                                <X className="h-4 w-4 text-red-600" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <Badge variant="secondary" className="text-xs">
+                              Somente leitura
+                            </Badge>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
