@@ -56,11 +56,12 @@ const AnimalDetail = () => {
   });
 
   const [localizacaoForm, setLocalizacaoForm] = useState({
-    tipo_localizacao: "",
+    localizacao: "",
     endereco: "",
-    data_inicio: new Date().toISOString().split('T')[0],
-    data_fim: "",
-    observacoes: ""
+    data_entrada: new Date().toISOString().split('T')[0],
+    data_saida: "",
+    observacoes: "",
+    ativo: true
   });
 
   useEffect(() => {
@@ -398,10 +399,10 @@ const AnimalDetail = () => {
   const handleLocalizacaoSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!localizacaoForm.tipo_localizacao || !localizacaoForm.endereco || !localizacaoForm.data_inicio) {
+    if (!localizacaoForm.localizacao || !localizacaoForm.endereco || !localizacaoForm.data_entrada) {
       toast({
         title: "Campos obrigatórios",
-        description: "Tipo, endereço e data de início são obrigatórios",
+        description: "Localização, endereço e data de entrada são obrigatórios",
         variant: "destructive",
       });
       return;
@@ -410,11 +411,12 @@ const AnimalDetail = () => {
     try {
       const dataToSubmit = {
         animal_id: id,
-        tipo_localizacao: localizacaoForm.tipo_localizacao,
+        localizacao: localizacaoForm.localizacao,
         endereco: localizacaoForm.endereco,
-        data_inicio: localizacaoForm.data_inicio,
-        data_fim: localizacaoForm.data_fim || null,
-        observacoes: localizacaoForm.observacoes || null
+        data_entrada: localizacaoForm.data_entrada,
+        data_saida: localizacaoForm.data_saida || null,
+        observacoes: localizacaoForm.observacoes || null,
+        ativo: localizacaoForm.ativo !== undefined ? localizacaoForm.ativo : true
       };
 
       if (editingLocalizacao) {
@@ -507,11 +509,12 @@ const AnimalDetail = () => {
 
   const resetLocalizacaoForm = () => {
     setLocalizacaoForm({
-      tipo_localizacao: "",
+      localizacao: "",
       endereco: "",
-      data_inicio: new Date().toISOString().split('T')[0],
-      data_fim: "",
-      observacoes: ""
+      data_entrada: new Date().toISOString().split('T')[0],
+      data_saida: "",
+      observacoes: "",
+      ativo: true
     });
   };
 
@@ -544,11 +547,12 @@ const AnimalDetail = () => {
   const openEditLocalizacao = (localizacao: Localizacao) => {
     setEditingLocalizacao(localizacao);
     setLocalizacaoForm({
-      tipo_localizacao: localizacao.tipo_localizacao || "",
+      localizacao: localizacao.localizacao || "",
       endereco: localizacao.endereco || "",
-      data_inicio: localizacao.data_inicio || "",
-      data_fim: localizacao.data_fim || "",
-      observacoes: localizacao.observacoes || ""
+      data_entrada: localizacao.data_entrada || "",
+      data_saida: localizacao.data_saida || "",
+      observacoes: localizacao.observacoes || "",
+      ativo: localizacao.ativo !== undefined ? localizacao.ativo : true
     });
     setLocalizacaoDialogOpen(true);
   };
@@ -1219,20 +1223,20 @@ const AnimalDetail = () => {
                       </DialogHeader>
                       <form onSubmit={handleLocalizacaoSubmit} className="space-y-4">
                         <div>
-                          <Label htmlFor="tipo_localizacao">Tipo de Localização *</Label>
+                          <Label htmlFor="localizacao">Localização *</Label>
                           <Select 
-                            value={localizacaoForm.tipo_localizacao} 
-                            onValueChange={(value) => setLocalizacaoForm(prev => ({...prev, tipo_localizacao: value}))}
+                            value={localizacaoForm.localizacao} 
+                            onValueChange={(value) => setLocalizacaoForm(prev => ({...prev, localizacao: value}))}
                           >
                             <SelectTrigger>
-                              <SelectValue placeholder="Selecione o tipo" />
+                              <SelectValue placeholder="Selecione a localização" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="Abrigo">Abrigo</SelectItem>
-                              <SelectItem value="Família Acolhimento">Família de Acolhimento</SelectItem>
-                              <SelectItem value="Clínica Veterinária">Clínica Veterinária</SelectItem>
-                              <SelectItem value="Casa Adotiva">Casa Adotiva</SelectItem>
-                              <SelectItem value="Quarentena">Quarentena</SelectItem>
+                              <SelectItem value="Canil">Canil</SelectItem>
+                              <SelectItem value="CRO">CRO</SelectItem>
+                              <SelectItem value="FAT">FAT</SelectItem>
+                              <SelectItem value="Rua">Rua</SelectItem>
+                              <SelectItem value="Casa Temporária">Casa Temporária</SelectItem>
                               <SelectItem value="Outro">Outro</SelectItem>
                             </SelectContent>
                           </Select>
@@ -1251,22 +1255,22 @@ const AnimalDetail = () => {
 
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <Label htmlFor="data_inicio">Data de Início *</Label>
+                            <Label htmlFor="data_entrada">Data de Entrada *</Label>
                             <Input
-                              id="data_inicio"
+                              id="data_entrada"
                               type="date"
-                              value={localizacaoForm.data_inicio}
-                              onChange={(e) => setLocalizacaoForm(prev => ({...prev, data_inicio: e.target.value}))}
+                              value={localizacaoForm.data_entrada}
+                              onChange={(e) => setLocalizacaoForm(prev => ({...prev, data_entrada: e.target.value}))}
                               required
                             />
                           </div>
                           <div>
-                            <Label htmlFor="data_fim">Data de Fim</Label>
+                            <Label htmlFor="data_saida">Data de Saída</Label>
                             <Input
-                              id="data_fim"
+                              id="data_saida"
                               type="date"
-                              value={localizacaoForm.data_fim}
-                              onChange={(e) => setLocalizacaoForm(prev => ({...prev, data_fim: e.target.value}))}
+                              value={localizacaoForm.data_saida}
+                              onChange={(e) => setLocalizacaoForm(prev => ({...prev, data_saida: e.target.value}))}
                             />
                           </div>
                         </div>
@@ -1310,12 +1314,12 @@ const AnimalDetail = () => {
                           <div className="flex-1">
                             <div className="flex items-center space-x-3 mb-2">
                               <Badge variant="outline">
-                                {localizacao.tipo_localizacao}
+                                {localizacao.localizacao}
                               </Badge>
                               <span className="text-sm text-gray-600">
-                                {formatDate(localizacao.data_inicio)}
-                                {localizacao.data_fim && ` - ${formatDate(localizacao.data_fim)}`}
-                                {!localizacao.data_fim && " - Atual"}
+                                {formatDate(localizacao.data_entrada)}
+                                {localizacao.data_saida && ` - ${formatDate(localizacao.data_saida)}`}
+                                {!localizacao.data_saida && " - Atual"}
                               </span>
                             </div>
                             
