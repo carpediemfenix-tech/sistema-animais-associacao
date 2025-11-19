@@ -40,8 +40,13 @@ const RelatorioFinanceiro = ({ data, filtroAno, filtroMes }: RelatorioFinanceiro
       filtroMes
     });
 
-    if (!data || !data.movimentos || !data.intervencoes) {
-      console.log('⚠️ [FINANCEIRO] Dados insuficientes para cálculo');
+    if (!data) {
+      console.log('⚠️ [FINANCEIRO] Nenhum dado fornecido');
+      return;
+    }
+    
+    if (!data.movimentos && !data.intervencoes) {
+      console.log('⚠️ [FINANCEIRO] Sem movimentos nem intervenções');
       setEstatisticasFinanceiras({
         receitas: 0,
         despesas: 0,

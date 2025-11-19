@@ -65,6 +65,17 @@ const SistemaRelatoriosProfissional = () => {
   const [anosDisponiveis, setAnosDisponiveis] = useState<number[]>([]);
   const [fichaAnimalSelecionado, setFichaAnimalSelecionado] = useState<any>(null);
   const [fichaVoluntarioSelecionado, setFichaVoluntarioSelecionado] = useState<any>(null);
+  
+  // Estados para filtros aplicados (separados dos filtros de interface)
+  const [filtrosAplicados, setFiltrosAplicados] = useState({
+    ano: 2025,
+    mes: new Date().getMonth() + 1,
+    voluntario: 'todos',
+    clinica: 'todas',
+    busca: ''
+  });
+  const [aplicandoFiltros, setAplicandoFiltros] = useState(false);
+  
   const { toast } = useToast();
 
   useEffect(() => {
@@ -108,10 +119,10 @@ const SistemaRelatoriosProfissional = () => {
       if (localizacoesError) throw localizacoesError;
       if (tiposError) throw tiposError;
 
-      // Gerar anos disponíveis de 2005 até ano atual + 1
-      const anoAtual = new Date().getFullYear();
+      // Gerar anos disponíveis: 2025 até 2030 (5 anos futuros)
+      const anoAtual = 2025;
       const anos = [];
-      for (let ano = anoAtual + 1; ano >= 2005; ano--) {
+      for (let ano = anoAtual + 5; ano >= anoAtual; ano--) {
         anos.push(ano);
       }
       setAnosDisponiveis(anos);
@@ -147,19 +158,57 @@ const SistemaRelatoriosProfissional = () => {
     }
   };
 
+  // FUNÇÃO PARA APLICAR FILTROS
+  const aplicarFiltros = async () => {
+    try {
+      setAplicandoFiltros(true);
+      console.log('🔍 [FILTROS] Aplicando filtros:', {
+        ano: filtroAno,
+        mes: filtroMes,
+        voluntario: filtroVoluntario,
+        clinica: filtroClinica,
+        busca
+      });
+      
+      // Atualizar filtros aplicados
+      setFiltrosAplicados({
+        ano: filtroAno,
+        mes: filtroMes,
+        voluntario: filtroVoluntario,
+        clinica: filtroClinica,
+        busca
+      });
+      
+      toast({
+        title: "✅ Filtros Aplicados",
+        description: `Filtros atualizados para ${filtroAno}${filtroMes !== 0 ? `/${filtroMes.toString().padStart(2, '0')}` : ''}`,
+      });
+      
+    } catch (error) {
+      console.error('❌ [FILTROS] Erro ao aplicar filtros:', error);
+      toast({
+        title: "❌ Erro",
+        description: "Não foi possível aplicar os filtros",
+        variant: "destructive",
+      });
+    } finally {
+      setAplicandoFiltros(false);
+    }
+  };
+
   // LISTAGEM COMPLETA DE ANIMAIS
   const gerarListagemAnimais = () => {
     if (!data) return [];
 
     let animaisFiltrados = data.animais;
 
-    // Filtro por busca
-    if (busca) {
-      animaisFiltrados = animaisFiltrados.filter(animal => 
-        animal.nome?.toLowerCase().includes(busca.toLowerCase()) ||
-        animal.numero_processo?.toLowerCase().includes(busca.toLowerCase()) ||
-        animal.especie?.toLowerCase().includes(busca.toLowerCase()) ||
-        animal.raca?.toLowerCase().includes(busca.toLowerCase())
+    // Filtro por busca (usando filtros aplicados)
+    if (filtrosAplicados.busca) {
+      animaisFiltrados = animaisFiltrados.filter(animal =>
+        animal.nome?.toLowerCase().includes(filtrosAplicados.busca.toLowerCase()) ||
+        animal.numero_processo?.toLowerCase().includes(filtrosAplicados.busca.toLowerCase()) ||
+        animal.especie?.toLowerCase().includes(filtrosAplicados.busca.toLowerCase()) ||
+        animal.raca?.toLowerCase().includes(filtrosAplicados.busca.toLowerCase())
       );
     }
 
@@ -189,24 +238,24 @@ const SistemaRelatoriosProfissional = () => {
 
     let intervencoesFiltradas = data.intervencoes;
 
-    // Filtro por ano
-    if (filtroAno && filtroAno !== 0) {
+    // Filtro por ano (usando filtros aplicados)
+    if (filtrosAplicados.ano && filtrosAplicados.ano !== 0) {
       intervencoesFiltradas = intervencoesFiltradas.filter(i => 
-        new Date(i.data_intervencao).getFullYear() === filtroAno
+        new Date(i.data_intervencao).getFullYear() === filtrosAplicados.ano
       );
     }
 
-    // Filtro por mês
-    if (filtroMes && filtroMes !== 0) {
-      intervencoesFiltradas = intervencoesFiltradas.filter(i => 
-        new Date(i.data_intervencao).getMonth() + 1 === filtroMes
+    // Filtro por mês (usando filtros aplicados)
+    if (filtrosAplicados.mes && filtrosAplicados.mes !== 0) {
+      intervencoesFiltradas = intervencoesFiltradas.filter(i =>
+        new Date(i.data_intervencao).getMonth() + 1 === filtrosAplicados.mes
       );
     }
 
-    // Filtro por clínica
-    if (filtroClinica !== 'todas') {
+    // Filtro por clínica (usando filtros aplicados)
+    if (filtrosAplicados.clinica !== 'todas') {
       intervencoesFiltradas = intervencoesFiltradas.filter(i => 
-        i.clinica?.toLowerCase().includes(filtroClinica.toLowerCase())
+        i.clinica?.toLowerCase().includes(filtrosAplicados.clinica.toLowerCase())
       );
     }
 
@@ -465,6 +514,27 @@ const SistemaRelatoriosProfissional = () => {
                 </SelectContent>
               </Select>
             </div>
+          </div>
+          
+          {/* Botão Aplicar Filtros */}
+          <div className="flex justify-center pt-4">
+            <Button 
+              onClick={aplicarFiltros} 
+              disabled={aplicandoFiltros}
+              className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-8 py-2"
+            >
+              {aplicandoFiltros ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Aplicando...
+                </>
+              ) : (
+                <>
+                  <Filter className="h-4 w-4 mr-2" />
+                  Aplicar Filtros
+                </>
+              )}
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -878,8 +948,8 @@ const SistemaRelatoriosProfissional = () => {
         <TabsContent value="financeiro">
           <RelatorioFinanceiro 
             data={data} 
-            filtroAno={filtroAno} 
-            filtroMes={filtroMes} 
+            filtroAno={filtrosAplicados.ano} 
+            filtroMes={filtrosAplicados.mes}
           />
         </TabsContent>
 
@@ -887,8 +957,8 @@ const SistemaRelatoriosProfissional = () => {
         <TabsContent value="adocoes">
           <RelatorioAdocoes 
             data={data} 
-            filtroAno={filtroAno} 
-            filtroMes={filtroMes} 
+            filtroAno={filtrosAplicados.ano} 
+            filtroMes={filtrosAplicados.mes}
           />
         </TabsContent>
       </Tabs>
