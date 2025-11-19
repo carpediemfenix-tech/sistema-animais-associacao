@@ -94,7 +94,7 @@ const GestaoUtilizadores = () => {
       setLoading(true);
       console.log('👥 [USER_MGMT] Carregando utilizadores...');
 
-      const { data, error } = await supabase.functions.invoke('user_management_simple_2025_11_19_05_00', {
+      const { data, error } = await supabase.functions.invoke('user_create_focused_2025_11_19_05_00', {
         method: 'GET'
       });
 
@@ -240,11 +240,14 @@ const GestaoUtilizadores = () => {
       } else {
         // Criar novo utilizador
         console.log('➕ [USER_MGMT] Criando utilizador:', formData.username);
+        console.log('📝 [USER_MGMT] Dados do formulário:', formData);
         
-        const { data, error } = await supabase.functions.invoke('user_management_simple_2025_11_19_05_00', {
+        const { data, error } = await supabase.functions.invoke('user_create_focused_2025_11_19_05_00', {
           method: 'POST',
           body: formData
         });
+        
+        console.log('📊 [USER_MGMT] Resposta da Edge Function:', { data, error });
 
         if (error || !data.success) {
           throw new Error(data?.error || 'Erro ao criar utilizador');
