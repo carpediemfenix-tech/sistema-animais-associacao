@@ -95,12 +95,15 @@ const RelatorioFinanceiro = ({ data, filtroAno, filtroMes }: RelatorioFinanceiro
     const custosIntervencoes = intervencoesFiltradas
       .reduce((sum: number, i: any) => sum + (i.custo || 0), 0);
 
-    const saldoTotal = receitas - despesas;
+    // CORREÇÃO: Incluir custos de intervenções no cálculo do saldo
+    const despesasTotal = despesas + custosIntervencoes;
+    const saldoTotal = receitas - despesasTotal;
 
-    console.log('📊 [FINANCEIRO] Totais calculados:', {
+    console.log('📊 [FINANCEIRO] Totais calculados (CORRIGIDO):', {
       receitas,
-      despesas,
+      despesasMovimentos: despesas,
       custosIntervencoes,
+      despesasTotal,
       saldoTotal,
       movimentosFiltrados: movimentosFiltrados.length,
       intervencoesFiltradas: intervencoesFiltradas.length
@@ -120,6 +123,11 @@ const RelatorioFinanceiro = ({ data, filtroAno, filtroMes }: RelatorioFinanceiro
         acc[m.categoria] = (acc[m.categoria] || 0) + (m.valor || 0);
         return acc;
       }, {});
+
+    // Adicionar custos de intervenções às despesas por categoria
+    if (custosIntervencoes > 0) {
+      despesasPorCategoria['Custos Médicos'] = (despesasPorCategoria['Custos Médicos'] || 0) + custosIntervencoes;
+    }
 
     // Análise por clínica
     const custosPorClinica = intervencoesFiltradas
@@ -165,11 +173,24 @@ const RelatorioFinanceiro = ({ data, filtroAno, filtroMes }: RelatorioFinanceiro
         .filter((m: any) => m.tipo_movimento === 'Despesa')
         .reduce((sum: number, m: any) => sum + (m.valor || 0), 0);
 
+      // Incluir custos de intervenções do mês
+      const intervencoesMes = data.intervencoes.filter((i: any) => {
+        const dataIntervencao = new Date(i.data_intervencao);
+        return dataIntervencao.getFullYear() === ano && dataIntervencao.getMonth() + 1 === mes;
+      });
+      
+      const custosIntervencoesMes = intervencoesMes
+        .reduce((sum: number, i: any) => sum + (i.custo || 0), 0);
+      
+      const despesasTotalMes = despesasMes + custosIntervencoesMes;
+
       analiseMenual.push({
         periodo: `${mes.toString().padStart(2, '0')}/${ano}`,
         receitas: receitasMes,
-        despesas: despesasMes,
-        saldo: receitasMes - despesasMes
+        despesas: despesasTotalMes,
+        despesasMovimentos: despesasMes,
+        custosIntervencoes: custosIntervencoesMes,
+        saldo: receitasMes - despesasTotalMes
       });
     }
 
@@ -278,9 +299,13 @@ const RelatorioFinanceiro = ({ data, filtroAno, filtroMes }: RelatorioFinanceiro
               <TrendingDown className="h-8 w-8 text-red-600" />
             </div>
             <div className="text-2xl font-bold text-red-600">
-              {formatCurrency(estatisticasFinanceiras.despesas)}
+              {formatCurrency(estatisticasFinanceiras.despesas + estatisticasFinanceiras.custosIntervencoes)}
             </div>
             <div className="text-sm text-red-700">Despesas Totais</div>
+            <div className="text-xs text-red-600 mt-1">
+              Movimentos: {formatCurrency(estatisticasFinanceiras.despesas)}<br/>
+              Intervenções: {formatCurrency(estatisticasFinanceiras.custosIntervencoes)}
+            </div>
           </CardContent>
         </Card>
 
@@ -468,7 +493,8 @@ const RelatorioFinanceiro = ({ data, filtroAno, filtroMes }: RelatorioFinanceiro
                 <TableRow>
                   <TableHead>Período</TableHead>
                   <TableHead>Receitas</TableHead>
-                  <TableHead>Despesas</TableHead>
+                  <TableHead>Despesas Totais</TableHead>
+                  <TableHead>Custos Médicos</TableHead>
                   <TableHead>Saldo</TableHead>
                   <TableHead>Tendência</TableHead>
                 </TableRow>
@@ -482,7 +508,18 @@ const RelatorioFinanceiro = ({ data, filtroAno, filtroMes }: RelatorioFinanceiro
                     <TableRow key={mes.periodo}>
                       <TableCell className="font-medium">{mes.periodo}</TableCell>
                       <TableCell className="text-green-600">{formatCurrency(mes.receitas)}</TableCell>
-                      <TableCell className="text-red-600">{formatCurrency(mes.despesas)}</TableCell>
+                      <TableCell className="text-red-600">
+                        {formatCurrency(mes.despesas)}
+                        {mes.custosIntervencoes > 0 && (
+                          <div className="text-xs text-gray-500">
+                            Mov: {formatCurrency(mes.despesasMovimentos || 0)}<br/>
+                            Méd: {formatCurrency(mes.custosIntervencoes)}
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-blue-600">
+                        {formatCurrency(mes.custosIntervencoes || 0)}
+                      </TableCell>
                       <TableCell className={`font-semibold ${
                         mes.saldo >= 0 ? 'text-green-600' : 'text-red-600'
                       }`}>

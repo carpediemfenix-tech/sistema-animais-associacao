@@ -42,6 +42,7 @@ interface MovimentoFinanceiro {
 
 const GestaoFinanceira = () => {
   const [movimentos, setMovimentos] = useState<MovimentoFinanceiro[]>([]);
+  const [custosIntervencoes, setCustosIntervencoes] = useState(0);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -79,6 +80,21 @@ const GestaoFinanceira = () => {
 
       console.log('✅ [FINANCEIRO] Movimentos carregados:', data?.length || 0);
       setMovimentos(data || []);
+
+      // Buscar custos de intervenções
+      console.log('👩‍⚕️ [FINANCEIRO] Buscando custos de intervenções...');
+      const { data: intervencoes, error: intervencoesError } = await supabase
+        .from('intervencoes')
+        .select('custo')
+        .not('custo', 'is', null);
+
+      if (intervencoesError) {
+        console.error('❌ [FINANCEIRO] Erro ao buscar intervenções:', intervencoesError);
+      } else {
+        const totalCustosIntervencoes = (intervencoes || []).reduce((sum, i) => sum + (i.custo || 0), 0);
+        console.log('💰 [FINANCEIRO] Custos de intervenções:', totalCustosIntervencoes);
+        setCustosIntervencoes(totalCustosIntervencoes);
+      }
 
     } catch (error: any) {
       console.error('💥 [FINANCEIRO] Erro geral:', error);
@@ -248,11 +264,20 @@ const GestaoFinanceira = () => {
     .filter(m => m.tipo_movimento === 'Receita')
     .reduce((sum, m) => sum + m.valor, 0);
 
-  const totalDespesas = movimentos
+  const despesasMovimentos = movimentos
     .filter(m => m.tipo_movimento === 'Despesa')
     .reduce((sum, m) => sum + m.valor, 0);
-
+  
+  const totalDespesas = despesasMovimentos + custosIntervencoes;
   const saldoAtual = totalReceitas - totalDespesas;
+  
+  console.log('📊 [GESTÃO FINANCEIRA] Totais calculados:', {
+    totalReceitas,
+    despesasMovimentos,
+    custosIntervencoes,
+    totalDespesas,
+    saldoAtual
+  });
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-PT', {
@@ -496,6 +521,10 @@ const GestaoFinanceira = () => {
                 <div>
                   <p className="text-red-100 text-sm font-medium">Total Despesas</p>
                   <p className="text-2xl font-bold">{formatCurrency(totalDespesas)}</p>
+                  <div className="text-xs text-red-200 mt-1">
+                    Movimentos: {formatCurrency(despesasMovimentos)}<br/>
+                    Intervenções: {formatCurrency(custosIntervencoes)}
+                  </div>
                 </div>
                 <TrendingDown className="h-8 w-8 text-red-200" />
               </div>
