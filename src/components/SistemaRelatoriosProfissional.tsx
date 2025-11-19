@@ -71,6 +71,11 @@ const SistemaRelatoriosProfissional = () => {
     carregarDados();
   }, []);
 
+  // Recarregar dados quando filtros mudarem (para componentes que dependem)
+  useEffect(() => {
+    console.log('🔄 [RELATÓRIOS] Filtros alterados:', { filtroAno, filtroMes, filtroVoluntario, filtroClinica });
+  }, [filtroAno, filtroMes, filtroVoluntario, filtroClinica]);
+
   const carregarDados = async () => {
     try {
       setLoading(true);
@@ -103,19 +108,15 @@ const SistemaRelatoriosProfissional = () => {
       if (localizacoesError) throw localizacoesError;
       if (tiposError) throw tiposError;
 
-      // Calcular anos disponíveis baseado nos dados reais
-      const todasDatas = [
-        ...(animais || []).map(a => a.data_entrada),
-        ...(intervencoes || []).map(i => i.data_intervencao),
-        ...(eventos || []).map(e => e.data_evento),
-        ...(movimentos || []).map(m => m.data_movimento),
-        ...(localizacoes || []).map(l => l.data_entrada)
-      ].filter(Boolean);
-
-      const anos = [...new Set(todasDatas.map(data => new Date(data).getFullYear()))]
-        .sort((a, b) => b - a);
+      // Gerar anos disponíveis de 2005 até ano atual + 1
+      const anoAtual = new Date().getFullYear();
+      const anos = [];
+      for (let ano = anoAtual + 1; ano >= 2005; ano--) {
+        anos.push(ano);
+      }
+      setAnosDisponiveis(anos);
       
-      setAnosDisponiveis(anos.length > 0 ? anos : [2025]);
+      console.log('📅 [RELATÓRIOS] Anos disponíveis:', anos);
 
       setData({
         animais: animais || [],

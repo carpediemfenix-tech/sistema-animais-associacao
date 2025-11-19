@@ -15,6 +15,7 @@ import {
   Stethoscope
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import LayoutRelatorio from "@/components/LayoutRelatorio";
 
 interface RelatorioFinanceiroProps {
   data: any;
@@ -32,8 +33,31 @@ const RelatorioFinanceiro = ({ data, filtroAno, filtroMes }: RelatorioFinanceiro
   }, [data, filtroAno, filtroMes]);
 
   const calcularEstatisticasFinanceiras = () => {
-    let movimentosFiltrados = data.movimentos;
-    let intervencoesFiltradas = data.intervencoes;
+    console.log('💰 [FINANCEIRO] Iniciando cálculo com dados:', {
+      movimentos: data?.movimentos?.length || 0,
+      intervencoes: data?.intervencoes?.length || 0,
+      filtroAno,
+      filtroMes
+    });
+
+    if (!data || !data.movimentos || !data.intervencoes) {
+      console.log('⚠️ [FINANCEIRO] Dados insuficientes para cálculo');
+      setEstatisticasFinanceiras({
+        receitas: 0,
+        despesas: 0,
+        custosIntervencoes: 0,
+        saldoTotal: 0,
+        receitasPorCategoria: {},
+        despesasPorCategoria: {},
+        custosPorClinica: {},
+        top10AnimaisCustos: [],
+        analiseMenual: []
+      });
+      return;
+    }
+
+    let movimentosFiltrados = data.movimentos || [];
+    let intervencoesFiltradas = data.intervencoes || [];
 
     // Aplicar filtros de período
     if (filtroAno && filtroAno !== 0) {
@@ -67,6 +91,15 @@ const RelatorioFinanceiro = ({ data, filtroAno, filtroMes }: RelatorioFinanceiro
       .reduce((sum: number, i: any) => sum + (i.custo || 0), 0);
 
     const saldoTotal = receitas - despesas;
+
+    console.log('📊 [FINANCEIRO] Totais calculados:', {
+      receitas,
+      despesas,
+      custosIntervencoes,
+      saldoTotal,
+      movimentosFiltrados: movimentosFiltrados.length,
+      intervencoesFiltradas: intervencoesFiltradas.length
+    });
 
     // Análise por categoria
     const receitasPorCategoria = movimentosFiltrados
@@ -166,8 +199,60 @@ const RelatorioFinanceiro = ({ data, filtroAno, filtroMes }: RelatorioFinanceiro
     );
   }
 
+  // Verificar se há dados para mostrar
+  const temDados = estatisticasFinanceiras.receitas > 0 || 
+                   estatisticasFinanceiras.despesas > 0 || 
+                   estatisticasFinanceiras.custosIntervencoes > 0;
+
+  if (!temDados) {
+    return (
+      <LayoutRelatorio
+        titulo="Relatório Financeiro"
+        subtitulo="Nenhum dado financeiro encontrado para o período selecionado"
+        tipoRelatorio="Relatório Financeiro Executivo"
+        periodo={filtroAno && filtroAno !== 0 
+          ? (filtroMes && filtroMes !== 0 
+              ? `${new Date(2024, filtroMes - 1).toLocaleDateString('pt-PT', { month: 'long' })} de ${filtroAno}`
+              : `Ano ${filtroAno}`)
+          : 'Todos os períodos'}
+        dadosEstatisticos={{ totalRegistros: 0, periodoAnalise: 'Sem dados' }}
+      >
+        <div className="text-center py-12">
+          <Euro className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+          <h3 className="text-lg font-semibold text-gray-600 mb-2">Sem Dados Financeiros</h3>
+          <p className="text-gray-500 mb-4">
+            Não foram encontrados movimentos financeiros ou custos de intervenções para o período selecionado.
+          </p>
+          <p className="text-sm text-gray-400">
+            Experimente alterar os filtros ou verificar se existem dados registados no sistema.
+          </p>
+        </div>
+      </LayoutRelatorio>
+    );
+  }
+
+  const periodoTexto = filtroAno && filtroAno !== 0 
+    ? (filtroMes && filtroMes !== 0 
+        ? `${new Date(2024, filtroMes - 1).toLocaleDateString('pt-PT', { month: 'long' })} de ${filtroAno}`
+        : `Ano ${filtroAno}`)
+    : 'Todos os períodos';
+
+  const dadosEstatisticos = {
+    totalRegistros: (estatisticasFinanceiras.receitas + estatisticasFinanceiras.despesas) > 0 
+      ? Object.keys(estatisticasFinanceiras.receitasPorCategoria).length + Object.keys(estatisticasFinanceiras.despesasPorCategoria).length
+      : 0,
+    periodoAnalise: periodoTexto
+  };
+
   return (
-    <div className="space-y-6">
+    <LayoutRelatorio
+      titulo="Relatório Financeiro"
+      subtitulo="Análise detalhada de receitas, despesas e custos operacionais"
+      tipoRelatorio="Relatório Financeiro Executivo"
+      periodo={periodoTexto}
+      dadosEstatisticos={dadosEstatisticos}
+    >
+      <div className="space-y-6">
       {/* Resumo Financeiro */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
@@ -425,7 +510,8 @@ const RelatorioFinanceiro = ({ data, filtroAno, filtroMes }: RelatorioFinanceiro
           </div>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </LayoutRelatorio>
   );
 };
 

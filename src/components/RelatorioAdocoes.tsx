@@ -12,6 +12,7 @@ import {
   MapPin,
   User
 } from "lucide-react";
+import LayoutRelatorio from "@/components/LayoutRelatorio";
 
 interface RelatorioAdocoesProps {
   data: any;
@@ -171,8 +172,26 @@ const RelatorioAdocoes = ({ data, filtroAno, filtroMes }: RelatorioAdocoesProps)
     );
   }
 
+  const periodoTexto = filtroAno && filtroAno !== 0 
+    ? (filtroMes && filtroMes !== 0 
+        ? `${new Date(2024, filtroMes - 1).toLocaleDateString('pt-PT', { month: 'long' })} de ${filtroAno}`
+        : `Ano ${filtroAno}`)
+    : 'Todos os períodos';
+
+  const dadosEstatisticos = {
+    totalRegistros: estatisticasAdocoes.totalAdocoes,
+    periodoAnalise: periodoTexto
+  };
+
   return (
-    <div className="space-y-6">
+    <LayoutRelatorio
+      titulo="Relatório de Adoções"
+      subtitulo="Análise detalhada do processo de adoção de animais"
+      tipoRelatorio="Relatório de Adoções e Bem-Estar Animal"
+      periodo={periodoTexto}
+      dadosEstatisticos={dadosEstatisticos}
+    >
+      <div className="space-y-6">
       {/* Resumo de Adoções */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="bg-gradient-to-br from-pink-50 to-rose-50 border-pink-200">
@@ -421,7 +440,8 @@ const RelatorioAdocoes = ({ data, filtroAno, filtroMes }: RelatorioAdocoesProps)
           </div>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </LayoutRelatorio>
   );
 };
 
