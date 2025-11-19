@@ -63,7 +63,7 @@ const GestaoUtilizadores = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   
-  const { user, hasPermission } = useAuth();
+  const { user, hasPermission, logout } = useAuth();
   const { toast } = useToast();
 
   // Verificar se tem permissão de administrador
@@ -417,7 +417,7 @@ const GestaoUtilizadores = () => {
               <div className="flex items-center space-x-3">
                 <img 
                   src="./images/BackgroundEraser_20250411_205630024.png" 
-                  alt="Associação Valentão" 
+                  alt="Associação Valentão"
                   className="h-8 w-auto object-contain"
                 />
                 <Users className="h-6 w-6 text-blue-600" />
@@ -577,7 +577,7 @@ const GestaoUtilizadores = () => {
                   </div>
                 </form>
               </DialogContent>
-              </Dialog>
+            </Dialog>
             </div>
           </div>
         </div>
