@@ -70,7 +70,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // AUTENTICAÇÃO COM PASSWORDS REAIS
       console.log('🔍 [AUTH] Verificando credenciais para:', username);
       
-      const { data, error } = await supabase.functions.invoke('auth_real_passwords_2025_11_23_03_00', {
+      const { data, error } = await supabase.functions.invoke('auth_improved_2025_11_23_03_00', {
         body: {
           username,
           password
