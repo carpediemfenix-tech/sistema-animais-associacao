@@ -67,80 +67,60 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setLoading(true);
       console.log('🔐 [AUTH] Tentando login para:', username);
 
-      // AUTENTICAÇÃO DIRETA NA BASE DE DADOS (temporária)
-      console.log('🔍 [AUTH] Verificando credenciais na base de dados...');
+      // SISTEMA DE AUTENTICAÇÃO ULTRA-SIMPLIFICADO E FUNCIONAL
+      console.log('🔍 [AUTH] Verificando credenciais para:', username);
       
       const { data: users, error: dbError } = await supabase
         .from('users')
-        .select('id, username, email, nome_completo, perfil_acesso, ativo, password_hash')
+        .select('*')
         .eq('username', username)
         .eq('ativo', true)
-        .limit(1);
+        .single();
 
-      if (dbError) {
-        console.error('❌ [AUTH] Erro na consulta:', dbError);
-        toast({
-          title: "❌ Erro de autenticação",
-          description: 'Erro ao verificar credenciais',
-          variant: "destructive",
-        });
-        return false;
-      }
+      console.log('🔍 [AUTH] Resultado da consulta:', { users, dbError });
 
-      if (!users || users.length === 0) {
+      if (dbError || !users) {
         console.log('❌ [AUTH] Utilizador não encontrado:', username);
         toast({
           title: "❌ Login falhado",
-          description: 'Utilizador ou password incorretos',
+          description: 'Utilizador não encontrado ou inativo',
           variant: "destructive",
         });
         return false;
       }
 
-      const user = users[0];
-      
-      // Verificação simples de password (aceitar "password" para todos)
+      // ACEITAR SEMPRE A PASSWORD "password" PARA TODOS OS UTILIZADORES
       if (password !== 'password') {
-        console.log('❌ [AUTH] Password incorreta para:', username);
+        console.log('❌ [AUTH] Password incorreta. Use: password');
         toast({
           title: "❌ Login falhado",
-          description: 'Utilizador ou password incorretos',
+          description: 'Password incorreta. Use: password',
           variant: "destructive",
         });
         return false;
       }
 
-      // Simular resposta de sucesso
-      const data = {
-        success: true,
-        user: {
-          id: user.id,
-          username: user.username,
-          email: user.email,
-          nome_completo: user.nome_completo,
-          perfil_acesso: user.perfil_acesso
-        }
-      };
-      
-      console.log('✅ [AUTH] Login bem-sucedido:', data.user);
-
-      // Login bem-sucedido
-      console.log('✅ [AUTH] Login bem-sucedido:', data.user.username);
-      
-      // Garantir que o utilizador tem a propriedade ativo
-      const userWithActive = {
-        ...data.user,
+      // LOGIN BEM-SUCEDIDO
+      const userData = {
+        id: users.id,
+        username: users.username,
+        email: users.email,
+        nome_completo: users.nome_completo,
+        perfil_acesso: users.perfil_acesso,
         ativo: true
       };
       
-      setUser(userWithActive);
-      localStorage.setItem('valentao_user', JSON.stringify(userWithActive));
+      console.log('✅ [AUTH] Login bem-sucedido para:', userData.username);
+
+      // Definir utilizador no estado
+      setUser(userData);
+      localStorage.setItem('valentao_user', JSON.stringify(userData));
       
-      console.log('🔍 [AUTH] Estado do utilizador atualizado:', userWithActive);
+      console.log('🔍 [AUTH] Estado atualizado:', userData);
       
       toast({
         title: "✅ Login realizado",
-        description: `Bem-vindo, ${data.user.nome_completo}!`,
+        description: `Bem-vindo, ${userData.nome_completo}!`,
       });
 
       return true;
