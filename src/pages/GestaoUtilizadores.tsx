@@ -339,18 +339,20 @@ const GestaoUtilizadores = () => {
       setSubmitting(true);
       console.log('🔑 [USER_MGMT] Atualizando password para:', selectedUserForReset.username);
 
-      // Hash simples da password (em produção usar bcrypt)
+      // Hash simples da password (temporariamente usar hash fixo)
       const passwordHash = '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi'; // hash para "password"
+      
+      console.log('🔍 [USER_MGMT] Tentando atualizar utilizador ID:', selectedUserForReset.id);
       
       const { data, error } = await supabase
         .from('users')
         .update({ 
-          password_hash: passwordHash,
-          updated_at: new Date().toISOString(),
-          updated_by: 'admin'
+          password_hash: passwordHash
         })
         .eq('id', selectedUserForReset.id)
         .select();
+        
+      console.log('🔍 [USER_MGMT] Resultado da atualização:', { data, error });
 
       if (error) {
         console.error('❌ [USER_MGMT] Erro ao atualizar password:', error);
