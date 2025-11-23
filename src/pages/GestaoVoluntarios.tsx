@@ -28,6 +28,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { Voluntario } from "@/types/animal";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const GestaoVoluntarios = () => {
   const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
@@ -43,6 +44,32 @@ const GestaoVoluntarios = () => {
     observacoes: ""
   });
   const { toast } = useToast();
+  const { hasPermission } = useAuth();
+
+  // Verificar se o utilizador tem permissão de administrador
+  if (!hasPermission('admin')) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+            <CardTitle className="text-red-600">Acesso Negado</CardTitle>
+            <CardDescription>
+              Apenas administradores podem aceder à gestão de voluntários
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="text-center">
+            <Link to="/">
+              <Button variant="outline" className="w-full">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Voltar ao Dashboard
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   useEffect(() => {
     fetchVoluntarios();
@@ -217,10 +244,42 @@ const GestaoVoluntarios = () => {
   };
 
   const handleDelete = async (voluntario: Voluntario) => {
+    // Confirmação antes de eliminar
+    const confirmDelete = confirm(
+      `Tem certeza que deseja eliminar o voluntário "${voluntario.nome}"?\n\n` +
+      `Esta ação não pode ser desfeita.`
+    );
+    
+    if (!confirmDelete) {
+      return;
+    }
+
     try {
       console.log(`🗑️ Eliminando voluntário ${voluntario.nome}...`);
       
-      // CORREÇÃO: Usar nome correto da tabela 'voluntarios'
+      // Verificar se há referências antes de eliminar
+      console.log('🔍 Verificando referências...');
+      
+      const { data: intervencoes, error: checkError } = await supabase
+        .from('intervencoes')
+        .select('id')
+        .eq('veterinario', voluntario.nome)
+        .limit(1);
+      
+      if (checkError) {
+        console.error('❌ Erro ao verificar referências:', checkError);
+      }
+      
+      if (intervencoes && intervencoes.length > 0) {
+        toast({
+          title: "Não é possível eliminar",
+          description: `O voluntário ${voluntario.nome} tem intervenções associadas. Desative-o em vez de eliminar.`,
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Eliminar o voluntário
       const { error } = await supabase
         .from('voluntarios')
         .delete()
@@ -228,6 +287,17 @@ const GestaoVoluntarios = () => {
 
       if (error) {
         console.error('❌ Erro ao eliminar voluntário:', error);
+        
+        // Tratar erros específicos
+        if (error.code === '23503') {
+          toast({
+            title: "Não é possível eliminar",
+            description: `O voluntário ${voluntario.nome} tem registos associados. Desative-o em vez de eliminar.`,
+            variant: "destructive",
+          });
+          return;
+        }
+        
         throw error;
       }
 

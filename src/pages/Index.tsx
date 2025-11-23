@@ -294,17 +294,19 @@ const Index = () => {
                     </Link>
                   </Button>
 
-                  {/* Voluntários */}
-                  <Button 
-                    asChild 
-                    variant="outline" 
-                    className="h-20 flex-col space-y-2 hover-lift border-green-200 hover:bg-green-50"
-                  >
-                    <Link to="/voluntarios">
-                      <UserPlus className="h-6 w-6 text-green-600" />
-                      <span className="text-sm font-medium text-green-600">Voluntários</span>
-                    </Link>
-                  </Button>
+                  {/* Voluntários - Apenas Administradores */}
+                  {hasPermission('admin') && (
+                    <Button 
+                      asChild 
+                      variant="outline" 
+                      className="h-20 flex-col space-y-2 hover-lift border-green-200 hover:bg-green-50"
+                    >
+                      <Link to="/voluntarios">
+                        <UserPlus className="h-6 w-6 text-green-600" />
+                        <span className="text-sm font-medium text-green-600">Voluntários</span>
+                      </Link>
+                    </Button>
+                  )}
 
                   {/* Intervenções */}
                   <Button 
@@ -428,12 +430,14 @@ const Index = () => {
                 <h3 className="font-semibold text-gray-800 mb-2">Gestão de Pessoas</h3>
                 <p className="text-sm text-gray-600 mb-4">Voluntários e colaboradores</p>
                 <div className="space-y-2">
-                  <Button asChild variant="outline" size="sm" className="w-full border-green-200 hover:bg-green-50">
-                    <Link to="/voluntarios">
-                      <Users className="h-4 w-4 mr-2" />
-                      Voluntários
-                    </Link>
-                  </Button>
+                  {hasPermission('admin') && (
+                    <Button asChild variant="outline" size="sm" className="w-full border-green-200 hover:bg-green-50">
+                      <Link to="/voluntarios">
+                        <Users className="h-4 w-4 mr-2" />
+                        Voluntários
+                      </Link>
+                    </Button>
+                  )}
                   {hasPermission('admin') && (
                     <Button asChild variant="outline" size="sm" className="w-full border-emerald-200 hover:bg-emerald-50">
                       <Link to="/utilizadores">
