@@ -270,9 +270,19 @@ const GestaoUtilizadores = () => {
         
         console.log('✅ [USER_MGMT] Nenhum duplicado encontrado');
         
-        // Gerar hash simples da password (temporário para teste)
-        const passwordHash = `simple_hash_${formData.password}_${Date.now()}`;
-        console.log('🔐 [USER_MGMT] Hash gerado:', passwordHash.substring(0, 20) + '...');
+        // Gerar hash real da password usando Edge Function
+        console.log('🔐 [USER_MGMT] Gerando hash bcrypt da password...');
+        const { data: hashData, error: hashError } = await supabase.functions.invoke('generate_password_hash_2025_11_23_03_00', {
+          body: { password: formData.password }
+        });
+        
+        if (hashError || !hashData.success) {
+          console.error('❌ [USER_MGMT] Erro ao gerar hash:', hashError);
+          throw new Error('Erro ao gerar hash da password');
+        }
+        
+        const passwordHash = hashData.hash;
+        console.log('✅ [USER_MGMT] Hash bcrypt gerado com sucesso');
         
         // Inserir utilizador diretamente
         const { data: newUser, error: insertError } = await supabase
@@ -339,8 +349,19 @@ const GestaoUtilizadores = () => {
       setSubmitting(true);
       console.log('🔑 [USER_MGMT] Atualizando password para:', selectedUserForReset.username);
 
-      // Hash simples da password (temporariamente usar hash fixo)
-      const passwordHash = '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi'; // hash para "password"
+      // Gerar hash real da nova password
+      console.log('🔐 [USER_MGMT] Gerando hash da nova password...');
+      const { data: hashData, error: hashError } = await supabase.functions.invoke('generate_password_hash_2025_11_23_03_00', {
+        body: { password: newPassword }
+      });
+      
+      if (hashError || !hashData.success) {
+        console.error('❌ [USER_MGMT] Erro ao gerar hash:', hashError);
+        throw new Error('Erro ao gerar hash da password');
+      }
+      
+      const passwordHash = hashData.hash;
+      console.log('✅ [USER_MGMT] Hash da nova password gerado');
       
       console.log('🔍 [USER_MGMT] Tentando atualizar utilizador ID:', selectedUserForReset.id);
       

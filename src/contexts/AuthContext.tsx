@@ -67,34 +67,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setLoading(true);
       console.log('🔐 [AUTH] Tentando login para:', username);
 
-      // SISTEMA DE AUTENTICAÇÃO ULTRA-SIMPLIFICADO E FUNCIONAL
+      // AUTENTICAÇÃO COM PASSWORDS REAIS
       console.log('🔍 [AUTH] Verificando credenciais para:', username);
       
-      const { data: users, error: dbError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('username', username)
-        .eq('ativo', true)
-        .single();
+      const { data, error } = await supabase.functions.invoke('auth_real_passwords_2025_11_23_03_00', {
+        body: {
+          username,
+          password
+        }
+      });
 
-      console.log('🔍 [AUTH] Resultado da consulta:', { users, dbError });
+      console.log('🔍 [AUTH] Resposta da Edge Function:', { data, error });
 
-      if (dbError || !users) {
-        console.log('❌ [AUTH] Utilizador não encontrado:', username);
+      if (error) {
+        console.error('❌ [AUTH] Erro na Edge Function:', error);
         toast({
-          title: "❌ Login falhado",
-          description: 'Utilizador não encontrado ou inativo',
+          title: "❌ Erro de autenticação",
+          description: 'Erro interno do servidor',
           variant: "destructive",
         });
         return false;
       }
 
-      // ACEITAR SEMPRE A PASSWORD "password" PARA TODOS OS UTILIZADORES
-      if (password !== 'password') {
-        console.log('❌ [AUTH] Password incorreta. Use: password');
+      if (!data.success) {
+        console.log('❌ [AUTH] Login falhado:', data.error);
         toast({
           title: "❌ Login falhado",
-          description: 'Password incorreta. Use: password',
+          description: data.error,
           variant: "destructive",
         });
         return false;
@@ -102,11 +101,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       // LOGIN BEM-SUCEDIDO
       const userData = {
-        id: users.id,
-        username: users.username,
-        email: users.email,
-        nome_completo: users.nome_completo,
-        perfil_acesso: users.perfil_acesso,
+        ...data.user,
         ativo: true
       };
       
