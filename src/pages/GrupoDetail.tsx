@@ -41,6 +41,7 @@ const GrupoDetail = () => {
   const [grupo, setGrupo] = useState<Grupo | null>(null);
   const [animais, setAnimais] = useState<Animal[]>([]);
   const [animaisDisponiveis, setAnimaisDisponiveis] = useState<Animal[]>([]);
+  const [todosAnimaisEspecie, setTodosAnimaisEspecie] = useState<Animal[]>([]);
   const [despesas, setDespesas] = useState<DespesaGrupo[]>([]);
   const [eventos, setEventos] = useState<EventoGrupo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,6 +52,7 @@ const GrupoDetail = () => {
   const [despesaDialogOpen, setDespesaDialogOpen] = useState(false);
   const [eventoDialogOpen, setEventoDialogOpen] = useState(false);
   const [animalDialogOpen, setAnimalDialogOpen] = useState(false);
+  const [transferirDialogOpen, setTransferirDialogOpen] = useState(false);
 
   // Estados dos formulários
   const [despesaForm, setDespesaForm] = useState({
@@ -119,6 +121,30 @@ const GrupoDetail = () => {
 
       // Buscar animais disponíveis para associar
       const especiePermitida = grupoData.tipo === 'matilha' ? 'Cão' : 'Gato';
+      console.log('🔍 [DEBUG] Buscando animais disponíveis:', {
+        especiePermitida,
+        grupoTipo: grupoData.tipo,
+        grupoId: id
+      });
+      
+      // Primeiro, vamos buscar TODOS os animais da espécie para debug
+      const { data: todosAnimais, error: todosError } = await supabase
+        .from('animais')
+        .select('*, grupos(nome, tipo)')
+        .eq('especie', especiePermitida);
+      
+      if (!todosError) {
+        console.log('🔍 [DEBUG] Todos os animais da espécie:', todosAnimais?.map(a => ({
+          nome: a.nome,
+          estado: a.estado,
+          arquivado: a.arquivado,
+          temGrupo: a.grupo_id ? 'SIM' : 'NÃO',
+          nomeGrupo: a.grupos?.nome || 'N/A',
+          disponivel: !a.grupo_id && a.estado === 'Ativo' && !a.arquivado ? 'SIM' : 'NÃO'
+        })));
+        setTodosAnimaisEspecie(todosAnimais || []);
+      }
+      
       const { data: animaisDisponiveisData, error: disponiveisError } = await supabase
         .from('animais')
         .select('*')
@@ -297,6 +323,39 @@ const GrupoDetail = () => {
       toast({
         title: "❌ Erro",
         description: "Não foi possível associar o animal",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleTransferirAnimal = async (animalId: string, animalNome: string, grupoAtual: string) => {
+    const confirmTransferir = confirm(
+      `Tem certeza que deseja transferir "${animalNome}" do grupo "${grupoAtual}" para "${grupo?.nome}"?`
+    );
+    
+    if (!confirmTransferir) return;
+
+    try {
+      console.log('🔄 [TRANSFERIR] Transferindo animal:', animalNome);
+
+      const { error } = await supabase
+        .from('animais')
+        .update({ grupo_id: id })
+        .eq('id', animalId);
+
+      if (error) throw error;
+
+      toast({
+        title: "✅ Animal transferido",
+        description: `${animalNome} foi transferido para ${grupo?.nome}`,
+      });
+
+      await fetchGrupoData();
+    } catch (error: any) {
+      console.error('💥 [TRANSFERIR] Erro:', error);
+      toast({
+        title: "❌ Erro",
+        description: "Não foi possível transferir o animal",
         variant: "destructive",
       });
     }
@@ -549,14 +608,15 @@ const GrupoDetail = () => {
                       {grupo.tipo === 'matilha' ? 'Cães' : 'Gatos'} associados a este grupo
                     </CardDescription>
                   </div>
-                  <Dialog open={animalDialogOpen} onOpenChange={setAnimalDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button>
-                        <UserPlus className="h-4 w-4 mr-2" />
-                        Associar Animal
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
+                  <div className="flex space-x-2">
+                    <Dialog open={animalDialogOpen} onOpenChange={setAnimalDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button>
+                          <UserPlus className="h-4 w-4 mr-2" />
+                          Associar Animal
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
                       <DialogHeader>
                         <DialogTitle>Associar Animal ao Grupo</DialogTitle>
                         <DialogDescription>
@@ -564,38 +624,210 @@ const GrupoDetail = () => {
                         </DialogDescription>
                       </DialogHeader>
                       <div className="space-y-4">
+                        {/* Resumo de animais */}
+                        <div className="bg-blue-50 p-4 rounded-lg">
+                          <h4 className="font-medium text-blue-900 mb-2">
+                            Resumo de {grupo.tipo === 'matilha' ? 'Cães' : 'Gatos'}
+                          </h4>
+                          <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <span className="text-blue-700">Total da espécie:</span>
+                              <span className="font-medium ml-2">{todosAnimaisEspecie.length}</span>
+                            </div>
+                            <div>
+                              <span className="text-green-700">Disponíveis:</span>
+                              <span className="font-medium ml-2">{animaisDisponiveis.length}</span>
+                            </div>
+                            <div>
+                              <span className="text-orange-700">Em outros grupos:</span>
+                              <span className="font-medium ml-2">
+                                {todosAnimaisEspecie.filter(a => a.grupo_id && a.grupo_id !== id).length}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-red-700">Não ativos:</span>
+                              <span className="font-medium ml-2">
+                                {todosAnimaisEspecie.filter(a => a.estado !== 'Ativo' || a.arquivado).length}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Lista de animais disponíveis */}
                         {animaisDisponiveis.length === 0 ? (
-                          <p className="text-center text-gray-500 py-8">
-                            Não há {grupo.tipo === 'matilha' ? 'cães' : 'gatos'} disponíveis para associar
-                          </p>
+                          <div className="text-center py-8">
+                            <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                            <p className="text-gray-600 font-medium mb-2">
+                              Não há {grupo.tipo === 'matilha' ? 'cães' : 'gatos'} disponíveis
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              Todos os animais desta espécie já pertencem a grupos, não estão ativos ou estão arquivados
+                            </p>
+                          </div>
                         ) : (
-                          <div className="max-h-96 overflow-y-auto space-y-2">
-                            {animaisDisponiveis.map((animal) => (
-                              <div key={animal.id} className="flex items-center justify-between p-3 border rounded-lg">
-                                <div>
-                                  <p className="font-medium">{animal.nome}</p>
-                                  <p className="text-sm text-gray-500">
-                                    {animal.raca} • {animal.sexo} • Processo: {animal.numero_processo}
-                                  </p>
+                          <div>
+                            <h4 className="font-medium text-gray-900 mb-3">
+                              Animais Disponíveis ({animaisDisponiveis.length})
+                            </h4>
+                            <div className="max-h-64 overflow-y-auto space-y-2">
+                              {animaisDisponiveis.map((animal) => (
+                                <div key={animal.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                                  <div>
+                                    <p className="font-medium">{animal.nome}</p>
+                                    <p className="text-sm text-gray-500">
+                                      {animal.raca} • {animal.sexo} • Processo: {animal.numero_processo}
+                                    </p>
+                                    <div className="flex items-center mt-1">
+                                      <Badge className="bg-green-100 text-green-800 text-xs">
+                                        {animal.estado}
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    onClick={() => {
+                                      handleAssociarAnimal(animal.id);
+                                      setAnimalDialogOpen(false);
+                                    }}
+                                  >
+                                    Associar
+                                  </Button>
                                 </div>
-                                <Button
-                                  size="sm"
-                                  onClick={() => {
-                                    handleAssociarAnimal(animal.id);
-                                    setAnimalDialogOpen(false);
-                                  }}
-                                >
-                                  Associar
-                                </Button>
-                              </div>
-                            ))}
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Lista de animais não disponíveis (para debug) */}
+                        {todosAnimaisEspecie.length > animaisDisponiveis.length && (
+                          <div className="border-t pt-4">
+                            <h4 className="font-medium text-gray-700 mb-3">
+                              Animais Não Disponíveis ({todosAnimaisEspecie.length - animaisDisponiveis.length})
+                            </h4>
+                            <div className="max-h-48 overflow-y-auto space-y-2">
+                              {todosAnimaisEspecie
+                                .filter(animal => 
+                                  animal.grupo_id !== null || 
+                                  animal.estado !== 'Ativo' || 
+                                  animal.arquivado
+                                )
+                                .map((animal) => {
+                                  let motivo = '';
+                                  let corBadge = 'bg-gray-100 text-gray-800';
+                                  let podeTransferir = false;
+                                  
+                                  if (animal.arquivado) {
+                                    motivo = 'Arquivado';
+                                    corBadge = 'bg-red-100 text-red-800';
+                                  } else if (animal.estado !== 'Ativo') {
+                                    motivo = animal.estado;
+                                    corBadge = 'bg-yellow-100 text-yellow-800';
+                                  } else if (animal.grupo_id) {
+                                    motivo = animal.grupos?.nome ? `Em: ${animal.grupos.nome}` : 'Em outro grupo';
+                                    corBadge = 'bg-blue-100 text-blue-800';
+                                    podeTransferir = animal.grupo_id !== id; // Pode transferir se não for do grupo atual
+                                  }
+                                  
+                                  return (
+                                    <div key={animal.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                      <div className="flex-1">
+                                        <p className="font-medium text-gray-700">{animal.nome}</p>
+                                        <p className="text-sm text-gray-500">
+                                          {animal.raca} • {animal.sexo} • Processo: {animal.numero_processo}
+                                        </p>
+                                      </div>
+                                      <div className="flex items-center space-x-2">
+                                        <Badge className={`text-xs ${corBadge}`}>
+                                          {motivo}
+                                        </Badge>
+                                        {podeTransferir && (
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => {
+                                              handleTransferirAnimal(animal.id, animal.nome, animal.grupos?.nome || 'Desconhecido');
+                                              setAnimalDialogOpen(false);
+                                            }}
+                                            className="text-xs"
+                                          >
+                                            Transferir
+                                          </Button>
+                                        )}
+                                      </div>
+                                    </div>
+                                  );
+                                })
+                              }
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                  
+                  <Dialog open={transferirDialogOpen} onOpenChange={setTransferirDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline">
+                        <Edit className="h-4 w-4 mr-2" />
+                        Transferir de Outros Grupos
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Transferir Animal de Outro Grupo</DialogTitle>
+                        <DialogDescription>
+                          Transferir {grupo.tipo === 'matilha' ? 'cães' : 'gatos'} que já pertencem a outros grupos
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        {todosAnimaisEspecie.filter(a => a.grupo_id && a.grupo_id !== id && !a.arquivado && a.estado === 'Ativo').length === 0 ? (
+                          <div className="text-center py-8">
+                            <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                            <p className="text-gray-600 font-medium mb-2">
+                              Não há {grupo.tipo === 'matilha' ? 'cães' : 'gatos'} em outros grupos
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              Todos os animais desta espécie estão disponíveis ou já pertencem a este grupo
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="max-h-64 overflow-y-auto space-y-2">
+                            {todosAnimaisEspecie
+                              .filter(a => a.grupo_id && a.grupo_id !== id && !a.arquivado && a.estado === 'Ativo')
+                              .map((animal) => (
+                                <div key={animal.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                                  <div>
+                                    <p className="font-medium">{animal.nome}</p>
+                                    <p className="text-sm text-gray-500">
+                                      {animal.raca} • {animal.sexo} • Processo: {animal.numero_processo}
+                                    </p>
+                                    <div className="flex items-center mt-1">
+                                      <Badge className="bg-blue-100 text-blue-800 text-xs">
+                                        Grupo: {animal.grupos?.nome || 'Desconhecido'}
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => {
+                                      handleTransferirAnimal(animal.id, animal.nome, animal.grupos?.nome || 'Desconhecido');
+                                      setTransferirDialogOpen(false);
+                                    }}
+                                  >
+                                    Transferir
+                                  </Button>
+                                </div>
+                              ))
+                            }
                           </div>
                         )}
                       </div>
                     </DialogContent>
                   </Dialog>
                 </div>
-              </CardHeader>
+              </div>
+            </CardHeader>
               <CardContent>
                 {animais.length === 0 ? (
                   <div className="text-center py-12">
