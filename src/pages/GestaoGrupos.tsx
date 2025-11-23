@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -42,6 +43,7 @@ const GestaoGrupos = () => {
   const [editingGrupo, setEditingGrupo] = useState<Grupo | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
+  const { hasPermission } = useAuth();
 
   // Estados do formulário
   const [grupoForm, setGrupoForm] = useState({
@@ -365,10 +367,12 @@ const GestaoGrupos = () => {
               </div>
             </div>
             <div className="flex space-x-3">
-              <Button onClick={openNewDialog}>
-                <Plus className="h-4 w-4 mr-2" />
-                Novo Grupo
-              </Button>
+              {hasPermission('create') && (
+                <Button onClick={openNewDialog}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Novo Grupo
+                </Button>
+              )}
               
               <Button variant="outline" asChild>
                 <Link to="/">
@@ -570,21 +574,25 @@ const GestaoGrupos = () => {
                                 <Eye className="h-4 w-4" />
                               </Link>
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => openEditDialog(grupo)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDelete(grupo)}
-                              className="text-red-600 hover:text-red-800"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            {hasPermission('update') && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => openEditDialog(grupo)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {hasPermission('delete') && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDelete(grupo)}
+                                className="text-red-600 hover:text-red-800"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>

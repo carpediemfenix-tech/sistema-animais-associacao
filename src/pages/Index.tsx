@@ -406,12 +406,14 @@ const Index = () => {
                       Ver Animais
                     </Link>
                   </Button>
-                  <Button asChild size="sm" className="w-full btn-animal-primary">
-                    <Link to="/novo-animal">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Novo Animal
-                    </Link>
-                  </Button>
+                  {hasPermission('create') && (
+                    <Button asChild size="sm" className="w-full btn-animal-primary">
+                      <Link to="/novo-animal">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Novo Animal
+                      </Link>
+                    </Button>
+                  )}
                   
                   {/* Botão Animais Arquivados - Apenas Administradores */}
                   {hasPermission('admin') && (

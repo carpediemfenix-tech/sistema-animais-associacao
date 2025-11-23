@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -41,6 +42,7 @@ interface MovimentoFinanceiro {
 }
 
 const GestaoFinanceira = () => {
+  const { hasPermission } = useAuth();
   const [movimentos, setMovimentos] = useState<MovimentoFinanceiro[]>([]);
   const [custosIntervencoes, setCustosIntervencoes] = useState(0);
   const [historicoUnificado, setHistoricoUnificado] = useState<any[]>([]);
@@ -498,13 +500,14 @@ const GestaoFinanceira = () => {
                 Atualizar
               </Button>
               
-              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button size="sm" className="bg-green-600 hover:bg-green-700">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Novo Movimento
-                  </Button>
-                </DialogTrigger>
+              {hasPermission('create') && (
+                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Novo Movimento
+                    </Button>
+                  </DialogTrigger>
                 <DialogContent className="sm:max-w-md">
                   <DialogHeader>
                     <DialogTitle className="flex items-center justify-between">
@@ -649,6 +652,7 @@ const GestaoFinanceira = () => {
                   </form>
                 </DialogContent>
               </Dialog>
+              )}
             </div>
           </div>
         </div>
@@ -791,22 +795,31 @@ const GestaoFinanceira = () => {
                         <TableCell className="text-center">
                           {item.tipo === 'movimento' ? (
                             <div className="flex items-center justify-center space-x-1">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => abrirEdicao(item)}
-                                className="h-8 w-8 p-0 hover:bg-blue-100"
-                              >
-                                <FileText className="h-4 w-4 text-blue-600" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => excluirMovimento(item.id)}
-                                className="h-8 w-8 p-0 hover:bg-red-100"
-                              >
-                                <X className="h-4 w-4 text-red-600" />
-                              </Button>
+                              {hasPermission('update') && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => abrirEdicao(item)}
+                                  className="h-8 w-8 p-0 hover:bg-blue-100"
+                                >
+                                  <FileText className="h-4 w-4 text-blue-600" />
+                                </Button>
+                              )}
+                              {hasPermission('delete') && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => excluirMovimento(item.id)}
+                                  className="h-8 w-8 p-0 hover:bg-red-100"
+                                >
+                                  <X className="h-4 w-4 text-red-600" />
+                                </Button>
+                              )}
+                              {!hasPermission('update') && !hasPermission('delete') && (
+                                <Badge variant="secondary" className="text-xs">
+                                  Somente leitura
+                                </Badge>
+                              )}
                             </div>
                           ) : (
                             <Badge variant="secondary" className="text-xs">

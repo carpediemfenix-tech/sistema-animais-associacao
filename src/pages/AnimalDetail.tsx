@@ -913,16 +913,17 @@ const AnimalDetail = () => {
                       Histórico de procedimentos veterinários e cuidados médicos
                     </CardDescription>
                   </div>
-                  <Dialog open={intervencaoDialogOpen} onOpenChange={setIntervencaoDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button onClick={() => {
-                        setEditingIntervencao(null);
-                        resetIntervencaoForm();
-                      }}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Nova Intervenção
-                      </Button>
-                    </DialogTrigger>
+                  {hasPermission('create') && (
+                    <Dialog open={intervencaoDialogOpen} onOpenChange={setIntervencaoDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button onClick={() => {
+                          setEditingIntervencao(null);
+                          resetIntervencaoForm();
+                        }}>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Nova Intervenção
+                        </Button>
+                      </DialogTrigger>
                     <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
                       <DialogHeader>
                         <DialogTitle>
@@ -1061,6 +1062,7 @@ const AnimalDetail = () => {
                       </form>
                     </DialogContent>
                   </Dialog>
+                  )}
                 </div>
               </CardHeader>
               <CardContent>
@@ -1113,19 +1115,22 @@ const AnimalDetail = () => {
                           </div>
                           
                           <div className="flex items-center space-x-2 ml-4">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => openEditIntervencao(intervencao)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="sm">
-                                  <Trash2 className="h-4 w-4 text-red-500" />
-                                </Button>
-                              </AlertDialogTrigger>
+                            {hasPermission('update') && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => openEditIntervencao(intervencao)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {hasPermission('delete') && (
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="sm">
+                                    <Trash2 className="h-4 w-4 text-red-500" />
+                                  </Button>
+                                </AlertDialogTrigger>
                               <AlertDialogContent>
                                 <AlertDialogHeader>
                                   <AlertDialogTitle>Eliminar Intervenção</AlertDialogTitle>
@@ -1144,6 +1149,7 @@ const AnimalDetail = () => {
                                 </AlertDialogFooter>
                               </AlertDialogContent>
                             </AlertDialog>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -1165,16 +1171,17 @@ const AnimalDetail = () => {
                       Registro de eventos importantes na vida do animal
                     </CardDescription>
                   </div>
-                  <Dialog open={eventoDialogOpen} onOpenChange={setEventoDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button onClick={() => {
-                        setEditingEvento(null);
-                        resetEventoForm();
-                      }}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Novo Evento
-                      </Button>
-                    </DialogTrigger>
+                  {hasPermission('create') && (
+                    <Dialog open={eventoDialogOpen} onOpenChange={setEventoDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button onClick={() => {
+                          setEditingEvento(null);
+                          resetEventoForm();
+                        }}>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Novo Evento
+                        </Button>
+                      </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
                         <DialogTitle>
@@ -1260,6 +1267,7 @@ const AnimalDetail = () => {
                       </form>
                     </DialogContent>
                   </Dialog>
+                  )}
                 </div>
               </CardHeader>
               <CardContent>
@@ -1296,19 +1304,22 @@ const AnimalDetail = () => {
                           </div>
                           
                           <div className="flex items-center space-x-2 ml-4">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => openEditEvento(evento)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="sm">
-                                  <Trash2 className="h-4 w-4 text-red-500" />
-                                </Button>
-                              </AlertDialogTrigger>
+                            {hasPermission('update') && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => openEditEvento(evento)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {hasPermission('delete') && (
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="sm">
+                                    <Trash2 className="h-4 w-4 text-red-500" />
+                                  </Button>
+                                </AlertDialogTrigger>
                               <AlertDialogContent>
                                 <AlertDialogHeader>
                                   <AlertDialogTitle>Eliminar Evento</AlertDialogTitle>
@@ -1327,6 +1338,7 @@ const AnimalDetail = () => {
                                 </AlertDialogFooter>
                               </AlertDialogContent>
                             </AlertDialog>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -1348,16 +1360,17 @@ const AnimalDetail = () => {
                       Histórico de locais onde o animal esteve
                     </CardDescription>
                   </div>
-                  <Dialog open={localizacaoDialogOpen} onOpenChange={setLocalizacaoDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button onClick={() => {
-                        setEditingLocalizacao(null);
-                        resetLocalizacaoForm();
-                      }}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Nova Localização
-                      </Button>
-                    </DialogTrigger>
+                  {hasPermission('create') && (
+                    <Dialog open={localizacaoDialogOpen} onOpenChange={setLocalizacaoDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button onClick={() => {
+                          setEditingLocalizacao(null);
+                          resetLocalizacaoForm();
+                        }}>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Nova Localização
+                        </Button>
+                      </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
                         <DialogTitle>
@@ -1452,6 +1465,7 @@ const AnimalDetail = () => {
                       </form>
                     </DialogContent>
                   </Dialog>
+                  )}
                 </div>
               </CardHeader>
               <CardContent>
@@ -1491,19 +1505,22 @@ const AnimalDetail = () => {
                           </div>
                           
                           <div className="flex items-center space-x-2 ml-4">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => openEditLocalizacao(localizacao)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="sm">
-                                  <Trash2 className="h-4 w-4 text-red-500" />
-                                </Button>
-                              </AlertDialogTrigger>
+                            {hasPermission('update') && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => openEditLocalizacao(localizacao)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {hasPermission('delete') && (
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="sm">
+                                    <Trash2 className="h-4 w-4 text-red-500" />
+                                  </Button>
+                                </AlertDialogTrigger>
                               <AlertDialogContent>
                                 <AlertDialogHeader>
                                   <AlertDialogTitle>Eliminar Localização</AlertDialogTitle>
@@ -1522,6 +1539,7 @@ const AnimalDetail = () => {
                                 </AlertDialogFooter>
                               </AlertDialogContent>
                             </AlertDialog>
+                            )}
                           </div>
                         </div>
                       </div>

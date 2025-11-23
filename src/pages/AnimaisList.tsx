@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +30,7 @@ const AnimaisList = () => {
   const [filtroEstado, setFiltroEstado] = useState("todos");
   const [mostrarArquivados, setMostrarArquivados] = useState(false);
   const { toast } = useToast();
+  const { hasPermission } = useAuth();
 
   useEffect(() => {
     fetchAnimais();
@@ -143,12 +145,14 @@ const AnimaisList = () => {
                 </div>
               </div>
             </div>
-            <Button asChild>
-              <Link to="/novo-animal">
-                <Plus className="h-4 w-4 mr-2" />
-                Novo Animal
-              </Link>
-            </Button>
+            {hasPermission('create') && (
+              <Button asChild>
+                <Link to="/novo-animal">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Novo Animal
+                </Link>
+              </Button>
+            )}
           </div>
         </div>
       </div>
@@ -327,12 +331,14 @@ const AnimaisList = () => {
                           Ver Detalhes
                         </Link>
                       </Button>
-                      <Button asChild size="sm" className="flex-1">
-                        <Link to={`/animal/${animal.id}/editar`}>
-                          <Edit className="h-4 w-4 mr-1" />
-                          Editar
-                        </Link>
-                      </Button>
+                      {hasPermission('update') && (
+                        <Button asChild size="sm" className="flex-1">
+                          <Link to={`/animal/${animal.id}/editar`}>
+                            <Edit className="h-4 w-4 mr-1" />
+                            Editar
+                          </Link>
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </CardContent>
