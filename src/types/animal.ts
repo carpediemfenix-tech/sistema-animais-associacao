@@ -20,6 +20,8 @@ export interface Animal {
   adotante_contacto?: string;
   observacoes?: string;
   arquivado: boolean;
+  data_arquivamento?: string;
+  motivo_arquivamento?: string;
   foto_url?: string;
   created_at: string;
   updated_at: string;

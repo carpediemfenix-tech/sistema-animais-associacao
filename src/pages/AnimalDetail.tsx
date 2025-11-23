@@ -28,11 +28,14 @@ import {
   Clock,
   AlertTriangle,
   CheckCircle,
+  Archive,
+  ArchiveRestore,
   Loader2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Animal, Intervencao, Evento, Localizacao, TipoIntervencao, Voluntario } from "@/types/animal";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const AnimalDetail = () => {
   const { id } = useParams();
@@ -45,6 +48,7 @@ const AnimalDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { hasPermission } = useAuth();
 
   // Estados dos modais
   const [intervencaoDialogOpen, setIntervencaoDialogOpen] = useState(false);
@@ -595,6 +599,65 @@ const AnimalDetail = () => {
     setLocalizacaoDialogOpen(true);
   };
 
+  // Função para arquivar/desarquivar animal
+  const handleArquivar = async () => {
+    if (!animal) return;
+
+    const isArquivando = !animal.arquivado;
+    const acao = isArquivando ? 'arquivar' : 'desarquivar';
+    
+    const confirmMessage = isArquivando 
+      ? `Tem certeza que deseja arquivar o animal "${animal.nome}"?\n\n` +
+        `O animal deixará de aparecer na gestão normal e nas estatísticas.`
+      : `Tem certeza que deseja desarquivar o animal "${animal.nome}"?\n\n` +
+        `O animal voltará a aparecer na gestão normal.`;
+    
+    if (!confirm(confirmMessage)) return;
+
+    try {
+      console.log(`📎 [ARQUIVO] ${acao} animal:`, animal.nome);
+
+      const updateData: any = {
+        arquivado: isArquivando,
+        updated_at: new Date().toISOString()
+      };
+
+      if (isArquivando) {
+        updateData.data_arquivamento = new Date().toISOString();
+        updateData.motivo_arquivamento = 'Arquivado manualmente';
+      } else {
+        updateData.data_arquivamento = null;
+        updateData.motivo_arquivamento = null;
+      }
+
+      const { error } = await supabase
+        .from('animais')
+        .update(updateData)
+        .eq('id', animal.id);
+
+      if (error) {
+        console.error(`❌ [ARQUIVO] Erro ao ${acao}:`, error);
+        throw error;
+      }
+
+      toast({
+        title: `✅ Animal ${isArquivando ? 'arquivado' : 'desarquivado'}`,
+        description: `${animal.nome} foi ${isArquivando ? 'arquivado' : 'desarquivado'} com sucesso`,
+      });
+
+      // Atualizar o estado local
+      setAnimal({ ...animal, ...updateData });
+
+    } catch (error: any) {
+      console.error(`💥 [ARQUIVO] Erro ao ${acao}:`, error);
+      toast({
+        title: "❌ Erro",
+        description: `Não foi possível ${acao} o animal`,
+        variant: "destructive",
+      });
+    }
+  };
+
   const formatCurrency = (value: number | null) => {
     if (!value) return "N/A";
     return new Intl.NumberFormat('pt-PT', {
@@ -686,9 +749,33 @@ const AnimalDetail = () => {
                 </div>
               </div>
             </div>
-            <Badge className={getEstadoBadgeColor(animal.estado)}>
-              {animal.estado}
-            </Badge>
+            <div className="flex items-center space-x-3">
+              <Badge className={getEstadoBadgeColor(animal.estado)}>
+                {animal.estado}
+              </Badge>
+              
+              {/* Botão de Arquivar - Apenas para Administradores */}
+              {hasPermission('admin') && (
+                <Button
+                  variant={animal.arquivado ? "default" : "outline"}
+                  size="sm"
+                  onClick={handleArquivar}
+                  className={animal.arquivado ? "bg-blue-600 hover:bg-blue-700" : "border-orange-300 text-orange-600 hover:bg-orange-50"}
+                >
+                  {animal.arquivado ? (
+                    <>
+                      <ArchiveRestore className="h-4 w-4 mr-2" />
+                      Desarquivar
+                    </>
+                  ) : (
+                    <>
+                      <Archive className="h-4 w-4 mr-2" />
+                      Arquivar
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </div>

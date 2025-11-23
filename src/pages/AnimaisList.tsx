@@ -41,6 +41,7 @@ const AnimaisList = () => {
       const { data, error } = await supabase
         .from('animais')
         .select('*')
+        .eq('arquivado', false) // Excluir animais arquivados
         .order('created_at', { ascending: false });
 
       if (error) throw error;

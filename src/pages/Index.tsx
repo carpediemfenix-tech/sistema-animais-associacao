@@ -23,7 +23,8 @@ import {
   UserPlus,
   BarChart3,
   Sparkles,
-  LogOut
+  LogOut,
+  Archive
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { DashboardStats, PerfilUsuario } from "@/types/animal";
@@ -49,7 +50,8 @@ const Index = () => {
       // Buscar estatísticas básicas
       const { data: animais, error: animaisError } = await supabase
         .from('animais')
-        .select('*');
+        .select('*')
+        .eq('arquivado', false); // Excluir animais arquivados das estatísticas
 
       if (animaisError) throw animaisError;
 
@@ -396,6 +398,16 @@ const Index = () => {
                       Novo Animal
                     </Link>
                   </Button>
+                  
+                  {/* Botão Animais Arquivados - Apenas Administradores */}
+                  {hasPermission('admin') && (
+                    <Button asChild variant="outline" size="sm" className="w-full border-gray-300 text-gray-600 hover:bg-gray-50">
+                      <Link to="/animais-arquivados">
+                        <Archive className="h-4 w-4 mr-2" />
+                        Arquivados
+                      </Link>
+                    </Button>
+                  )}
                 </div>
               </div>
 

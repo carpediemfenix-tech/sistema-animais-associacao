@@ -102,8 +102,8 @@ const SistemaRelatoriosProfissional = () => {
         { data: localizacoes, error: localizacoesError },
         { data: tiposIntervencoes, error: tiposError }
       ] = await Promise.all([
-        supabase.from('animais').select('*').order('created_at', { ascending: false }),
-        supabase.from('intervencoes').select('*').order('data_intervencao', { ascending: false }),
+        supabase.from('animais').select('*').eq('arquivado', false).order('created_at', { ascending: false }),
+        supabase.from('intervencoes').select('*, animais!inner(arquivado)').eq('animais.arquivado', false).order('data_intervencao', { ascending: false }),
         supabase.from('eventos').select('*').order('data_evento', { ascending: false }),
         supabase.from('voluntarios').select('*').order('nome'),
         supabase.from('movimentos_financeiros').select('*').order('data_movimento', { ascending: false }),

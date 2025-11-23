@@ -52,11 +52,12 @@ const SistemaLembretes = () => {
       const hoje = new Date();
       const em30Dias = new Date(hoje.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-      // 1. Buscar animais ativos
+      // 1. Buscar animais ativos (excluir arquivados)
       const { data: animais, error: animaisError } = await supabase
         .from('animais')
         .select('*')
-        .eq('estado', 'Ativo');
+        .eq('estado', 'Ativo')
+        .eq('arquivado', false);
 
       if (animaisError) throw animaisError;
 
