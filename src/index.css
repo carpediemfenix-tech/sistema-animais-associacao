@@ -2,112 +2,116 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
+/* SISTEMA TÁTICO MILITAR - Design System 
+Todas as cores devem ser HSL para consistência.
 */
 
 @layer base {
   :root {
-    /* 🐾 TEMA DE ANIMAIS - CORES PRINCIPAIS */
-    --background: 45 100% 98%; /* Creme suave */
-    --foreground: 25 25% 15%; /* Marrom escuro */
+    /* 🎖️ TEMA TÁTICO MILITAR - CORES PRINCIPAIS */
+    --background: 120 8% 8%; /* Verde militar escuro */
+    --foreground: 0 0% 95%; /* Branco quase puro */
 
-    --card: 0 0% 100%; /* Branco puro */
-    --card-foreground: 25 25% 15%;
+    --card: 120 10% 12%; /* Verde militar card */
+    --card-foreground: 0 0% 95%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 25 25% 15%;
+    --popover: 120 12% 10%;
+    --popover-foreground: 0 0% 95%;
 
-    /* 🧡 Laranja caloroso - cor principal */
-    --primary: 25 95% 53%; /* Laranja vibrante */
+    /* 🟢 Verde militar - cor principal */
+    --primary: 120 40% 25%; /* Verde militar */
     --primary-foreground: 0 0% 100%;
 
-    /* 🌿 Verde natureza - secundária */
-    --secondary: 142 76% 36%; /* Verde floresta */
-    --secondary-foreground: 0 0% 100%;
+    /* ⚫ Cinza tático - secundária */
+    --secondary: 0 0% 20%; /* Cinza escuro */
+    --secondary-foreground: 0 0% 95%;
 
-    /* 🔵 Azul suave - acentos */
-    --accent: 200 100% 70%; /* Azul céu */
-    --accent-foreground: 25 25% 15%;
+    /* 🔶 Laranja tático - acentos */
+    --accent: 30 100% 50%; /* Laranja militar */
+    --accent-foreground: 0 0% 10%;
 
-    --muted: 45 50% 95%; /* Bege muito claro */
-    --muted-foreground: 25 15% 45%;
+    --muted: 120 8% 15%; /* Verde militar muted */
+    --muted-foreground: 0 0% 70%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 75% 50%; /* Vermelho militar */
     --destructive-foreground: 0 0% 100%;
 
-    --border: 45 30% 88%;
-    --input: 45 30% 88%;
-    --ring: 25 95% 53%;
+    --border: 120 15% 20%; /* Borda verde militar */
+    --input: 120 15% 18%; /* Input verde militar */
+    --ring: 120 40% 25%;
 
-    --radius: 0.75rem; /* Bordas mais arredondadas */
+    --radius: 0.25rem; /* Bordas mais angulares - estilo militar */
 
-    /* 🎨 CORES TEMÁTICAS PERSONALIZADAS */
-    --animal-orange: 25 95% 53%; /* Laranja principal */
-    --animal-green: 142 76% 36%; /* Verde natureza */
-    --animal-blue: 200 100% 70%; /* Azul céu */
-    --animal-purple: 280 100% 70%; /* Roxo suave */
-    --animal-brown: 25 50% 35%; /* Marrom terra */
-    --animal-yellow: 45 100% 60%; /* Amarelo sol */
+    /* 🎖️ CORES TEMÁTICAS MILITARES */
+    --tactical-green: 120 40% 25%; /* Verde militar principal */
+    --tactical-dark: 120 15% 10%; /* Verde muito escuro */
+    --tactical-gray: 0 0% 25%; /* Cinza tático */
+    --tactical-orange: 30 100% 50%; /* Laranja de alerta */
+    --tactical-red: 0 75% 50%; /* Vermelho de perigo */
+    --tactical-blue: 210 100% 40%; /* Azul tático */
+    --tactical-yellow: 50 100% 50%; /* Amarelo de aviso */
     
-    /* 🌈 GRADIENTES TEMÁTICOS */
-    --gradient-warm: linear-gradient(135deg, hsl(25 95% 53%), hsl(45 100% 60%));
-    --gradient-nature: linear-gradient(135deg, hsl(142 76% 36%), hsl(200 100% 70%));
-    --gradient-sunset: linear-gradient(135deg, hsl(25 95% 53%), hsl(280 100% 70%));
+    /* 🎖️ GRADIENTES MILITARES */
+    --gradient-tactical: linear-gradient(135deg, hsl(120 40% 25%), hsl(120 30% 15%));
+    --gradient-command: linear-gradient(135deg, hsl(0 0% 20%), hsl(120 15% 10%));
+    --gradient-alert: linear-gradient(135deg, hsl(30 100% 50%), hsl(0 75% 50%));
+    --gradient-stealth: linear-gradient(135deg, hsl(120 15% 10%), hsl(0 0% 5%));
     
-    /* 🎭 SOMBRAS TEMÁTICAS */
-    --shadow-warm: 0 10px 30px -10px hsl(25 95% 53% / 0.3);
-    --shadow-nature: 0 10px 30px -10px hsl(142 76% 36% / 0.3);
-    --shadow-soft: 0 4px 20px -4px hsl(25 25% 15% / 0.1);
+    /* ⚔️ SOMBRAS MILITARES */
+    --shadow-tactical: 0 8px 25px -8px hsl(120 40% 25% / 0.4);
+    --shadow-command: 0 12px 35px -12px hsl(0 0% 0% / 0.6);
+    --shadow-stealth: 0 4px 15px -4px hsl(120 15% 10% / 0.8);
+    --shadow-alert: 0 6px 20px -6px hsl(30 100% 50% / 0.3);
 
-    --sidebar-background: 45 100% 98%;
-    --sidebar-foreground: 25 25% 15%;
-    --sidebar-primary: 25 95% 53%;
+    /* 🎖️ SIDEBAR MILITAR */
+    --sidebar-background: 120 15% 8%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 120 40% 25%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 45 50% 95%;
-    --sidebar-accent-foreground: 25 25% 15%;
-    --sidebar-border: 45 30% 88%;
-    --sidebar-ring: 25 95% 53%;
+    --sidebar-accent: 120 15% 15%;
+    --sidebar-accent-foreground: 0 0% 90%;
+    --sidebar-border: 120 20% 18%;
+    --sidebar-ring: 120 40% 25%;
   }
 
   .dark {
-    /* 🌙 TEMA ESCURO COM CORES DE ANIMAIS */
-    --background: 25 25% 8%; /* Marrom muito escuro */
-    --foreground: 45 50% 95%; /* Creme claro */
+    /* 🌃 MODO NOTURNO MILITAR - OPERAÇÕES ESPECIAIS */
+    --background: 120 15% 5%; /* Verde militar ultra escuro */
+    --foreground: 0 0% 98%; /* Branco quase puro */
 
-    --card: 25 25% 12%; /* Marrom escuro */
-    --card-foreground: 45 50% 95%;
+    --card: 120 20% 8%; /* Verde militar escuro */
+    --card-foreground: 0 0% 95%;
 
-    --popover: 25 25% 12%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 120 25% 6%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 120 50% 30%; /* Verde militar mais claro */
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 0 0% 15%; /* Cinza muito escuro */
+    --secondary-foreground: 0 0% 95%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 120 15% 12%;
+    --muted-foreground: 0 0% 65%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 30 100% 55%; /* Laranja mais vibrante no escuro */
+    --accent-foreground: 0 0% 10%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 80% 55%; /* Vermelho mais vibrante */
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --border: 120 20% 15%;
+    --input: 120 20% 12%;
+    --ring: 120 50% 30%;
 
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 94.1%;
-    --sidebar-primary-foreground: 240 5.9% 10%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 120 20% 6%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 120 50% 30%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 120 15% 10%;
+    --sidebar-accent-foreground: 0 0% 90%;
+    --sidebar-border: 120 25% 12%;
+    --sidebar-ring: 120 50% 30%;
   }
 }
 
@@ -120,9 +124,93 @@ All colors MUST be HSL.
   }
 }
 
-/* Animações suaves para transições de tema */
+/* 🎖️ CLASSES MILITARES PERSONALIZADAS */
+
+/* Animações militares */
 * {
-  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Efeitos tácticos */
+.tactical-card {
+  @apply bg-gradient-to-br from-slate-800 to-slate-900 border border-green-800/30;
+  box-shadow: 0 4px 15px -4px hsl(120 15% 10% / 0.8), inset 0 1px 0 hsl(120 40% 25% / 0.2);
+}
+
+.tactical-button {
+  @apply bg-gradient-to-r from-green-800 to-green-900 hover:from-green-700 hover:to-green-800;
+  @apply border border-green-600/50 text-green-100 font-semibold;
+  @apply shadow-lg hover:shadow-xl transform hover:scale-105;
+  transition: all 0.2s ease-in-out;
+}
+
+.tactical-button:active {
+  @apply scale-95;
+}
+
+.command-center {
+  @apply bg-gradient-to-br from-slate-900 via-slate-800 to-green-900/20;
+  @apply border-2 border-green-800/40;
+  box-shadow: 
+    0 0 30px hsl(120 40% 25% / 0.3),
+    inset 0 1px 0 hsl(120 40% 25% / 0.1);
+}
+
+.tactical-grid {
+  background-image: 
+    linear-gradient(hsl(120 40% 25% / 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(120 40% 25% / 0.1) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.military-badge {
+  @apply inline-flex items-center px-2 py-1 text-xs font-bold;
+  @apply bg-gradient-to-r from-green-800 to-green-900;
+  @apply border border-green-600/50 text-green-100;
+  @apply shadow-md;
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 50%, calc(100% - 8px) 100%, 0 100%);
+}
+
+.alert-status {
+  @apply animate-pulse;
+  box-shadow: 0 0 10px hsl(30 100% 50% / 0.5);
+}
+
+.stealth-mode {
+  @apply opacity-80 hover:opacity-100;
+  backdrop-filter: blur(1px);
+}
+
+/* Tipografia militar */
+.military-title {
+  @apply font-bold text-green-100 tracking-wider uppercase;
+  text-shadow: 0 2px 4px hsl(0 0% 0% / 0.8);
+}
+
+.tactical-text {
+  @apply text-green-200 font-mono text-sm;
+}
+
+/* Animações de entrada */
+@keyframes tactical-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tactical-enter {
+  animation: tactical-slide-in 0.3s ease-out;
+}
+
+/* Hover effects militares */
+.tactical-hover:hover {
+  @apply bg-green-800/20 border-green-600/60;
+  box-shadow: 0 0 15px hsl(120 40% 25% / 0.4);
 }
 
 /* Estilos para impressão */
