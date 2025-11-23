@@ -1,15 +1,16 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import WelcomeMessage from '@/components/WelcomeMessage';
 
 interface User {
   id: string;
   username: string;
   email: string;
-  nome_completo: string;
-  perfil_acesso: 'administrador' | 'tecnico' | 'consulta';
+  nome: string;
+  perfil: 'administrador' | 'tecnico' | 'consulta';
   ativo: boolean;
-  ultimo_login?: string;
+  last_login?: string;
 }
 
 interface AuthContextType {
@@ -19,6 +20,8 @@ interface AuthContextType {
   logout: () => void;
   hasPermission: (action: 'create' | 'update' | 'delete' | 'admin') => boolean;
   isAuthenticated: boolean;
+  showWelcomeMessage: boolean;
+  showGoodbyeMessage: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -38,6 +41,8 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showWelcomeMessage, setShowWelcomeMessage] = useState(false);
+  const [showGoodbyeMessage, setShowGoodbyeMessage] = useState(false);
   const { toast } = useToast();
 
   // Verificar se há utilizador logado no localStorage
@@ -113,10 +118,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       console.log('🔍 [AUTH] Estado atualizado:', userData);
       
-      toast({
-        title: "✅ Login realizado",
-        description: `Bem-vindo, ${userData.nome_completo}!`,
-      });
+      // Mostrar mensagem de boas-vindas
+      setShowWelcomeMessage(true);
 
       return true;
     } catch (error) {
@@ -135,13 +138,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Função de logout
   const logout = () => {
     console.log('🚪 [AUTH] Logout realizado');
-    setUser(null);
-    localStorage.removeItem('valentao_user');
     
-    toast({
-      title: "👋 Logout realizado",
-      description: "Sessão terminada com sucesso",
-    });
+    // Mostrar mensagem de despedida
+    setShowGoodbyeMessage(true);
+    
+    // Aguardar a mensagem antes de limpar o estado
+    setTimeout(() => {
+      setUser(null);
+      localStorage.removeItem('valentao_user');
+      setShowGoodbyeMessage(false);
+    }, 2300);
   };
 
   // Verificar permissões baseadas no perfil
@@ -171,12 +177,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     login,
     logout,
     hasPermission,
-    isAuthenticated
+    isAuthenticated,
+    showWelcomeMessage,
+    showGoodbyeMessage
   };
 
   return (
     <AuthContext.Provider value={value}>
       {children}
+      
+      {/* Mensagem de Boas-vindas */}
+      {showWelcomeMessage && user && (
+        <WelcomeMessage
+          type="welcome"
+          userName={user.nome || user.username}
+          onComplete={() => setShowWelcomeMessage(false)}
+        />
+      )}
+      
+      {/* Mensagem de Despedida */}
+      {showGoodbyeMessage && user && (
+        <WelcomeMessage
+          type="goodbye"
+          userName={user.nome || user.username}
+          onComplete={() => setShowGoodbyeMessage(false)}
+        />
+      )}
     </AuthContext.Provider>
   );
 };

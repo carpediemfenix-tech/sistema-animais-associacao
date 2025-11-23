@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import UserHeader from "@/components/UserHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -129,49 +130,11 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-green-50">
-      {/* 🎨 Header Redesenhado */}
-      <div className="bg-white/80 backdrop-blur-sm shadow-lg border-b border-orange-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
-            <div className="flex items-center space-x-4">
-              {/* Logotipo da Associação Valentão */}
-              <div className="flex items-center space-x-3">
-                <img 
-                  src="./images/BackgroundEraser_20250411_205630024.png" 
-                  alt="Associação Valentão" 
-                  className="h-12 w-auto object-contain drop-shadow-md"
-                />
-                <div>
-                  <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-yellow-600 bg-clip-text text-transparent">
-                    Sistema Valentão
-                  </h1>
-                  <p className="text-sm text-gray-600">Gestão de Animais da Associação</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="sm" className="hover:bg-orange-100">
-                <Bell className="h-5 w-5 text-orange-600" />
-              </Button>
-              <Button variant="ghost" size="sm" asChild className="hover:bg-orange-100">
-                <Link to="/configuracoes">
-                  <Settings className="h-5 w-5 text-orange-600" />
-                </Link>
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={logout}
-                className="hover:bg-red-100 text-red-600 hover:text-red-700"
-                title="Terminar Sessão"
-              >
-                <LogOut className="h-5 w-5" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Header com informações do utilizador */}
+      <UserHeader 
+        title="Dashboard - Sistema Valentão" 
+        description="Gestão de Animais da Associação"
+      />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* 📊 Cards de Estatísticas Temáticos */}

@@ -71,10 +71,10 @@ const Login = () => {
             />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Associação Valentão
+            Valentão ao Resgate
           </h1>
           <p className="text-gray-600">
-            Sistema de Gestão de Animais
+            Sistema de Gestão - Valentão Operacionais
           </p>
         </div>
 
@@ -163,17 +163,21 @@ const Login = () => {
               </Button>
             </form>
 
-            {/* Informações de Teste */}
-            <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <h4 className="text-sm font-medium text-blue-900 mb-2">
-                🔑 Credenciais de Teste:
+            {/* Informações de Acesso */}
+            <div className="mt-6 p-4 bg-amber-50 rounded-lg border border-amber-200">
+              <h4 className="text-sm font-medium text-amber-900 mb-2">
+                🔐 Acesso ao Sistema
               </h4>
-              <div className="text-xs text-blue-700 space-y-1">
-                <div><strong>Username:</strong> admin</div>
-                <div><strong>Password:</strong> admin123</div>
-                <div className="text-blue-600 mt-2">
-                  ⚠️ Altere a password após o primeiro login
+              <div className="text-xs text-amber-700 space-y-2">
+                <p>
+                  Para aceder ao sistema, entre em contacto com o Administrador:
+                </p>
+                <div className="bg-white p-2 rounded border border-amber-300">
+                  <strong>📧 E-mail:</strong> geral@valentao.org
                 </div>
+                <p className="text-amber-600 mt-2">
+                  ℹ️ Será fornecido um nome de utilizador e password personalizados
+                </p>
               </div>
             </div>
           </CardContent>
@@ -181,8 +185,8 @@ const Login = () => {
 
         {/* Footer */}
         <div className="text-center mt-8 text-sm text-gray-500">
-          <p>© 2025 Associação Valentão - Sistema de Gestão</p>
-          <p className="mt-1">Desenvolvido com ❤️ para o bem-estar animal</p>
+          <p>© 2025 Valentão ao Resgate - Valentão Operacionais</p>
+          <p className="mt-1">Desenvolvido com muito ❤️ para o bem-estar animal</p>
         </div>
       </div>
     </div>

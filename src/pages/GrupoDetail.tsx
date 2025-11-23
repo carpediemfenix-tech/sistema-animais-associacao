@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -47,6 +48,7 @@ const GrupoDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { hasPermission } = useAuth();
 
   // Estados dos diálogos
   const [despesaDialogOpen, setDespesaDialogOpen] = useState(false);
@@ -609,13 +611,14 @@ const GrupoDetail = () => {
                     </CardDescription>
                   </div>
                   <div className="flex space-x-2">
-                    <Dialog open={animalDialogOpen} onOpenChange={setAnimalDialogOpen}>
-                      <DialogTrigger asChild>
-                        <Button>
-                          <UserPlus className="h-4 w-4 mr-2" />
-                          Associar Animal
-                        </Button>
-                      </DialogTrigger>
+                    {hasPermission('update') && (
+                      <Dialog open={animalDialogOpen} onOpenChange={setAnimalDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button>
+                            <UserPlus className="h-4 w-4 mr-2" />
+                            Associar Animal
+                          </Button>
+                        </DialogTrigger>
                       <DialogContent>
                       <DialogHeader>
                         <DialogTitle>Associar Animal ao Grupo</DialogTitle>
@@ -683,15 +686,17 @@ const GrupoDetail = () => {
                                       </Badge>
                                     </div>
                                   </div>
-                                  <Button
-                                    size="sm"
-                                    onClick={() => {
-                                      handleAssociarAnimal(animal.id);
-                                      setAnimalDialogOpen(false);
-                                    }}
-                                  >
-                                    Associar
-                                  </Button>
+                                  {hasPermission('update') && (
+                                    <Button
+                                      size="sm"
+                                      onClick={() => {
+                                        handleAssociarAnimal(animal.id);
+                                        setAnimalDialogOpen(false);
+                                      }}
+                                    >
+                                      Associar
+                                    </Button>
+                                  )}
                                 </div>
                               ))}
                             </div>
@@ -740,7 +745,7 @@ const GrupoDetail = () => {
                                         <Badge className={`text-xs ${corBadge}`}>
                                           {motivo}
                                         </Badge>
-                                        {podeTransferir && (
+                                        {podeTransferir && hasPermission('update') && (
                                           <Button
                                             size="sm"
                                             variant="outline"
@@ -764,14 +769,16 @@ const GrupoDetail = () => {
                       </div>
                     </DialogContent>
                   </Dialog>
+                  )}
                   
-                  <Dialog open={transferirDialogOpen} onOpenChange={setTransferirDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button variant="outline">
-                        <Edit className="h-4 w-4 mr-2" />
-                        Transferir de Outros Grupos
-                      </Button>
-                    </DialogTrigger>
+                  {hasPermission('update') && (
+                    <Dialog open={transferirDialogOpen} onOpenChange={setTransferirDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline">
+                          <Edit className="h-4 w-4 mr-2" />
+                          Transferir de Outros Grupos
+                        </Button>
+                      </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
                         <DialogTitle>Transferir Animal de Outro Grupo</DialogTitle>
@@ -807,16 +814,18 @@ const GrupoDetail = () => {
                                       </Badge>
                                     </div>
                                   </div>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => {
-                                      handleTransferirAnimal(animal.id, animal.nome, animal.grupos?.nome || 'Desconhecido');
-                                      setTransferirDialogOpen(false);
-                                    }}
-                                  >
-                                    Transferir
-                                  </Button>
+                                  {hasPermission('update') && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => {
+                                        handleTransferirAnimal(animal.id, animal.nome, animal.grupos?.nome || 'Desconhecido');
+                                        setTransferirDialogOpen(false);
+                                      }}
+                                    >
+                                      Transferir
+                                    </Button>
+                                  )}
                                 </div>
                               ))
                             }
@@ -825,6 +834,7 @@ const GrupoDetail = () => {
                       </div>
                     </DialogContent>
                   </Dialog>
+                  )}
                 </div>
               </div>
             </CardHeader>
@@ -878,14 +888,16 @@ const GrupoDetail = () => {
                                     <Eye className="h-4 w-4" />
                                   </Link>
                                 </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleDesassociarAnimal(animal.id, animal.nome)}
-                                  className="text-red-600 hover:text-red-800"
-                                >
-                                  <UserMinus className="h-4 w-4" />
-                                </Button>
+                                {hasPermission('update') && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleDesassociarAnimal(animal.id, animal.nome)}
+                                    className="text-red-600 hover:text-red-800"
+                                  >
+                                    <UserMinus className="h-4 w-4" />
+                                  </Button>
+                                )}
                               </div>
                             </TableCell>
                           </TableRow>
@@ -909,13 +921,14 @@ const GrupoDetail = () => {
                       Total: {formatCurrency(totalDespesas)}
                     </CardDescription>
                   </div>
-                  <Dialog open={despesaDialogOpen} onOpenChange={setDespesaDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Nova Despesa
-                      </Button>
-                    </DialogTrigger>
+                  {hasPermission('create') && (
+                    <Dialog open={despesaDialogOpen} onOpenChange={setDespesaDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Nova Despesa
+                        </Button>
+                      </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
                         <DialogTitle>Nova Despesa</DialogTitle>
@@ -998,6 +1011,7 @@ const GrupoDetail = () => {
                       </form>
                     </DialogContent>
                   </Dialog>
+                  )}
                 </div>
               </CardHeader>
               <CardContent>

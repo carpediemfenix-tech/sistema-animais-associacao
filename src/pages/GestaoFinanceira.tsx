@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import UserHeader from "@/components/UserHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -467,41 +468,28 @@ const GestaoFinanceira = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="sm" asChild>
-                <Link to="/">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Voltar ao Dashboard
-                </Link>
-              </Button>
-              <div className="flex items-center space-x-3">
-                <img 
-                  src="./images/BackgroundEraser_20250411_205630024.png" 
-                  alt="Associação Valentão" 
-                  className="h-8 w-auto object-contain"
-                />
-                <DollarSign className="h-6 w-6 text-green-600" />
-                <div>
-                  <h1 className="text-xl font-bold text-gray-900">Gestão Financeira</h1>
-                  <p className="text-sm text-gray-500">
-                    {movimentos.length} movimentos registados
-                  </p>
-                </div>
-              </div>
-            </div>
+      {/* Header com informações do utilizador */}
+      <UserHeader 
+        title="Gestão Financeira" 
+        description={`${movimentos.length} movimentos registados`}
+        showBackButton={true}
+        backTo="/"
+      />
 
-            <div className="flex items-center space-x-4">
-              <Button onClick={fetchMovimentos} variant="outline" size="sm" disabled={loading}>
-                <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                Atualizar
-              </Button>
-              
-              {hasPermission('create') && (
-                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-2">
+            <DollarSign className="h-6 w-6 text-green-600" />
+            <h2 className="text-lg font-semibold text-gray-900">Controlo Financeiro</h2>
+          </div>
+          <div className="flex items-center space-x-4">
+            <Button onClick={fetchMovimentos} variant="outline" size="sm" disabled={loading}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              Atualizar
+            </Button>
+            
+            {hasPermission('create') && (
+              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                   <DialogTrigger asChild>
                     <Button size="sm" className="bg-green-600 hover:bg-green-700">
                       <Plus className="h-4 w-4 mr-2" />
@@ -652,13 +640,10 @@ const GestaoFinanceira = () => {
                   </form>
                 </DialogContent>
               </Dialog>
-              )}
-            </div>
+            )}
           </div>
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Resumo Financeiro */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
