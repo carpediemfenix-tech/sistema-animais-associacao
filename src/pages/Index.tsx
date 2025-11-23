@@ -426,7 +426,7 @@ const Index = () => {
                       asChild 
                       className="tactical-button h-16 flex-col space-y-1 text-xs bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-600 hover:to-gray-700"
                     >
-                      <Link to="/arquivados">
+                      <Link to="/animais-arquivados">
                         <Archive className="h-5 w-5" />
                         <span className="font-semibold">ARQUIVO</span>
                       </Link>
@@ -598,21 +598,6 @@ const Index = () => {
           </CardContent>
         </Card>
 
-        {/* 🔔 Sistema de Lembretes Inteligentes */}
-        <Card className="animal-card border-0 shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2 text-gray-800">
-              <Bell className="h-5 w-5 text-orange-500 animate-pulse" />
-              <span>Lembretes Inteligentes</span>
-            </CardTitle>
-            <CardDescription>
-              Sistema automático de alertas e lembretes para cuidados com os animais
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <SistemaLembretes />
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
