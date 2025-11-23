@@ -48,6 +48,11 @@ const GestaoGrupos = () => {
     tipo: "",
     localizacao: "",
     endereco: "",
+    coordenadas_latitude: "",
+    coordenadas_longitude: "",
+    localidade: "",
+    concelho: "",
+    distrito: "",
     responsavel_voluntario_id: "",
     cuidador_informal: "",
     contacto_cuidador: "",
@@ -131,6 +136,11 @@ const GestaoGrupos = () => {
       tipo: "",
       localizacao: "",
       endereco: "",
+      coordenadas_latitude: "",
+      coordenadas_longitude: "",
+      localidade: "",
+      concelho: "",
+      distrito: "",
       responsavel_voluntario_id: "",
       cuidador_informal: "",
       contacto_cuidador: "",
@@ -151,12 +161,33 @@ const GestaoGrupos = () => {
       return;
     }
 
+    // Validar coordenadas se fornecidas
+    if (grupoForm.coordenadas_latitude && (isNaN(parseFloat(grupoForm.coordenadas_latitude)) || parseFloat(grupoForm.coordenadas_latitude) < -90 || parseFloat(grupoForm.coordenadas_latitude) > 90)) {
+      toast({
+        title: "❌ Erro",
+        description: "Latitude deve ser um número entre -90 e 90",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (grupoForm.coordenadas_longitude && (isNaN(parseFloat(grupoForm.coordenadas_longitude)) || parseFloat(grupoForm.coordenadas_longitude) < -180 || parseFloat(grupoForm.coordenadas_longitude) > 180)) {
+      toast({
+        title: "❌ Erro",
+        description: "Longitude deve ser um número entre -180 e 180",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       console.log('💾 [GRUPOS] Salvando grupo:', grupoForm);
 
       const grupoData = {
         ...grupoForm,
         responsavel_voluntario_id: grupoForm.responsavel_voluntario_id || null,
+        coordenadas_latitude: grupoForm.coordenadas_latitude ? parseFloat(grupoForm.coordenadas_latitude) : null,
+        coordenadas_longitude: grupoForm.coordenadas_longitude ? parseFloat(grupoForm.coordenadas_longitude) : null,
         updated_at: new Date().toISOString()
       };
 
@@ -207,6 +238,11 @@ const GestaoGrupos = () => {
       tipo: grupo.tipo,
       localizacao: grupo.localizacao || "",
       endereco: grupo.endereco || "",
+      coordenadas_latitude: grupo.coordenadas_latitude?.toString() || "",
+      coordenadas_longitude: grupo.coordenadas_longitude?.toString() || "",
+      localidade: grupo.localidade || "",
+      concelho: grupo.concelho || "",
+      distrito: grupo.distrito || "",
       responsavel_voluntario_id: grupo.responsavel_voluntario_id || "",
       cuidador_informal: grupo.cuidador_informal || "",
       contacto_cuidador: grupo.contacto_cuidador || "",
@@ -307,7 +343,10 @@ const GestaoGrupos = () => {
             <div className="flex space-x-3">
               <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button onClick={resetForm}>
+                  <Button onClick={() => {
+                    resetForm();
+                    setDialogOpen(true);
+                  }}>
                     <Plus className="h-4 w-4 mr-2" />
                     Novo Grupo
                   </Button>
@@ -380,6 +419,63 @@ const GestaoGrupos = () => {
                           value={grupoForm.endereco}
                           onChange={(e) => setGrupoForm({...grupoForm, endereco: e.target.value})}
                           placeholder="Endereço completo"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Campos Geográficos */}
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <Label htmlFor="localidade">Localidade</Label>
+                        <Input
+                          id="localidade"
+                          value={grupoForm.localidade}
+                          onChange={(e) => setGrupoForm({...grupoForm, localidade: e.target.value})}
+                          placeholder="Localidade"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="concelho">Concelho</Label>
+                        <Input
+                          id="concelho"
+                          value={grupoForm.concelho}
+                          onChange={(e) => setGrupoForm({...grupoForm, concelho: e.target.value})}
+                          placeholder="Concelho"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="distrito">Distrito</Label>
+                        <Input
+                          id="distrito"
+                          value={grupoForm.distrito}
+                          onChange={(e) => setGrupoForm({...grupoForm, distrito: e.target.value})}
+                          placeholder="Distrito"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Coordenadas Geográficas */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="coordenadas_latitude">Latitude</Label>
+                        <Input
+                          id="coordenadas_latitude"
+                          type="number"
+                          step="0.000001"
+                          value={grupoForm.coordenadas_latitude}
+                          onChange={(e) => setGrupoForm({...grupoForm, coordenadas_latitude: e.target.value})}
+                          placeholder="Ex: 41.157944"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="coordenadas_longitude">Longitude</Label>
+                        <Input
+                          id="coordenadas_longitude"
+                          type="number"
+                          step="0.000001"
+                          value={grupoForm.coordenadas_longitude}
+                          onChange={(e) => setGrupoForm({...grupoForm, coordenadas_longitude: e.target.value})}
+                          placeholder="Ex: -8.629105"
                         />
                       </div>
                     </div>
@@ -596,9 +692,21 @@ const GestaoGrupos = () => {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center text-sm text-gray-600">
-                            <MapPin className="h-4 w-4 mr-1" />
-                            {grupo.localizacao || 'N/A'}
+                          <div className="text-sm">
+                            <div className="flex items-center text-gray-600 mb-1">
+                              <MapPin className="h-4 w-4 mr-1" />
+                              {grupo.localizacao || 'N/A'}
+                            </div>
+                            {(grupo.localidade || grupo.concelho || grupo.distrito) && (
+                              <div className="text-xs text-gray-500">
+                                {[grupo.localidade, grupo.concelho, grupo.distrito].filter(Boolean).join(', ')}
+                              </div>
+                            )}
+                            {(grupo.coordenadas_latitude && grupo.coordenadas_longitude) && (
+                              <div className="text-xs text-blue-600 mt-1">
+                                📍 {grupo.coordenadas_latitude.toFixed(6)}, {grupo.coordenadas_longitude.toFixed(6)}
+                              </div>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell>

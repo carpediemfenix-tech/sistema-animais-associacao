@@ -145,6 +145,11 @@ export interface Grupo {
   tipo: 'matilha' | 'colonia';
   localizacao?: string;
   endereco?: string;
+  coordenadas_latitude?: number;
+  coordenadas_longitude?: number;
+  localidade?: string;
+  concelho?: string;
+  distrito?: string;
   responsavel_voluntario_id?: string;
   cuidador_informal?: string;
   contacto_cuidador?: string;
