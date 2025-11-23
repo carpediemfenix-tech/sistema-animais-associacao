@@ -44,8 +44,11 @@ const Login = () => {
     try {
       const success = await login(username.trim(), password);
       if (success) {
-        // O redirecionamento será feito automaticamente pelo Navigate acima
-        console.log('✅ [LOGIN] Redirecionando para dashboard...');
+        console.log('✅ [LOGIN] Login bem-sucedido, redirecionando...');
+        // Forçar redirecionamento manual
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 1000);
       }
     } catch (error) {
       console.error('💥 [LOGIN] Erro no submit:', error);

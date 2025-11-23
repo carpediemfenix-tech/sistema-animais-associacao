@@ -126,8 +126,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       // Login bem-sucedido
       console.log('✅ [AUTH] Login bem-sucedido:', data.user.username);
-      setUser(data.user);
-      localStorage.setItem('valentao_user', JSON.stringify(data.user));
+      
+      // Garantir que o utilizador tem a propriedade ativo
+      const userWithActive = {
+        ...data.user,
+        ativo: true
+      };
+      
+      setUser(userWithActive);
+      localStorage.setItem('valentao_user', JSON.stringify(userWithActive));
+      
+      console.log('🔍 [AUTH] Estado do utilizador atualizado:', userWithActive);
       
       toast({
         title: "✅ Login realizado",
