@@ -40,6 +40,7 @@ const GestaoGrupos = () => {
   const [filterTipo, setFilterTipo] = useState("todos");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingGrupo, setEditingGrupo] = useState<Grupo | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
 
   // Estados do formulário
@@ -149,6 +150,31 @@ const GestaoGrupos = () => {
     setEditingGrupo(null);
   };
 
+  const openNewDialog = () => {
+    resetForm();
+    setDialogOpen(true);
+  };
+
+  const openEditDialog = (grupo: Grupo) => {
+    setEditingGrupo(grupo);
+    setGrupoForm({
+      nome: grupo.nome,
+      tipo: grupo.tipo,
+      localizacao: grupo.localizacao || "",
+      endereco: grupo.endereco || "",
+      coordenadas_latitude: grupo.coordenadas_latitude?.toString() || "",
+      coordenadas_longitude: grupo.coordenadas_longitude?.toString() || "",
+      localidade: grupo.localidade || "",
+      concelho: grupo.concelho || "",
+      distrito: grupo.distrito || "",
+      responsavel_voluntario_id: grupo.responsavel_voluntario_id || "",
+      cuidador_informal: grupo.cuidador_informal || "",
+      contacto_cuidador: grupo.contacto_cuidador || "",
+      observacoes: grupo.observacoes || ""
+    });
+    setDialogOpen(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -162,32 +188,48 @@ const GestaoGrupos = () => {
     }
 
     // Validar coordenadas se fornecidas
-    if (grupoForm.coordenadas_latitude && (isNaN(parseFloat(grupoForm.coordenadas_latitude)) || parseFloat(grupoForm.coordenadas_latitude) < -90 || parseFloat(grupoForm.coordenadas_latitude) > 90)) {
-      toast({
-        title: "❌ Erro",
-        description: "Latitude deve ser um número entre -90 e 90",
-        variant: "destructive",
-      });
-      return;
+    if (grupoForm.coordenadas_latitude && grupoForm.coordenadas_latitude.trim()) {
+      const lat = parseFloat(grupoForm.coordenadas_latitude);
+      if (isNaN(lat) || lat < -90 || lat > 90) {
+        toast({
+          title: "❌ Erro",
+          description: "Latitude deve ser um número entre -90 e 90",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
-    if (grupoForm.coordenadas_longitude && (isNaN(parseFloat(grupoForm.coordenadas_longitude)) || parseFloat(grupoForm.coordenadas_longitude) < -180 || parseFloat(grupoForm.coordenadas_longitude) > 180)) {
-      toast({
-        title: "❌ Erro",
-        description: "Longitude deve ser um número entre -180 e 180",
-        variant: "destructive",
-      });
-      return;
+    if (grupoForm.coordenadas_longitude && grupoForm.coordenadas_longitude.trim()) {
+      const lng = parseFloat(grupoForm.coordenadas_longitude);
+      if (isNaN(lng) || lng < -180 || lng > 180) {
+        toast({
+          title: "❌ Erro",
+          description: "Longitude deve ser um número entre -180 e 180",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     try {
+      setSubmitting(true);
       console.log('💾 [GRUPOS] Salvando grupo:', grupoForm);
 
       const grupoData = {
-        ...grupoForm,
+        nome: grupoForm.nome.trim(),
+        tipo: grupoForm.tipo,
+        localizacao: grupoForm.localizacao.trim() || null,
+        endereco: grupoForm.endereco.trim() || null,
+        coordenadas_latitude: grupoForm.coordenadas_latitude.trim() ? parseFloat(grupoForm.coordenadas_latitude) : null,
+        coordenadas_longitude: grupoForm.coordenadas_longitude.trim() ? parseFloat(grupoForm.coordenadas_longitude) : null,
+        localidade: grupoForm.localidade.trim() || null,
+        concelho: grupoForm.concelho.trim() || null,
+        distrito: grupoForm.distrito.trim() || null,
         responsavel_voluntario_id: grupoForm.responsavel_voluntario_id || null,
-        coordenadas_latitude: grupoForm.coordenadas_latitude ? parseFloat(grupoForm.coordenadas_latitude) : null,
-        coordenadas_longitude: grupoForm.coordenadas_longitude ? parseFloat(grupoForm.coordenadas_longitude) : null,
+        cuidador_informal: grupoForm.cuidador_informal.trim() || null,
+        contacto_cuidador: grupoForm.contacto_cuidador.trim() || null,
+        observacoes: grupoForm.observacoes.trim() || null,
         updated_at: new Date().toISOString()
       };
 
@@ -225,30 +267,12 @@ const GestaoGrupos = () => {
       console.error('💥 [GRUPOS] Erro ao salvar:', error);
       toast({
         title: "❌ Erro",
-        description: "Não foi possível salvar o grupo",
+        description: error.message || "Não foi possível salvar o grupo",
         variant: "destructive",
       });
+    } finally {
+      setSubmitting(false);
     }
-  };
-
-  const handleEdit = (grupo: Grupo) => {
-    setEditingGrupo(grupo);
-    setGrupoForm({
-      nome: grupo.nome,
-      tipo: grupo.tipo,
-      localizacao: grupo.localizacao || "",
-      endereco: grupo.endereco || "",
-      coordenadas_latitude: grupo.coordenadas_latitude?.toString() || "",
-      coordenadas_longitude: grupo.coordenadas_longitude?.toString() || "",
-      localidade: grupo.localidade || "",
-      concelho: grupo.concelho || "",
-      distrito: grupo.distrito || "",
-      responsavel_voluntario_id: grupo.responsavel_voluntario_id || "",
-      cuidador_informal: grupo.cuidador_informal || "",
-      contacto_cuidador: grupo.contacto_cuidador || "",
-      observacoes: grupo.observacoes || ""
-    });
-    setDialogOpen(true);
   };
 
   const handleDelete = async (grupo: Grupo) => {
@@ -341,208 +365,10 @@ const GestaoGrupos = () => {
               </div>
             </div>
             <div className="flex space-x-3">
-              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button onClick={() => {
-                    resetForm();
-                    setDialogOpen(true);
-                  }}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Novo Grupo
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl">
-                  <DialogHeader>
-                    <DialogTitle>
-                      {editingGrupo ? 'Editar Grupo' : 'Novo Grupo'}
-                    </DialogTitle>
-                    <DialogDescription>
-                      {editingGrupo 
-                        ? 'Edite as informações do grupo'
-                        : 'Crie uma nova matilha ou colónia'
-                      }
-                    </DialogDescription>
-                  </DialogHeader>
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="nome">Nome *</Label>
-                        <Input
-                          id="nome"
-                          value={grupoForm.nome}
-                          onChange={(e) => setGrupoForm({...grupoForm, nome: e.target.value})}
-                          placeholder="Nome da matilha ou colónia"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="tipo">Tipo *</Label>
-                        <Select 
-                          value={grupoForm.tipo} 
-                          onValueChange={(value) => setGrupoForm({...grupoForm, tipo: value})}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecionar tipo" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="matilha">
-                              <div className="flex items-center">
-                                <Dog className="h-4 w-4 mr-2" />
-                                Matilha (Cães)
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="colonia">
-                              <div className="flex items-center">
-                                <Cat className="h-4 w-4 mr-2" />
-                                Colónia (Gatos)
-                              </div>
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="localizacao">Localização</Label>
-                        <Input
-                          id="localizacao"
-                          value={grupoForm.localizacao}
-                          onChange={(e) => setGrupoForm({...grupoForm, localizacao: e.target.value})}
-                          placeholder="Local onde se encontra o grupo"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="endereco">Endereço</Label>
-                        <Input
-                          id="endereco"
-                          value={grupoForm.endereco}
-                          onChange={(e) => setGrupoForm({...grupoForm, endereco: e.target.value})}
-                          placeholder="Endereço completo"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Campos Geográficos */}
-                    <div className="grid grid-cols-3 gap-4">
-                      <div>
-                        <Label htmlFor="localidade">Localidade</Label>
-                        <Input
-                          id="localidade"
-                          value={grupoForm.localidade}
-                          onChange={(e) => setGrupoForm({...grupoForm, localidade: e.target.value})}
-                          placeholder="Localidade"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="concelho">Concelho</Label>
-                        <Input
-                          id="concelho"
-                          value={grupoForm.concelho}
-                          onChange={(e) => setGrupoForm({...grupoForm, concelho: e.target.value})}
-                          placeholder="Concelho"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="distrito">Distrito</Label>
-                        <Input
-                          id="distrito"
-                          value={grupoForm.distrito}
-                          onChange={(e) => setGrupoForm({...grupoForm, distrito: e.target.value})}
-                          placeholder="Distrito"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Coordenadas Geográficas */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="coordenadas_latitude">Latitude</Label>
-                        <Input
-                          id="coordenadas_latitude"
-                          type="number"
-                          step="0.000001"
-                          value={grupoForm.coordenadas_latitude}
-                          onChange={(e) => setGrupoForm({...grupoForm, coordenadas_latitude: e.target.value})}
-                          placeholder="Ex: 41.157944"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="coordenadas_longitude">Longitude</Label>
-                        <Input
-                          id="coordenadas_longitude"
-                          type="number"
-                          step="0.000001"
-                          value={grupoForm.coordenadas_longitude}
-                          onChange={(e) => setGrupoForm({...grupoForm, coordenadas_longitude: e.target.value})}
-                          placeholder="Ex: -8.629105"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="responsavel">Voluntário Responsável</Label>
-                      <Select 
-                        value={grupoForm.responsavel_voluntario_id} 
-                        onValueChange={(value) => setGrupoForm({...grupoForm, responsavel_voluntario_id: value})}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecionar voluntário (opcional)" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="">Nenhum voluntário</SelectItem>
-                          {voluntarios.map((voluntario) => (
-                            <SelectItem key={voluntario.id} value={voluntario.id}>
-                              {voluntario.nome}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="cuidador">Cuidador Informal</Label>
-                        <Input
-                          id="cuidador"
-                          value={grupoForm.cuidador_informal}
-                          onChange={(e) => setGrupoForm({...grupoForm, cuidador_informal: e.target.value})}
-                          placeholder="Nome do cuidador não registado"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="contacto">Contacto do Cuidador</Label>
-                        <Input
-                          id="contacto"
-                          value={grupoForm.contacto_cuidador}
-                          onChange={(e) => setGrupoForm({...grupoForm, contacto_cuidador: e.target.value})}
-                          placeholder="Telefone ou email"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="observacoes">Observações</Label>
-                      <Textarea
-                        id="observacoes"
-                        value={grupoForm.observacoes}
-                        onChange={(e) => setGrupoForm({...grupoForm, observacoes: e.target.value})}
-                        placeholder="Informações adicionais sobre o grupo"
-                        rows={3}
-                      />
-                    </div>
-
-                    <div className="flex justify-end space-x-2 pt-4">
-                      <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                        Cancelar
-                      </Button>
-                      <Button type="submit">
-                        {editingGrupo ? 'Atualizar' : 'Criar'} Grupo
-                      </Button>
-                    </div>
-                  </form>
-                </DialogContent>
-              </Dialog>
+              <Button onClick={openNewDialog}>
+                <Plus className="h-4 w-4 mr-2" />
+                Novo Grupo
+              </Button>
               
               <Button variant="outline" asChild>
                 <Link to="/">
@@ -704,7 +530,7 @@ const GestaoGrupos = () => {
                             )}
                             {(grupo.coordenadas_latitude && grupo.coordenadas_longitude) && (
                               <div className="text-xs text-blue-600 mt-1">
-                                📍 {grupo.coordenadas_latitude.toFixed(6)}, {grupo.coordenadas_longitude.toFixed(6)}
+                                📍 {Number(grupo.coordenadas_latitude).toFixed(6)}, {Number(grupo.coordenadas_longitude).toFixed(6)}
                               </div>
                             )}
                           </div>
@@ -747,7 +573,7 @@ const GestaoGrupos = () => {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => handleEdit(grupo)}
+                              onClick={() => openEditDialog(grupo)}
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -770,6 +596,226 @@ const GestaoGrupos = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Dialog para Novo/Editar Grupo */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {editingGrupo ? 'Editar Grupo' : 'Novo Grupo'}
+            </DialogTitle>
+            <DialogDescription>
+              {editingGrupo 
+                ? 'Edite as informações do grupo'
+                : 'Crie uma nova matilha ou colónia'
+              }
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Informações Básicas */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="nome">Nome *</Label>
+                <Input
+                  id="nome"
+                  value={grupoForm.nome}
+                  onChange={(e) => setGrupoForm({...grupoForm, nome: e.target.value})}
+                  placeholder="Nome da matilha ou colónia"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="tipo">Tipo *</Label>
+                <Select 
+                  value={grupoForm.tipo} 
+                  onValueChange={(value) => setGrupoForm({...grupoForm, tipo: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecionar tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="matilha">
+                      <div className="flex items-center">
+                        <Dog className="h-4 w-4 mr-2" />
+                        Matilha (Cães)
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="colonia">
+                      <div className="flex items-center">
+                        <Cat className="h-4 w-4 mr-2" />
+                        Colónia (Gatos)
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Localização */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="localizacao">Localização</Label>
+                <Input
+                  id="localizacao"
+                  value={grupoForm.localizacao}
+                  onChange={(e) => setGrupoForm({...grupoForm, localizacao: e.target.value})}
+                  placeholder="Local onde se encontra o grupo"
+                />
+              </div>
+              <div>
+                <Label htmlFor="endereco">Endereço</Label>
+                <Input
+                  id="endereco"
+                  value={grupoForm.endereco}
+                  onChange={(e) => setGrupoForm({...grupoForm, endereco: e.target.value})}
+                  placeholder="Endereço completo"
+                />
+              </div>
+            </div>
+
+            {/* Campos Geográficos */}
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="localidade">Localidade</Label>
+                <Input
+                  id="localidade"
+                  value={grupoForm.localidade}
+                  onChange={(e) => setGrupoForm({...grupoForm, localidade: e.target.value})}
+                  placeholder="Localidade"
+                />
+              </div>
+              <div>
+                <Label htmlFor="concelho">Concelho</Label>
+                <Input
+                  id="concelho"
+                  value={grupoForm.concelho}
+                  onChange={(e) => setGrupoForm({...grupoForm, concelho: e.target.value})}
+                  placeholder="Concelho"
+                />
+              </div>
+              <div>
+                <Label htmlFor="distrito">Distrito</Label>
+                <Input
+                  id="distrito"
+                  value={grupoForm.distrito}
+                  onChange={(e) => setGrupoForm({...grupoForm, distrito: e.target.value})}
+                  placeholder="Distrito"
+                />
+              </div>
+            </div>
+
+            {/* Coordenadas Geográficas */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="coordenadas_latitude">Latitude</Label>
+                <Input
+                  id="coordenadas_latitude"
+                  type="number"
+                  step="0.000001"
+                  value={grupoForm.coordenadas_latitude}
+                  onChange={(e) => setGrupoForm({...grupoForm, coordenadas_latitude: e.target.value})}
+                  placeholder="Ex: 41.157944"
+                />
+                <p className="text-xs text-gray-500 mt-1">Entre -90 e 90</p>
+              </div>
+              <div>
+                <Label htmlFor="coordenadas_longitude">Longitude</Label>
+                <Input
+                  id="coordenadas_longitude"
+                  type="number"
+                  step="0.000001"
+                  value={grupoForm.coordenadas_longitude}
+                  onChange={(e) => setGrupoForm({...grupoForm, coordenadas_longitude: e.target.value})}
+                  placeholder="Ex: -8.629105"
+                />
+                <p className="text-xs text-gray-500 mt-1">Entre -180 e 180</p>
+              </div>
+            </div>
+
+            {/* Responsável */}
+            <div>
+              <Label htmlFor="responsavel">Voluntário Responsável</Label>
+              <Select 
+                value={grupoForm.responsavel_voluntario_id} 
+                onValueChange={(value) => setGrupoForm({...grupoForm, responsavel_voluntario_id: value === "none" ? "" : value})}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecionar voluntário (opcional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Nenhum voluntário</SelectItem>
+                  {voluntarios.map((voluntario) => (
+                    <SelectItem key={voluntario.id} value={voluntario.id}>
+                      {voluntario.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Cuidador Informal */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="cuidador">Cuidador Informal</Label>
+                <Input
+                  id="cuidador"
+                  value={grupoForm.cuidador_informal}
+                  onChange={(e) => setGrupoForm({...grupoForm, cuidador_informal: e.target.value})}
+                  placeholder="Nome do cuidador não registado"
+                />
+              </div>
+              <div>
+                <Label htmlFor="contacto">Contacto do Cuidador</Label>
+                <Input
+                  id="contacto"
+                  value={grupoForm.contacto_cuidador}
+                  onChange={(e) => setGrupoForm({...grupoForm, contacto_cuidador: e.target.value})}
+                  placeholder="Telefone ou email"
+                />
+              </div>
+            </div>
+
+            {/* Observações */}
+            <div>
+              <Label htmlFor="observacoes">Observações</Label>
+              <Textarea
+                id="observacoes"
+                value={grupoForm.observacoes}
+                onChange={(e) => setGrupoForm({...grupoForm, observacoes: e.target.value})}
+                placeholder="Informações adicionais sobre o grupo"
+                rows={3}
+              />
+            </div>
+
+            {/* Botões de Ação */}
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setDialogOpen(false)}
+                disabled={submitting}
+              >
+                Cancelar
+              </Button>
+              <Button 
+                type="submit"
+                disabled={submitting}
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    A guardar...
+                  </>
+                ) : (
+                  <>
+                    {editingGrupo ? 'Atualizar' : 'Criar'} Grupo
+                  </>
+                )}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
