@@ -22,6 +22,7 @@ export interface Animal {
   arquivado: boolean;
   data_arquivamento?: string;
   motivo_arquivamento?: string;
+  grupo_id?: string;
   foto_url?: string;
   created_at: string;
   updated_at: string;
@@ -135,4 +136,54 @@ export interface Alerta {
   lido: boolean;
   animal_id?: string;
   intervencao_id?: string;
+}
+
+// Interfaces para Sistema de Grupos (Matilhas e Colónias)
+export interface Grupo {
+  id: string;
+  nome: string;
+  tipo: 'matilha' | 'colonia';
+  localizacao?: string;
+  endereco?: string;
+  responsavel_voluntario_id?: string;
+  cuidador_informal?: string;
+  contacto_cuidador?: string;
+  data_criacao: string;
+  observacoes?: string;
+  ativo: boolean;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+  updated_by?: string;
+  // Campos calculados
+  total_animais?: number;
+  responsavel_nome?: string;
+}
+
+export interface DespesaGrupo {
+  id: string;
+  grupo_id: string;
+  descricao: string;
+  valor: number;
+  data_despesa: string;
+  categoria?: string;
+  observacoes?: string;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+  updated_by?: string;
+}
+
+export interface EventoGrupo {
+  id: string;
+  grupo_id: string;
+  titulo: string;
+  descricao?: string;
+  data_evento: string;
+  tipo_evento?: string;
+  observacoes?: string;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+  updated_by?: string;
 }

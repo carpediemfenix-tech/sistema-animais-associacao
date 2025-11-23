@@ -30,7 +30,9 @@ import {
   CheckCircle,
   Archive,
   ArchiveRestore,
-  Loader2
+  Loader2,
+  Dog,
+  Cat
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Animal, Intervencao, Evento, Localizacao, TipoIntervencao, Voluntario } from "@/types/animal";
@@ -45,6 +47,7 @@ const AnimalDetail = () => {
   const [localizacoes, setLocalizacoes] = useState<Localizacao[]>([]);
   const [tiposIntervencoes, setTiposIntervencoes] = useState<TipoIntervencao[]>([]);
   const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
+  const [grupoInfo, setGrupoInfo] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -165,6 +168,25 @@ const AnimalDetail = () => {
       } else {
         console.log('✅ [LOCALIZAÇÕES] Localizações carregadas:', localizacoesData?.length || 0);
         setLocalizacoes(localizacoesData || []);
+      }
+
+      // Buscar informações do grupo se o animal pertencer a um
+      if (animalData.grupo_id) {
+        console.log('🐕 [GRUPO] Buscando informações do grupo...');
+        const { data: grupoData, error: grupoError } = await supabase
+          .from('grupos')
+          .select('*')
+          .eq('id', animalData.grupo_id)
+          .single();
+
+        if (grupoError) {
+          console.error('❌ [GRUPO] Erro ao buscar grupo:', grupoError);
+        } else {
+          console.log('✅ [GRUPO] Grupo carregado:', grupoData.nome);
+          setGrupoInfo(grupoData);
+        }
+      } else {
+        setGrupoInfo(null);
       }
 
     } catch (error: any) {
@@ -826,6 +848,31 @@ const AnimalDetail = () => {
               <div>
                 <Label className="text-sm font-medium text-gray-600">Número de Processo</Label>
                 <p className="text-lg font-mono">{animal.numero_processo}</p>
+              </div>
+              
+              {/* Informações do Grupo */}
+              <div>
+                <Label className="text-sm font-medium text-gray-600">Grupo</Label>
+                {grupoInfo ? (
+                  <div className="flex items-center space-x-2 mt-1">
+                    <Link 
+                      to={`/grupo/${grupoInfo.id}`}
+                      className="text-lg text-blue-600 hover:text-blue-800 font-medium flex items-center"
+                    >
+                      {grupoInfo.tipo === 'matilha' ? (
+                        <Dog className="h-4 w-4 mr-1" />
+                      ) : (
+                        <Cat className="h-4 w-4 mr-1" />
+                      )}
+                      {grupoInfo.nome}
+                    </Link>
+                    <Badge variant="outline" className={grupoInfo.tipo === 'matilha' ? 'text-blue-600' : 'text-purple-600'}>
+                      {grupoInfo.tipo === 'matilha' ? 'Matilha' : 'Colónia'}
+                    </Badge>
+                  </div>
+                ) : (
+                  <p className="text-lg text-gray-500">Não pertence a nenhum grupo</p>
+                )}
               </div>
             </div>
             

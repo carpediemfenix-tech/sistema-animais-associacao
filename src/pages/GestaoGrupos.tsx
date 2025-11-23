@@ -1,0 +1,669 @@
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { 
+  ArrowLeft, 
+  Plus, 
+  Search, 
+  Eye, 
+  Edit, 
+  Trash2,
+  Users,
+  MapPin,
+  Calendar,
+  Phone,
+  User,
+  PawPrint,
+  Cat,
+  Dog,
+  Loader2,
+  AlertCircle
+} from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Grupo, Voluntario } from "@/types/animal";
+import { useToast } from "@/hooks/use-toast";
+import LogotipoValentao from "@/components/LogotipoValentao";
+
+const GestaoGrupos = () => {
+  const [grupos, setGrupos] = useState<Grupo[]>([]);
+  const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterTipo, setFilterTipo] = useState("todos");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingGrupo, setEditingGrupo] = useState<Grupo | null>(null);
+  const { toast } = useToast();
+
+  // Estados do formulário
+  const [grupoForm, setGrupoForm] = useState({
+    nome: "",
+    tipo: "",
+    localizacao: "",
+    endereco: "",
+    responsavel_voluntario_id: "",
+    cuidador_informal: "",
+    contacto_cuidador: "",
+    observacoes: ""
+  });
+
+  useEffect(() => {
+    fetchGrupos();
+    fetchVoluntarios();
+  }, []);
+
+  const fetchGrupos = async () => {
+    try {
+      setLoading(true);
+      console.log('🐕 [GRUPOS] Carregando grupos...');
+
+      const { data, error } = await supabase
+        .from('grupos')
+        .select(`
+          *,
+          voluntarios(nome)
+        `)
+        .eq('ativo', true)
+        .order('tipo')
+        .order('nome');
+
+      if (error) {
+        console.error('❌ [GRUPOS] Erro ao carregar grupos:', error);
+        throw error;
+      }
+
+      // Buscar contagem de animais para cada grupo
+      const gruposComContagem = await Promise.all(
+        (data || []).map(async (grupo) => {
+          const { count } = await supabase
+            .from('animais')
+            .select('*', { count: 'exact', head: true })
+            .eq('grupo_id', grupo.id)
+            .eq('arquivado', false);
+
+          return {
+            ...grupo,
+            total_animais: count || 0,
+            responsavel_nome: grupo.voluntarios?.nome || grupo.cuidador_informal
+          };
+        })
+      );
+
+      console.log('✅ [GRUPOS] Grupos carregados:', gruposComContagem.length);
+      setGrupos(gruposComContagem);
+    } catch (error: any) {
+      console.error('💥 [GRUPOS] Erro:', error);
+      toast({
+        title: "❌ Erro",
+        description: "Não foi possível carregar os grupos",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchVoluntarios = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('voluntarios')
+        .select('*')
+        .eq('ativo', true)
+        .order('nome');
+
+      if (error) throw error;
+      setVoluntarios(data || []);
+    } catch (error: any) {
+      console.error('❌ [VOLUNTÁRIOS] Erro ao carregar voluntários:', error);
+    }
+  };
+
+  const resetForm = () => {
+    setGrupoForm({
+      nome: "",
+      tipo: "",
+      localizacao: "",
+      endereco: "",
+      responsavel_voluntario_id: "",
+      cuidador_informal: "",
+      contacto_cuidador: "",
+      observacoes: ""
+    });
+    setEditingGrupo(null);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!grupoForm.nome || !grupoForm.tipo) {
+      toast({
+        title: "❌ Erro",
+        description: "Nome e tipo são obrigatórios",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      console.log('💾 [GRUPOS] Salvando grupo:', grupoForm);
+
+      const grupoData = {
+        ...grupoForm,
+        responsavel_voluntario_id: grupoForm.responsavel_voluntario_id || null,
+        updated_at: new Date().toISOString()
+      };
+
+      if (editingGrupo) {
+        // Atualizar grupo existente
+        const { error } = await supabase
+          .from('grupos')
+          .update(grupoData)
+          .eq('id', editingGrupo.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "✅ Grupo atualizado",
+          description: `${grupoForm.nome} foi atualizado com sucesso`,
+        });
+      } else {
+        // Criar novo grupo
+        const { error } = await supabase
+          .from('grupos')
+          .insert([grupoData]);
+
+        if (error) throw error;
+
+        toast({
+          title: "✅ Grupo criado",
+          description: `${grupoForm.nome} foi criado com sucesso`,
+        });
+      }
+
+      setDialogOpen(false);
+      resetForm();
+      await fetchGrupos();
+    } catch (error: any) {
+      console.error('💥 [GRUPOS] Erro ao salvar:', error);
+      toast({
+        title: "❌ Erro",
+        description: "Não foi possível salvar o grupo",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEdit = (grupo: Grupo) => {
+    setEditingGrupo(grupo);
+    setGrupoForm({
+      nome: grupo.nome,
+      tipo: grupo.tipo,
+      localizacao: grupo.localizacao || "",
+      endereco: grupo.endereco || "",
+      responsavel_voluntario_id: grupo.responsavel_voluntario_id || "",
+      cuidador_informal: grupo.cuidador_informal || "",
+      contacto_cuidador: grupo.contacto_cuidador || "",
+      observacoes: grupo.observacoes || ""
+    });
+    setDialogOpen(true);
+  };
+
+  const handleDelete = async (grupo: Grupo) => {
+    const confirmDelete = confirm(
+      `Tem certeza que deseja eliminar o grupo "${grupo.nome}"?\n\n` +
+      `Esta ação não pode ser desfeita e todos os animais associados ficarão sem grupo.`
+    );
+    
+    if (!confirmDelete) return;
+
+    try {
+      console.log('🗑️ [GRUPOS] Eliminando grupo:', grupo.nome);
+
+      // Primeiro, remover associações dos animais
+      await supabase
+        .from('animais')
+        .update({ grupo_id: null })
+        .eq('grupo_id', grupo.id);
+
+      // Depois, eliminar o grupo
+      const { error } = await supabase
+        .from('grupos')
+        .delete()
+        .eq('id', grupo.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "✅ Grupo eliminado",
+        description: `${grupo.nome} foi eliminado com sucesso`,
+      });
+
+      await fetchGrupos();
+    } catch (error: any) {
+      console.error('💥 [GRUPOS] Erro ao eliminar:', error);
+      toast({
+        title: "❌ Erro",
+        description: "Não foi possível eliminar o grupo",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Filtrar grupos
+  const gruposFiltrados = grupos.filter(grupo => {
+    const matchSearch = grupo.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                       grupo.localizacao?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                       grupo.responsavel_nome?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchTipo = filterTipo === "todos" || grupo.tipo === filterTipo;
+    return matchSearch && matchTipo;
+  });
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('pt-PT');
+  };
+
+  const getTipoBadge = (tipo: string) => {
+    return tipo === 'matilha' 
+      ? <Badge className="bg-blue-100 text-blue-800"><Dog className="h-3 w-3 mr-1" />Matilha</Badge>
+      : <Badge className="bg-purple-100 text-purple-800"><Cat className="h-3 w-3 mr-1" />Colónia</Badge>;
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-16 w-16 animate-spin mx-auto mb-4 text-blue-600" />
+          <p className="text-lg text-gray-600">A carregar grupos...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center space-x-4">
+              <LogotipoValentao size="sm" />
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 flex items-center">
+                  <Users className="h-6 w-6 mr-2 text-blue-600" />
+                  Gestão de Grupos
+                </h1>
+                <p className="text-sm text-gray-600">
+                  Matilhas de cães e colónias de gatos
+                </p>
+              </div>
+            </div>
+            <div className="flex space-x-3">
+              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button onClick={resetForm}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Novo Grupo
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>
+                      {editingGrupo ? 'Editar Grupo' : 'Novo Grupo'}
+                    </DialogTitle>
+                    <DialogDescription>
+                      {editingGrupo 
+                        ? 'Edite as informações do grupo'
+                        : 'Crie uma nova matilha ou colónia'
+                      }
+                    </DialogDescription>
+                  </DialogHeader>
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="nome">Nome *</Label>
+                        <Input
+                          id="nome"
+                          value={grupoForm.nome}
+                          onChange={(e) => setGrupoForm({...grupoForm, nome: e.target.value})}
+                          placeholder="Nome da matilha ou colónia"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="tipo">Tipo *</Label>
+                        <Select 
+                          value={grupoForm.tipo} 
+                          onValueChange={(value) => setGrupoForm({...grupoForm, tipo: value})}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecionar tipo" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="matilha">
+                              <div className="flex items-center">
+                                <Dog className="h-4 w-4 mr-2" />
+                                Matilha (Cães)
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="colonia">
+                              <div className="flex items-center">
+                                <Cat className="h-4 w-4 mr-2" />
+                                Colónia (Gatos)
+                              </div>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="localizacao">Localização</Label>
+                        <Input
+                          id="localizacao"
+                          value={grupoForm.localizacao}
+                          onChange={(e) => setGrupoForm({...grupoForm, localizacao: e.target.value})}
+                          placeholder="Local onde se encontra o grupo"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="endereco">Endereço</Label>
+                        <Input
+                          id="endereco"
+                          value={grupoForm.endereco}
+                          onChange={(e) => setGrupoForm({...grupoForm, endereco: e.target.value})}
+                          placeholder="Endereço completo"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="responsavel">Voluntário Responsável</Label>
+                      <Select 
+                        value={grupoForm.responsavel_voluntario_id} 
+                        onValueChange={(value) => setGrupoForm({...grupoForm, responsavel_voluntario_id: value})}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecionar voluntário (opcional)" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Nenhum voluntário</SelectItem>
+                          {voluntarios.map((voluntario) => (
+                            <SelectItem key={voluntario.id} value={voluntario.id}>
+                              {voluntario.nome}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="cuidador">Cuidador Informal</Label>
+                        <Input
+                          id="cuidador"
+                          value={grupoForm.cuidador_informal}
+                          onChange={(e) => setGrupoForm({...grupoForm, cuidador_informal: e.target.value})}
+                          placeholder="Nome do cuidador não registado"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="contacto">Contacto do Cuidador</Label>
+                        <Input
+                          id="contacto"
+                          value={grupoForm.contacto_cuidador}
+                          onChange={(e) => setGrupoForm({...grupoForm, contacto_cuidador: e.target.value})}
+                          placeholder="Telefone ou email"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="observacoes">Observações</Label>
+                      <Textarea
+                        id="observacoes"
+                        value={grupoForm.observacoes}
+                        onChange={(e) => setGrupoForm({...grupoForm, observacoes: e.target.value})}
+                        placeholder="Informações adicionais sobre o grupo"
+                        rows={3}
+                      />
+                    </div>
+
+                    <div className="flex justify-end space-x-2 pt-4">
+                      <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                        Cancelar
+                      </Button>
+                      <Button type="submit">
+                        {editingGrupo ? 'Atualizar' : 'Criar'} Grupo
+                      </Button>
+                    </div>
+                  </form>
+                </DialogContent>
+              </Dialog>
+              
+              <Button variant="outline" asChild>
+                <Link to="/">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Voltar ao Dashboard
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Estatísticas */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total de Grupos</p>
+                  <p className="text-3xl font-bold text-gray-900">{grupos.length}</p>
+                </div>
+                <Users className="h-8 w-8 text-blue-600" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Matilhas</p>
+                  <p className="text-3xl font-bold text-blue-600">
+                    {grupos.filter(g => g.tipo === 'matilha').length}
+                  </p>
+                </div>
+                <Dog className="h-8 w-8 text-blue-600" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Colónias</p>
+                  <p className="text-3xl font-bold text-purple-600">
+                    {grupos.filter(g => g.tipo === 'colonia').length}
+                  </p>
+                </div>
+                <Cat className="h-8 w-8 text-purple-600" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total de Animais</p>
+                  <p className="text-3xl font-bold text-green-600">
+                    {grupos.reduce((sum, g) => sum + (g.total_animais || 0), 0)}
+                  </p>
+                </div>
+                <PawPrint className="h-8 w-8 text-green-600" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Filtros */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Filtros</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Pesquisar por nome, localização ou responsável..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Select value={filterTipo} onValueChange={setFilterTipo}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Filtrar por tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os tipos</SelectItem>
+                  <SelectItem value="matilha">Matilhas</SelectItem>
+                  <SelectItem value="colonia">Colónias</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Lista de Grupos */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Lista de Grupos ({gruposFiltrados.length})</CardTitle>
+            <CardDescription>
+              Gestão de matilhas e colónias
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {gruposFiltrados.length === 0 ? (
+              <div className="text-center py-12">
+                <Users className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  Nenhum grupo encontrado
+                </h3>
+                <p className="text-gray-500">
+                  {searchTerm || filterTipo !== "todos" 
+                    ? "Tente ajustar os filtros de pesquisa"
+                    : "Comece criando uma nova matilha ou colónia"
+                  }
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Grupo</TableHead>
+                      <TableHead>Localização</TableHead>
+                      <TableHead>Responsável</TableHead>
+                      <TableHead>Animais</TableHead>
+                      <TableHead>Data Criação</TableHead>
+                      <TableHead>Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {gruposFiltrados.map((grupo) => (
+                      <TableRow key={grupo.id}>
+                        <TableCell>
+                          <div className="flex items-center space-x-3">
+                            <div>
+                              <div className="font-medium">{grupo.nome}</div>
+                              <div className="mt-1">
+                                {getTipoBadge(grupo.tipo)}
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center text-sm text-gray-600">
+                            <MapPin className="h-4 w-4 mr-1" />
+                            {grupo.localizacao || 'N/A'}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center text-sm text-gray-600">
+                            <User className="h-4 w-4 mr-1" />
+                            {grupo.responsavel_nome || 'N/A'}
+                          </div>
+                          {grupo.contacto_cuidador && (
+                            <div className="flex items-center text-xs text-gray-500 mt-1">
+                              <Phone className="h-3 w-3 mr-1" />
+                              {grupo.contacto_cuidador}
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-green-600">
+                            <PawPrint className="h-3 w-3 mr-1" />
+                            {grupo.total_animais || 0}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center text-sm text-gray-600">
+                            <Calendar className="h-4 w-4 mr-1" />
+                            {formatDate(grupo.data_criacao)}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex space-x-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              asChild
+                            >
+                              <Link to={`/grupo/${grupo.id}`}>
+                                <Eye className="h-4 w-4" />
+                              </Link>
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEdit(grupo)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDelete(grupo)}
+                              className="text-red-600 hover:text-red-800"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+export default GestaoGrupos;

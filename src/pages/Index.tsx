@@ -24,7 +24,8 @@ import {
   BarChart3,
   Sparkles,
   LogOut,
-  Archive
+  Archive,
+  Users
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { DashboardStats, PerfilUsuario } from "@/types/animal";
@@ -458,6 +459,23 @@ const Index = () => {
                       </Link>
                     </Button>
                   )}
+                </div>
+              </div>
+
+              {/* Gestão de Grupos */}
+              <div className="text-center p-6 rounded-xl bg-gradient-to-br from-cyan-100 to-teal-100 hover-lift">
+                <div className="bg-gradient-to-br from-cyan-500 to-teal-500 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Users className="h-8 w-8 text-white" />
+                </div>
+                <h3 className="font-semibold text-gray-800 mb-2">Matilhas e Colónias</h3>
+                <p className="text-sm text-gray-600 mb-4">Grupos de cães e gatos</p>
+                <div className="space-y-2">
+                  <Button asChild variant="outline" size="sm" className="w-full border-cyan-200 hover:bg-cyan-50">
+                    <Link to="/grupos">
+                      <Users className="h-4 w-4 mr-2" />
+                      Ver Grupos
+                    </Link>
+                  </Button>
                 </div>
               </div>
 

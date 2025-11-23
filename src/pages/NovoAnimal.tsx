@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,10 +29,12 @@ const NovoAnimal = () => {
     transponder: "",
     local_encontrado: "",
     observacoes: "",
+    grupo_id: "",
     data_entrada: new Date().toISOString().split('T')[0]
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [grupos, setGrupos] = useState<any[]>([]);
 
   const generateNextProcessNumber = async (): Promise<string> => {
     try {
@@ -91,6 +93,26 @@ const NovoAnimal = () => {
       return fallbackNumber;
     }
   };
+
+  const fetchGrupos = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('grupos')
+        .select('*')
+        .eq('ativo', true)
+        .order('tipo')
+        .order('nome');
+
+      if (error) throw error;
+      setGrupos(data || []);
+    } catch (error: any) {
+      console.error('Erro ao carregar grupos:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchGrupos();
+  }, []);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -198,7 +220,8 @@ const NovoAnimal = () => {
         local_encontrado: formData.local_encontrado.trim() || null,
         observacoes: formData.observacoes.trim() || null,
         estado: 'Ativo',
-        arquivado: false
+        arquivado: false,
+        grupo_id: formData.grupo_id || null
       };
 
       console.log('Dados para inserção:', dataToInsert);
@@ -497,6 +520,49 @@ const NovoAnimal = () => {
                     placeholder="Ex: Rua das Flores, Lisboa"
                   />
                 </div>
+              </div>
+
+              {/* Seleção de Grupo */}
+              <div>
+                <Label htmlFor="grupo_id">Grupo (Matilha/Colónia)</Label>
+                <Select 
+                  value={formData.grupo_id} 
+                  onValueChange={(value) => handleInputChange("grupo_id", value === "none" ? "" : value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecionar grupo (opcional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Nenhum grupo</SelectItem>
+                    {grupos
+                      .filter(grupo => {
+                        // Filtrar grupos compatíveis com a espécie
+                        if (!formData.especie) return true;
+                        return (
+                          (grupo.tipo === 'matilha' && formData.especie === 'Cão') ||
+                          (grupo.tipo === 'colonia' && formData.especie === 'Gato')
+                        );
+                      })
+                      .map((grupo) => (
+                        <SelectItem key={grupo.id} value={grupo.id}>
+                          <div className="flex items-center">
+                            {grupo.tipo === 'matilha' ? '🐕' : '🐱'} {grupo.nome}
+                          </div>
+                        </SelectItem>
+                      ))
+                    }
+                  </SelectContent>
+                </Select>
+                {formData.especie && grupos.length > 0 && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    {formData.especie === 'Cão' 
+                      ? 'Apenas matilhas são compatíveis com cães'
+                      : formData.especie === 'Gato'
+                      ? 'Apenas colónias são compatíveis com gatos'
+                      : 'Outros animais não podem pertencer a grupos'
+                    }
+                  </p>
+                )}
               </div>
 
               <div>
