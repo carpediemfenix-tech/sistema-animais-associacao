@@ -23,6 +23,7 @@ import GestaoUtilizadores from "./pages/GestaoUtilizadores";
 import AnimaisArquivados from "./pages/AnimaisArquivados";
 import GestaoGrupos from "./pages/GestaoGrupos";
 import GrupoDetail from "./pages/GrupoDetail";
+import ManualUtilizador from "./pages/ManualUtilizador";
 
 const queryClient = new QueryClient();
 
@@ -54,6 +55,7 @@ const App = () => (
             <Route path="/animais-arquivados" element={<ProtectedRoute><AnimaisArquivados /></ProtectedRoute>} />
             <Route path="/grupos" element={<ProtectedRoute><GestaoGrupos /></ProtectedRoute>} />
             <Route path="/grupo/:id" element={<ProtectedRoute><GrupoDetail /></ProtectedRoute>} />
+            <Route path="/manual" element={<ProtectedRoute><ManualUtilizador /></ProtectedRoute>} />
             
             {/* Rota 404 */}
             <Route path="*" element={<NotFound />} />

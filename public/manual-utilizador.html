@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual do Utilizador - Sistema Valentão</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        
+        .header {
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 700;
+        }
+        
+        .header p {
+            margin: 10px 0 0 0;
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .section {
+            background: white;
+            margin: 25px 0;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            border-left: 5px solid #667eea;
+        }
+        
+        .section h2 {
+            color: #667eea;
+            margin-top: 0;
+            font-size: 1.8em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section h3 {
+            color: #555;
+            margin-top: 25px;
+            font-size: 1.3em;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 8px;
+        }
+        
+        .step {
+            background: #f8f9ff;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .step-number {
+            background: #667eea;
+            color: white;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 10px;
+            font-size: 0.9em;
+        }
+        
+        .screenshot {
+            text-align: center;
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 2px dashed #ddd;
+        }
+        
+        .screenshot img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .tip {
+            background: #e8f5e8;
+            border: 1px solid #4caf50;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .tip::before {
+            content: "💡 ";
+            font-size: 1.2em;
+        }
+        
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .warning::before {
+            content: "⚠️ ";
+            font-size: 1.2em;
+        }
+        
+        .feature-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .feature-item {
+            background: #f8f9ff;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .feature-item h4 {
+            margin: 0 0 8px 0;
+            color: #667eea;
+            font-size: 1.1em;
+        }
+        
+        .feature-item p {
+            margin: 0;
+            font-size: 0.9em;
+            color: #666;
+        }
+        
+        .mobile-tip {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .mobile-tip h3 {
+            margin: 0 0 10px 0;
+            color: white;
+            border: none;
+            padding: 0;
+        }
+        
+        .toc {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            margin-bottom: 30px;
+        }
+        
+        .toc h2 {
+            margin-top: 0;
+            color: #667eea;
+            text-align: center;
+        }
+        
+        .toc ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .toc li {
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .toc a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .toc a:hover {
+            text-decoration: underline;
+        }
+        
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .section {
+                padding: 20px;
+            }
+            
+            .feature-list {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .credentials-box {
+            background: #e3f2fd;
+            border: 2px solid #2196f3;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .credentials-box h3 {
+            color: #1976d2;
+            margin-top: 0;
+        }
+        
+        .credential-item {
+            background: white;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 1.1em;
+            border: 1px solid #ddd;
+        }
+        
+        @media print {
+            body {
+                background-color: white;
+                padding: 0;
+            }
+            
+            .section {
+                box-shadow: none;
+                border: 1px solid #ddd;
+                page-break-inside: avoid;
+            }
+            
+            .header {
+                background: #667eea !important;
+                -webkit-print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🐾 Sistema Valentão</h1>
+        <p>Manual do Utilizador - Gestão de Animais</p>
+        <p style="font-size: 0.9em; opacity: 0.8;">Versão 1.0 - Novembro 2025</p>
+    </div>
+
+    <div class="toc">
+        <h2>📋 Índice</h2>
+        <ul>
+            <li><a href="#introducao">1. Introdução ao Sistema</a></li>
+            <li><a href="#login">2. Como Fazer Login</a></li>
+            <li><a href="#dashboard">3. Dashboard Principal</a></li>
+            <li><a href="#animais">4. Gestão de Animais</a></li>
+            <li><a href="#grupos">5. Matilhas e Colónias</a></li>
+            <li><a href="#financeiro">6. Gestão Financeira</a></li>
+            <li><a href="#relatorios">7. Relatórios</a></li>
+            <li><a href="#mobile">8. Dicas para Telemóvel</a></li>
+            <li><a href="#suporte">9. Suporte e Contactos</a></li>
+        </ul>
+    </div>
+
+    <div class="section" id="introducao">
+        <h2>🎯 1. Introdução ao Sistema</h2>
+        
+        <p>O <strong>Sistema Valentão</strong> é uma plataforma completa para gestão de animais de associações de proteção animal. Foi desenvolvido especificamente para facilitar o trabalho diário de voluntários e gestores.</p>
+        
+        <h3>Principais Funcionalidades</h3>
+        <div class="feature-list">
+            <div class="feature-item">
+                <h4>🐕 Gestão de Animais</h4>
+                <p>Registo completo de cães, gatos e outros animais com histórico médico</p>
+            </div>
+            <div class="feature-item">
+                <h4>👥 Matilhas e Colónias</h4>
+                <p>Organização de animais em grupos com localização geográfica</p>
+            </div>
+            <div class="feature-item">
+                <h4>💰 Gestão Financeira</h4>
+                <p>Controlo de receitas, despesas e custos de intervenções</p>
+            </div>
+            <div class="feature-item">
+                <h4>📊 Relatórios</h4>
+                <p>Estatísticas e relatórios detalhados para análise</p>
+            </div>
+            <div class="feature-item">
+                <h4>👤 Gestão de Utilizadores</h4>
+                <p>Sistema de permissões e controlo de acesso</p>
+            </div>
+            <div class="feature-item">
+                <h4>📱 Otimizado para Telemóvel</h4>
+                <p>Interface responsiva para uso em qualquer dispositivo</p>
+            </div>
+        </div>
+
+        <div class="tip">
+            <strong>Dica:</strong> O sistema foi desenvolvido para ser intuitivo. Se tiver dúvidas, procure os ícones de ajuda (?) ou contacte o administrador.
+        </div>
+    </div>
+
+    <div class="section" id="login">
+        <h2>🔐 2. Como Fazer Login</h2>
+        
+        <div class="credentials-box">
+            <h3>🔑 Credenciais de Acesso</h3>
+            <p>Para aceder ao sistema, utilize as seguintes credenciais:</p>
+            <div class="credential-item">
+                <strong>URL:</strong> https://xg65bxhsm5.skywork.website
+            </div>
+            <div class="credential-item">
+                <strong>Utilizador:</strong> admin
+            </div>
+            <div class="credential-item">
+                <strong>Password:</strong> password
+            </div>
+        </div>
+
+        <h3>Passos para Login</h3>
+        
+        <div class="step">
+            <span class="step-number">1</span>
+            <strong>Aceder ao Sistema</strong><br>
+            Abra o navegador do seu telemóvel e digite o endereço do sistema.
+        </div>
+        
+        <div class="step">
+            <span class="step-number">2</span>
+            <strong>Inserir Credenciais</strong><br>
+            Digite o seu nome de utilizador e password nos campos correspondentes.
+        </div>
+        
+        <div class="step">
+            <span class="step-number">3</span>
+            <strong>Fazer Login</strong><br>
+            Toque no botão "Entrar" para aceder ao sistema.
+        </div>
+
+        <div class="warning">
+            <strong>Importante:</strong> Guarde as suas credenciais em local seguro. Não partilhe a sua password com outros utilizadores.
+        </div>
+
+        <div class="tip">
+            <strong>Primeira vez?</strong> Se for a sua primeira vez no sistema, contacte o administrador para obter as suas credenciais personalizadas.
+        </div>
+    </div>
+
+    <div class="section" id="dashboard">
+        <h2>🏠 3. Dashboard Principal</h2>
+        
+        <p>Após fazer login, será direcionado para o Dashboard principal. Esta é a página inicial onde pode ver um resumo geral do sistema.</p>
+
+        <h3>Elementos do Dashboard</h3>
+        
+        <div class="step">
+            <span class="step-number">1</span>
+            <strong>Estatísticas Rápidas</strong><br>
+            No topo, vê cartões com números importantes: total de animais, adoções, intervenções médicas, etc.
+        </div>
+        
+        <div class="step">
+            <span class="step-number">2</span>
+            <strong>Módulos Principais</strong><br>
+            Cartões grandes com as principais funcionalidades: Gestão de Animais, Matilhas e Colónias, Gestão Financeira, etc.
+        </div>
+        
+        <div class="step">
+            <span class="step-number">3</span>
+            <strong>Agenda e Lembretes</strong><br>
+            Lista de eventos próximos e lembretes importantes (vacinações, consultas, etc.).
+        </div>
+        
+        <div class="step">
+            <span class="step-number">4</span>
+            <strong>Ações Rápidas</strong><br>
+            Botões para ações frequentes como "Novo Animal", "Nova Intervenção", etc.
+        </div>
+
+        <div class="mobile-tip">
+            <h3>📱 Dica para Telemóvel</h3>
+            <p>No telemóvel, deslize para baixo para ver todos os módulos. Toque nos cartões para aceder às funcionalidades.</p>
+        </div>
+    </div>
+
+    <div class="section" id="animais">
+        <h2>🐕 4. Gestão de Animais</h2>
+        
+        <p>A gestão de animais é o coração do sistema. Aqui pode registar, editar e acompanhar todos os animais da associação.</p>
+
+        <h3>Como Adicionar um Novo Animal</h3>
+        
+        <div class="step">
+            <span class="step-number">1</span>
+            <strong>Aceder à Gestão</strong><br>
+            No Dashboard, toque em "Gestão de Animais" → "Ver Animais".
+        </div>
+        
+        <div class="step">
+            <span class="step-number">2</span>
+            <strong>Novo Animal</strong><br>
+            Toque no botão "+ Novo Animal" no topo da página.
+        </div>
+        
+        <div class="step">
+            <span class="step-number">3</span>
+            <strong>Preencher Dados</strong><br>
+            Complete o formulário com as informações do animal:
+            <ul>
+                <li><strong>Nome:</strong> Nome do animal</li>
+                <li><strong>Espécie:</strong> Cão, Gato, Outro</li>
+                <li><strong>Raça:</strong> Raça do animal</li>
+                <li><strong>Sexo:</strong> Macho ou Fêmea</li>
+                <li><strong>Data de Nascimento:</strong> Se conhecida</li>
+                <li><strong>Data de Entrada:</strong> Quando chegou à associação</li>
+                <li><strong>Estado:</strong> Ativo, Adotado, etc.</li>
+            </ul>
+        </div>
+        
+        <div class="step">
+            <span class="step-number">4</span>
+            <strong>Guardar</strong><br>
+            Toque em "Criar Animal" para guardar as informações.
+        </div>
+
+        <h3>Como Ver Detalhes de um Animal</h3>
+        
+        <div class="step">
+            <span class="step-number">1</span>
+            <strong>Lista de Animais</strong><br>
+            Na lista de animais, toque no nome do animal ou no ícone do olho.
+        </div>
+        
+        <div class="step">
+            <span class="step-number">2</span>
+            <strong>Página de Detalhes</strong><br>
+            Verá todas as informações do animal organizadas em secções:
+            <ul>
+                <li><strong>Informações Básicas:</strong> Nome, raça, idade, etc.</li>
+                <li><strong>Histórico Médico:</strong> Intervenções e tratamentos</li>
+                <li><strong>Eventos:</strong> Adoções, transferências, etc.</li>
+                <li><strong>Localização:</strong> Onde está atualmente</li>
+            </ul>
+        </div>
+
+        <h3>Como Adicionar Intervenções Médicas</h3>
+        
+        <div class="step">
+            <span class="step-number">1</span>
+            <strong>Página do Animal</strong><br>
+            Na página de detalhes do animal, procure a secção "Histórico Médico".
+        </div>
+        
+        <div class="step">
+            <span class="step-number">2</span>
+            <strong>Nova Intervenção</strong><br>
+            Toque em "+ Nova Intervenção".
+        </div>
+        
+        <div class="step">
+            <span class="step-number">3</span>
+            <strong>Preencher Dados</strong><br>
+            Complete as informações:
+            <ul>
+                <li><strong>Tipo:</strong> Vacinação, Consulta, Cirurgia, etc.</li>
+                <li><strong>Data:</strong> Quando foi realizada</li>
+                <li><strong>Veterinário:</strong> Quem realizou</li>
+                <li><strong>Custo:</strong> Valor gasto (opcional)</li>
+                <li><strong>Observações:</strong> Detalhes adicionais</li>
+            </ul>
+        </div>
+
+        <div class="tip">
+            <strong>Dica:</strong> O número de processo é gerado automaticamente. Use-o para identificar rapidamente o animal.
+        </div>
+
+        <div class="warning">
+            <strong>Atenção:</strong> Apenas administradores podem arquivar animais. Animais arquivados não aparecem nas listas normais.
+        </div>
+    </div>
+
+    <div class="section" id="grupos">
+        <h2>👥 5. Matilhas e Colónias</h2>
+        
+        <p>O sistema permite organizar animais em grupos: <strong>Matilhas</strong> para cães e <strong>Colónias</strong> para gatos.</p>
+
+        <h3>Como Criar um Novo Grupo</h3>
+        
+        <div class="step">
+            <span class="step-number">1</span>
+            <strong>Aceder aos Grupos</strong><br>
+            No Dashboard, toque em "Matilhas e Colónias" → "Ver Grupos".
+        </div>
+        
+        <div class="step">
+            <span class="step-number">2</span>
+            <strong>Novo Grupo</strong><br>
+            Toque em "+ Novo Grupo".
+        </div>
+        
+        <div class="step">
+            <span class="step-number">3</span>
+            <strong>Informações Básicas</strong><br>
+            Preencha:
+            <ul>
+                <li><strong>Nome:</strong> Nome da matilha/colónia</li>
+                <li><strong>Tipo:</strong> Matilha (cães) ou Colónia (gatos)</li>
+                <li><strong>Localização:</strong> Onde se encontra</li>
+                <li><strong>Endereço:</strong> Endereço completo</li>
+            </ul>
+        </div>
+        
+        <div class="step">
+            <span class="step-number">4</span>
+            <strong>Informações Geográficas</strong><br>
+            Complete os campos de localização:
+            <ul>
+                <li><strong>Localidade:</strong> Cidade/Vila</li>
+                <li><strong>Concelho:</strong> Município</li>
+                <li><strong>Distrito:</strong> Região</li>
+                <li><strong>Coordenadas:</strong> Latitude e Longitude (opcional)</li>
+            </ul>
+        </div>
+        
+        <div class="step">
+            <span class="step-number">5</span>
+            <strong>Responsável</strong><br>
+            Defina quem é responsável:
+            <ul>
+                <li><strong>Voluntário:</strong> Selecione da lista</li>
+                <li><strong>Cuidador Informal:</strong> Nome de pessoa não registada</li>
+                <li><strong>Contacto:</strong> Telefone ou email</li>
+            </ul>
+        </div>
+
+        <h3>Como Associar Animais a Grupos</h3>
+        
+        <div class="step">
+            <span class="step-number">1</span>
+            <strong>Página do Grupo</strong><br>
+            Na lista de grupos, toque no nome do grupo para ver os detalhes.
+        </div>
+        
+        <div class="step">
+            <span class="step-number">2</span>
+            <strong>Associar Animal</strong><br>
+            Na secção "Animais do Grupo", toque em "Associar Animal".
+        </div>
+        
+        <div class="step">
+            <span class="step-number">3</span>
+            <strong>Selecionar Animal</strong><br>
+            Escolha um animal da lista de animais disponíveis (apenas da espécie correta).
+        </div>
+
+        <div class="tip">
+            <strong>Regra Importante:</strong> Apenas cães podem ser associados a matilhas e apenas gatos a colónias.
+        </div>
+    </div>
+
+    <div class="section" id="financeiro">
+        <h2>💰 6. Gestão Financeira</h2>
+        
+        <p>Controle todas as receitas e despesas da associação, incluindo custos de intervenções médicas.</p>
+
+        <h3>Como Adicionar um Movimento Financeiro</h3>
+        
+        <div class="step">
+            <span class="step-number">1</span>
+            <strong>Aceder às Finanças</strong><br>
+            No Dashboard, toque em "Gestão Financeira".
+        </div>
+        
+        <div class="step">
+            <span class="step-number">2</span>
+            <strong>Novo Movimento</strong><br>
+            Toque em "+ Novo Movimento".
+        </div>
+        
+        <div class="step">
+            <span class="step-number">3</span>
+            <strong>Preencher Dados</strong><br>
+            Complete as informações:
+            <ul>
+                <li><strong>Tipo:</strong> Receita ou Despesa</li>
+                <li><strong>Descrição:</strong> O que foi o movimento</li>
+                <li><strong>Valor:</strong> Quantia em euros</li>
+                <li><strong>Data:</strong> Quando ocorreu</li>
+                <li><strong>Categoria:</strong> Tipo de movimento</li>
+            </ul>
+        </div>
+
+        <h3>Visualizar Saldo e Histórico</h3>
+        
+        <p>Na página financeira pode ver:</p>
+        <ul>
+            <li><strong>Saldo Atual:</strong> Total disponível</li>
+            <li><strong>Receitas do Mês:</strong> Entradas do mês atual</li>
+            <li><strong>Despesas do Mês:</strong> Saídas do mês atual</li>
+            <li><strong>Histórico Completo:</strong> Todos os movimentos incluindo custos de intervenções</li>
+        </ul>
+
+        <div class="tip">
+            <strong>Automático:</strong> Os custos das intervenções médicas são automaticamente incluídos nas despesas.
+        </div>
+    </div>
+
+    <div class="section" id="relatorios">
+        <h2>📊 7. Relatórios</h2>
+        
+        <p>Gere relatórios detalhados para análise e prestação de contas.</p>
+
+        <h3>Tipos de Relatórios Disponíveis</h3>
+        
+        <div class="feature-list">
+            <div class="feature-item">
+                <h4>📈 Relatório Geral</h4>
+                <p>Estatísticas gerais de animais, adoções e intervenções</p>
+            </div>
+            <div class="feature-item">
+                <h4>💰 Relatório Financeiro</h4>
+                <p>Análise detalhada de receitas, despesas e saldos</p>
+            </div>
+            <div class="feature-item">
+                <h4>🏠 Relatório de Adoções</h4>
+                <p>Estatísticas de adoções por período</p>
+            </div>
+        </div>
+
+        <h3>Como Gerar um Relatório</h3>
+        
+        <div class="step">
+            <span class="step-number">1</span>
+            <strong>Aceder aos Relatórios</strong><br>
+            No Dashboard, toque em "Relatórios".
+        </div>
+        
+        <div class="step">
+            <span class="step-number">2</span>
+            <strong>Escolher Tipo</strong><br>
+            Selecione o tipo de relatório desejado.
+        </div>
+        
+        <div class="step">
+            <span class="step-number">3</span>
+            <strong>Definir Filtros</strong><br>
+            Configure os filtros:
+            <ul>
+                <li><strong>Período:</strong> Ano e mês</li>
+                <li><strong>Tipo de Animal:</strong> Todos, Cães, Gatos</li>
+                <li><strong>Estado:</strong> Ativo, Adotado, etc.</li>
+            </ul>
+        </div>
+        
+        <div class="step">
+            <span class="step-number">4</span>
+            <strong>Aplicar Filtros</strong><br>
+            Toque em "Aplicar Filtros" para gerar o relatório.
+        </div>
+
+        <div class="tip">
+            <strong>Impressão:</strong> Os relatórios são formatados para impressão e podem ser guardados como PDF.
+        </div>
+    </div>
+
+    <div class="section" id="mobile">
+        <h2>📱 8. Dicas para Uso em Telemóvel</h2>
+        
+        <p>O sistema foi otimizado para telemóveis. Aqui estão algumas dicas para melhor experiência:</p>
+
+        <h3>Navegação</h3>
+        <div class="step">
+            <span class="step-number">1</span>
+            <strong>Menu Principal</strong><br>
+            Use o Dashboard como ponto central. Todos os módulos estão acessíveis a partir daí.
+        </div>
+        
+        <div class="step">
+            <span class="step-number">2</span>
+            <strong>Botão Voltar</strong><br>
+            Use sempre os botões "Voltar" do sistema em vez do botão do navegador.
+        </div>
+        
+        <div class="step">
+            <span class="step-number">3</span>
+            <strong>Formulários</strong><br>
+            Deslize para baixo para ver todos os campos dos formulários.
+        </div>
+
+        <h3>Funcionalidades Móveis</h3>
+        <div class="feature-list">
+            <div class="feature-item">
+                <h4>🔍 Pesquisa Rápida</h4>
+                <p>Use a barra de pesquisa para encontrar animais rapidamente</p>
+            </div>
+            <div class="feature-item">
+                <h4>📋 Listas Otimizadas</h4>
+                <p>Listas adaptadas para ecrãs pequenos com informações essenciais</p>
+            </div>
+            <div class="feature-item">
+                <h4>⚡ Ações Rápidas</h4>
+                <p>Botões grandes e fáceis de tocar</p>
+            </div>
+        </div>
+
+        <div class="mobile-tip">
+            <h3>🔋 Dica de Performance</h3>
+            <p>Para melhor performance, feche outras aplicações enquanto usa o sistema e certifique-se de ter boa ligação à internet.</p>
+        </div>
+
+        <h3>Resolução de Problemas Comuns</h3>
+        
+        <div class="warning">
+            <strong>Página não carrega:</strong> Verifique a ligação à internet e recarregue a página.
+        </div>
+        
+        <div class="warning">
+            <strong>Botões não respondem:</strong> Aguarde alguns segundos - o sistema pode estar a processar.
+        </div>
+        
+        <div class="warning">
+            <strong>Formulário não guarda:</strong> Verifique se preencheu todos os campos obrigatórios (marcados com *).
+        </div>
+    </div>
+
+    <div class="section" id="suporte">
+        <h2>🆘 9. Suporte e Contactos</h2>
+        
+        <h3>Como Obter Ajuda</h3>
+        
+        <div class="step">
+            <span class="step-number">1</span>
+            <strong>Consulte este Manual</strong><br>
+            A maioria das dúvidas está respondida neste manual.
+        </div>
+        
+        <div class="step">
+            <span class="step-number">2</span>
+            <strong>Contacte o Administrador</strong><br>
+            Para problemas técnicos ou dúvidas específicas.
+        </div>
+        
+        <div class="step">
+            <span class="step-number">3</span>
+            <strong>Formação Adicional</strong><br>
+            Solicite formação adicional se necessário.
+        </div>
+
+        <h3>Informações Importantes</h3>
+        
+        <div class="credentials-box">
+            <h3>📞 Contactos de Suporte</h3>
+            <div class="credential-item">
+                <strong>Sistema:</strong> https://xg65bxhsm5.skywork.website
+            </div>
+            <div class="credential-item">
+                <strong>Administrador:</strong> [Contactar responsável da associação]
+            </div>
+            <div class="credential-item">
+                <strong>Suporte Técnico:</strong> [Definir contacto técnico]
+            </div>
+        </div>
+
+        <h3>Boas Práticas</h3>
+        <ul>
+            <li>✅ Faça logout quando terminar de usar o sistema</li>
+            <li>✅ Mantenha as suas credenciais seguras</li>
+            <li>✅ Atualize regularmente os dados dos animais</li>
+            <li>✅ Verifique os relatórios mensalmente</li>
+            <li>✅ Comunique problemas técnicos imediatamente</li>
+        </ul>
+
+        <div class="tip">
+            <strong>Lembre-se:</strong> Este sistema foi criado para facilitar o vosso trabalho. Não hesite em pedir ajuda quando necessário!
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🎉 Conclusão</h2>
+        <p>O Sistema Valentão foi desenvolvido especificamente para associações de proteção animal, com foco na simplicidade e eficiência.</p>
+        
+        <p><strong>Principais benefícios:</strong></p>
+        <ul>
+            <li>🚀 <strong>Rapidez:</strong> Acesso rápido a informações importantes</li>
+            <li>📱 <strong>Mobilidade:</strong> Use em qualquer lugar com o telemóvel</li>
+            <li>🔒 <strong>Segurança:</strong> Dados protegidos e backups automáticos</li>
+            <li>📊 <strong>Controlo:</strong> Relatórios detalhados para gestão</li>
+            <li>👥 <strong>Colaboração:</strong> Múltiplos utilizadores com diferentes permissões</li>
+        </ul>
+
+        <div class="mobile-tip">
+            <h3>💝 Obrigado por Cuidar dos Animais!</h3>
+            <p>Este sistema é uma ferramenta para apoiar o vosso trabalho incrível de proteção animal. Juntos, fazemos a diferença! 🐾</p>
+        </div>
+    </div>
+
+    <footer style="text-align: center; margin-top: 40px; padding: 20px; color: #666; font-size: 0.9em;">
+        <p>Sistema Valentão - Manual do Utilizador v1.0</p>
+        <p>Desenvolvido com ❤️ para associações de proteção animal</p>
+        <p>© 2025 - Todos os direitos reservados</p>
+    </footer>
+</body>
+</html>

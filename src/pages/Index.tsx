@@ -25,7 +25,8 @@ import {
   Sparkles,
   LogOut,
   Archive,
-  Users
+  Users,
+  BookOpen
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { DashboardStats, PerfilUsuario } from "@/types/animal";
@@ -360,6 +361,18 @@ const Index = () => {
                       </Link>
                     </Button>
                   )}
+
+                  {/* Manual do Utilizador */}
+                  <Button 
+                    asChild 
+                    variant="outline" 
+                    className="h-20 flex-col space-y-2 hover-lift border-teal-200 hover:bg-teal-50"
+                  >
+                    <Link to="/manual">
+                      <BookOpen className="h-6 w-6 text-teal-600" />
+                      <span className="text-sm font-medium text-teal-600">Manual</span>
+                    </Link>
+                  </Button>
                 </div>
               </CardContent>
             </Card>
