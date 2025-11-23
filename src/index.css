@@ -316,3 +316,261 @@ Todas as cores devem ser HSL para consistência.
 .bg-animal-sunset {
   background: var(--gradient-sunset);
 }
+
+/* 📱 OTIMIZAÇÃO MOBILE-FIRST */
+
+/* Touch interactions - botões mínimo 44px */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+  @apply flex items-center justify-center;
+}
+
+.touch-button {
+  @apply touch-target px-4 py-3 text-base font-medium rounded-lg;
+  @apply active:scale-95 transition-transform duration-150;
+}
+
+/* Layout mobile */
+.mobile-container {
+  @apply px-4 py-2;
+}
+
+.mobile-card {
+  @apply p-4 rounded-lg shadow-sm border;
+  @apply mb-3 last:mb-0;
+}
+
+.mobile-grid {
+  @apply grid grid-cols-1 gap-4;
+}
+
+@media (min-width: 640px) {
+  .mobile-grid {
+    @apply grid-cols-2;
+  }
+}
+
+@media (min-width: 1024px) {
+  .mobile-grid {
+    @apply grid-cols-3;
+  }
+}
+
+/* Tabelas responsivas */
+.mobile-table {
+  @apply w-full overflow-x-auto;
+}
+
+.mobile-table table {
+  @apply min-w-full;
+}
+
+/* Cards para mobile em vez de tabelas */
+@media (max-width: 768px) {
+  .desktop-table {
+    @apply hidden;
+  }
+  
+  .mobile-cards {
+    @apply block;
+  }
+}
+
+@media (min-width: 769px) {
+  .desktop-table {
+    @apply block;
+  }
+  
+  .mobile-cards {
+    @apply hidden;
+  }
+}
+
+/* Typography responsiva */
+.mobile-title {
+  @apply text-xl font-bold;
+}
+
+@media (min-width: 640px) {
+  .mobile-title {
+    @apply text-2xl;
+  }
+}
+
+@media (min-width: 1024px) {
+  .mobile-title {
+    @apply text-3xl;
+  }
+}
+
+.mobile-text {
+  @apply text-sm;
+}
+
+@media (min-width: 640px) {
+  .mobile-text {
+    @apply text-base;
+  }
+}
+
+/* Espaçamentos mobile */
+.mobile-spacing {
+  @apply space-y-3;
+}
+
+@media (min-width: 640px) {
+  .mobile-spacing {
+    @apply space-y-4;
+  }
+}
+
+@media (min-width: 1024px) {
+  .mobile-spacing {
+    @apply space-y-6;
+  }
+}
+
+/* Formulários mobile */
+.mobile-form {
+  @apply space-y-4;
+}
+
+.mobile-input {
+  @apply w-full px-4 py-3 text-base rounded-lg border;
+  @apply focus:ring-2 focus:ring-offset-2;
+}
+
+.mobile-select {
+  @apply mobile-input appearance-none;
+}
+
+.mobile-textarea {
+  @apply mobile-input min-h-[100px] resize-y;
+}
+
+/* Botões de ação flutuante */
+.fab {
+  @apply fixed bottom-6 right-6 z-50;
+  @apply w-14 h-14 rounded-full shadow-lg;
+  @apply flex items-center justify-center;
+  @apply transition-all duration-300;
+}
+
+.fab:hover {
+  @apply scale-110 shadow-xl;
+}
+
+/* Estados de loading mobile */
+.mobile-loading {
+  @apply flex flex-col items-center justify-center py-8;
+}
+
+.mobile-skeleton {
+  @apply animate-pulse bg-gray-200 rounded;
+}
+
+/* Navegação mobile */
+.mobile-nav {
+  @apply flex overflow-x-auto pb-2;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.mobile-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.mobile-nav-item {
+  @apply flex-shrink-0 px-4 py-2 mr-2 rounded-full;
+  @apply text-sm font-medium whitespace-nowrap;
+}
+
+/* Swipe indicators */
+.swipe-indicator {
+  @apply absolute top-2 right-2 text-xs text-gray-400;
+}
+
+/* Pull to refresh */
+.pull-refresh {
+  @apply relative;
+}
+
+.pull-refresh-indicator {
+  @apply absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-full;
+  @apply transition-transform duration-300;
+}
+
+/* Sticky headers mobile */
+.mobile-sticky {
+  @apply sticky top-0 z-40 bg-white/95 backdrop-blur-sm;
+  @apply border-b border-gray-200;
+}
+
+/* Modais mobile */
+@media (max-width: 640px) {
+  .mobile-modal {
+    @apply fixed inset-0 z-50 bg-white;
+    @apply overflow-y-auto;
+  }
+  
+  .mobile-modal-content {
+    @apply min-h-full p-4;
+  }
+}
+
+@media (min-width: 641px) {
+  .mobile-modal {
+    @apply fixed inset-0 z-50 flex items-center justify-center p-4;
+    @apply bg-black/50;
+  }
+  
+  .mobile-modal-content {
+    @apply bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto;
+  }
+}
+
+/* Tabs mobile */
+.mobile-tabs {
+  @apply flex border-b border-gray-200;
+}
+
+.mobile-tab {
+  @apply flex-1 px-4 py-3 text-center text-sm font-medium;
+  @apply border-b-2 border-transparent;
+  @apply transition-colors duration-200;
+}
+
+.mobile-tab.active {
+  @apply border-blue-500 text-blue-600;
+}
+
+/* Cards com ações mobile */
+.mobile-action-card {
+  @apply relative overflow-hidden;
+}
+
+.mobile-action-card .actions {
+  @apply absolute inset-y-0 right-0 flex items-center;
+  @apply bg-gradient-to-l from-white via-white to-transparent;
+  @apply px-4 opacity-0 transition-opacity duration-200;
+}
+
+.mobile-action-card:hover .actions {
+  @apply opacity-100;
+}
+
+/* Feedback visual para touch */
+.touch-feedback {
+  @apply relative overflow-hidden;
+}
+
+.touch-feedback::after {
+  content: '';
+  @apply absolute inset-0 bg-white/20 opacity-0;
+  @apply transition-opacity duration-150;
+}
+
+.touch-feedback:active::after {
+  @apply opacity-100;
+}
