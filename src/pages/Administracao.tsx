@@ -100,6 +100,7 @@ const Administracao = () => {
   const fetchAllData = async () => {
     try {
       setLoading(true);
+      console.log('🔍 Iniciando carregamento de dados de administração...');
       
       const [
         especiesData,
@@ -115,11 +116,28 @@ const Administracao = () => {
         supabase.from('tipos_intervencoes_opcoes').select('*').order('nome')
       ]);
 
+      // Debug logs detalhados
+      console.log('📊 Dados carregados:');
+      console.log('- Espécies:', especiesData.data?.length || 0, 'itens', especiesData.error ? `(Erro: ${especiesData.error.message})` : '');
+      console.log('- Sexos:', sexosData.data?.length || 0, 'itens', sexosData.error ? `(Erro: ${sexosData.error.message})` : '');
+      console.log('- Especialidades:', especialidadesData.data?.length || 0, 'itens', especialidadesData.error ? `(Erro: ${especialidadesData.error.message})` : '');
+      console.log('- Estados:', estadosData.data?.length || 0, 'itens', estadosData.error ? `(Erro: ${estadosData.error.message})` : '');
+      console.log('- Tipos Intervenções:', tiposData.data?.length || 0, 'itens', tiposData.error ? `(Erro: ${tiposData.error.message})` : '');
+
+      // Verificar erros individuais
+      if (especiesData.error) console.error('❌ Erro espécies:', especiesData.error);
+      if (sexosData.error) console.error('❌ Erro sexos:', sexosData.error);
+      if (especialidadesData.error) console.error('❌ Erro especialidades:', especialidadesData.error);
+      if (estadosData.error) console.error('❌ Erro estados:', estadosData.error);
+      if (tiposData.error) console.error('❌ Erro tipos intervenções:', tiposData.error);
+
       setEspecies(especiesData.data || []);
       setSexos(sexosData.data || []);
       setEspecialidades(especialidadesData.data || []);
       setEstados(estadosData.data || []);
       setTiposIntervencoes(tiposData.data || []);
+      
+      console.log('✅ Estados atualizados com sucesso');
       
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
