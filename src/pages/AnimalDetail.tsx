@@ -47,6 +47,8 @@ const AnimalDetail = () => {
   const [localizacoes, setLocalizacoes] = useState<Localizacao[]>([]);
   const [tiposIntervencoes, setTiposIntervencoes] = useState<TipoIntervencao[]>([]);
   const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
+  const [tiposEventos, setTiposEventos] = useState<any[]>([]);
+  const [tiposLocalizacoes, setTiposLocalizacoes] = useState<any[]>([]);
   const [grupoInfo, setGrupoInfo] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -92,11 +94,55 @@ const AnimalDetail = () => {
     ativo: true
   });
 
+  const fetchTiposEventos = async () => {
+    try {
+      console.log('📅 [TIPOS EVENTOS] Buscando tipos de eventos...');
+      const { data, error } = await supabase
+        .from('tipos_eventos')
+        .select('*')
+        .eq('ativo', true)
+        .order('nome');
+
+      if (error) {
+        console.error('❌ [TIPOS EVENTOS] Erro ao buscar tipos:', error);
+        throw error;
+      }
+
+      console.log('✅ [TIPOS EVENTOS] Tipos carregados:', data?.length || 0);
+      setTiposEventos(data || []);
+    } catch (error: any) {
+      console.error('💥 [TIPOS EVENTOS] Erro geral:', error);
+    }
+  };
+
+  const fetchTiposLocalizacoes = async () => {
+    try {
+      console.log('📍 [TIPOS LOCALIZAÇÕES] Buscando tipos de localizações...');
+      const { data, error } = await supabase
+        .from('tipos_localizacoes')
+        .select('*')
+        .eq('ativo', true)
+        .order('nome');
+
+      if (error) {
+        console.error('❌ [TIPOS LOCALIZAÇÕES] Erro ao buscar tipos:', error);
+        throw error;
+      }
+
+      console.log('✅ [TIPOS LOCALIZAÇÕES] Tipos carregados:', data?.length || 0);
+      setTiposLocalizacoes(data || []);
+    } catch (error: any) {
+      console.error('💥 [TIPOS LOCALIZAÇÕES] Erro geral:', error);
+    }
+  };
+
   useEffect(() => {
     if (id) {
       fetchAnimalData();
       fetchTiposIntervencoes();
       fetchVoluntarios();
+      fetchTiposEventos();
+      fetchTiposLocalizacoes();
     }
   }, [id]);
 
@@ -1203,13 +1249,11 @@ const AnimalDetail = () => {
                                 <SelectValue placeholder="Selecione o tipo" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="Resgate">Resgate</SelectItem>
-                                <SelectItem value="Adoção">Adoção</SelectItem>
-                                <SelectItem value="Transferência">Transferência</SelectItem>
-                                <SelectItem value="Fuga">Fuga</SelectItem>
-                                <SelectItem value="Retorno">Retorno</SelectItem>
-                                <SelectItem value="Óbito">Óbito</SelectItem>
-                                <SelectItem value="Outro">Outro</SelectItem>
+                                {tiposEventos.map((tipo) => (
+                                  <SelectItem key={tipo.id} value={tipo.nome}>
+                                    {tipo.nome}
+                                  </SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                           </div>
@@ -1391,12 +1435,11 @@ const AnimalDetail = () => {
                               <SelectValue placeholder="Selecione a localização" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="Canil">Canil</SelectItem>
-                              <SelectItem value="CRO">CRO</SelectItem>
-                              <SelectItem value="FAT">FAT</SelectItem>
-                              <SelectItem value="Rua">Rua</SelectItem>
-                              <SelectItem value="Casa Temporária">Casa Temporária</SelectItem>
-                              <SelectItem value="Outro">Outro</SelectItem>
+                              {tiposLocalizacoes.map((tipo) => (
+                                <SelectItem key={tipo.id} value={tipo.nome}>
+                                  {tipo.nome}
+                                </SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                         </div>

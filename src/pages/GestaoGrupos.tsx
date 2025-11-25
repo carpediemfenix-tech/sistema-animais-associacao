@@ -36,6 +36,7 @@ import LogotipoValentao from "@/components/LogotipoValentao";
 const GestaoGrupos = () => {
   const [grupos, setGrupos] = useState<Grupo[]>([]);
   const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
+  const [tiposGrupos, setTiposGrupos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterTipo, setFilterTipo] = useState("todos");
@@ -62,9 +63,31 @@ const GestaoGrupos = () => {
     observacoes: ""
   });
 
+  const fetchTiposGrupos = async () => {
+    try {
+      console.log('🏷️ [TIPOS] Carregando tipos de grupos...');
+      const { data, error } = await supabase
+        .from('tipos_grupos')
+        .select('*')
+        .eq('ativo', true)
+        .order('nome');
+
+      if (error) {
+        console.error('❌ [TIPOS] Erro ao carregar tipos:', error);
+        throw error;
+      }
+
+      console.log('✅ [TIPOS] Tipos carregados:', data?.length || 0);
+      setTiposGrupos(data || []);
+    } catch (error: any) {
+      console.error('💥 [TIPOS] Erro geral:', error);
+    }
+  };
+
   useEffect(() => {
     fetchGrupos();
     fetchVoluntarios();
+    fetchTiposGrupos();
   }, []);
 
   const fetchGrupos = async () => {
@@ -642,18 +665,17 @@ const GestaoGrupos = () => {
                     <SelectValue placeholder="Selecionar tipo" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="matilha">
-                      <div className="flex items-center">
-                        <Dog className="h-4 w-4 mr-2" />
-                        Matilha (Cães)
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="colonia">
-                      <div className="flex items-center">
-                        <Cat className="h-4 w-4 mr-2" />
-                        Colónia (Gatos)
-                      </div>
-                    </SelectItem>
+                    {tiposGrupos.map((tipo) => {
+                      const IconComponent = tipo.icone === 'Dog' ? Dog : Cat;
+                      return (
+                        <SelectItem key={tipo.id} value={tipo.nome}>
+                          <div className="flex items-center">
+                            <IconComponent className="h-4 w-4 mr-2" />
+                            {tipo.nome} ({tipo.descricao})
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>
