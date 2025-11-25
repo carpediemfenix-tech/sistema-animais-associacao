@@ -35,24 +35,30 @@ import {
   Eye,
   EyeOff,
   Save,
-  X
+  X,
+  Calendar,
+  MapPin
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { 
-  EspecieOpcao, 
-  SexoOpcao, 
-  EspecialidadeOpcao, 
-  EstadoOpcao, 
-  TipoIntervencaoOpcao 
+  Especie, 
+  Sexo, 
+  EspecialidadeVoluntario, 
+  TipoGrupo, 
+  TipoEvento, 
+  TipoLocalizacao,
+  TipoIntervencao 
 } from "@/types/animal";
 
 const Administracao = () => {
-  const [especies, setEspecies] = useState<EspecieOpcao[]>([]);
-  const [sexos, setSexos] = useState<SexoOpcao[]>([]);
-  const [especialidades, setEspecialidades] = useState<EspecialidadeOpcao[]>([]);
-  const [estados, setEstados] = useState<EstadoOpcao[]>([]);
-  const [tiposIntervencoes, setTiposIntervencoes] = useState<TipoIntervencaoOpcao[]>([]);
+  const [especies, setEspecies] = useState<Especie[]>([]);
+  const [sexos, setSexos] = useState<Sexo[]>([]);
+  const [especialidadesVoluntarios, setEspecialidadesVoluntarios] = useState<EspecialidadeVoluntario[]>([]);
+  const [tiposGrupos, setTiposGrupos] = useState<TipoGrupo[]>([]);
+  const [tiposEventos, setTiposEventos] = useState<TipoEvento[]>([]);
+  const [tiposLocalizacoes, setTiposLocalizacoes] = useState<TipoLocalizacao[]>([]);
+  const [tiposIntervencoes, setTiposIntervencoes] = useState<TipoIntervencao[]>([]);
   
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -105,15 +111,19 @@ const Administracao = () => {
       const [
         especiesData,
         sexosData,
-        especialidadesData,
-        estadosData,
-        tiposData
+        especialidadesVoluntariosData,
+        tiposGruposData,
+        tiposEventosData,
+        tiposLocalizacoesData,
+        tiposIntervencoesData
       ] = await Promise.all([
-        supabase.from('especies_opcoes').select('*').order('nome'),
-        supabase.from('sexos_opcoes').select('*').order('nome'),
-        supabase.from('especialidades_opcoes').select('*').order('nome'),
-        supabase.from('estados_opcoes').select('*').order('nome'),
-        supabase.from('tipos_intervencoes_opcoes').select('*').order('nome')
+        supabase.from('especies').select('*').order('nome'),
+        supabase.from('sexos').select('*').order('nome'),
+        supabase.from('especialidades_voluntarios').select('*').order('nome'),
+        supabase.from('tipos_grupos').select('*').order('nome'),
+        supabase.from('tipos_eventos').select('*').order('nome'),
+        supabase.from('tipos_localizacoes').select('*').order('nome'),
+        supabase.from('tipos_intervencoes').select('*').order('nome')
       ]);
 
       // Dados carregados com sucesso
@@ -121,15 +131,19 @@ const Administracao = () => {
       // Verificar erros individuais
       if (especiesData.error) console.error('❌ Erro espécies:', especiesData.error);
       if (sexosData.error) console.error('❌ Erro sexos:', sexosData.error);
-      if (especialidadesData.error) console.error('❌ Erro especialidades:', especialidadesData.error);
-      if (estadosData.error) console.error('❌ Erro estados:', estadosData.error);
-      if (tiposData.error) console.error('❌ Erro tipos intervenções:', tiposData.error);
+      if (especialidadesVoluntariosData.error) console.error('❌ Erro especialidades voluntários:', especialidadesVoluntariosData.error);
+      if (tiposGruposData.error) console.error('❌ Erro tipos grupos:', tiposGruposData.error);
+      if (tiposEventosData.error) console.error('❌ Erro tipos eventos:', tiposEventosData.error);
+      if (tiposLocalizacoesData.error) console.error('❌ Erro tipos localizações:', tiposLocalizacoesData.error);
+      if (tiposIntervencoesData.error) console.error('❌ Erro tipos intervenções:', tiposIntervencoesData.error);
 
       setEspecies(especiesData.data || []);
       setSexos(sexosData.data || []);
-      setEspecialidades(especialidadesData.data || []);
-      setEstados(estadosData.data || []);
-      setTiposIntervencoes(tiposData.data || []);
+      setEspecialidadesVoluntarios(especialidadesVoluntariosData.data || []);
+      setTiposGrupos(tiposGruposData.data || []);
+      setTiposEventos(tiposEventosData.data || []);
+      setTiposLocalizacoes(tiposLocalizacoesData.data || []);
+      setTiposIntervencoes(tiposIntervencoesData.data || []);
       
       // Estados atualizados
       
@@ -445,11 +459,13 @@ const Administracao = () => {
 
         {/* Tabelas de Gestão */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {renderTable("Espécies", especies, "especies_opcoes", PawPrint)}
-          {renderTable("Sexos", sexos, "sexos_opcoes", Users)}
-          {renderTable("Especialidades", especialidades, "especialidades_opcoes", Stethoscope)}
-          {renderTable("Estados", estados, "estados_opcoes", Activity)}
-          {renderTable("Tipos de Intervenções", tiposIntervencoes, "tipos_intervencoes_opcoes", Settings)}
+          {renderTable("Espécies de Animais", especies, "especies", PawPrint)}
+          {renderTable("Sexos de Animais", sexos, "sexos", Users)}
+          {renderTable("Especialidades de Voluntários", especialidadesVoluntarios, "especialidades_voluntarios", Stethoscope)}
+          {renderTable("Tipos de Grupos", tiposGrupos, "tipos_grupos", Users)}
+          {renderTable("Tipos de Eventos", tiposEventos, "tipos_eventos", Calendar)}
+          {renderTable("Tipos de Localizações", tiposLocalizacoes, "tipos_localizacoes", MapPin)}
+          {renderTable("Tipos de Intervenções", tiposIntervencoes, "tipos_intervencoes", Settings)}
         </div>
 
         {/* Dialog para Edição/Criação */}

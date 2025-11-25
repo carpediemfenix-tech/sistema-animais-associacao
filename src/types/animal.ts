@@ -194,9 +194,10 @@ export interface EventoGrupo {
   updated_by?: string;
 }
 
-// 🐾 INTERFACES PARA GESTÃO DE OPÇÕES (ADMINISTRAÇÃO)
+// 🛡️ INTERFACES PARA TABELAS DE ADMINISTRAÇÃO CORRETAS
 
-export interface EspecieOpcao {
+// Espécies (para formulário Novo Animal)
+export interface Especie {
   id: number;
   nome: string;
   descricao?: string;
@@ -205,7 +206,8 @@ export interface EspecieOpcao {
   updated_at: string;
 }
 
-export interface SexoOpcao {
+// Sexos (para formulário Novo Animal)
+export interface Sexo {
   id: number;
   nome: string;
   descricao?: string;
@@ -214,17 +216,8 @@ export interface SexoOpcao {
   updated_at: string;
 }
 
-export interface EspecialidadeOpcao {
-  id: number;
-  nome: string;
-  descricao?: string;
-  categoria?: string;
-  ativo: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface EstadoOpcao {
+// Especialidades de Voluntários (para formulário Gestão Voluntários)
+export interface EspecialidadeVoluntario {
   id: number;
   nome: string;
   descricao?: string;
@@ -234,8 +227,41 @@ export interface EstadoOpcao {
   updated_at: string;
 }
 
-export interface TipoIntervencaoOpcao {
+// Tipos de Grupos (para formulário Gestão Grupos)
+export interface TipoGrupo {
   id: number;
+  nome: string;
+  descricao?: string;
+  icone?: string;
+  ativo: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// Tipos de Eventos (para formulário Eventos)
+export interface TipoEvento {
+  id: number;
+  nome: string;
+  descricao?: string;
+  cor?: string;
+  ativo: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// Tipos de Localizações (para formulário Localizações)
+export interface TipoLocalizacao {
+  id: number;
+  nome: string;
+  descricao?: string;
+  ativo: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// Tipos de Intervenções (já existe tabela tipos_intervencoes)
+export interface TipoIntervencao {
+  id: string;
   nome: string;
   descricao?: string;
   categoria?: string;

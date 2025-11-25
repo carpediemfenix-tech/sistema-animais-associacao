@@ -32,6 +32,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const GestaoVoluntarios = () => {
   const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
+  const [especialidades, setEspecialidades] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -71,8 +72,24 @@ const GestaoVoluntarios = () => {
     );
   }
 
+  const fetchEspecialidades = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('especialidades_voluntarios')
+        .select('*')
+        .eq('ativo', true)
+        .order('nome');
+
+      if (error) throw error;
+      setEspecialidades(data || []);
+    } catch (error: any) {
+      console.error('Erro ao carregar especialidades:', error);
+    }
+  };
+
   useEffect(() => {
     fetchVoluntarios();
+    fetchEspecialidades();
   }, []);
 
   const fetchVoluntarios = async () => {
@@ -439,11 +456,11 @@ const GestaoVoluntarios = () => {
                           <SelectValue placeholder="Selecione a especialidade" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Veterinário">Veterinário</SelectItem>
-                          <SelectItem value="Cuidador">Cuidador</SelectItem>
-                          <SelectItem value="Transporte">Transporte</SelectItem>
-                          <SelectItem value="Administrativo">Administrativo</SelectItem>
-                          <SelectItem value="Geral">Geral</SelectItem>
+                          {especialidades.map((especialidade) => (
+                            <SelectItem key={especialidade.id} value={especialidade.nome}>
+                              {especialidade.nome}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>

@@ -36,6 +36,8 @@ const NovoAnimal = () => {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [grupos, setGrupos] = useState<any[]>([]);
+  const [especies, setEspecies] = useState<any[]>([]);
+  const [sexos, setSexos] = useState<any[]>([]);
 
   const generateNextProcessNumber = async (): Promise<string> => {
     try {
@@ -111,8 +113,40 @@ const NovoAnimal = () => {
     }
   };
 
+  const fetchEspecies = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('especies')
+        .select('*')
+        .eq('ativo', true)
+        .order('nome');
+
+      if (error) throw error;
+      setEspecies(data || []);
+    } catch (error: any) {
+      console.error('Erro ao carregar espécies:', error);
+    }
+  };
+
+  const fetchSexos = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('sexos')
+        .select('*')
+        .eq('ativo', true)
+        .order('nome');
+
+      if (error) throw error;
+      setSexos(data || []);
+    } catch (error: any) {
+      console.error('Erro ao carregar sexos:', error);
+    }
+  };
+
   useEffect(() => {
     fetchGrupos();
+    fetchEspecies();
+    fetchSexos();
   }, []);
 
   const validateForm = () => {
@@ -339,9 +373,11 @@ const NovoAnimal = () => {
                       <SelectValue placeholder="Selecione a espécie" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Cão">Cão</SelectItem>
-                      <SelectItem value="Gato">Gato</SelectItem>
-                      <SelectItem value="Outro">Outro</SelectItem>
+                      {especies.map((especie) => (
+                        <SelectItem key={especie.id} value={especie.nome}>
+                          {especie.nome}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   {errors.especie && (
@@ -369,8 +405,11 @@ const NovoAnimal = () => {
                       <SelectValue placeholder="Selecione o sexo" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Macho">Macho</SelectItem>
-                      <SelectItem value="Fêmea">Fêmea</SelectItem>
+                      {sexos.map((sexo) => (
+                        <SelectItem key={sexo.id} value={sexo.nome}>
+                          {sexo.nome}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   {errors.sexo && (
