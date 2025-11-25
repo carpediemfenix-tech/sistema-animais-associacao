@@ -1,9 +1,0 @@
-  // CORREÇÃO: Atualizar estado do formulário de localização para usar campos corretos
-  const [localizacaoForm, setLocalizacaoForm] = useState({
-    localizacao: "", // CORRIGIDO: usar 'localizacao' em vez de 'tipo_localizacao'
-    endereco: "",
-    data_entrada: new Date().toISOString().split('T')[0], // CORRIGIDO: usar 'data_entrada' em vez de 'data_inicio'
-    data_saida: "", // CORRIGIDO: usar 'data_saida' em vez de 'data_fim'
-    observacoes: "",
-    ativo: true
-  });
