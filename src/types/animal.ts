@@ -24,6 +24,7 @@ export interface Animal {
   motivo_arquivamento?: string;
   grupo_id?: string;
   foto_url?: string;
+  url_fotografia?: string; // Nova: URL da fotografia do animal
   created_at: string;
   updated_at: string;
 }
@@ -191,4 +192,54 @@ export interface EventoGrupo {
   updated_at: string;
   created_by?: string;
   updated_by?: string;
+}
+
+// 🐾 INTERFACES PARA GESTÃO DE OPÇÕES (ADMINISTRAÇÃO)
+
+export interface EspecieOpcao {
+  id: number;
+  nome: string;
+  descricao?: string;
+  ativo: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SexoOpcao {
+  id: number;
+  nome: string;
+  descricao?: string;
+  ativo: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EspecialidadeOpcao {
+  id: number;
+  nome: string;
+  descricao?: string;
+  categoria?: string;
+  ativo: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EstadoOpcao {
+  id: number;
+  nome: string;
+  descricao?: string;
+  cor?: string;
+  ativo: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TipoIntervencaoOpcao {
+  id: number;
+  nome: string;
+  descricao?: string;
+  categoria?: string;
+  ativo: boolean;
+  created_at: string;
+  updated_at: string;
 }

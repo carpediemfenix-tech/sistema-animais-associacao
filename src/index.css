@@ -8,110 +8,110 @@ Todas as cores devem ser HSL para consistência.
 
 @layer base {
   :root {
-    /* 🎖️ TEMA TÁTICO MILITAR - CORES PRINCIPAIS */
-    --background: 120 8% 8%; /* Verde militar escuro */
-    --foreground: 0 0% 95%; /* Branco quase puro */
+    /* 🐾 TEMA CAUSA ANIMAL - CORES PRINCIPAIS */
+    --background: 45 15% 97%; /* Creme muito claro */
+    --foreground: 25 25% 15%; /* Marrom escuro */
 
-    --card: 120 10% 12%; /* Verde militar card */
-    --card-foreground: 0 0% 95%;
+    --card: 0 0% 100%; /* Branco puro */
+    --card-foreground: 25 25% 15%;
 
-    --popover: 120 12% 10%;
-    --popover-foreground: 0 0% 95%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 25 25% 15%;
 
-    /* 🟢 Verde militar - cor principal */
-    --primary: 120 40% 25%; /* Verde militar */
+    /* 🧡 Laranja caloroso - cor principal */
+    --primary: 25 95% 53%; /* Laranja caloroso */
     --primary-foreground: 0 0% 100%;
 
-    /* ⚫ Cinza tático - secundária */
-    --secondary: 0 0% 20%; /* Cinza escuro */
-    --secondary-foreground: 0 0% 95%;
+    /* 🟤 Marrom natural - secundária */
+    --secondary: 25 25% 85%; /* Bege claro */
+    --secondary-foreground: 25 25% 15%;
 
-    /* 🔶 Laranja tático - acentos */
-    --accent: 30 100% 50%; /* Laranja militar */
-    --accent-foreground: 0 0% 10%;
+    /* 💚 Verde natureza - acentos */
+    --accent: 142 76% 36%; /* Verde natureza */
+    --accent-foreground: 0 0% 100%;
 
-    --muted: 120 8% 15%; /* Verde militar muted */
-    --muted-foreground: 0 0% 70%;
+    --muted: 45 15% 92%; /* Creme muted */
+    --muted-foreground: 25 25% 45%;
 
-    --destructive: 0 75% 50%; /* Vermelho militar */
+    --destructive: 0 84% 60%; /* Vermelho suave */
     --destructive-foreground: 0 0% 100%;
 
-    --border: 120 15% 20%; /* Borda verde militar */
-    --input: 120 15% 18%; /* Input verde militar */
-    --ring: 120 40% 25%;
+    --border: 45 15% 88%; /* Borda creme */
+    --input: 45 15% 95%; /* Input creme claro */
+    --ring: 25 95% 53%;
 
-    --radius: 0.25rem; /* Bordas mais angulares - estilo militar */
+    --radius: 0.5rem; /* Bordas mais suaves - estilo amigável */
 
-    /* 🎖️ CORES TEMÁTICAS MILITARES */
-    --tactical-green: 120 40% 25%; /* Verde militar principal */
-    --tactical-dark: 120 15% 10%; /* Verde muito escuro */
-    --tactical-gray: 0 0% 25%; /* Cinza tático */
-    --tactical-orange: 30 100% 50%; /* Laranja de alerta */
-    --tactical-red: 0 75% 50%; /* Vermelho de perigo */
+    /* 🐾 CORES TEMÁTICAS ANIMAIS */
+    --animal-orange: 25 95% 53%; /* Laranja principal */
+    --animal-green: 142 76% 36%; /* Verde natureza */
+    --animal-blue: 200 100% 70%; /* Azul céu */
+    --animal-brown: 25 45% 35%; /* Marrom terra */
+    --animal-yellow: 45 100% 60%; /* Amarelo sol */
     --tactical-blue: 210 100% 40%; /* Azul tático */
     --tactical-yellow: 50 100% 50%; /* Amarelo de aviso */
     
-    /* 🎖️ GRADIENTES MILITARES */
-    --gradient-tactical: linear-gradient(135deg, hsl(120 40% 25%), hsl(120 30% 15%));
-    --gradient-command: linear-gradient(135deg, hsl(0 0% 20%), hsl(120 15% 10%));
-    --gradient-alert: linear-gradient(135deg, hsl(30 100% 50%), hsl(0 75% 50%));
-    --gradient-stealth: linear-gradient(135deg, hsl(120 15% 10%), hsl(0 0% 5%));
+    /* 🐾 GRADIENTES TEMÁTICOS ANIMAIS */
+    --gradient-warm: linear-gradient(135deg, hsl(25 95% 53%), hsl(45 100% 60%));
+    --gradient-nature: linear-gradient(135deg, hsl(142 76% 36%), hsl(200 100% 70%));
+    --gradient-sunset: linear-gradient(135deg, hsl(25 95% 53%), hsl(280 100% 70%));
+    --gradient-earth: linear-gradient(135deg, hsl(25 45% 35%), hsl(45 100% 60%));
     
-    /* ⚔️ SOMBRAS MILITARES */
-    --shadow-tactical: 0 8px 25px -8px hsl(120 40% 25% / 0.4);
-    --shadow-command: 0 12px 35px -12px hsl(0 0% 0% / 0.6);
-    --shadow-stealth: 0 4px 15px -4px hsl(120 15% 10% / 0.8);
-    --shadow-alert: 0 6px 20px -6px hsl(30 100% 50% / 0.3);
+    /* 🌟 SOMBRAS TEMÁTICAS */
+    --shadow-warm: 0 10px 30px -10px hsl(25 95% 53% / 0.3);
+    --shadow-nature: 0 10px 30px -10px hsl(142 76% 36% / 0.3);
+    --shadow-soft: 0 4px 20px -4px hsl(25 25% 15% / 0.1);
+    --shadow-glow: 0 0 40px hsl(45 100% 60% / 0.2);
 
-    /* 🎖️ SIDEBAR MILITAR */
-    --sidebar-background: 120 15% 8%;
-    --sidebar-foreground: 0 0% 95%;
-    --sidebar-primary: 120 40% 25%;
+    /* 🐾 SIDEBAR ANIMAL */
+    --sidebar-background: 45 100% 98%;
+    --sidebar-foreground: 25 25% 15%;
+    --sidebar-primary: 25 95% 53%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 120 15% 15%;
-    --sidebar-accent-foreground: 0 0% 90%;
-    --sidebar-border: 120 20% 18%;
-    --sidebar-ring: 120 40% 25%;
+    --sidebar-accent: 45 50% 95%;
+    --sidebar-accent-foreground: 25 25% 15%;
+    --sidebar-border: 45 30% 88%;
+    --sidebar-ring: 25 95% 53%;
   }
 
   .dark {
-    /* 🌃 MODO NOTURNO MILITAR - OPERAÇÕES ESPECIAIS */
-    --background: 120 15% 5%; /* Verde militar ultra escuro */
-    --foreground: 0 0% 98%; /* Branco quase puro */
+    /* 🌙 MODO NOTURNO ANIMAL - SUAVE E ACOLHEDOR */
+    --background: 25 15% 8%; /* Marrom escuro suave */
+    --foreground: 45 20% 95%; /* Creme claro */
 
-    --card: 120 20% 8%; /* Verde militar escuro */
-    --card-foreground: 0 0% 95%;
+    --card: 25 20% 12%; /* Marrom escuro */
+    --card-foreground: 45 20% 95%;
 
-    --popover: 120 25% 6%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 25 25% 10%;
+    --popover-foreground: 45 20% 95%;
 
-    --primary: 120 50% 30%; /* Verde militar mais claro */
+    --primary: 25 85% 55%; /* Laranja mais suave no escuro */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 15%; /* Cinza muito escuro */
-    --secondary-foreground: 0 0% 95%;
+    --secondary: 25 15% 18%; /* Marrom secundário */
+    --secondary-foreground: 45 20% 90%;
 
-    --muted: 120 15% 12%;
-    --muted-foreground: 0 0% 65%;
+    --muted: 25 15% 15%;
+    --muted-foreground: 45 15% 65%;
 
-    --accent: 30 100% 55%; /* Laranja mais vibrante no escuro */
-    --accent-foreground: 0 0% 10%;
+    --accent: 142 60% 45%; /* Verde natureza no escuro */
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 80% 55%; /* Vermelho mais vibrante */
+    --destructive: 0 70% 60%; /* Vermelho suave */
     --destructive-foreground: 0 0% 100%;
 
-    --border: 120 20% 15%;
-    --input: 120 20% 12%;
-    --ring: 120 50% 30%;
+    --border: 25 20% 20%;
+    --input: 25 20% 15%;
+    --ring: 25 85% 55%;
 
-    --sidebar-background: 120 20% 6%;
-    --sidebar-foreground: 0 0% 95%;
-    --sidebar-primary: 120 50% 30%;
+    --sidebar-background: 25 20% 10%;
+    --sidebar-foreground: 45 20% 95%;
+    --sidebar-primary: 25 85% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 120 15% 10%;
-    --sidebar-accent-foreground: 0 0% 90%;
-    --sidebar-border: 120 25% 12%;
-    --sidebar-ring: 120 50% 30%;
+    --sidebar-accent: 25 15% 15%;
+    --sidebar-accent-foreground: 45 20% 90%;
+    --sidebar-border: 25 25% 18%;
+    --sidebar-ring: 25 85% 55%;
   }
 }
 
@@ -131,29 +131,37 @@ Todas as cores devem ser HSL para consistência.
   transition: all 0.2s ease-in-out;
 }
 
-/* Efeitos tácticos */
-.tactical-card {
-  @apply bg-gradient-to-br from-slate-800 to-slate-900 border border-green-800/30;
-  box-shadow: 0 4px 15px -4px hsl(120 15% 10% / 0.8), inset 0 1px 0 hsl(120 40% 25% / 0.2);
+/* 🐾 Efeitos temáticos animais */
+.animal-card {
+  @apply bg-white border border-orange-200/50 rounded-lg;
+  box-shadow: 0 4px 20px -4px hsl(25 25% 15% / 0.1), 0 2px 8px -2px hsl(25 95% 53% / 0.1);
 }
 
-.tactical-button {
-  @apply bg-gradient-to-r from-green-800 to-green-900 hover:from-green-700 hover:to-green-800;
-  @apply border border-green-600/50 text-green-100 font-semibold;
-  @apply shadow-lg hover:shadow-xl transform hover:scale-105;
+.animal-button {
+  @apply bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-400 hover:to-orange-500;
+  @apply border border-orange-400/50 text-white font-semibold rounded-lg;
+  @apply shadow-md hover:shadow-lg transform hover:scale-105;
   transition: all 0.2s ease-in-out;
 }
 
-.tactical-button:active {
+.animal-button:active {
   @apply scale-95;
 }
 
-.command-center {
-  @apply bg-gradient-to-br from-slate-900 via-slate-800 to-green-900/20;
-  @apply border-2 border-green-800/40;
+.warm-card {
+  @apply bg-gradient-to-br from-orange-50 to-yellow-50;
+  @apply border border-orange-200/60;
   box-shadow: 
-    0 0 30px hsl(120 40% 25% / 0.3),
-    inset 0 1px 0 hsl(120 40% 25% / 0.1);
+    0 4px 25px hsl(25 95% 53% / 0.15),
+    inset 0 1px 0 hsl(45 100% 60% / 0.2);
+}
+
+.nature-card {
+  @apply bg-gradient-to-br from-green-50 to-blue-50;
+  @apply border border-green-200/60;
+  box-shadow: 
+    0 4px 25px hsl(142 76% 36% / 0.15),
+    inset 0 1px 0 hsl(200 100% 70% / 0.2);
 }
 
 .tactical-grid {
@@ -181,14 +189,26 @@ Todas as cores devem ser HSL para consistência.
   backdrop-filter: blur(1px);
 }
 
-/* Tipografia militar */
-.military-title {
-  @apply font-bold text-green-100 tracking-wider uppercase;
-  text-shadow: 0 2px 4px hsl(0 0% 0% / 0.8);
+/* 🐾 Tipografia temática animal */
+.animal-title {
+  @apply font-bold text-orange-800 tracking-wide;
+  text-shadow: 0 1px 2px hsl(25 25% 15% / 0.3);
 }
 
-.tactical-text {
-  @apply text-green-200 font-mono text-sm;
+.animal-subtitle {
+  @apply text-orange-600 font-semibold text-lg;
+}
+
+.animal-text {
+  @apply text-gray-700 leading-relaxed;
+}
+
+.warm-text {
+  @apply text-orange-700;
+}
+
+.nature-text {
+  @apply text-green-700;
 }
 
 /* Animações de entrada */

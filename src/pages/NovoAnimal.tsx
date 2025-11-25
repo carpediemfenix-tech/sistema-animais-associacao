@@ -30,6 +30,7 @@ const NovoAnimal = () => {
     local_encontrado: "",
     observacoes: "",
     grupo_id: "",
+    url_fotografia: "", // Nova: URL da fotografia
     data_entrada: new Date().toISOString().split('T')[0]
   });
 
@@ -480,6 +481,20 @@ const NovoAnimal = () => {
                   placeholder="Descreva características distintivas, cicatrizes, marcas especiais..."
                   rows={3}
                 />
+              </div>
+
+              <div>
+                <Label htmlFor="url_fotografia">URL da Fotografia</Label>
+                <Input
+                  id="url_fotografia"
+                  type="url"
+                  value={formData.url_fotografia}
+                  onChange={(e) => handleInputChange("url_fotografia", e.target.value)}
+                  placeholder="https://exemplo.com/foto-do-animal.jpg"
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  Link para a fotografia do animal (opcional)
+                </p>
               </div>
             </CardContent>
           </Card>
