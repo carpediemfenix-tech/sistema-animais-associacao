@@ -58,6 +58,7 @@ const Administracao = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [currentTable, setCurrentTable] = useState<string>('');
+  const [showInactive, setShowInactive] = useState(false);
   
   const [formData, setFormData] = useState({
     nome: '',
@@ -152,6 +153,16 @@ const Administracao = () => {
   };
 
   const handleSubmit = async () => {
+    // Validação
+    if (!formData.nome.trim()) {
+      toast({
+        title: "Erro de Validação",
+        description: "O nome da opção é obrigatório",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const dataToSubmit = {
         nome: formData.nome.trim(),
@@ -254,14 +265,22 @@ const Administracao = () => {
 
   const renderTable = (title: string, data: any[], tableName: string, icon: any) => {
     const IconComponent = icon;
+    const activeCount = data.filter(item => item.ativo).length;
+    const totalCount = data.length;
+    const filteredData = showInactive ? data : data.filter(item => item.ativo);
     
     return (
       <Card className="animal-card">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-3">
               <IconComponent className="h-5 w-5 text-orange-500" />
-              <CardTitle className="text-orange-800">{title}</CardTitle>
+              <div>
+                <CardTitle className="text-orange-800">{title}</CardTitle>
+                <CardDescription className="text-orange-600">
+                  {activeCount} ativos de {totalCount} total
+                </CardDescription>
+              </div>
             </div>
             <Button 
               onClick={() => openDialog(tableName)}
@@ -269,13 +288,13 @@ const Administracao = () => {
               size="sm"
             >
               <Plus className="h-4 w-4 mr-2" />
-              Adicionar
+              Nova Opção
             </Button>
           </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            {data.map((item) => (
+            {filteredData.map((item) => (
               <div key={item.id} className="flex items-center justify-between p-3 bg-orange-50 rounded-lg border border-orange-200">
                 <div className="flex items-center space-x-3">
                   <Badge 
@@ -294,11 +313,13 @@ const Administracao = () => {
                     )}
                   </div>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-1">
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => toggleActive(tableName, item.id, item.ativo)}
+                    className={`${item.ativo ? 'text-orange-600 hover:text-orange-800' : 'text-green-600 hover:text-green-800'}`}
+                    title={item.ativo ? 'Desativar' : 'Ativar'}
                   >
                     {item.ativo ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
@@ -306,6 +327,8 @@ const Administracao = () => {
                     variant="ghost"
                     size="sm"
                     onClick={() => openDialog(tableName, item)}
+                    className="text-blue-600 hover:text-blue-800"
+                    title="Editar"
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
@@ -314,6 +337,7 @@ const Administracao = () => {
                     size="sm"
                     onClick={() => deleteItem(tableName, item.id)}
                     className="text-red-600 hover:text-red-800"
+                    title="Eliminar"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -321,9 +345,28 @@ const Administracao = () => {
               </div>
             ))}
             
-            {data.length === 0 && (
-              <div className="text-center py-6 text-orange-400">
-                <p>Nenhum item encontrado</p>
+            {filteredData.length === 0 && (
+              <div className="text-center py-8 text-orange-400">
+                <IconComponent className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <p className="text-lg font-medium mb-2">
+                  {totalCount === 0 ? 'Nenhuma opção encontrada' : 
+                   showInactive ? 'Nenhuma opção encontrada' : 'Nenhuma opção ativa encontrada'}
+                </p>
+                <p className="text-sm text-orange-500 mb-4">
+                  {totalCount === 0 ? 
+                    'Clique em "Nova Opção" para adicionar a primeira opção desta categoria.' :
+                    showInactive ? 
+                      'Todas as opções foram eliminadas.' :
+                      'Todas as opções estão desativadas. Ative algumas opções ou marque "Mostrar inativos".'}
+                </p>
+                <Button 
+                  onClick={() => openDialog(tableName)}
+                  className="animal-button"
+                  size="sm"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Adicionar Primeira Opção
+                </Button>
               </div>
             )}
           </div>
@@ -357,13 +400,32 @@ const Administracao = () => {
         {/* Cabeçalho */}
         <Card className="animal-card">
           <CardHeader>
-            <div className="flex items-center space-x-2">
-              <Shield className="h-6 w-6 text-orange-500" />
-              <div>
-                <CardTitle className="text-orange-800">Painel de Administração</CardTitle>
-                <CardDescription className="text-orange-600">
-                  Gerir campos com opções e configurações do sistema
-                </CardDescription>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Shield className="h-6 w-6 text-orange-500" />
+                <div>
+                  <CardTitle className="text-orange-800">Painel de Administração</CardTitle>
+                  <CardDescription className="text-orange-600">
+                    Gerir campos com opções e configurações do sistema
+                  </CardDescription>
+                </div>
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-2">
+                  <Label htmlFor="show-inactive" className="text-sm text-orange-700">
+                    Mostrar inativos
+                  </Label>
+                  <input
+                    id="show-inactive"
+                    type="checkbox"
+                    checked={showInactive}
+                    onChange={(e) => setShowInactive(e.target.checked)}
+                    className="rounded border-orange-300 text-orange-600 focus:ring-orange-500"
+                  />
+                </div>
+                <Badge variant="outline" className="text-orange-700 border-orange-300">
+                  {showInactive ? 'Todos os itens' : 'Apenas ativos'}
+                </Badge>
               </div>
             </div>
           </CardHeader>
@@ -392,14 +454,22 @@ const Administracao = () => {
             
             <div className="space-y-4">
               <div>
-                <Label htmlFor="nome" className="text-orange-700">Nome *</Label>
+                <Label htmlFor="nome" className="text-orange-700 font-medium">
+                  Nome da Opção *
+                </Label>
                 <Input
                   id="nome"
                   value={formData.nome}
                   onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                  placeholder="Nome do item"
-                  className="border-orange-200 focus:border-orange-400"
+                  placeholder="Digite o nome da opção"
+                  className={`border-orange-200 focus:border-orange-400 ${
+                    !formData.nome.trim() ? 'border-red-300' : ''
+                  }`}
+                  required
                 />
+                {!formData.nome.trim() && (
+                  <p className="text-xs text-red-500 mt-1">Campo obrigatório</p>
+                )}
               </div>
               
               <div>
