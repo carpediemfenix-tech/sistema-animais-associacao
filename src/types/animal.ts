@@ -3,7 +3,7 @@ export interface Animal {
   id: string;
   numero_processo?: string;
   nome: string;
-  especie: 'Cão' | 'Gato' | 'Outro';
+  especie: string; // Valor dinâmico da tabela especies
   raca?: string;
   sexo: 'Macho' | 'Fêmea';
   idade_estimada?: number; // em meses
