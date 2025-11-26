@@ -31,6 +31,7 @@ const NovoAnimal = () => {
     observacoes: "",
     grupo_id: "",
     url_fotografia: "", // Nova: URL da fotografia
+    voluntario_responsavel_id: "", // Nova: Voluntário responsável (obrigatório)
     data_entrada: new Date().toISOString().split('T')[0]
   });
 
@@ -38,6 +39,7 @@ const NovoAnimal = () => {
   const [grupos, setGrupos] = useState<any[]>([]);
   const [especies, setEspecies] = useState<any[]>([]);
   const [sexos, setSexos] = useState<any[]>([]);
+  const [voluntarios, setVoluntarios] = useState<any[]>([]);
 
   const generateNextProcessNumber = async (): Promise<string> => {
     try {
@@ -143,10 +145,26 @@ const NovoAnimal = () => {
     }
   };
 
+  const fetchVoluntarios = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('voluntarios')
+        .select('*')
+        .eq('ativo', true)
+        .order('nome');
+
+      if (error) throw error;
+      setVoluntarios(data || []);
+    } catch (error: any) {
+      console.error('Erro ao carregar voluntários:', error);
+    }
+  };
+
   useEffect(() => {
     fetchGrupos();
     fetchEspecies();
     fetchSexos();
+    fetchVoluntarios();
   }, []);
 
   const validateForm = () => {
@@ -162,6 +180,10 @@ const NovoAnimal = () => {
 
     if (!formData.sexo) {
       newErrors.sexo = "Sexo é obrigatório";
+    }
+
+    if (!formData.voluntario_responsavel_id) {
+      newErrors.voluntario_responsavel_id = "Voluntário responsável é obrigatório";
     }
 
     if (!formData.data_entrada) {
@@ -256,7 +278,9 @@ const NovoAnimal = () => {
         observacoes: formData.observacoes.trim() || null,
         estado: 'Ativo',
         arquivado: false,
-        grupo_id: formData.grupo_id || null
+        grupo_id: formData.grupo_id || null,
+        voluntario_responsavel_id: formData.voluntario_responsavel_id,
+        url_fotografia: formData.url_fotografia.trim() || null
       };
 
       console.log('Dados para inserção:', dataToInsert);
@@ -273,6 +297,32 @@ const NovoAnimal = () => {
       }
 
       console.log('Animal inserido com sucesso:', data);
+
+      // Criar registro de responsabilidade inicial
+      const responsabilidadeData = {
+        animal_id: data.id,
+        voluntario_id: formData.voluntario_responsavel_id,
+        data_inicio: formData.data_entrada,
+        motivo_mudanca: 'Responsabilidade inicial no cadastro do animal',
+        observacoes: `Voluntário responsável atribuído no momento do cadastro de ${formData.nome}`,
+        ativo: true
+      };
+
+      const { error: responsabilidadeError } = await supabase
+        .from('responsabilidades_voluntarios')
+        .insert([responsabilidadeData]);
+
+      if (responsabilidadeError) {
+        console.error('Erro ao criar responsabilidade:', responsabilidadeError);
+        // Não falhar o cadastro por causa disso, apenas avisar
+        toast({
+          title: "Aviso",
+          description: "Animal cadastrado, mas houve erro ao atribuir responsabilidade",
+          variant: "destructive",
+        });
+      } else {
+        console.log('Responsabilidade criada com sucesso');
+      }
 
       toast({
         title: "Animal cadastrado com sucesso!",
@@ -574,6 +624,38 @@ const NovoAnimal = () => {
                     placeholder="Ex: Rua das Flores, Lisboa"
                   />
                 </div>
+              </div>
+
+              {/* Voluntário Responsável - OBRIGATÓRIO */}
+              <div>
+                <Label htmlFor="voluntario_responsavel_id">Voluntário Responsável *</Label>
+                <Select 
+                  value={formData.voluntario_responsavel_id} 
+                  onValueChange={(value) => handleInputChange("voluntario_responsavel_id", value)}
+                >
+                  <SelectTrigger className={errors.voluntario_responsavel_id ? "border-red-500" : ""}>
+                    <SelectValue placeholder="Selecionar voluntário responsável" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {voluntarios.map((voluntario) => (
+                      <SelectItem key={voluntario.id} value={voluntario.id}>
+                        <div className="flex items-center">
+                          <span className="font-medium">{voluntario.nome}</span>
+                          <span className="text-sm text-gray-500 ml-2">({voluntario.especialidade})</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.voluntario_responsavel_id && (
+                  <p className="text-sm text-red-500 mt-1 flex items-center">
+                    <AlertCircle className="h-4 w-4 mr-1" />
+                    {errors.voluntario_responsavel_id}
+                  </p>
+                )}
+                <p className="text-sm text-blue-600 mt-1">
+                  🐾 Este voluntário será responsável pelo cuidado do animal
+                </p>
               </div>
 
               {/* Seleção de Grupo */}

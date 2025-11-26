@@ -18,6 +18,7 @@ import {
   Trash2, 
   UserCheck, 
   UserX,
+  Eye,
   Phone,
   Mail,
   Calendar,
@@ -671,10 +672,21 @@ const GestaoVoluntarios = () => {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => handleEdit(voluntario)}
+                              asChild
                             >
-                              <Edit className="h-4 w-4" />
+                              <Link to={`/voluntario/${voluntario.id}`}>
+                                <Eye className="h-4 w-4 text-blue-500" />
+                              </Link>
                             </Button>
+                            {hasPermission('update') && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEdit(voluntario)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            )}
                             <Button
                               variant="ghost"
                               size="sm"

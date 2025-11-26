@@ -405,6 +405,12 @@ const Dashboard = () => {
                       </Link>
                     </Button>
                   )}
+                  <Button asChild variant="outline" size="sm" className="w-full border-orange-200 hover:bg-orange-50">
+                    <Link to="/grupos">
+                      <Users className="h-4 w-4 mr-2" />
+                      Matilhas e Colónias
+                    </Link>
+                  </Button>
                 </div>
               </div>
 
@@ -455,12 +461,6 @@ const Dashboard = () => {
                       </Button>
                     </>
                   )}
-                  <Button asChild variant="outline" size="sm" className="w-full border-cyan-200 hover:bg-cyan-50">
-                    <Link to="/grupos">
-                      <MapPin className="h-4 w-4 mr-2" />
-                      Grupos
-                    </Link>
-                  </Button>
                 </div>
               </div>
 

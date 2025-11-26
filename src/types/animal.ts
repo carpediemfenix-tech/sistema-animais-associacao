@@ -25,6 +25,7 @@ export interface Animal {
   grupo_id?: string;
   foto_url?: string;
   url_fotografia?: string; // Nova: URL da fotografia do animal
+  voluntario_responsavel_id?: string; // Nova: Voluntário responsável pelo animal
   created_at: string;
   updated_at: string;
 }
@@ -268,4 +269,27 @@ export interface TipoIntervencao {
   ativo: boolean;
   created_at: string;
   updated_at: string;
+}
+
+// 👥 INTERFACE PARA RESPONSABILIDADES DE VOLUNTÁRIOS
+export interface ResponsabilidadeVoluntario {
+  id: string;
+  animal_id: string;
+  voluntario_id: string;
+  data_inicio: string;
+  data_fim?: string; // null = responsabilidade ativa
+  motivo_mudanca?: string;
+  observacoes?: string;
+  ativo: boolean;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+  updated_by?: string;
+  // Campos calculados
+  animal_nome?: string;
+  animal_numero_processo?: string;
+  animal_especie?: string;
+  voluntario_nome?: string;
+  voluntario_email?: string;
+  voluntario_telefone?: string;
 }
