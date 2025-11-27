@@ -561,204 +561,50 @@ const GestaoFinanceira = () => {
             {hasPermission('create') && (
               <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                    <Button 
+                      size="sm" 
+                      className="bg-green-600 hover:bg-green-700"
+                      onClick={() => {
+                        console.log('💰 [FINANCEIRO] Abrindo modal...');
+                        setDialogOpen(true);
+                      }}
+                    >
                       <Plus className="h-4 w-4 mr-2" />
                       Novo Movimento
                     </Button>
                   </DialogTrigger>
                 <DialogContent className="sm:max-w-md">
                   <DialogHeader>
-                    <DialogTitle className="flex items-center justify-between">
-                      {editandoMovimento ? 'Editar Movimento Financeiro' : 'Novo Movimento Financeiro'}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setDialogOpen(false);
-                          resetForm();
-                        }}
-                        className="h-6 w-6 p-0"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
+                    <DialogTitle>
+                      Novo Movimento Financeiro
                     </DialogTitle>
                     <DialogDescription>
-                      {editandoMovimento ? 'Alterar dados do movimento financeiro' : 'Registar nova receita ou despesa'}
+                      Registar nova receita ou despesa
                     </DialogDescription>
                   </DialogHeader>
                   
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                      <Label htmlFor="tipo_movimento">Tipo *</Label>
-                      <Select value={tipoMovimento} onValueChange={setTipoMovimento}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o tipo" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Receita">
-                            <div className="flex items-center space-x-2">
-                              <TrendingUp className="h-4 w-4 text-green-600" />
-                              <span>Receita</span>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="Despesa">
-                            <div className="flex items-center space-x-2">
-                              <TrendingDown className="h-4 w-4 text-red-600" />
-                              <span>Despesa</span>
-                            </div>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                  <div className="space-y-4">
+                    <p>Modal de teste - funciona!</p>
                     
-                    {/* 💰 EKO: CATEGORIA DINÂMICA */}
-                    <div>
-                      <Label htmlFor="categoria">Categoria *</Label>
-                      <Select 
-                        value={categoriaSelecionada} 
-                        onValueChange={(value) => {
-                          setCategoriaSelecionada(value);
-                          const cat = categorias.find(c => c.id === value);
-                          setCategoria(cat?.nome || '');
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione a categoria" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {categorias && categorias.length > 0 ? (
-                            categorias.map((cat) => (
-                              <SelectItem key={cat.id} value={cat.id}>
-                                <div className="flex items-center space-x-2">
-                                  <div 
-                                    className="w-3 h-3 rounded-full" 
-                                    style={{ backgroundColor: cat.cor || '#6B7280' }}
-                                  />
-                                  <span>{cat.nome}</span>
-                                  <span className="text-xs text-gray-500">({cat.tipo})</span>
-                                </div>
-                              </SelectItem>
-                            ))
-                          ) : (
-                            // 💰 EKO: FALLBACK PARA CATEGORIAS PADRÃO
-                            <>
-                              <SelectItem value="Veterinário">Veterinário</SelectItem>
-                              <SelectItem value="Medicação">Medicação</SelectItem>
-                              <SelectItem value="Alimentação">Alimentação</SelectItem>
-                              <SelectItem value="Transporte">Transporte</SelectItem>
-                              <SelectItem value="Doação">Doação</SelectItem>
-                              <SelectItem value="Adoção">Adoção</SelectItem>
-                              <SelectItem value="Equipamento">Equipamento</SelectItem>
-                              <SelectItem value="Outros">Outros</SelectItem>
-                            </>
-                          )}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    {/* 🐶 EKO: SELEÇÃO DE ANIMAL (OPCIONAL) */}
-                    <div>
-                      <Label htmlFor="animal">Animal (Opcional)</Label>
-                      <Select value={animalSelecionado} onValueChange={setAnimalSelecionado}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Associar a um animal específico" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="">
-                            <div className="flex items-center space-x-2">
-                              <span>🎯 Movimento geral (sem animal)</span>
-                            </div>
-                          </SelectItem>
-                          {animais && animais.length > 0 && animais.map((animal) => (
-                            <SelectItem key={animal.id} value={animal.id}>
-                              <span>🐶 {animal.nome}</span>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <p className="text-xs text-gray-500 mt-1">
-                        📝 Exemplo: Donativo para o "Max", transporte do "Luna", etc.
-                      </p>
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="descricao">Descrição *</Label>
-                      <Input
-                        id="descricao"
-                        value={descricao}
-                        onChange={(e) => setDescricao(e.target.value)}
-                        placeholder="Descrição do movimento"
-                      />
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="valor">Valor (€) *</Label>
-                        <Input
-                          id="valor"
-                          type="number"
-                          step="0.01"
-                          min="0.01"
-                          max="999999.99"
-                          value={valor}
-                          onChange={(e) => setValor(e.target.value)}
-                          placeholder="0.00"
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="data_movimento">Data *</Label>
-                        <Input
-                          id="data_movimento"
-                          type="date"
-                          value={dataMovimento}
-                          onChange={(e) => setDataMovimento(e.target.value)}
-                        />
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="observacoes">Observações</Label>
-                      <Textarea
-                        id="observacoes"
-                        value={observacoes}
-                        onChange={(e) => setObservacoes(e.target.value)}
-                        placeholder="Observações adicionais (opcional)"
-                        rows={3}
-                      />
-                    </div>
-                    
-                    <div className="flex justify-end space-x-2 pt-4 border-t">
+                    <div className="flex justify-end space-x-2">
                       <Button 
-                        type="button" 
                         variant="outline" 
-                        onClick={() => {
-                          setDialogOpen(false);
-                          resetForm();
-                        }}
-                        disabled={submitting}
+                        onClick={() => setDialogOpen(false)}
                       >
                         Cancelar
                       </Button>
                       <Button 
-                        type="submit" 
+                        onClick={() => {
+                          alert('Funcionalidade em desenvolvimento');
+                          setDialogOpen(false);
+                        }}
                         className="bg-green-600 hover:bg-green-700"
-                        disabled={submitting}
                       >
-                        {submitting ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            A registar...
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle className="h-4 w-4 mr-2" />
-                            Registar
-                          </>
-                        )}
+                        Testar
                       </Button>
                     </div>
-                  </form>
+                  </div>
+
                 </DialogContent>
               </Dialog>
             )}
