@@ -16,11 +16,16 @@ import {
   Heart,
   Calendar,
   MapPin,
-  Phone
+  Phone,
+  PawPrint,
+  User,
+  Archive,
+  ArchiveRestore
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Animal } from "@/types/animal";
 import { useToast } from "@/hooks/use-toast";
+import UserHeader from "@/components/UserHeader";
 
 const AnimaisList = () => {
   const [animais, setAnimais] = useState<Animal[]>([]);
@@ -39,15 +44,19 @@ const AnimaisList = () => {
   const fetchAnimais = async () => {
     try {
       setLoading(true);
+      console.log('🔍 [ANIMAIS] Buscando animais...');
       
       const { data, error } = await supabase
         .from('animais')
         .select('*')
-        .eq('arquivado', false) // Excluir animais arquivados
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ [ANIMAIS] Erro ao buscar:', error);
+        throw error;
+      }
 
+      console.log('✅ [ANIMAIS] Animais carregados:', data?.length || 0);
       setAnimais(data || []);
     } catch (error: any) {
       console.error('Erro ao carregar animais:', error);
@@ -100,14 +109,40 @@ const AnimaisList = () => {
       return false;
     }
 
-    // Filtro de espécie
-    if (filtroEspecie !== "todos" && animal.especie !== filtroEspecie) return false;
+    // ✅ EKO: FILTRO DE ESPÉCIE CORRIGIDO
+    if (filtroEspecie !== "todos") {
+      if (filtroEspecie === "Outro") {
+        // "Outro" inclui todas as espécies EXCETO Cão e Gato
+        if (animal.especie === "Cão" || animal.especie === "Gato") {
+          console.log(`🔍 [FILTRO] Animal ${animal.nome} (${animal.especie}) excluído do filtro "Outro"`);
+          return false;
+        }
+        console.log(`✅ [FILTRO] Animal ${animal.nome} (${animal.especie}) incluído no filtro "Outro"`);
+      } else {
+        // Filtros específicos (Cão, Gato)
+        if (animal.especie !== filtroEspecie) {
+          console.log(`🔍 [FILTRO] Animal ${animal.nome} (${animal.especie}) não corresponde ao filtro "${filtroEspecie}"`);
+          return false;
+        }
+        console.log(`✅ [FILTRO] Animal ${animal.nome} (${animal.especie}) corresponde ao filtro "${filtroEspecie}"`);
+      }
+    }
 
     // Filtro de estado
     if (filtroEstado !== "todos" && animal.estado !== filtroEstado) return false;
 
     return true;
   });
+
+  // 🐞 Debug: Log das espécies únicas para verificação
+  useEffect(() => {
+    const especiesUnicas = [...new Set(animais.map(a => a.especie))].sort();
+    console.log('🐾 [DEBUG] Espécies encontradas na base de dados:', especiesUnicas);
+    
+    const animaisOutros = animais.filter(a => a.especie !== "Cão" && a.especie !== "Gato");
+    console.log('🔍 [DEBUG] Animais que devem aparecer no filtro "Outro":', 
+      animaisOutros.map(a => `${a.nome} (${a.especie})`));
+  }, [animais]);
 
   if (loading) {
     return (
@@ -122,30 +157,50 @@ const AnimaisList = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="sm" asChild>
-                <Link to="/">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Voltar
-                </Link>
+      {/* ✅ EKO: HEADER COM BOTÃO DE REGRESSO */}
+      <UserHeader 
+        title="Lista de Animais"
+        description={`${animaisFiltrados.length} ${mostrarArquivados ? 'arquivados' : 'animais'} encontrados`}
+      />
+      
+      {/* Botão de Regresso */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <Button asChild variant="outline" className="mb-4">
+          <Link to="/">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Voltar ao Dashboard
+          </Link>
+        </Button>
+
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">
+              {mostrarArquivados ? 'Animais Arquivados' : 'Lista de Animais'}
+            </h1>
+            <p className="text-gray-600">
+              {animaisFiltrados.length} {mostrarArquivados ? 'arquivados' : 'animais'} encontrados
+            </p>
+          </div>
+          <div className="flex space-x-2">
+            {hasPermission('admin') && (
+              <Button
+                variant={mostrarArquivados ? "default" : "outline"}
+                onClick={() => setMostrarArquivados(!mostrarArquivados)}
+              >
+                {mostrarArquivados ? (
+                  <>
+                    <ArchiveRestore className="h-4 w-4 mr-2" />
+                    Ver Ativos
+                  </>
+                ) : (
+                  <>
+                    <Archive className="h-4 w-4 mr-2" />
+                    Ver Arquivados
+                  </>
+                )}
               </Button>
-              <div className="flex items-center space-x-3">
-                <img 
-                  src="/images/BackgroundEraser_20250411_205630024.png" 
-                  alt="Valentão ao Resgate" 
-                  className="h-8 w-8 object-contain"
-                />
-                <div>
-                  <h1 className="text-xl font-bold text-gray-900">Gestão de Animais</h1>
-                  <p className="text-sm text-gray-500">{animaisFiltrados.length} animais encontrados</p>
-                </div>
-              </div>
-            </div>
-            {hasPermission('create') && (
+            )}
+            {hasPermission('create') && !mostrarArquivados && (
               <Button asChild>
                 <Link to="/novo-animal">
                   <Plus className="h-4 w-4 mr-2" />
@@ -186,7 +241,7 @@ const AnimaisList = () => {
                   <SelectItem value="todos">Todas as espécies</SelectItem>
                   <SelectItem value="Cão">Cão</SelectItem>
                   <SelectItem value="Gato">Gato</SelectItem>
-                  <SelectItem value="Outro">Outro</SelectItem>
+                  <SelectItem value="Outro">Outro (Ovelha, Coelho, etc.)</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -202,6 +257,17 @@ const AnimaisList = () => {
                   <SelectItem value="Não Adotável">Não Adotável</SelectItem>
                 </SelectContent>
               </Select>
+
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setSearchTerm("");
+                  setFiltroEspecie("todos");
+                  setFiltroEstado("todos");
+                }}
+              >
+                Limpar Filtros
+              </Button>
 
               <Select value={mostrarArquivados ? "arquivados" : "ativos"} onValueChange={(value) => setMostrarArquivados(value === "arquivados")}>
                 <SelectTrigger>

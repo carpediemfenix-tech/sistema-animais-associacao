@@ -479,6 +479,16 @@ const AnimalDetail = () => {
         title={`${animal.nome} - Ficha Completa`}
         description={`Processo ${animal.numero_processo} • ${animal.especie} • ${animal.sexo}`}
       />
+      
+      {/* ✅ EKO: BOTÃO DE REGRESSO */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <Button asChild variant="outline" className="mb-4">
+          <Link to="/animais">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Voltar aos Animais
+          </Link>
+        </Button>
+      </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Informações Básicas */}
