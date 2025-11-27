@@ -780,11 +780,12 @@ const AnimalDetail = () => {
 
         {/* Tabs com Histórico */}
         <Tabs defaultValue="intervencoes" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="intervencoes">Intervenções ({intervencoes.length})</TabsTrigger>
             <TabsTrigger value="eventos">Eventos ({eventos.length})</TabsTrigger>
             <TabsTrigger value="localizacoes">Localizações ({localizacoes.length})</TabsTrigger>
             <TabsTrigger value="responsabilidades">Responsabilidades ({responsabilidades.length})</TabsTrigger>
+            <TabsTrigger value="financeiro">💰 Financeiro</TabsTrigger>
           </TabsList>
 
           {/* 👥 NOVA TAB: Responsabilidades */}
@@ -994,7 +995,25 @@ const AnimalDetail = () => {
           <TabsContent value="intervencoes">
             <Card>
               <CardHeader>
-                <CardTitle>Intervenções Médicas</CardTitle>
+                <div className="flex justify-between items-center">
+                  <CardTitle>Intervenções Médicas</CardTitle>
+                  {hasPermission('create') && (
+                    <Button
+                      onClick={() => {
+                        // TODO: Implementar modal de nova intervenção
+                        toast({
+                          title: "🚀 Funcionalidade em desenvolvimento",
+                          description: "Botão 'Nova Intervenção' será implementado em breve",
+                        });
+                      }}
+                      size="sm"
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Nova Intervenção
+                    </Button>
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
                 <p className="text-gray-500">Lista de intervenções será mantida igual...</p>
@@ -1005,7 +1024,25 @@ const AnimalDetail = () => {
           <TabsContent value="eventos">
             <Card>
               <CardHeader>
-                <CardTitle>Eventos</CardTitle>
+                <div className="flex justify-between items-center">
+                  <CardTitle>Eventos</CardTitle>
+                  {hasPermission('create') && (
+                    <Button
+                      onClick={() => {
+                        // TODO: Implementar modal de novo evento
+                        toast({
+                          title: "🚀 Funcionalidade em desenvolvimento",
+                          description: "Botão 'Novo Evento' será implementado em breve",
+                        });
+                      }}
+                      size="sm"
+                      className="bg-purple-600 hover:bg-purple-700"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Novo Evento
+                    </Button>
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
                 <p className="text-gray-500">Lista de eventos será mantida igual...</p>
@@ -1016,10 +1053,115 @@ const AnimalDetail = () => {
           <TabsContent value="localizacoes">
             <Card>
               <CardHeader>
-                <CardTitle>Localizações</CardTitle>
+                <div className="flex justify-between items-center">
+                  <CardTitle>Localizações</CardTitle>
+                  {hasPermission('create') && (
+                    <Button
+                      onClick={() => {
+                        // TODO: Implementar modal de nova localização
+                        toast({
+                          title: "🚀 Funcionalidade em desenvolvimento",
+                          description: "Botão 'Nova Localização' será implementado em breve",
+                        });
+                      }}
+                      size="sm"
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Nova Localização
+                    </Button>
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
                 <p className="text-gray-500">Lista de localizações será mantida igual...</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          {/* 💰 EKO: NOVA ABA MOVIMENTOS FINANCEIROS */}
+          <TabsContent value="financeiro">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle className="flex items-center">
+                      <DollarSign className="h-5 w-5 mr-2 text-green-600" />
+                      Movimentos Financeiros
+                    </CardTitle>
+                    <CardDescription>
+                      Histórico financeiro associado a este animal
+                    </CardDescription>
+                  </div>
+                  {hasPermission('create') && (
+                    <Button
+                      onClick={() => {
+                        // TODO: Implementar modal de associar movimento
+                        toast({
+                          title: "🚀 Funcionalidade em desenvolvimento",
+                          description: "Botão 'Associar Movimento' será implementado em breve",
+                        });
+                      }}
+                      size="sm"
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Associar Movimento
+                    </Button>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {/* Resumo Financeiro */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Card className="border-green-200">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm text-green-600">Total Recebido</p>
+                            <p className="text-2xl font-bold text-green-700">€0,00</p>
+                          </div>
+                          <TrendingUp className="h-8 w-8 text-green-600" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card className="border-red-200">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm text-red-600">Total Gasto</p>
+                            <p className="text-2xl font-bold text-red-700">€0,00</p>
+                          </div>
+                          <TrendingDown className="h-8 w-8 text-red-600" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card className="border-blue-200">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm text-blue-600">Saldo</p>
+                            <p className="text-2xl font-bold text-blue-700">€0,00</p>
+                          </div>
+                          <DollarSign className="h-8 w-8 text-blue-600" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                  
+                  {/* Lista de Movimentos */}
+                  <div>
+                    <h4 className="text-lg font-semibold mb-4">Histórico de Movimentos</h4>
+                    <div className="text-center py-8 text-gray-500">
+                      <DollarSign className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                      <p className="text-lg font-medium">Nenhum movimento financeiro</p>
+                      <p className="text-sm">Os movimentos associados a este animal aparecerão aqui</p>
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

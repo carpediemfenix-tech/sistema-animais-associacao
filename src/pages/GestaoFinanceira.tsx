@@ -636,9 +636,17 @@ const GestaoFinanceira = () => {
                                 </SelectItem>
                               ))
                           ) : (
-                            <SelectItem value="loading" disabled>
-                              A carregar categorias...
-                            </SelectItem>
+                            // 💰 EKO: FALLBACK PARA CATEGORIAS PADRÃO
+                            <>
+                              <SelectItem value="Veterinário">Veterinário</SelectItem>
+                              <SelectItem value="Medicação">Medicação</SelectItem>
+                              <SelectItem value="Alimentação">Alimentação</SelectItem>
+                              <SelectItem value="Transporte">Transporte</SelectItem>
+                              <SelectItem value="Doação">Doação</SelectItem>
+                              <SelectItem value="Adoção">Adoção</SelectItem>
+                              <SelectItem value="Equipamento">Equipamento</SelectItem>
+                              <SelectItem value="Outros">Outros</SelectItem>
+                            </>
                           )}
                         </SelectContent>
                       </Select>
