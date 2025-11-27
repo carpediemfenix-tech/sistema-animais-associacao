@@ -37,7 +37,8 @@ import {
   Save,
   X,
   Calendar,
-  MapPin
+  MapPin,
+  DollarSign
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -48,6 +49,7 @@ import {
   TipoGrupo, 
   TipoEvento, 
   TipoLocalizacao,
+  CategoriaFinanceira,
   TipoIntervencao 
 } from "@/types/animal";
 
@@ -59,6 +61,7 @@ const Administracao = () => {
   const [tiposEventos, setTiposEventos] = useState<TipoEvento[]>([]);
   const [tiposLocalizacoes, setTiposLocalizacoes] = useState<TipoLocalizacao[]>([]);
   const [tiposIntervencoes, setTiposIntervencoes] = useState<TipoIntervencao[]>([]);
+  const [categoriasFinanceiras, setCategoriasFinanceiras] = useState<CategoriaFinanceira[]>([]);
   
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -70,7 +73,9 @@ const Administracao = () => {
     nome: '',
     descricao: '',
     categoria: '',
-    cor: ''
+    cor: '',
+    tipo: '', // Para categorias financeiras
+    icone: '' // Para categorias financeiras
   });
 
   const { toast } = useToast();
@@ -115,7 +120,8 @@ const Administracao = () => {
         tiposGruposData,
         tiposEventosData,
         tiposLocalizacoesData,
-        tiposIntervencoesData
+        tiposIntervencoesData,
+        categoriasFinanceirasData
       ] = await Promise.all([
         supabase.from('especies').select('*').order('nome'),
         supabase.from('sexos').select('*').order('nome'),
@@ -123,7 +129,8 @@ const Administracao = () => {
         supabase.from('tipos_grupos').select('*').order('nome'),
         supabase.from('tipos_eventos').select('*').order('nome'),
         supabase.from('tipos_localizacoes').select('*').order('nome'),
-        supabase.from('tipos_intervencoes').select('*').order('nome')
+        supabase.from('tipos_intervencoes').select('*').order('nome'),
+        supabase.from('categorias_financeiras').select('*').order('nome')
       ]);
 
       // Dados carregados com sucesso
@@ -136,6 +143,7 @@ const Administracao = () => {
       if (tiposEventosData.error) console.error('❌ Erro tipos eventos:', tiposEventosData.error);
       if (tiposLocalizacoesData.error) console.error('❌ Erro tipos localizações:', tiposLocalizacoesData.error);
       if (tiposIntervencoesData.error) console.error('❌ Erro tipos intervenções:', tiposIntervencoesData.error);
+      if (categoriasFinanceirasData.error) console.error('❌ Erro categorias financeiras:', categoriasFinanceirasData.error);
 
       setEspecies(especiesData.data || []);
       setSexos(sexosData.data || []);
@@ -144,6 +152,7 @@ const Administracao = () => {
       setTiposEventos(tiposEventosData.data || []);
       setTiposLocalizacoes(tiposLocalizacoesData.data || []);
       setTiposIntervencoes(tiposIntervencoesData.data || []);
+      setCategoriasFinanceiras(categoriasFinanceirasData.data || []);
       
       // Estados atualizados
       
@@ -166,7 +175,9 @@ const Administracao = () => {
       nome: item?.nome || '',
       descricao: item?.descricao || '',
       categoria: item?.categoria || '',
-      cor: item?.cor || ''
+      cor: item?.cor || '',
+      tipo: item?.tipo || '',
+      icone: item?.icone || ''
     });
     setDialogOpen(true);
   };
@@ -175,7 +186,7 @@ const Administracao = () => {
     setDialogOpen(false);
     setEditingItem(null);
     setCurrentTable('');
-    setFormData({ nome: '', descricao: '', categoria: '', cor: '' });
+    setFormData({ nome: '', descricao: '', categoria: '', cor: '', tipo: '', icone: '' });
   };
 
   const handleSubmit = async () => {
@@ -195,6 +206,8 @@ const Administracao = () => {
         descricao: formData.descricao.trim() || null,
         ...(formData.categoria && { categoria: formData.categoria.trim() }),
         ...(formData.cor && { cor: formData.cor.trim() }),
+        ...(formData.tipo && { tipo: formData.tipo.trim() }),
+        ...(formData.icone && { icone: formData.icone.trim() }),
         ativo: true
       };
 
@@ -466,6 +479,7 @@ const Administracao = () => {
           {renderTable("Tipos de Eventos", tiposEventos, "tipos_eventos", Calendar)}
           {renderTable("Tipos de Localizações", tiposLocalizacoes, "tipos_localizacoes", MapPin)}
           {renderTable("Tipos de Intervenções", tiposIntervencoes, "tipos_intervencoes", Settings)}
+          {renderTable("Categorias Financeiras", categoriasFinanceiras, "categorias_financeiras", DollarSign)}
         </div>
 
         {/* Dialog para Edição/Criação */}
@@ -542,6 +556,58 @@ const Administracao = () => {
                     </SelectContent>
                   </Select>
                 </div>
+              )}
+              
+              {/* 💰 EKO: CAMPOS ESPECÍFICOS PARA CATEGORIAS FINANCEIRAS */}
+              {currentTable === 'categorias_financeiras' && (
+                <>
+                  <div>
+                    <Label htmlFor="tipo" className="text-orange-700 font-medium">Tipo *</Label>
+                    <Select 
+                      value={formData.tipo} 
+                      onValueChange={(value) => setFormData({ ...formData, tipo: value })}
+                    >
+                      <SelectTrigger className="border-orange-200 focus:border-orange-400">
+                        <SelectValue placeholder="Selecionar tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Receita">💰 Receita</SelectItem>
+                        <SelectItem value="Despesa">💸 Despesa</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="icone" className="text-orange-700">Ícone</Label>
+                    <Select 
+                      value={formData.icone} 
+                      onValueChange={(value) => setFormData({ ...formData, icone: value })}
+                    >
+                      <SelectTrigger className="border-orange-200 focus:border-orange-400">
+                        <SelectValue placeholder="Selecionar ícone" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="DollarSign">💵 DollarSign</SelectItem>
+                        <SelectItem value="Heart">❤️ Heart</SelectItem>
+                        <SelectItem value="Target">🎯 Target</SelectItem>
+                        <SelectItem value="Home">🏠 Home</SelectItem>
+                        <SelectItem value="Calendar">📅 Calendar</SelectItem>
+                        <SelectItem value="ShoppingBag">🛍️ ShoppingBag</SelectItem>
+                        <SelectItem value="Building">🏢 Building</SelectItem>
+                        <SelectItem value="Handshake">🤝 Handshake</SelectItem>
+                        <SelectItem value="Utensils">🍴 Utensils</SelectItem>
+                        <SelectItem value="Stethoscope">🩺 Stethoscope</SelectItem>
+                        <SelectItem value="Pill">💊 Pill</SelectItem>
+                        <SelectItem value="Car">🚗 Car</SelectItem>
+                        <SelectItem value="Wrench">🔧 Wrench</SelectItem>
+                        <SelectItem value="FileText">📄 FileText</SelectItem>
+                        <SelectItem value="Megaphone">📢 Megaphone</SelectItem>
+                        <SelectItem value="GraduationCap">🎓 GraduationCap</SelectItem>
+                        <SelectItem value="AlertTriangle">⚠️ AlertTriangle</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
               )}
             </div>
             

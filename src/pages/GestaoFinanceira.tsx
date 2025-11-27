@@ -27,19 +27,22 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { CategoriaFinanceira, Animal } from "@/types/animal";
 
 interface MovimentoFinanceiro {
   id: string;
   animal_id?: string;
   tipo_movimento: 'Receita' | 'Despesa';
   categoria: string;
+  categoria_id?: string; // Nova: ID da categoria
   descricao: string;
   valor: number;
   data_movimento: string;
   voluntario_id?: string;
   observacoes?: string;
-  animal?: { nome: string };
+  animal?: { nome: string; numero_processo?: string };
   voluntario?: { nome: string };
+  categoria_info?: CategoriaFinanceira; // Nova: informações da categoria
 }
 
 const GestaoFinanceira = () => {
@@ -61,10 +64,18 @@ const GestaoFinanceira = () => {
   const [dataMovimento, setDataMovimento] = useState(new Date().toISOString().split('T')[0]);
   const [observacoes, setObservacoes] = useState("");
   
+  // 💰 EKO: NOVOS ESTADOS PARA CATEGORIAS E ANIMAIS
+  const [categorias, setCategorias] = useState<CategoriaFinanceira[]>([]);
+  const [animais, setAnimais] = useState<Animal[]>([]);
+  const [animalSelecionado, setAnimalSelecionado] = useState("");
+  const [categoriaSelecionada, setCategoriaSelecionada] = useState("");
+  
   const { toast } = useToast();
 
   useEffect(() => {
     fetchMovimentos();
+    fetchCategorias();
+    fetchAnimais();
   }, []);
 
   const fetchMovimentos = async () => {
@@ -160,6 +171,54 @@ const GestaoFinanceira = () => {
     }
   };
 
+  // 💰 EKO: FUNÇÕES PARA CARREGAR CATEGORIAS E ANIMAIS
+  const fetchCategorias = async () => {
+    try {
+      console.log('💰 [FINANCEIRO] Carregando categorias...');
+      const { data, error } = await supabase
+        .from('categorias_financeiras')
+        .select('*')
+        .eq('ativo', true)
+        .order('tipo, nome');
+
+      if (error) {
+        console.error('❌ [FINANCEIRO] Erro ao carregar categorias:', error);
+        // Se não conseguir carregar, usar categorias padrão
+        setCategorias([]);
+        return;
+      }
+
+      console.log('✅ [FINANCEIRO] Categorias carregadas:', data?.length || 0);
+      setCategorias(data || []);
+    } catch (error: any) {
+      console.error('💥 [FINANCEIRO] Erro ao carregar categorias:', error);
+      setCategorias([]);
+    }
+  };
+
+  const fetchAnimais = async () => {
+    try {
+      console.log('🐶 [FINANCEIRO] Carregando animais...');
+      const { data, error } = await supabase
+        .from('animais')
+        .select('id, nome, numero_processo, especie')
+        .eq('arquivado', false)
+        .order('nome');
+
+      if (error) {
+        console.error('❌ [FINANCEIRO] Erro ao carregar animais:', error);
+        setAnimais([]);
+        return;
+      }
+
+      console.log('✅ [FINANCEIRO] Animais carregados:', data?.length || 0);
+      setAnimais(data || []);
+    } catch (error: any) {
+      console.error('💥 [FINANCEIRO] Erro ao carregar animais:', error);
+      setAnimais([]);
+    }
+  };
+
   const resetForm = () => {
     setTipoMovimento("");
     setCategoria("");
@@ -167,6 +226,9 @@ const GestaoFinanceira = () => {
     setValor("");
     setDataMovimento(new Date().toISOString().split('T')[0]);
     setObservacoes("");
+    // 💰 EKO: NOVOS CAMPOS
+    setAnimalSelecionado("");
+    setCategoriaSelecionada("");
     setEditandoMovimento(null);
   };
 
@@ -260,6 +322,8 @@ const GestaoFinanceira = () => {
       const dadosInserir = {
         tipo_movimento: tipoMovimento,
         categoria: categoria,
+        categoria_id: categoriaSelecionada || null, // Nova: ID da categoria
+        animal_id: animalSelecionado || null, // Nova: ID do animal
         descricao: descricao.trim(),
         valor: valorNumerico,
         data_movimento: dataMovimento,
@@ -541,23 +605,74 @@ const GestaoFinanceira = () => {
                       </Select>
                     </div>
                     
+                    {/* 💰 EKO: CATEGORIA DINÂMICA */}
                     <div>
                       <Label htmlFor="categoria">Categoria *</Label>
-                      <Select value={categoria} onValueChange={setCategoria}>
+                      <Select 
+                        value={categoriaSelecionada} 
+                        onValueChange={(value) => {
+                          setCategoriaSelecionada(value);
+                          const cat = categorias.find(c => c.id === value);
+                          setCategoria(cat?.nome || '');
+                        }}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione a categoria" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Veterinário">Veterinário</SelectItem>
-                          <SelectItem value="Medicação">Medicação</SelectItem>
-                          <SelectItem value="Alimentação">Alimentação</SelectItem>
-                          <SelectItem value="Transporte">Transporte</SelectItem>
-                          <SelectItem value="Doação">Doação</SelectItem>
-                          <SelectItem value="Adoção">Adoção</SelectItem>
-                          <SelectItem value="Equipamento">Equipamento</SelectItem>
-                          <SelectItem value="Outros">Outros</SelectItem>
+                          {categorias.length > 0 ? (
+                            categorias
+                              .filter(cat => !tipoMovimento || cat.tipo === tipoMovimento)
+                              .map((cat) => (
+                                <SelectItem key={cat.id} value={cat.id}>
+                                  <div className="flex items-center space-x-2">
+                                    <div 
+                                      className="w-3 h-3 rounded-full" 
+                                      style={{ backgroundColor: cat.cor }}
+                                    />
+                                    <span>{cat.nome}</span>
+                                    <span className="text-xs text-gray-500">({cat.tipo})</span>
+                                  </div>
+                                </SelectItem>
+                              ))
+                          ) : (
+                            <SelectItem value="loading" disabled>
+                              A carregar categorias...
+                            </SelectItem>
+                          )}
                         </SelectContent>
                       </Select>
+                    </div>
+                    
+                    {/* 🐶 EKO: SELEÇÃO DE ANIMAL (OPCIONAL) */}
+                    <div>
+                      <Label htmlFor="animal">Animal (Opcional)</Label>
+                      <Select value={animalSelecionado} onValueChange={setAnimalSelecionado}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Associar a um animal específico" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">
+                            <div className="flex items-center space-x-2">
+                              <span>🎯 Movimento geral (sem animal)</span>
+                            </div>
+                          </SelectItem>
+                          {animais.map((animal) => (
+                            <SelectItem key={animal.id} value={animal.id}>
+                              <div className="flex items-center space-x-2">
+                                <span>🐶 {animal.nome}</span>
+                                {animal.numero_processo && (
+                                  <span className="text-xs text-gray-500">({animal.numero_processo})</span>
+                                )}
+                                <span className="text-xs text-blue-600">{animal.especie}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-gray-500 mt-1">
+                        📝 Exemplo: Donativo para o "Max", transporte do "Luna", etc.
+                      </p>
                     </div>
                     
                     <div>

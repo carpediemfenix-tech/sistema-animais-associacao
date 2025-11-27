@@ -293,3 +293,51 @@ export interface ResponsabilidadeVoluntario {
   voluntario_email?: string;
   voluntario_telefone?: string;
 }
+
+// 💰 EKO: NOVAS INTERFACES PARA SISTEMA FINANCEIRO
+
+// Categoria Financeira (para Painel de Administração)
+export interface CategoriaFinanceira {
+  id: string;
+  nome: string;
+  descricao?: string;
+  tipo: 'Receita' | 'Despesa';
+  cor: string; // Cor em hexadecimal (#RRGGBB)
+  icone: string; // Nome do ícone Lucide React
+  ativo: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// Movimento Financeiro (atualizado com animal_id)
+export interface MovimentoFinanceiro {
+  id: string;
+  tipo: 'Receita' | 'Despesa';
+  categoria: string; // Agora virá da tabela categorias_financeiras
+  categoria_id?: string; // Nova: ID da categoria
+  descricao: string;
+  valor: number;
+  data_movimento: string;
+  observacoes?: string;
+  animal_id?: string; // Nova: Associação opcional com animal
+  created_at: string;
+  updated_at: string;
+  // Campos calculados/relacionados
+  animal_nome?: string;
+  animal_numero_processo?: string;
+  categoria_cor?: string;
+  categoria_icone?: string;
+}
+
+// Movimento Financeiro do Animal (para aba na ficha)
+export interface MovimentoFinanceiroAnimal {
+  id: string;
+  tipo: 'Receita' | 'Despesa' | 'Custo Intervenção';
+  categoria: string;
+  descricao: string;
+  valor: number;
+  data: string;
+  observacoes?: string;
+  origem: 'movimento' | 'intervencao'; // De onde vem o movimento
+  origem_id: string; // ID do movimento ou intervenção
+}
