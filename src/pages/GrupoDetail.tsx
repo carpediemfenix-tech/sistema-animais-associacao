@@ -121,40 +121,66 @@ const GrupoDetail = () => {
         setAnimais(animaisData || []);
       }
 
-      // Buscar animais disponíveis para associar
-      const especiePermitida = grupoData.tipo === 'matilha' ? 'Cão' : 'Gato';
-      console.log('🔍 [DEBUG] Buscando animais disponíveis:', {
-        especiePermitida,
+      // Buscar animais disponíveis para associar - SISTEMA INTELIGENTE
+      // Matilha = apenas Cães, Colónia = apenas Gatos, outros tipos = todos os animais
+      let filtroEspecie = null;
+      if (grupoData.tipo === 'Matilha') {
+        filtroEspecie = 'Cão';
+      } else if (grupoData.tipo === 'Colónia') {
+        filtroEspecie = 'Gato';
+      }
+      // Para outros tipos (Sócios, Especiais, etc.) não filtramos por espécie
+      
+      console.log('🔍 [DEBUG] Sistema inteligente de filtros:', {
         grupoTipo: grupoData.tipo,
+        filtroEspecie: filtroEspecie || 'TODOS OS ANIMAIS',
         grupoId: id
       });
       
-      // Primeiro, vamos buscar TODOS os animais da espécie para debug
-      const { data: todosAnimais, error: todosError } = await supabase
+      // Buscar TODOS os animais (com ou sem filtro de espécie) para debug
+      let queryTodosAnimais = supabase
         .from('animais')
-        .select('*, grupos(nome, tipo)')
-        .eq('especie', especiePermitida);
+        .select('*, grupos(nome, tipo)');
+      
+      if (filtroEspecie) {
+        queryTodosAnimais = queryTodosAnimais.eq('especie', filtroEspecie);
+      }
+      
+      const { data: todosAnimais, error: todosError } = await queryTodosAnimais;
       
       if (!todosError) {
-        console.log('🔍 [DEBUG] Todos os animais da espécie:', todosAnimais?.map(a => ({
+        console.log(`🔍 [DEBUG] Todos os animais ${filtroEspecie ? 'da espécie ' + filtroEspecie : 'de todas as espécies'}:`, todosAnimais?.map(a => ({
           nome: a.nome,
+          especie: a.especie,
           estado: a.estado,
           arquivado: a.arquivado,
           temGrupo: a.grupo_id ? 'SIM' : 'NÃO',
           nomeGrupo: a.grupos?.nome || 'N/A',
-          disponivel: !a.grupo_id && a.estado === 'Ativo' && !a.arquivado ? 'SIM' : 'NÃO'
+          disponivel: !a.grupo_id && (a.estado === 'Ativo' || (grupoData.tipo === 'Sócios' && a.estado === 'Adotado')) && !a.arquivado ? 'SIM' : 'NÃO'
         })));
         setTodosAnimaisEspecie(todosAnimais || []);
       }
       
-      const { data: animaisDisponiveisData, error: disponiveisError } = await supabase
+      // Buscar animais disponíveis com filtro inteligente
+      let queryAnimaisDisponiveis = supabase
         .from('animais')
         .select('*')
-        .eq('especie', especiePermitida)
         .is('grupo_id', null)
-        .eq('arquivado', false)
-        .eq('estado', 'Ativo')
-        .order('nome');
+        .eq('arquivado', false);
+      
+      // Para grupos Sócios, incluir também animais Adotados
+      if (grupoData.tipo === 'Sócios') {
+        queryAnimaisDisponiveis = queryAnimaisDisponiveis.in('estado', ['Ativo', 'Adotado']);
+      } else {
+        queryAnimaisDisponiveis = queryAnimaisDisponiveis.eq('estado', 'Ativo');
+      }
+      
+      // Aplicar filtro de espécie apenas se necessário
+      if (filtroEspecie) {
+        queryAnimaisDisponiveis = queryAnimaisDisponiveis.eq('especie', filtroEspecie);
+      }
+      
+      const { data: animaisDisponiveisData, error: disponiveisError } = await queryAnimaisDisponiveis.order('nome');
 
       if (disponiveisError) {
         console.error('❌ [DISPONÍVEIS] Erro ao buscar animais disponíveis:', disponiveisError);
@@ -408,9 +434,37 @@ const GrupoDetail = () => {
   };
 
   const getTipoBadge = (tipo: string) => {
-    return tipo === 'matilha' 
-      ? <Badge className="bg-blue-100 text-blue-800"><Dog className="h-4 w-4 mr-1" />Matilha</Badge>
-      : <Badge className="bg-purple-100 text-purple-800"><Cat className="h-4 w-4 mr-1" />Colónia</Badge>;
+    switch (tipo) {
+      case 'Matilha':
+        return <Badge className="bg-blue-100 text-blue-800"><Dog className="h-4 w-4 mr-1" />Matilha (Cães)</Badge>;
+      case 'Colónia':
+        return <Badge className="bg-purple-100 text-purple-800"><Cat className="h-4 w-4 mr-1" />Colónia (Gatos)</Badge>;
+      case 'Sócios':
+        return <Badge className="bg-green-100 text-green-800"><Users className="h-4 w-4 mr-1" />Sócios (Todos)</Badge>;
+      case 'Especiais':
+        return <Badge className="bg-orange-100 text-orange-800"><PawPrint className="h-4 w-4 mr-1" />Especiais</Badge>;
+      case 'Temporários':
+        return <Badge className="bg-gray-100 text-gray-800"><Calendar className="h-4 w-4 mr-1" />Temporários</Badge>;
+      default:
+        return <Badge className="bg-gray-100 text-gray-800"><Users className="h-4 w-4 mr-1" />{tipo}</Badge>;
+    }
+  };
+
+  const getTipoDescricao = (tipo: string) => {
+    switch (tipo) {
+      case 'Matilha':
+        return 'Apenas cães podem ser adicionados a este grupo';
+      case 'Colónia':
+        return 'Apenas gatos podem ser adicionados a este grupo';
+      case 'Sócios':
+        return 'Todos os animais (cães, gatos, outros) podem ser adicionados. Inclui animais ativos e adotados';
+      case 'Especiais':
+        return 'Grupo para animais com necessidades especiais - todos os tipos aceitos';
+      case 'Temporários':
+        return 'Grupo temporário para situações específicas - todos os tipos aceitos';
+      default:
+        return 'Todos os tipos de animais podem ser adicionados a este grupo';
+    }
   };
 
   const getEstadoBadge = (estado: string) => {
