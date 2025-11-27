@@ -67,6 +67,13 @@ const AnimalDetail = () => {
   const [eventoDialogOpen, setEventoDialogOpen] = useState(false);
   const [localizacaoDialogOpen, setLocalizacaoDialogOpen] = useState(false);
   const [responsabilidadeDialogOpen, setResponsabilidadeDialogOpen] = useState(false);
+  
+  // 📦 EKO: Estados para arquivamento
+  const [arquivarDialogOpen, setArquivarDialogOpen] = useState(false);
+  const [arquivarForm, setArquivarForm] = useState({
+    motivo: "",
+    observacoes: ""
+  });
 
   // Estados de edição
   const [editingIntervencao, setEditingIntervencao] = useState<Intervencao | null>(null);
@@ -412,6 +419,117 @@ const AnimalDetail = () => {
     setEditingResponsabilidade(null);
   };
 
+  // 📦 EKO: FUNÇÕES DE ARQUIVAMENTO
+  const handleArquivar = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!arquivarForm.motivo) {
+      toast({
+        title: "❌ Erro",
+        description: "Motivo do arquivamento é obrigatório",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const confirmArchive = confirm(
+      `Tem certeza que deseja arquivar o animal "${animal?.nome}"?\n\n` +
+      `Motivo: ${arquivarForm.motivo}\n` +
+      `Observações: ${arquivarForm.observacoes || 'Nenhuma'}\n\n` +
+      `Esta ação irá remover o animal da gestão normal.`
+    );
+    
+    if (!confirmArchive) return;
+
+    try {
+      console.log('📦 [ARQUIVO] Arquivando animal:', animal?.nome);
+
+      const { error } = await supabase
+        .from('animais')
+        .update({
+          arquivado: true,
+          data_arquivamento: new Date().toISOString(),
+          motivo_arquivamento: `${arquivarForm.motivo}${arquivarForm.observacoes ? ` - ${arquivarForm.observacoes}` : ''}`,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', animal?.id);
+
+      if (error) {
+        console.error('❌ [ARQUIVO] Erro ao arquivar:', error);
+        throw error;
+      }
+
+      toast({
+        title: "✅ Animal arquivado",
+        description: `${animal?.nome} foi arquivado com sucesso`,
+      });
+
+      // Fechar modal e recarregar dados
+      setArquivarDialogOpen(false);
+      resetArquivarForm();
+      await fetchAnimalData();
+      
+    } catch (error: any) {
+      console.error('💥 [ARQUIVO] Erro:', error);
+      toast({
+        title: "❌ Erro",
+        description: "Não foi possível arquivar o animal",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDesarquivar = async () => {
+    const confirmRestore = confirm(
+      `Tem certeza que deseja desarquivar o animal "${animal?.nome}"?\n\n` +
+      `O animal voltará a aparecer na gestão normal de animais.`
+    );
+    
+    if (!confirmRestore) return;
+
+    try {
+      console.log('📤 [ARQUIVO] Desarquivando animal:', animal?.nome);
+
+      const { error } = await supabase
+        .from('animais')
+        .update({
+          arquivado: false,
+          data_arquivamento: null,
+          motivo_arquivamento: null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', animal?.id);
+
+      if (error) {
+        console.error('❌ [ARQUIVO] Erro ao desarquivar:', error);
+        throw error;
+      }
+
+      toast({
+        title: "✅ Animal desarquivado",
+        description: `${animal?.nome} foi desarquivado com sucesso`,
+      });
+
+      // Recarregar dados
+      await fetchAnimalData();
+      
+    } catch (error: any) {
+      console.error('💥 [ARQUIVO] Erro:', error);
+      toast({
+        title: "❌ Erro",
+        description: "Não foi possível desarquivar o animal",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const resetArquivarForm = () => {
+    setArquivarForm({
+      motivo: "",
+      observacoes: ""
+    });
+  };
+
   // Funções auxiliares
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-PT');
@@ -501,18 +619,56 @@ const AnimalDetail = () => {
                   <CardTitle className="text-2xl flex items-center">
                     <PawPrint className="h-6 w-6 mr-2 text-blue-600" />
                     {animal.nome}
+                    {animal.arquivado && (
+                      <Badge className="ml-3 bg-gray-100 text-gray-800">
+                        <Archive className="h-3 w-3 mr-1" />
+                        Arquivado
+                      </Badge>
+                    )}
                   </CardTitle>
                   <CardDescription className="text-lg">
                     Processo: {animal.numero_processo} • {getEstadoBadge(animal.estado)}
                   </CardDescription>
                 </div>
-                {animal.url_fotografia && (
-                  <img 
-                    src={animal.url_fotografia} 
-                    alt={animal.nome}
-                    className="w-20 h-20 rounded-lg object-cover border-2 border-gray-200"
-                  />
-                )}
+                <div className="flex flex-col items-end space-y-2">
+                  {animal.url_fotografia && (
+                    <img 
+                      src={animal.url_fotografia} 
+                      alt={animal.nome}
+                      className="w-20 h-20 rounded-lg object-cover border-2 border-gray-200"
+                    />
+                  )}
+                  
+                  {/* 📦 EKO: BOTÕES DE ARQUIVAMENTO */}
+                  {hasPermission('admin') && (
+                    <div className="flex space-x-2 mt-2">
+                      {animal.arquivado ? (
+                        <Button
+                          onClick={handleDesarquivar}
+                          variant="outline"
+                          size="sm"
+                          className="border-green-200 hover:bg-green-50"
+                        >
+                          <ArchiveRestore className="h-4 w-4 mr-2" />
+                          Desarquivar
+                        </Button>
+                      ) : (
+                        <Dialog open={arquivarDialogOpen} onOpenChange={setArquivarDialogOpen}>
+                          <DialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="border-red-200 hover:bg-red-50"
+                            >
+                              <Archive className="h-4 w-4 mr-2" />
+                              Arquivar
+                            </Button>
+                          </DialogTrigger>
+                        </Dialog>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -547,6 +703,30 @@ const AnimalDetail = () => {
                 <div className="mt-4">
                   <p className="text-sm font-medium text-gray-500">Observações</p>
                   <p className="text-gray-700 mt-1">{animal.observacoes}</p>
+                </div>
+              )}
+              
+              {/* 📦 EKO: INFORMAÇÕES DE ARQUIVAMENTO */}
+              {animal.arquivado && (
+                <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                  <div className="flex items-center mb-2">
+                    <Archive className="h-4 w-4 mr-2 text-gray-600" />
+                    <p className="text-sm font-medium text-gray-700">Informações do Arquivamento</p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                    {animal.data_arquivamento && (
+                      <div>
+                        <span className="text-gray-500">Data:</span>
+                        <span className="ml-2 text-gray-700">{formatDate(animal.data_arquivamento)}</span>
+                      </div>
+                    )}
+                    {animal.motivo_arquivamento && (
+                      <div>
+                        <span className="text-gray-500">Motivo:</span>
+                        <span className="ml-2 text-gray-700">{animal.motivo_arquivamento}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </CardContent>
@@ -845,6 +1025,86 @@ const AnimalDetail = () => {
           </TabsContent>
         </Tabs>
       </div>
+      
+      {/* 📦 EKO: MODAL DE ARQUIVAMENTO */}
+      <Dialog open={arquivarDialogOpen} onOpenChange={setArquivarDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <Archive className="h-5 w-5 mr-2 text-red-600" />
+              Arquivar Animal
+            </DialogTitle>
+            <DialogDescription>
+              O animal será removido da gestão normal e movido para o arquivo.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleArquivar} className="space-y-4">
+            <div>
+              <Label htmlFor="motivo">Motivo do Arquivamento *</Label>
+              <Select 
+                value={arquivarForm.motivo} 
+                onValueChange={(value) => setArquivarForm({...arquivarForm, motivo: value})}
+                required
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecionar motivo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Óbito">🕊 Óbito</SelectItem>
+                  <SelectItem value="Adoção">🏠 Adoção</SelectItem>
+                  <SelectItem value="Transferência">🚚 Transferência</SelectItem>
+                  <SelectItem value="Não Adotável">⚠️ Não Adotável</SelectItem>
+                  <SelectItem value="Fuga">🏃 Fuga</SelectItem>
+                  <SelectItem value="Devolução">🔄 Devolução</SelectItem>
+                  <SelectItem value="Outros">📝 Outros</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="observacoes">Observações</Label>
+              <Textarea
+                id="observacoes"
+                value={arquivarForm.observacoes}
+                onChange={(e) => setArquivarForm({...arquivarForm, observacoes: e.target.value})}
+                placeholder="Observações adicionais sobre o arquivamento..."
+                rows={3}
+              />
+            </div>
+
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+              <div className="flex items-start">
+                <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5 mr-2" />
+                <div className="text-sm text-yellow-800">
+                  <p className="font-medium">Atenção:</p>
+                  <p>Esta ação irá arquivar o animal "{animal?.nome}". O animal não aparecerá mais na gestão normal, mas poderá ser desarquivado posteriormente por administradores.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-2">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => {
+                  setArquivarDialogOpen(false);
+                  resetArquivarForm();
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button 
+                type="submit" 
+                className="bg-red-600 hover:bg-red-700"
+              >
+                <Archive className="h-4 w-4 mr-2" />
+                Arquivar Animal
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
