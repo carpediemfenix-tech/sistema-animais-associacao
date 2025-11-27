@@ -16,7 +16,7 @@ const WelcomeMessage = ({ type, userName, onComplete }: WelcomeMessageProps) => 
       if (onComplete) {
         setTimeout(onComplete, 300); // Aguarda a animação de saída
       }
-    }, 2000);
+    }, 4000); // ✅ Eko: Aumentado de 2000ms para 4000ms (4 segundos)
 
     return () => clearTimeout(timer);
   }, [onComplete]);
@@ -54,25 +54,7 @@ const WelcomeMessage = ({ type, userName, onComplete }: WelcomeMessageProps) => 
         <p className={`${content.textColor} opacity-80`}>
           {content.message}
         </p>
-        
-        {/* Barra de progresso */}
-        <div className="mt-4 w-full bg-white bg-opacity-50 rounded-full h-1">
-          <div 
-            className={`h-1 rounded-full transition-all duration-2000 ease-linear ${type === 'welcome' ? 'bg-green-500' : 'bg-red-500'}`}
-            style={{ 
-              width: '100%',
-              animation: 'progress 2s linear forwards'
-            }}
-          />
-        </div>
       </div>
-      
-      <style jsx>{`
-        @keyframes progress {
-          from { width: 0%; }
-          to { width: 100%; }
-        }
-      `}</style>
     </div>
   );
 };

@@ -142,12 +142,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Mostrar mensagem de despedida
     setShowGoodbyeMessage(true);
     
-    // Aguardar a mensagem antes de limpar o estado
+    // ✅ Eko: Aguardar a mensagem antes de limpar o estado - aumentado para 4.3 segundos
     setTimeout(() => {
       setUser(null);
       localStorage.removeItem('valentao_user');
       setShowGoodbyeMessage(false);
-    }, 2300);
+    }, 4300); // Aumentado de 2300ms para 4300ms para sincronizar com a mensagem de 4 segundos
   };
 
   // Verificar permissões baseadas no perfil
