@@ -175,6 +175,10 @@ const GestaoFinanceira = () => {
   const fetchCategorias = async () => {
     try {
       console.log('💰 [FINANCEIRO] Carregando categorias...');
+      
+      // Inicializar com array vazio para evitar erros
+      setCategorias([]);
+      
       const { data, error } = await supabase
         .from('categorias_financeiras')
         .select('*')
@@ -182,16 +186,15 @@ const GestaoFinanceira = () => {
         .order('tipo, nome');
 
       if (error) {
-        console.error('❌ [FINANCEIRO] Erro ao carregar categorias:', error);
-        // Se não conseguir carregar, usar categorias padrão
-        setCategorias([]);
+        console.warn('⚠️ [FINANCEIRO] Tabela categorias_financeiras não encontrada:', error.message);
+        // Manter array vazio - fallback no UI funcionará
         return;
       }
 
       console.log('✅ [FINANCEIRO] Categorias carregadas:', data?.length || 0);
-      setCategorias(data || []);
+      setCategorias(Array.isArray(data) ? data : []);
     } catch (error: any) {
-      console.error('💥 [FINANCEIRO] Erro ao carregar categorias:', error);
+      console.warn('💥 [FINANCEIRO] Erro ao carregar categorias:', error.message);
       setCategorias([]);
     }
   };
@@ -199,6 +202,10 @@ const GestaoFinanceira = () => {
   const fetchAnimais = async () => {
     try {
       console.log('🐶 [FINANCEIRO] Carregando animais...');
+      
+      // Inicializar com array vazio
+      setAnimais([]);
+      
       const { data, error } = await supabase
         .from('animais')
         .select('id, nome, numero_processo, especie')
@@ -206,15 +213,14 @@ const GestaoFinanceira = () => {
         .order('nome');
 
       if (error) {
-        console.error('❌ [FINANCEIRO] Erro ao carregar animais:', error);
-        setAnimais([]);
+        console.warn('⚠️ [FINANCEIRO] Erro ao carregar animais:', error.message);
         return;
       }
 
       console.log('✅ [FINANCEIRO] Animais carregados:', data?.length || 0);
-      setAnimais(data || []);
+      setAnimais(Array.isArray(data) ? data : []);
     } catch (error: any) {
-      console.error('💥 [FINANCEIRO] Erro ao carregar animais:', error);
+      console.warn('💥 [FINANCEIRO] Erro ao carregar animais:', error.message);
       setAnimais([]);
     }
   };
@@ -620,21 +626,19 @@ const GestaoFinanceira = () => {
                           <SelectValue placeholder="Selecione a categoria" />
                         </SelectTrigger>
                         <SelectContent>
-                          {categorias.length > 0 ? (
-                            categorias
-                              .filter(cat => !tipoMovimento || cat.tipo === tipoMovimento)
-                              .map((cat) => (
-                                <SelectItem key={cat.id} value={cat.id}>
-                                  <div className="flex items-center space-x-2">
-                                    <div 
-                                      className="w-3 h-3 rounded-full" 
-                                      style={{ backgroundColor: cat.cor }}
-                                    />
-                                    <span>{cat.nome}</span>
-                                    <span className="text-xs text-gray-500">({cat.tipo})</span>
-                                  </div>
-                                </SelectItem>
-                              ))
+                          {categorias && categorias.length > 0 ? (
+                            categorias.map((cat) => (
+                              <SelectItem key={cat.id} value={cat.id}>
+                                <div className="flex items-center space-x-2">
+                                  <div 
+                                    className="w-3 h-3 rounded-full" 
+                                    style={{ backgroundColor: cat.cor || '#6B7280' }}
+                                  />
+                                  <span>{cat.nome}</span>
+                                  <span className="text-xs text-gray-500">({cat.tipo})</span>
+                                </div>
+                              </SelectItem>
+                            ))
                           ) : (
                             // 💰 EKO: FALLBACK PARA CATEGORIAS PADRÃO
                             <>
@@ -665,15 +669,9 @@ const GestaoFinanceira = () => {
                               <span>🎯 Movimento geral (sem animal)</span>
                             </div>
                           </SelectItem>
-                          {animais.map((animal) => (
+                          {animais && animais.length > 0 && animais.map((animal) => (
                             <SelectItem key={animal.id} value={animal.id}>
-                              <div className="flex items-center space-x-2">
-                                <span>🐶 {animal.nome}</span>
-                                {animal.numero_processo && (
-                                  <span className="text-xs text-gray-500">({animal.numero_processo})</span>
-                                )}
-                                <span className="text-xs text-blue-600">{animal.especie}</span>
-                              </div>
+                              <span>🐶 {animal.nome}</span>
                             </SelectItem>
                           ))}
                         </SelectContent>

@@ -37,7 +37,9 @@ import {
   ArchiveRestore,
   UserCheck,
   Clock,
-  CheckCircle
+  CheckCircle,
+  TrendingUp,
+  TrendingDown
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Animal, Intervencao, Evento, Localizacao, Voluntario, TipoIntervencao, ResponsabilidadeVoluntario } from "@/types/animal";
@@ -1000,11 +1002,7 @@ const AnimalDetail = () => {
                   {hasPermission('create') && (
                     <Button
                       onClick={() => {
-                        // TODO: Implementar modal de nova intervenção
-                        toast({
-                          title: "🚀 Funcionalidade em desenvolvimento",
-                          description: "Botão 'Nova Intervenção' será implementado em breve",
-                        });
+                        alert('Funcionalidade Nova Intervenção em desenvolvimento');
                       }}
                       size="sm"
                       className="bg-blue-600 hover:bg-blue-700"
@@ -1029,11 +1027,7 @@ const AnimalDetail = () => {
                   {hasPermission('create') && (
                     <Button
                       onClick={() => {
-                        // TODO: Implementar modal de novo evento
-                        toast({
-                          title: "🚀 Funcionalidade em desenvolvimento",
-                          description: "Botão 'Novo Evento' será implementado em breve",
-                        });
+                        alert('Funcionalidade Novo Evento em desenvolvimento');
                       }}
                       size="sm"
                       className="bg-purple-600 hover:bg-purple-700"
@@ -1058,11 +1052,7 @@ const AnimalDetail = () => {
                   {hasPermission('create') && (
                     <Button
                       onClick={() => {
-                        // TODO: Implementar modal de nova localização
-                        toast({
-                          title: "🚀 Funcionalidade em desenvolvimento",
-                          description: "Botão 'Nova Localização' será implementado em breve",
-                        });
+                        alert('Funcionalidade Nova Localização em desenvolvimento');
                       }}
                       size="sm"
                       className="bg-green-600 hover:bg-green-700"
@@ -1096,11 +1086,7 @@ const AnimalDetail = () => {
                   {hasPermission('create') && (
                     <Button
                       onClick={() => {
-                        // TODO: Implementar modal de associar movimento
-                        toast({
-                          title: "🚀 Funcionalidade em desenvolvimento",
-                          description: "Botão 'Associar Movimento' será implementado em breve",
-                        });
+                        alert('Funcionalidade em desenvolvimento');
                       }}
                       size="sm"
                       className="bg-green-600 hover:bg-green-700"
