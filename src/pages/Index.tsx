@@ -35,7 +35,12 @@ import {
   Stethoscope,
   Home,
   Dog,
-  Cat
+  Cat,
+  Settings,
+  FileText,
+  BookOpen,
+  UserPlus,
+  Navigation
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -716,6 +721,135 @@ const Index = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* 🏠 MÓDULOS DO SISTEMA */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2 text-blue-800">
+              <Navigation className="h-6 w-6 text-blue-600" />
+              <span>Módulos do Sistema</span>
+            </CardTitle>
+            <CardDescription className="text-blue-600">
+              Acesso completo a todas as funcionalidades do sistema
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              
+              {/* Gestão de Animais */}
+              <div className="text-center p-6 rounded-xl bg-gradient-to-br from-orange-50 to-red-50 border border-orange-200 hover:shadow-lg transition-all duration-200">
+                <div className="bg-gradient-to-br from-orange-500 to-red-500 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <PawPrint className="h-8 w-8 text-white" />
+                </div>
+                <h3 className="font-semibold text-orange-800 mb-2">Gestão de Animais</h3>
+                <p className="text-sm text-orange-600 mb-4">Registo e acompanhamento</p>
+                <div className="space-y-2">
+                  <Button asChild variant="outline" size="sm" className="w-full border-orange-200 hover:bg-orange-50">
+                    <Link to="/animais">
+                      <Eye className="h-4 w-4 mr-2" />
+                      Ver Animais
+                    </Link>
+                  </Button>
+                  {hasPermission('create') && (
+                    <Button asChild variant="outline" size="sm" className="w-full border-orange-200 hover:bg-orange-50">
+                      <Link to="/novo-animal">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Novo Animal
+                      </Link>
+                    </Button>
+                  )}
+                  {hasPermission('admin') && (
+                    <Button asChild variant="outline" size="sm" className="w-full border-orange-200 hover:bg-orange-50">
+                      <Link to="/animais-arquivados">
+                        <Archive className="h-4 w-4 mr-2" />
+                        Arquivados
+                      </Link>
+                    </Button>
+                  )}
+                  <Button asChild variant="outline" size="sm" className="w-full border-orange-200 hover:bg-orange-50">
+                    <Link to="/grupos">
+                      <Users className="h-4 w-4 mr-2" />
+                      Grupos
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+
+              {/* Gestão de Pessoas */}
+              <div className="text-center p-6 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 hover:shadow-lg transition-all duration-200">
+                <div className="bg-gradient-to-br from-blue-500 to-indigo-500 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Users className="h-8 w-8 text-white" />
+                </div>
+                <h3 className="font-semibold text-blue-800 mb-2">Gestão de Pessoas</h3>
+                <p className="text-sm text-blue-600 mb-4">Voluntários e utilizadores</p>
+                <div className="space-y-2">
+                  <Button asChild variant="outline" size="sm" className="w-full border-blue-200 hover:bg-blue-50">
+                    <Link to="/voluntarios">
+                      <Users className="h-4 w-4 mr-2" />
+                      Voluntários
+                    </Link>
+                  </Button>
+                  {hasPermission('admin') && (
+                    <Button asChild variant="outline" size="sm" className="w-full border-blue-200 hover:bg-blue-50">
+                      <Link to="/utilizadores">
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        Utilizadores
+                      </Link>
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              {/* Gestão Financeira */}
+              <div className="text-center p-6 rounded-xl bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 hover:shadow-lg transition-all duration-200">
+                <div className="bg-gradient-to-br from-green-500 to-emerald-500 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <DollarSign className="h-8 w-8 text-white" />
+                </div>
+                <h3 className="font-semibold text-green-800 mb-2">Gestão Financeira</h3>
+                <p className="text-sm text-green-600 mb-4">Receitas, despesas e relatórios</p>
+                <div className="space-y-2">
+                  <Button asChild variant="outline" size="sm" className="w-full border-green-200 hover:bg-green-50">
+                    <Link to="/gestao-financeira">
+                      <DollarSign className="h-4 w-4 mr-2" />
+                      Movimentos
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" size="sm" className="w-full border-green-200 hover:bg-green-50">
+                    <Link to="/relatorios">
+                      <BarChart3 className="h-4 w-4 mr-2" />
+                      Relatórios
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+
+              {/* Administração */}
+              <div className="text-center p-6 rounded-xl bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 hover:shadow-lg transition-all duration-200">
+                <div className="bg-gradient-to-br from-purple-500 to-pink-500 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Settings className="h-8 w-8 text-white" />
+                </div>
+                <h3 className="font-semibold text-purple-800 mb-2">Administração</h3>
+                <p className="text-sm text-purple-600 mb-4">Configurações e sistema</p>
+                <div className="space-y-2">
+                  {hasPermission('admin') && (
+                    <Button asChild variant="outline" size="sm" className="w-full border-purple-200 hover:bg-purple-50">
+                      <Link to="/administracao">
+                        <Settings className="h-4 w-4 mr-2" />
+                        Configurações
+                      </Link>
+                    </Button>
+                  )}
+                  <Button asChild variant="outline" size="sm" className="w-full border-purple-200 hover:bg-purple-50">
+                    <Link to="/manual">
+                      <BookOpen className="h-4 w-4 mr-2" />
+                      Manual
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Sistema de Lembretes */}
         <SistemaLembretes />

@@ -16,10 +16,10 @@ const WelcomeMessage = ({ type, userName, onComplete }: WelcomeMessageProps) => 
       if (onComplete) {
         setTimeout(onComplete, 300); // Aguarda a animação de saída
       }
-    }, 4000); // ✅ Eko: Aumentado de 2000ms para 4000ms (4 segundos)
+    }, type === 'welcome' ? 6000 : 4000); // ✅ Eko: 6s para login, 4s para logout
 
     return () => clearTimeout(timer);
-  }, [onComplete]);
+  }, [onComplete, type]);
 
   if (!isVisible) return null;
 
