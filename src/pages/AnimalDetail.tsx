@@ -77,6 +77,11 @@ const AnimalDetail = () => {
     observacoes: ""
   });
 
+  // 💰 EKO: Estados para movimentos financeiros
+  const [movimentosFinanceiros, setMovimentosFinanceiros] = useState<any[]>([]);
+  const [totalReceitas, setTotalReceitas] = useState(0);
+  const [totalDespesas, setTotalDespesas] = useState(0);
+
   // Estados de edição
   const [editingIntervencao, setEditingIntervencao] = useState<Intervencao | null>(null);
   const [editingEvento, setEditingEvento] = useState<Evento | null>(null);
@@ -261,6 +266,39 @@ const AnimalDetail = () => {
 
     } catch (error: any) {
       console.error('💥 [AUXILIAR] Erro ao carregar dados auxiliares:', error);
+    }
+  };
+
+  // 💰 EKO: Função para buscar movimentos financeiros
+  const fetchMovimentosFinanceiros = async () => {
+    if (!id) return;
+    
+    try {
+      console.log('💰 [ANIMAL] Carregando movimentos financeiros para animal:', id);
+      
+      const { data, error } = await supabase
+        .from('movimentos_financeiros')
+        .select('*')
+        .eq('animal_id', id)
+        .order('data_movimento', { ascending: false });
+
+      if (error) {
+        console.error('❌ [ANIMAL] Erro ao carregar movimentos:', error);
+        return;
+      }
+
+      console.log('✅ [ANIMAL] Movimentos carregados:', data?.length || 0);
+      setMovimentosFinanceiros(data || []);
+      
+      // Calcular totais
+      const receitas = (data || []).filter(m => m.tipo_movimento === 'Receita').reduce((sum, m) => sum + m.valor, 0);
+      const despesas = (data || []).filter(m => m.tipo_movimento === 'Despesa').reduce((sum, m) => sum + m.valor, 0);
+      
+      setTotalReceitas(receitas);
+      setTotalDespesas(despesas);
+      
+    } catch (error: any) {
+      console.error('💥 [ANIMAL] Erro ao buscar movimentos financeiros:', error);
     }
   };
 
@@ -561,6 +599,7 @@ const AnimalDetail = () => {
   useEffect(() => {
     fetchAnimalData();
     fetchAuxiliaryData();
+    fetchMovimentosFinanceiros(); // 💰 EKO: Carregar movimentos financeiros
   }, [id]);
 
   if (loading) {
@@ -1084,16 +1123,15 @@ const AnimalDetail = () => {
                     </CardDescription>
                   </div>
                   {hasPermission('create') && (
-                    <Button
-                      onClick={() => {
-                        alert('Funcionalidade em desenvolvimento');
-                      }}
-                      size="sm"
-                      className="bg-green-600 hover:bg-green-700"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Associar Movimento
-                    </Button>
+                    <Link to="/gestao-financeira">
+                      <Button
+                        size="sm"
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Novo Movimento
+                      </Button>
+                    </Link>
                   )}
                 </div>
               </CardHeader>
@@ -1106,7 +1144,9 @@ const AnimalDetail = () => {
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="text-sm text-green-600">Total Recebido</p>
-                            <p className="text-2xl font-bold text-green-700">€0,00</p>
+                            <p className="text-2xl font-bold text-green-700">
+                              {new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(totalReceitas)}
+                            </p>
                           </div>
                           <TrendingUp className="h-8 w-8 text-green-600" />
                         </div>
@@ -1118,7 +1158,9 @@ const AnimalDetail = () => {
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="text-sm text-red-600">Total Gasto</p>
-                            <p className="text-2xl font-bold text-red-700">€0,00</p>
+                            <p className="text-2xl font-bold text-red-700">
+                              {new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(totalDespesas)}
+                            </p>
                           </div>
                           <TrendingDown className="h-8 w-8 text-red-600" />
                         </div>
@@ -1130,7 +1172,9 @@ const AnimalDetail = () => {
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="text-sm text-blue-600">Saldo</p>
-                            <p className="text-2xl font-bold text-blue-700">€0,00</p>
+                            <p className="text-2xl font-bold text-blue-700">
+                              {new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(totalReceitas - totalDespesas)}
+                            </p>
                           </div>
                           <DollarSign className="h-8 w-8 text-blue-600" />
                         </div>
@@ -1141,11 +1185,52 @@ const AnimalDetail = () => {
                   {/* Lista de Movimentos */}
                   <div>
                     <h4 className="text-lg font-semibold mb-4">Histórico de Movimentos</h4>
-                    <div className="text-center py-8 text-gray-500">
-                      <DollarSign className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                      <p className="text-lg font-medium">Nenhum movimento financeiro</p>
-                      <p className="text-sm">Os movimentos associados a este animal aparecerão aqui</p>
-                    </div>
+                    {movimentosFinanceiros.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        <DollarSign className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                        <p className="text-lg font-medium">Nenhum movimento financeiro</p>
+                        <p className="text-sm">Os movimentos associados a este animal aparecerão aqui</p>
+                      </div>
+                    ) : (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Data</TableHead>
+                            <TableHead>Tipo</TableHead>
+                            <TableHead>Categoria</TableHead>
+                            <TableHead>Descrição</TableHead>
+                            <TableHead className="text-right">Valor</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {movimentosFinanceiros.map((movimento) => (
+                            <TableRow key={movimento.id}>
+                              <TableCell>
+                                {new Date(movimento.data_movimento).toLocaleDateString('pt-PT')}
+                              </TableCell>
+                              <TableCell>
+                                <Badge 
+                                  className={movimento.tipo_movimento === 'Receita' 
+                                    ? "bg-green-100 text-green-800" 
+                                    : "bg-red-100 text-red-800"
+                                  }
+                                >
+                                  {movimento.tipo_movimento === 'Receita' ? '💰' : '💸'} {movimento.tipo_movimento}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>{movimento.categoria}</TableCell>
+                              <TableCell>{movimento.descricao}</TableCell>
+                              <TableCell className="text-right font-medium">
+                                <span className={movimento.tipo_movimento === 'Receita' ? 'text-green-600' : 'text-red-600'}>
+                                  {movimento.tipo_movimento === 'Receita' ? '+' : '-'}
+                                  {new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(movimento.valor)}
+                                </span>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    )}
                   </div>
                 </div>
               </CardContent>
