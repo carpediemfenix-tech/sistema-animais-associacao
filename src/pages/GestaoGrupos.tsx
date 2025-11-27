@@ -26,7 +26,8 @@ import {
   Cat,
   Dog,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Heart
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Grupo, Voluntario } from "@/types/animal";
@@ -355,9 +356,20 @@ const GestaoGrupos = () => {
   };
 
   const getTipoBadge = (tipo: string) => {
-    return tipo === 'matilha' 
-      ? <Badge className="bg-blue-100 text-blue-800"><Dog className="h-3 w-3 mr-1" />Matilha</Badge>
-      : <Badge className="bg-purple-100 text-purple-800"><Cat className="h-3 w-3 mr-1" />Colónia</Badge>;
+    switch (tipo) {
+      case 'Matilha':
+        return <Badge className="bg-blue-100 text-blue-800 border-blue-200"><Dog className="h-3 w-3 mr-1" />Matilha</Badge>;
+      case 'Colónia':
+        return <Badge className="bg-purple-100 text-purple-800 border-purple-200"><Cat className="h-3 w-3 mr-1" />Colónia</Badge>;
+      case 'Sócios':
+        return <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200"><Users className="h-3 w-3 mr-1" />Sócios</Badge>;
+      case 'Especiais':
+        return <Badge className="bg-rose-100 text-rose-800 border-rose-200"><Heart className="h-3 w-3 mr-1" />Especiais</Badge>;
+      case 'Temporários':
+        return <Badge className="bg-slate-100 text-slate-800 border-slate-200"><Calendar className="h-3 w-3 mr-1" />Temporários</Badge>;
+      default:
+        return <Badge className="bg-gray-100 text-gray-800 border-gray-200"><Users className="h-3 w-3 mr-1" />{tipo}</Badge>;
+    }
   };
 
   if (loading) {
@@ -385,7 +397,7 @@ const GestaoGrupos = () => {
                   Gestão de Grupos
                 </h1>
                 <p className="text-sm text-gray-600">
-                  Matilhas de cães e colónias de gatos
+                  Matilhas, Colónias, Sócios e grupos especiais
                 </p>
               </div>
             </div>

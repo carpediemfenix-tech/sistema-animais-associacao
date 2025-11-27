@@ -30,7 +30,8 @@ import {
   CalendarDays,
   Eye,
   UserMinus,
-  UserPlus
+  UserPlus,
+  Heart
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Grupo, Animal, DespesaGrupo, EventoGrupo } from "@/types/animal";
@@ -436,17 +437,17 @@ const GrupoDetail = () => {
   const getTipoBadge = (tipo: string) => {
     switch (tipo) {
       case 'Matilha':
-        return <Badge className="bg-blue-100 text-blue-800"><Dog className="h-4 w-4 mr-1" />Matilha (Cães)</Badge>;
+        return <Badge className="bg-blue-100 text-blue-800 border-blue-200"><Dog className="h-4 w-4 mr-1" />Matilha</Badge>;
       case 'Colónia':
-        return <Badge className="bg-purple-100 text-purple-800"><Cat className="h-4 w-4 mr-1" />Colónia (Gatos)</Badge>;
+        return <Badge className="bg-purple-100 text-purple-800 border-purple-200"><Cat className="h-4 w-4 mr-1" />Colónia</Badge>;
       case 'Sócios':
-        return <Badge className="bg-green-100 text-green-800"><Users className="h-4 w-4 mr-1" />Sócios (Todos)</Badge>;
+        return <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200"><Users className="h-4 w-4 mr-1" />Sócios</Badge>;
       case 'Especiais':
-        return <Badge className="bg-orange-100 text-orange-800"><PawPrint className="h-4 w-4 mr-1" />Especiais</Badge>;
+        return <Badge className="bg-rose-100 text-rose-800 border-rose-200"><Heart className="h-4 w-4 mr-1" />Especiais</Badge>;
       case 'Temporários':
-        return <Badge className="bg-gray-100 text-gray-800"><Calendar className="h-4 w-4 mr-1" />Temporários</Badge>;
+        return <Badge className="bg-slate-100 text-slate-800 border-slate-200"><Calendar className="h-4 w-4 mr-1" />Temporários</Badge>;
       default:
-        return <Badge className="bg-gray-100 text-gray-800"><Users className="h-4 w-4 mr-1" />{tipo}</Badge>;
+        return <Badge className="bg-gray-100 text-gray-800 border-gray-200"><Users className="h-4 w-4 mr-1" />{tipo}</Badge>;
     }
   };
 
@@ -457,11 +458,11 @@ const GrupoDetail = () => {
       case 'Colónia':
         return 'Apenas gatos podem ser adicionados a este grupo';
       case 'Sócios':
-        return 'Todos os animais (cães, gatos, outros) podem ser adicionados. Inclui animais ativos e adotados';
+        return 'Animais cujo detentor/responsável é sócio da associação. Inclui todos os tipos (ativos e adotados)';
       case 'Especiais':
-        return 'Grupo para animais com necessidades especiais - todos os tipos aceitos';
+        return 'Animais com necessidades especiais ou cuidados específicos. Todos os tipos aceitos';
       case 'Temporários':
-        return 'Grupo temporário para situações específicas - todos os tipos aceitos';
+        return 'Grupo temporário para situações específicas ou eventos pontuais. Todos os tipos aceitos';
       default:
         return 'Todos os tipos de animais podem ser adicionados a este grupo';
     }
