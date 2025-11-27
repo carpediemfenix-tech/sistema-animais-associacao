@@ -472,6 +472,12 @@ const Dashboard = () => {
                 <h3 className="font-semibold text-purple-800 mb-2">Administração</h3>
                 <p className="text-sm text-purple-600 mb-4">Relatórios e configurações</p>
                 <div className="space-y-2">
+                  <Button asChild variant="outline" size="sm" className="w-full border-emerald-200 hover:bg-emerald-50">
+                    <Link to="/dashboard-rico">
+                      <BarChart3 className="h-4 w-4 mr-2" />
+                      Dashboard Rico
+                    </Link>
+                  </Button>
                   <Button asChild variant="outline" size="sm" className="w-full border-purple-200 hover:bg-purple-50">
                     <Link to="/relatorios">
                       <FileText className="h-4 w-4 mr-2" />
