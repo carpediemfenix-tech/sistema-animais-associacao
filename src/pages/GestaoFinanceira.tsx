@@ -233,6 +233,7 @@ const GestaoFinanceira = () => {
     setDataMovimento(new Date().toISOString().split('T')[0]);
     setObservacoes("");
     // Limpar estados
+    setAnimalSelecionado("");
     setEditandoMovimento(null);
   };
 
@@ -329,7 +330,8 @@ const GestaoFinanceira = () => {
         descricao: descricao.trim(),
         valor: valorNumerico,
         data_movimento: dataMovimento,
-        observacoes: observacoes.trim() || null
+        observacoes: observacoes.trim() || null,
+        animal_id: animalSelecionado || null // 🐶 EKO: Associação com animal
       };
 
       console.log('📤 [FINANCEIRO] Dados para inserir:', dadosInserir);
@@ -556,7 +558,7 @@ const GestaoFinanceira = () => {
             
             {hasPermission('create') && (
               <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                  <DialogTrigger asChild>
+                <DialogTrigger asChild>
                     <Button 
                       size="sm" 
                       className="bg-green-600 hover:bg-green-700"
@@ -626,7 +628,8 @@ const GestaoFinanceira = () => {
                       />
                     </div>
                     
-                    {/* Valor e Data */}
+
+                    {/* Valor e Data */
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="valor">Valor (€) *</Label>
@@ -698,7 +701,6 @@ const GestaoFinanceira = () => {
                       </Button>
                     </div>
                   </form>
-
                 </DialogContent>
               </Dialog>
             )}
