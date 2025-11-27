@@ -232,9 +232,7 @@ const GestaoFinanceira = () => {
     setValor("");
     setDataMovimento(new Date().toISOString().split('T')[0]);
     setObservacoes("");
-    // 💰 EKO: NOVOS CAMPOS
-    setAnimalSelecionado("");
-    setCategoriaSelecionada("");
+    // Limpar estados
     setEditandoMovimento(null);
   };
 
@@ -328,8 +326,6 @@ const GestaoFinanceira = () => {
       const dadosInserir = {
         tipo_movimento: tipoMovimento,
         categoria: categoria,
-        categoria_id: categoriaSelecionada || null, // Nova: ID da categoria
-        animal_id: animalSelecionado || null, // Nova: ID do animal
         descricao: descricao.trim(),
         valor: valorNumerico,
         data_movimento: dataMovimento,
@@ -583,27 +579,125 @@ const GestaoFinanceira = () => {
                     </DialogDescription>
                   </DialogHeader>
                   
-                  <div className="space-y-4">
-                    <p>Modal de teste - funciona!</p>
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    {/* Tipo de Movimento */}
+                    <div>
+                      <Label htmlFor="tipo_movimento">Tipo *</Label>
+                      <Select value={tipoMovimento} onValueChange={setTipoMovimento}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o tipo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Receita">💰 Receita</SelectItem>
+                          <SelectItem value="Despesa">💸 Despesa</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                     
-                    <div className="flex justify-end space-x-2">
+                    {/* Categoria Simples */}
+                    <div>
+                      <Label htmlFor="categoria">Categoria *</Label>
+                      <Select value={categoria} onValueChange={setCategoria}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione a categoria" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Veterinário">🏥 Veterinário</SelectItem>
+                          <SelectItem value="Medicação">💊 Medicação</SelectItem>
+                          <SelectItem value="Alimentação">🍖 Alimentação</SelectItem>
+                          <SelectItem value="Transporte">🚗 Transporte</SelectItem>
+                          <SelectItem value="Doação">❤️ Doação</SelectItem>
+                          <SelectItem value="Adoção">🏠 Adoção</SelectItem>
+                          <SelectItem value="Equipamento">🔧 Equipamento</SelectItem>
+                          <SelectItem value="Outros">📝 Outros</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    {/* Descrição */}
+                    <div>
+                      <Label htmlFor="descricao">Descrição *</Label>
+                      <Input
+                        id="descricao"
+                        value={descricao}
+                        onChange={(e) => setDescricao(e.target.value)}
+                        placeholder="Descrição do movimento"
+                        required
+                      />
+                    </div>
+                    
+                    {/* Valor e Data */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="valor">Valor (€) *</Label>
+                        <Input
+                          id="valor"
+                          type="number"
+                          step="0.01"
+                          min="0.01"
+                          value={valor}
+                          onChange={(e) => setValor(e.target.value)}
+                          placeholder="0.00"
+                          required
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="data_movimento">Data *</Label>
+                        <Input
+                          id="data_movimento"
+                          type="date"
+                          value={dataMovimento}
+                          onChange={(e) => setDataMovimento(e.target.value)}
+                          required
+                        />
+                      </div>
+                    </div>
+                    
+                    {/* Observações */}
+                    <div>
+                      <Label htmlFor="observacoes">Observações</Label>
+                      <Textarea
+                        id="observacoes"
+                        value={observacoes}
+                        onChange={(e) => setObservacoes(e.target.value)}
+                        placeholder="Observações adicionais (opcional)"
+                        rows={3}
+                      />
+                    </div>
+                    
+                    {/* Botões */}
+                    <div className="flex justify-end space-x-2 pt-4 border-t">
                       <Button 
+                        type="button" 
                         variant="outline" 
-                        onClick={() => setDialogOpen(false)}
+                        onClick={() => {
+                          setDialogOpen(false);
+                          resetForm();
+                        }}
+                        disabled={submitting}
                       >
                         Cancelar
                       </Button>
                       <Button 
-                        onClick={() => {
-                          alert('Funcionalidade em desenvolvimento');
-                          setDialogOpen(false);
-                        }}
+                        type="submit" 
                         className="bg-green-600 hover:bg-green-700"
+                        disabled={submitting}
                       >
-                        Testar
+                        {submitting ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            A registar...
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                            Registar
+                          </>
+                        )}
                       </Button>
                     </div>
-                  </div>
+                  </form>
 
                 </DialogContent>
               </Dialog>
