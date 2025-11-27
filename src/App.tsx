@@ -6,8 +6,6 @@ import { HashRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Index from "./pages/Index";
-import DashboardRico from "./pages/DashboardRico";
-import AnimalDetailMelhorado from "./pages/AnimalDetailMelhorado";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import AnimaisList from "./pages/AnimaisList";
@@ -19,7 +17,6 @@ import EventosPage from "./pages/EventosPage";
 import GestaoVoluntarios from "./pages/GestaoVoluntarios";
 import VoluntarioDetail from "./pages/VoluntarioDetail";
 import GestaoFinanceira from "./pages/GestaoFinanceira";
-import DashboardAvancado from "./pages/DashboardAvancado";
 import Relatorios from "./pages/Relatorios";
 import Configuracoes from "./pages/Configuracoes";
 import GestaoUtilizadores from "./pages/GestaoUtilizadores";
@@ -44,18 +41,15 @@ const App = () => (
             
             {/* Rotas protegidas */}
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-            <Route path="/dashboard-rico" element={<ProtectedRoute><DashboardRico /></ProtectedRoute>} />
             <Route path="/animais" element={<ProtectedRoute><AnimaisList /></ProtectedRoute>} />
             <Route path="/animal/:id" element={<ProtectedRoute><AnimalDetail /></ProtectedRoute>} />
-            <Route path="/animal-melhorado/:id" element={<ProtectedRoute><AnimalDetailMelhorado /></ProtectedRoute>} />
             <Route path="/animal/:id/editar" element={<ProtectedRoute><EditarAnimal /></ProtectedRoute>} />
             <Route path="/novo-animal" element={<ProtectedRoute><NovoAnimal /></ProtectedRoute>} />
             <Route path="/intervencoes" element={<ProtectedRoute><IntervencoesPage /></ProtectedRoute>} />
             <Route path="/eventos" element={<ProtectedRoute><EventosPage /></ProtectedRoute>} />
             <Route path="/voluntarios" element={<ProtectedRoute><GestaoVoluntarios /></ProtectedRoute>} />
             <Route path="/voluntario/:id" element={<ProtectedRoute><VoluntarioDetail /></ProtectedRoute>} />
-            <Route path="/financeiro" element={<ProtectedRoute><GestaoFinanceira /></ProtectedRoute>} />
-            <Route path="/dashboard" element={<ProtectedRoute><DashboardAvancado /></ProtectedRoute>} />
+            <Route path="/gestao-financeira" element={<ProtectedRoute><GestaoFinanceira /></ProtectedRoute>} />
             <Route path="/relatorios" element={<ProtectedRoute><Relatorios /></ProtectedRoute>} />
             <Route path="/configuracoes" element={<ProtectedRoute><Configuracoes /></ProtectedRoute>} />
             <Route path="/utilizadores" element={<ProtectedRoute><GestaoUtilizadores /></ProtectedRoute>} />

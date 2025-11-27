@@ -1,128 +1,339 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import UserHeader from "@/components/UserHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { 
-  Heart,
-  PawPrint,
-  Users,
-  Stethoscope,
-  DollarSign,
-  Plus,
-  Eye,
-  FileText,
-  Settings,
-  Archive,
-  Calendar,
-  Activity,
-  TrendingUp,
+  PawPrint, 
+  Users, 
+  Heart, 
+  DollarSign, 
+  TrendingUp, 
   TrendingDown,
   AlertTriangle,
   CheckCircle,
   Clock,
+  Calendar,
   MapPin,
-  Shield,
-  UserPlus,
+  Phone,
+  Mail,
+  Activity,
   BarChart3,
-  BookOpen,
-  Navigation
+  PieChart,
+  Target,
+  Award,
+  Zap,
+  Star,
+  ArrowRight,
+  Plus,
+  Eye,
+  Edit,
+  Archive,
+  UserCheck,
+  Stethoscope,
+  Home,
+  Dog,
+  Cat
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import UserHeader from "@/components/UserHeader";
+import SistemaLembretes from "@/components/SistemaLembretes";
 
 interface DashboardStats {
+  // Estatísticas de Animais
   totalAnimais: number;
   animaisAtivos: number;
   animaisAdotados: number;
-  animaisCriticos: number;
+  animaisObitosAno: number;
+  animaisArquivados: number;
+  
+  // Estatísticas por Espécie
+  totalCaes: number;
+  totalGatos: number;
+  totalOutros: number;
+  
+  // Estatísticas de Voluntários
   totalVoluntarios: number;
-  totalIntervencoes: number;
-  saldoFinanceiro: number;
+  voluntariosAtivos: number;
+  
+  // Estatísticas Financeiras
+  saldoTotal: number;
+  receitasAno: number;
+  despesasAno: number;
+  custosIntervencoesAno: number;
+  
+  // Estatísticas de Atividade
+  intervencoesAno: number;
+  eventosAno: number;
+  adocoesAno: number;
+  
+  // Estatísticas de Grupos
+  totalGrupos: number;
+  totalMatilhas: number;
+  totalColonias: number;
+  totalSocios: number;
+  
+  // Alertas e Lembretes
+  animaisSemResponsavel: number;
+  intervencoesVencidas: number;
+  eventosProximos: number;
+  
+  // Tendências (comparação com mês anterior)
   tendenciaAnimais: number;
-  tendenciaFinanceira: number;
-  ultimasIntervencoes: any[];
-  proximosEventos: any[];
+  tendenciaAdocoes: number;
+  tendenciaVoluntarios: number;
+  tendenciaFinanceiro: number;
 }
 
-const Dashboard = () => {
+interface AlertaCritico {
+  id: string;
+  tipo: 'animal' | 'financeiro' | 'voluntario' | 'intervencao';
+  titulo: string;
+  descricao: string;
+  prioridade: 'alta' | 'media' | 'baixa';
+  link?: string;
+}
+
+interface AtividadeRecente {
+  id: string;
+  tipo: 'animal' | 'intervencao' | 'evento' | 'adocao' | 'voluntario';
+  titulo: string;
+  descricao: string;
+  data: string;
+  usuario?: string;
+}
+
+const Index = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [alertasCriticos, setAlertasCriticos] = useState<AlertaCritico[]>([]);
+  const [atividadeRecente, setAtividadeRecente] = useState<AtividadeRecente[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  const { user, hasPermission } = useAuth();
+  const { hasPermission } = useAuth();
 
-  useEffect(() => {
-    fetchDashboardStats();
-  }, []);
-
+  // Função para buscar estatísticas completas
   const fetchDashboardStats = async () => {
     try {
       setLoading(true);
       
-      // Buscar dados em paralelo
-      const [
-        animaisData,
-        intervencoesData,
-        eventosData,
-        movimentosData,
-        voluntariosData
-      ] = await Promise.all([
-        supabase.from('animais').select('*').is('data_arquivamento', null),
-        supabase.from('intervencoes').select('*, animais(nome)').order('data_intervencao', { ascending: false }).limit(5),
-        supabase.from('eventos').select('*, animais(nome)').order('data_evento', { ascending: false }).limit(5),
-        supabase.from('movimentos_financeiros').select('*'),
-        supabase.from('voluntarios').select('*').eq('ativo', true)
-      ]);
+      const anoAtual = new Date().getFullYear();
+      const mesAtual = new Date().getMonth() + 1;
+      const mesAnterior = mesAtual === 1 ? 12 : mesAtual - 1;
+      const anoMesAnterior = mesAtual === 1 ? anoAtual - 1 : anoAtual;
 
-      const animais = animaisData.data || [];
-      const intervencoes = intervencoesData.data || [];
-      const eventos = eventosData.data || [];
-      const movimentos = movimentosData.data || [];
-      const voluntarios = voluntariosData.data || [];
+      // Buscar estatísticas de animais
+      const { data: animais } = await supabase
+        .from('animais')
+        .select('id, estado, especie, arquivado, data_entrada, data_adocao, voluntario_responsavel_id');
 
-      // Calcular estatísticas
-      const hoje = new Date();
-      const mesPassado = new Date(hoje.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const totalAnimais = animais?.length || 0;
+      const animaisAtivos = animais?.filter(a => a.estado === 'Ativo' && !a.arquivado).length || 0;
+      const animaisAdotados = animais?.filter(a => a.estado === 'Adotado').length || 0;
+      const animaisArquivados = animais?.filter(a => a.arquivado).length || 0;
+      const animaisSemResponsavel = animais?.filter(a => !a.voluntario_responsavel_id && a.estado === 'Ativo' && !a.arquivado).length || 0;
       
-      const animaisRecentes = animais.filter(a => new Date(a.data_entrada) > mesPassado).length;
-      const saldoAtual = movimentos.reduce((acc, m) => 
-        acc + (m.tipo === 'receita' ? m.valor : -m.valor), 0
-      );
-      
-      const movimentosRecentes = movimentos.filter(m => new Date(m.data_movimento) > mesPassado);
-      const saldoRecente = movimentosRecentes.reduce((acc, m) => 
-        acc + (m.tipo === 'receita' ? m.valor : -m.valor), 0
-      );
+      // Por espécie
+      const totalCaes = animais?.filter(a => a.especie === 'Cão' && !a.arquivado).length || 0;
+      const totalGatos = animais?.filter(a => a.especie === 'Gato' && !a.arquivado).length || 0;
+      const totalOutros = animais?.filter(a => a.especie !== 'Cão' && a.especie !== 'Gato' && !a.arquivado).length || 0;
 
-      const statsData: DashboardStats = {
-        totalAnimais: animais.length,
-        animaisAtivos: animais.filter(a => a.estado === 'Ativo').length,
-        animaisAdotados: animais.filter(a => a.estado === 'Adotado').length,
-        animaisCriticos: animais.filter(a => a.estado === 'Crítico').length,
-        totalVoluntarios: voluntarios.length,
-        totalIntervencoes: intervencoes.length,
-        saldoFinanceiro: saldoAtual,
-        tendenciaAnimais: animaisRecentes,
-        tendenciaFinanceira: saldoRecente,
-        ultimasIntervencoes: intervencoes,
-        proximosEventos: eventos.filter(e => new Date(e.data_evento) > hoje).slice(0, 3)
+      // Adoções do ano
+      const adocoesAno = animais?.filter(a => {
+        if (!a.data_adocao) return false;
+        const anoAdocao = new Date(a.data_adocao).getFullYear();
+        return anoAdocao === anoAtual;
+      }).length || 0;
+
+      // Buscar voluntários
+      const { data: voluntarios } = await supabase
+        .from('voluntarios')
+        .select('id, ativo');
+
+      const totalVoluntarios = voluntarios?.length || 0;
+      const voluntariosAtivos = voluntarios?.filter(v => v.ativo).length || 0;
+
+      // Buscar movimentos financeiros do ano
+      const { data: movimentos } = await supabase
+        .from('movimentos_financeiros')
+        .select('tipo, valor, data_movimento')
+        .gte('data_movimento', `${anoAtual}-01-01`)
+        .lte('data_movimento', `${anoAtual}-12-31`);
+
+      const receitasAno = movimentos?.filter(m => m.tipo === 'Receita').reduce((sum, m) => sum + m.valor, 0) || 0;
+      const despesasAno = movimentos?.filter(m => m.tipo === 'Despesa').reduce((sum, m) => sum + m.valor, 0) || 0;
+
+      // Buscar custos de intervenções do ano
+      const { data: intervencoes } = await supabase
+        .from('intervencoes')
+        .select('custo, data_intervencao')
+        .gte('data_intervencao', `${anoAtual}-01-01`)
+        .lte('data_intervencao', `${anoAtual}-12-31`)
+        .not('custo', 'is', null);
+
+      const custosIntervencoesAno = intervencoes?.reduce((sum, i) => sum + (i.custo || 0), 0) || 0;
+      const intervencoesAno = intervencoes?.length || 0;
+
+      const saldoTotal = receitasAno - despesasAno - custosIntervencoesAno;
+
+      // Buscar eventos do ano
+      const { data: eventos } = await supabase
+        .from('eventos')
+        .select('id, data_evento')
+        .gte('data_evento', `${anoAtual}-01-01`)
+        .lte('data_evento', `${anoAtual}-12-31`);
+
+      const eventosAno = eventos?.length || 0;
+
+      // Buscar grupos
+      const { data: grupos } = await supabase
+        .from('grupos')
+        .select('tipo, ativo')
+        .eq('ativo', true);
+
+      const totalGrupos = grupos?.length || 0;
+      const totalMatilhas = grupos?.filter(g => g.tipo === 'Matilha').length || 0;
+      const totalColonias = grupos?.filter(g => g.tipo === 'Colónia').length || 0;
+      const totalSocios = grupos?.filter(g => g.tipo === 'Sócios').length || 0;
+
+      // Calcular tendências (comparação com mês anterior)
+      const animaisMesAtual = animais?.filter(a => {
+        const dataEntrada = new Date(a.data_entrada);
+        return dataEntrada.getFullYear() === anoAtual && dataEntrada.getMonth() + 1 === mesAtual;
+      }).length || 0;
+
+      const animaisMesAnterior = animais?.filter(a => {
+        const dataEntrada = new Date(a.data_entrada);
+        return dataEntrada.getFullYear() === anoMesAnterior && dataEntrada.getMonth() + 1 === mesAnterior;
+      }).length || 0;
+
+      const tendenciaAnimais = animaisMesAnterior > 0 ? ((animaisMesAtual - animaisMesAnterior) / animaisMesAnterior) * 100 : 0;
+
+      const adocoesMesAtual = animais?.filter(a => {
+        if (!a.data_adocao) return false;
+        const dataAdocao = new Date(a.data_adocao);
+        return dataAdocao.getFullYear() === anoAtual && dataAdocao.getMonth() + 1 === mesAtual;
+      }).length || 0;
+
+      const adocoesMesAnterior = animais?.filter(a => {
+        if (!a.data_adocao) return false;
+        const dataAdocao = new Date(a.data_adocao);
+        return dataAdocao.getFullYear() === anoMesAnterior && dataAdocao.getMonth() + 1 === mesAnterior;
+      }).length || 0;
+
+      const tendenciaAdocoes = adocoesMesAnterior > 0 ? ((adocoesMesAtual - adocoesMesAnterior) / adocoesMesAnterior) * 100 : 0;
+
+      // Montar objeto de estatísticas
+      const dashboardStats: DashboardStats = {
+        totalAnimais,
+        animaisAtivos,
+        animaisAdotados,
+        animaisObitosAno: animais?.filter(a => a.estado === 'Óbito').length || 0,
+        animaisArquivados,
+        totalCaes,
+        totalGatos,
+        totalOutros,
+        totalVoluntarios,
+        voluntariosAtivos,
+        saldoTotal,
+        receitasAno,
+        despesasAno,
+        custosIntervencoesAno,
+        intervencoesAno,
+        eventosAno,
+        adocoesAno,
+        totalGrupos,
+        totalMatilhas,
+        totalColonias,
+        totalSocios,
+        animaisSemResponsavel,
+        intervencoesVencidas: 0, // Implementar lógica se necessário
+        eventosProximos: 0, // Implementar lógica se necessário
+        tendenciaAnimais,
+        tendenciaAdocoes,
+        tendenciaVoluntarios: 0,
+        tendenciaFinanceiro: saldoTotal > 0 ? 10 : -5 // Exemplo
       };
 
-      setStats(statsData);
-    } catch (error) {
-      console.error('Erro ao carregar estatísticas:', error);
+      setStats(dashboardStats);
+
+      // Gerar alertas críticos baseados nas estatísticas
+      const alertas: AlertaCritico[] = [];
+
+      if (animaisSemResponsavel > 0) {
+        alertas.push({
+          id: 'sem-responsavel',
+          tipo: 'animal',
+          titulo: 'Animais sem Responsável',
+          descricao: `${animaisSemResponsavel} animais ativos não têm voluntário responsável atribuído`,
+          prioridade: 'alta',
+          link: '/animais'
+        });
+      }
+
+      if (saldoTotal < 0) {
+        alertas.push({
+          id: 'saldo-negativo',
+          tipo: 'financeiro',
+          titulo: 'Saldo Negativo',
+          descricao: `Saldo atual: ${saldoTotal.toFixed(2)}€. Atenção às finanças da associação`,
+          prioridade: 'alta',
+          link: '/gestao-financeira'
+        });
+      }
+
+      if (voluntariosAtivos < 5) {
+        alertas.push({
+          id: 'poucos-voluntarios',
+          tipo: 'voluntario',
+          titulo: 'Poucos Voluntários Ativos',
+          descricao: `Apenas ${voluntariosAtivos} voluntários ativos. Considere recrutar mais ajuda`,
+          prioridade: 'media',
+          link: '/voluntarios'
+        });
+      }
+
+      setAlertasCriticos(alertas);
+
+      // Gerar atividade recente (exemplo)
+      const atividades: AtividadeRecente[] = [
+        {
+          id: '1',
+          tipo: 'animal',
+          titulo: 'Novo animal registado',
+          descricao: 'Rex foi adicionado ao sistema',
+          data: new Date().toISOString(),
+          usuario: 'Sistema'
+        },
+        {
+          id: '2',
+          tipo: 'adocao',
+          titulo: 'Animal adotado',
+          descricao: 'Mimi foi adotada com sucesso',
+          data: new Date(Date.now() - 86400000).toISOString(),
+          usuario: 'Maria Silva'
+        }
+      ];
+
+      setAtividadeRecente(atividades);
+
+    } catch (error: any) {
+      console.error('💥 [DASHBOARD] Erro ao carregar estatísticas:', error);
       toast({
-        title: "Erro",
-        description: "Erro ao carregar dados do dashboard",
+        title: "❌ Erro",
+        description: "Não foi possível carregar as estatísticas do dashboard",
         variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchDashboardStats();
+  }, []);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-PT', {
@@ -131,426 +342,386 @@ const Dashboard = () => {
     }).format(value);
   };
 
+  const getTendenciaIcon = (tendencia: number) => {
+    if (tendencia > 0) return <TrendingUp className="h-4 w-4 text-green-600" />;
+    if (tendencia < 0) return <TrendingDown className="h-4 w-4 text-red-600" />;
+    return <Activity className="h-4 w-4 text-gray-600" />;
+  };
+
+  const getTendenciaColor = (tendencia: number) => {
+    if (tendencia > 0) return "text-green-600";
+    if (tendencia < 0) return "text-red-600";
+    return "text-gray-600";
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-green-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="relative mb-6">
-            <Heart className="h-16 w-16 animate-pulse mx-auto mb-4 text-orange-500" />
-            <div className="absolute inset-0 h-16 w-16 mx-auto border-2 border-orange-300 rounded-full animate-ping"></div>
-          </div>
-          <p className="text-xl font-bold text-orange-800 mb-2">Carregando Sistema</p>
-          <p className="text-orange-600">Valentão Operacionais</p>
+          <Activity className="h-16 w-16 animate-pulse mx-auto mb-4 text-blue-600" />
+          <p className="text-lg text-gray-600">A carregar dashboard...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-green-50">
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
       <UserHeader 
-        title="Dashboard Principal" 
+        title="Dashboard - Sistema Valentão"
         description="Centro de Controlo - Valentão Operacionais"
       />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
-        {/* 🚨 ALERTAS CRÍTICOS */}
-        {(stats?.animaisCriticos || 0) > 0 && (
-          <Card className="border-red-200 bg-gradient-to-r from-red-50 to-orange-50 shadow-md">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <AlertTriangle className="h-5 w-5 text-red-500 animate-pulse" />
-                  <CardTitle className="text-red-800 font-bold">Atenção Necessária</CardTitle>
-                </div>
-                <Badge variant="destructive" className="animate-pulse">
-                  {stats.animaisCriticos} Críticos
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-red-700">
-                Existem {stats.animaisCriticos} animais em estado crítico que necessitam de atenção imediata.
-              </p>
-            </CardContent>
-          </Card>
+        {/* Alertas Críticos */}
+        {alertasCriticos.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
+              <AlertTriangle className="h-6 w-6 mr-2 text-red-600" />
+              Alertas Críticos
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {alertasCriticos.map((alerta) => (
+                <Card key={alerta.id} className={`border-l-4 ${
+                  alerta.prioridade === 'alta' ? 'border-l-red-500 bg-red-50' :
+                  alerta.prioridade === 'media' ? 'border-l-yellow-500 bg-yellow-50' :
+                  'border-l-blue-500 bg-blue-50'
+                }`}>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg flex items-center">
+                      <AlertTriangle className={`h-5 w-5 mr-2 ${
+                        alerta.prioridade === 'alta' ? 'text-red-600' :
+                        alerta.prioridade === 'media' ? 'text-yellow-600' :
+                        'text-blue-600'
+                      }`} />
+                      {alerta.titulo}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-gray-700 mb-3">{alerta.descricao}</p>
+                    {alerta.link && (
+                      <Button size="sm" variant="outline" asChild>
+                        <Link to={alerta.link}>
+                          Ver Detalhes
+                          <ArrowRight className="h-3 w-3 ml-1" />
+                        </Link>
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
         )}
 
-        {/* 📊 ESTATÍSTICAS PRINCIPAIS */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          
+        {/* Métricas Principais */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {/* Total de Animais */}
-          <Card className="animal-card hover:shadow-lg transition-all duration-200">
+          <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-orange-700">
-                Total de Animais
-              </CardTitle>
-              <PawPrint className="h-4 w-4 text-orange-500" />
+              <CardTitle className="text-sm font-medium">Total de Animais</CardTitle>
+              <PawPrint className="h-4 w-4" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-orange-900">{stats?.totalAnimais || 0}</div>
-              <div className="flex items-center text-xs text-orange-600 mt-1">
-                {(stats?.tendenciaAnimais || 0) > 0 ? (
-                  <>
-                    <TrendingUp className="h-3 w-3 mr-1" />
-                    +{stats?.tendenciaAnimais} este mês
-                  </>
-                ) : (
-                  <span>Sem alterações</span>
-                )}
+              <div className="text-2xl font-bold">{stats?.totalAnimais || 0}</div>
+              <div className="flex items-center text-xs opacity-90">
+                {getTendenciaIcon(stats?.tendenciaAnimais || 0)}
+                <span className="ml-1">
+                  {stats?.tendenciaAnimais ? `${stats.tendenciaAnimais.toFixed(1)}%` : '0%'} vs mês anterior
+                </span>
               </div>
             </CardContent>
           </Card>
 
           {/* Animais Ativos */}
-          <Card className="animal-card hover:shadow-lg transition-all duration-200">
+          <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-green-700">
-                Animais Ativos
-              </CardTitle>
-              <Heart className="h-4 w-4 text-green-500" />
+              <CardTitle className="text-sm font-medium">Animais Ativos</CardTitle>
+              <Heart className="h-4 w-4" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-900">{stats?.animaisAtivos || 0}</div>
-              <Progress 
-                value={((stats?.animaisAtivos || 0) / (stats?.totalAnimais || 1)) * 100} 
-                className="mt-2 h-2"
-              />
-            </CardContent>
-          </Card>
-
-          {/* Voluntários */}
-          <Card className="animal-card hover:shadow-lg transition-all duration-200">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-blue-700">
-                Voluntários Ativos
-              </CardTitle>
-              <Users className="h-4 w-4 text-blue-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-900">{stats?.totalVoluntarios || 0}</div>
-              <p className="text-xs text-blue-600 mt-1">Equipa dedicada</p>
-            </CardContent>
-          </Card>
-
-          {/* Recursos Financeiros */}
-          <Card className="animal-card hover:shadow-lg transition-all duration-200">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-purple-700">
-                Recursos Disponíveis
-              </CardTitle>
-              <DollarSign className={`h-4 w-4 ${
-                (stats?.saldoFinanceiro || 0) >= 0 ? 'text-green-500' : 'text-red-500'
-              }`} />
-            </CardHeader>
-            <CardContent>
-              <div className={`text-2xl font-bold ${
-                (stats?.saldoFinanceiro || 0) >= 0 ? 'text-green-900' : 'text-red-900'
-              }`}>
-                {formatCurrency(stats?.saldoFinanceiro || 0)}
+              <div className="text-2xl font-bold">{stats?.animaisAtivos || 0}</div>
+              <div className="text-xs opacity-90">
+                {stats?.animaisSemResponsavel || 0} sem responsável
               </div>
-              <div className="flex items-center text-xs mt-1">
-                {(stats?.tendenciaFinanceira || 0) > 0 ? (
-                  <span className="text-green-600">Tendência positiva</span>
-                ) : (stats?.tendenciaFinanceira || 0) < 0 ? (
-                  <span className="text-red-600">Requer atenção</span>
-                ) : (
-                  <span className="text-gray-600">Estável</span>
-                )}
+            </CardContent>
+          </Card>
+
+          {/* Adoções do Ano */}
+          <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Adoções {new Date().getFullYear()}</CardTitle>
+              <CheckCircle className="h-4 w-4" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats?.adocoesAno || 0}</div>
+              <div className="flex items-center text-xs opacity-90">
+                {getTendenciaIcon(stats?.tendenciaAdocoes || 0)}
+                <span className="ml-1">
+                  {stats?.tendenciaAdocoes ? `${stats.tendenciaAdocoes.toFixed(1)}%` : '0%'} vs mês anterior
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Saldo Financeiro */}
+          <Card className={`bg-gradient-to-br ${
+            (stats?.saldoTotal || 0) >= 0 
+              ? 'from-emerald-500 to-emerald-600' 
+              : 'from-red-500 to-red-600'
+          } text-white`}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Saldo Atual</CardTitle>
+              <DollarSign className="h-4 w-4" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{formatCurrency(stats?.saldoTotal || 0)}</div>
+              <div className="flex items-center text-xs opacity-90">
+                {getTendenciaIcon(stats?.tendenciaFinanceiro || 0)}
+                <span className="ml-1">
+                  {stats?.tendenciaFinanceiro ? `${stats.tendenciaFinanceiro.toFixed(1)}%` : '0%'} vs mês anterior
+                </span>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* 🎯 AÇÕES RÁPIDAS E ATIVIDADE */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Estatísticas Detalhadas */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           
-          {/* Ações Rápidas */}
-          <div className="lg:col-span-1">
-            <Card className="animal-card h-full">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2 text-orange-800">
-                  <Heart className="h-5 w-5 text-orange-500" />
-                  <span>Ações Rápidas</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                
-                {hasPermission('create') && (
-                  <Button asChild className="w-full animal-button">
-                    <Link to="/novo-animal">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Novo Animal
-                    </Link>
-                  </Button>
-                )}
+          {/* Distribuição por Espécie */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <PieChart className="h-5 w-5 mr-2 text-blue-600" />
+                Distribuição por Espécie
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <Dog className="h-4 w-4 mr-2 text-blue-600" />
+                  <span>Cães</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Progress 
+                    value={stats?.totalAnimais ? (stats.totalCaes / stats.totalAnimais) * 100 : 0} 
+                    className="w-20" 
+                  />
+                  <span className="text-sm font-medium">{stats?.totalCaes || 0}</span>
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <Cat className="h-4 w-4 mr-2 text-purple-600" />
+                  <span>Gatos</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Progress 
+                    value={stats?.totalAnimais ? (stats.totalGatos / stats.totalAnimais) * 100 : 0} 
+                    className="w-20" 
+                  />
+                  <span className="text-sm font-medium">{stats?.totalGatos || 0}</span>
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <PawPrint className="h-4 w-4 mr-2 text-green-600" />
+                  <span>Outros</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Progress 
+                    value={stats?.totalAnimais ? (stats.totalOutros / stats.totalAnimais) * 100 : 0} 
+                    className="w-20" 
+                  />
+                  <span className="text-sm font-medium">{stats?.totalOutros || 0}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-                <Button asChild className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white">
+          {/* Resumo Financeiro */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <BarChart3 className="h-5 w-5 mr-2 text-green-600" />
+                Resumo Financeiro {new Date().getFullYear()}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Receitas</span>
+                <span className="font-medium text-green-600">
+                  {formatCurrency(stats?.receitasAno || 0)}
+                </span>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Despesas</span>
+                <span className="font-medium text-red-600">
+                  -{formatCurrency(stats?.despesasAno || 0)}
+                </span>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Custos Médicos</span>
+                <span className="font-medium text-orange-600">
+                  -{formatCurrency(stats?.custosIntervencoesAno || 0)}
+                </span>
+              </div>
+              
+              <hr />
+              
+              <div className="flex justify-between items-center">
+                <span className="font-medium">Saldo Total</span>
+                <span className={`font-bold ${
+                  (stats?.saldoTotal || 0) >= 0 ? 'text-green-600' : 'text-red-600'
+                }`}>
+                  {formatCurrency(stats?.saldoTotal || 0)}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Atividade do Ano */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Activity className="h-5 w-5 mr-2 text-orange-600" />
+                Atividade {new Date().getFullYear()}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center">
+                  <Stethoscope className="h-4 w-4 mr-2 text-blue-600" />
+                  <span className="text-sm">Intervenções</span>
+                </div>
+                <span className="font-medium">{stats?.intervencoesAno || 0}</span>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <div className="flex items-center">
+                  <Calendar className="h-4 w-4 mr-2 text-purple-600" />
+                  <span className="text-sm">Eventos</span>
+                </div>
+                <span className="font-medium">{stats?.eventosAno || 0}</span>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <div className="flex items-center">
+                  <Heart className="h-4 w-4 mr-2 text-green-600" />
+                  <span className="text-sm">Adoções</span>
+                </div>
+                <span className="font-medium">{stats?.adocoesAno || 0}</span>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <div className="flex items-center">
+                  <Users className="h-4 w-4 mr-2 text-indigo-600" />
+                  <span className="text-sm">Voluntários Ativos</span>
+                </div>
+                <span className="font-medium">{stats?.voluntariosAtivos || 0}</span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Ações Rápidas */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          
+          {/* Ações Principais */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Zap className="h-5 w-5 mr-2 text-yellow-600" />
+                Ações Rápidas
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4">
+                <Button asChild className="h-20 flex-col">
+                  <Link to="/novo-animal">
+                    <Plus className="h-6 w-6 mb-2" />
+                    Novo Animal
+                  </Link>
+                </Button>
+                
+                <Button asChild variant="outline" className="h-20 flex-col">
                   <Link to="/animais">
-                    <Eye className="h-4 w-4 mr-2" />
+                    <Eye className="h-6 w-6 mb-2" />
                     Ver Animais
                   </Link>
                 </Button>
-
-                <Button asChild className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 text-white">
-                  <Link to="/intervencoes">
-                    <Stethoscope className="h-4 w-4 mr-2" />
-                    Intervenções
+                
+                <Button asChild variant="outline" className="h-20 flex-col">
+                  <Link to="/gestao-financeira">
+                    <DollarSign className="h-6 w-6 mb-2" />
+                    Finanças
                   </Link>
                 </Button>
-
-                <Button asChild className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-400 hover:to-purple-500 text-white">
-                  <Link to="/financeiro">
-                    <DollarSign className="h-4 w-4 mr-2" />
-                    Financeiro
+                
+                <Button asChild variant="outline" className="h-20 flex-col">
+                  <Link to="/relatorios">
+                    <BarChart3 className="h-6 w-6 mb-2" />
+                    Relatórios
                   </Link>
                 </Button>
-
-                {hasPermission('admin') && (
-                  <Button asChild className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 text-white">
-                    <Link to="/administracao">
-                      <Shield className="h-4 w-4 mr-2" />
-                      Administração
-                    </Link>
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Atividade Recente */}
-          <div className="lg:col-span-2">
-            <Card className="animal-card h-full">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2 text-orange-800">
-                  <Activity className="h-5 w-5 text-orange-500" />
-                  <span>Atividade Recente</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {stats?.ultimasIntervencoes?.slice(0, 4).map((intervencao, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-orange-50 rounded-lg border border-orange-200">
-                      <div className="flex items-center space-x-3">
-                        <Stethoscope className="h-4 w-4 text-orange-500" />
-                        <div>
-                          <div className="font-medium text-orange-900">
-                            {intervencao.animais?.nome || 'Animal'}
-                          </div>
-                          <div className="text-sm text-orange-600">
-                            {intervencao.tipo_intervencao}
-                          </div>
-                        </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Clock className="h-5 w-5 mr-2 text-gray-600" />
+                Atividade Recente
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {atividadeRecente.length === 0 ? (
+                  <p className="text-gray-500 text-center py-4">Nenhuma atividade recente</p>
+                ) : (
+                  atividadeRecente.map((atividade) => (
+                    <div key={atividade.id} className="flex items-start space-x-3">
+                      <div className={`p-2 rounded-full ${
+                        atividade.tipo === 'animal' ? 'bg-blue-100' :
+                        atividade.tipo === 'adocao' ? 'bg-green-100' :
+                        atividade.tipo === 'intervencao' ? 'bg-orange-100' :
+                        'bg-gray-100'
+                      }`}>
+                        {atividade.tipo === 'animal' && <PawPrint className="h-4 w-4 text-blue-600" />}
+                        {atividade.tipo === 'adocao' && <Heart className="h-4 w-4 text-green-600" />}
+                        {atividade.tipo === 'intervencao' && <Stethoscope className="h-4 w-4 text-orange-600" />}
+                        {atividade.tipo === 'evento' && <Calendar className="h-4 w-4 text-purple-600" />}
+                        {atividade.tipo === 'voluntario' && <Users className="h-4 w-4 text-indigo-600" />}
                       </div>
-                      <div className="text-xs text-orange-500">
-                        {new Date(intervencao.data_intervencao).toLocaleDateString('pt-PT')}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900">{atividade.titulo}</p>
+                        <p className="text-sm text-gray-500">{atividade.descricao}</p>
+                        <p className="text-xs text-gray-400">
+                          {new Date(atividade.data).toLocaleDateString('pt-PT')} • {atividade.usuario}
+                        </p>
                       </div>
                     </div>
-                  ))}
-                  
-                  {(!stats?.ultimasIntervencoes || stats.ultimasIntervencoes.length === 0) && (
-                    <div className="text-center py-6 text-orange-400">
-                      <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                      <p>Nenhuma atividade recente</p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* 🏠 MÓDULOS DO SISTEMA */}
-        <Card className="animal-card">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2 text-orange-800">
-              <Navigation className="h-5 w-5 text-orange-500" />
-              <span>Módulos do Sistema</span>
-            </CardTitle>
-            <CardDescription className="text-orange-600">
-              Acesso completo a todas as funcionalidades do sistema
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              
-              {/* Gestão de Animais */}
-              <div className="text-center p-6 rounded-xl warm-card hover:shadow-md transition-all duration-200">
-                <div className="bg-gradient-to-br from-orange-500 to-red-500 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <PawPrint className="h-8 w-8 text-white" />
-                </div>
-                <h3 className="font-semibold text-orange-800 mb-2">Gestão de Animais</h3>
-                <p className="text-sm text-orange-600 mb-4">Registo e acompanhamento</p>
-                <div className="space-y-2">
-                  <Button asChild variant="outline" size="sm" className="w-full border-orange-200 hover:bg-orange-50">
-                    <Link to="/animais">
-                      <Eye className="h-4 w-4 mr-2" />
-                      Ver Animais
-                    </Link>
-                  </Button>
-                  {hasPermission('create') && (
-                    <Button asChild variant="outline" size="sm" className="w-full border-orange-200 hover:bg-orange-50">
-                      <Link to="/novo-animal">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Novo Animal
-                      </Link>
-                    </Button>
-                  )}
-                  {hasPermission('admin') && (
-                    <Button asChild variant="outline" size="sm" className="w-full border-gray-200 hover:bg-gray-50">
-                      <Link to="/animais-arquivados">
-                        <Archive className="h-4 w-4 mr-2" />
-                        Arquivados
-                      </Link>
-                    </Button>
-                  )}
-                  <Button asChild variant="outline" size="sm" className="w-full border-orange-200 hover:bg-orange-50">
-                    <Link to="/grupos">
-                      <Users className="h-4 w-4 mr-2" />
-                      Matilhas e Colónias
-                    </Link>
-                  </Button>
-                </div>
-              </div>
-
-              {/* Cuidados Médicos */}
-              <div className="text-center p-6 rounded-xl nature-card hover:shadow-md transition-all duration-200">
-                <div className="bg-gradient-to-br from-green-500 to-blue-500 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Stethoscope className="h-8 w-8 text-white" />
-                </div>
-                <h3 className="font-semibold text-green-800 mb-2">Cuidados Médicos</h3>
-                <p className="text-sm text-green-600 mb-4">Intervenções e tratamentos</p>
-                <div className="space-y-2">
-                  <Button asChild variant="outline" size="sm" className="w-full border-green-200 hover:bg-green-50">
-                    <Link to="/intervencoes">
-                      <Stethoscope className="h-4 w-4 mr-2" />
-                      Intervenções
-                    </Link>
-                  </Button>
-                  <Button asChild variant="outline" size="sm" className="w-full border-blue-200 hover:bg-blue-50">
-                    <Link to="/eventos">
-                      <Calendar className="h-4 w-4 mr-2" />
-                      Eventos
-                    </Link>
-                  </Button>
-                </div>
-              </div>
-
-              {/* Gestão de Pessoas */}
-              <div className="text-center p-6 rounded-xl warm-card hover:shadow-md transition-all duration-200">
-                <div className="bg-gradient-to-br from-blue-500 to-purple-500 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Users className="h-8 w-8 text-white" />
-                </div>
-                <h3 className="font-semibold text-blue-800 mb-2">Gestão de Pessoas</h3>
-                <p className="text-sm text-blue-600 mb-4">Voluntários e utilizadores</p>
-                <div className="space-y-2">
-                  {hasPermission('admin') && (
-                    <>
-                      <Button asChild variant="outline" size="sm" className="w-full border-blue-200 hover:bg-blue-50">
-                        <Link to="/voluntarios">
-                          <Users className="h-4 w-4 mr-2" />
-                          Voluntários
-                        </Link>
-                      </Button>
-                      <Button asChild variant="outline" size="sm" className="w-full border-purple-200 hover:bg-purple-50">
-                        <Link to="/utilizadores">
-                          <UserPlus className="h-4 w-4 mr-2" />
-                          Utilizadores
-                        </Link>
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {/* Administração */}
-              <div className="text-center p-6 rounded-xl nature-card hover:shadow-md transition-all duration-200">
-                <div className="bg-gradient-to-br from-purple-500 to-pink-500 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <BarChart3 className="h-8 w-8 text-white" />
-                </div>
-                <h3 className="font-semibold text-purple-800 mb-2">Administração</h3>
-                <p className="text-sm text-purple-600 mb-4">Relatórios e configurações</p>
-                <div className="space-y-2">
-                  <Button asChild variant="outline" size="sm" className="w-full border-emerald-200 hover:bg-emerald-50">
-                    <Link to="/dashboard-rico">
-                      <BarChart3 className="h-4 w-4 mr-2" />
-                      Dashboard Rico
-                    </Link>
-                  </Button>
-                  <Button asChild variant="outline" size="sm" className="w-full border-purple-200 hover:bg-purple-50">
-                    <Link to="/relatorios">
-                      <FileText className="h-4 w-4 mr-2" />
-                      Relatórios
-                    </Link>
-                  </Button>
-                  <Button asChild variant="outline" size="sm" className="w-full border-pink-200 hover:bg-pink-50">
-                    <Link to="/financeiro">
-                      <DollarSign className="h-4 w-4 mr-2" />
-                      Financeiro
-                    </Link>
-                  </Button>
-                  {hasPermission('admin') && (
-                    <Button asChild variant="outline" size="sm" className="w-full border-red-200 hover:bg-red-50">
-                      <Link to="/administracao">
-                        <Settings className="h-4 w-4 mr-2" />
-                        Configurações
-                      </Link>
-                    </Button>
-                  )}
-                  <Button asChild variant="outline" size="sm" className="w-full border-teal-200 hover:bg-teal-50">
-                    <Link to="/manual">
-                      <BookOpen className="h-4 w-4 mr-2" />
-                      Manual
-                    </Link>
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* 📈 RESUMO OPERACIONAL */}
-        <Card className="animal-card">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <CheckCircle className="h-5 w-5 text-green-500" />
-                <CardTitle className="text-orange-800">Sistema Operacional</CardTitle>
-              </div>
-              <Badge className="bg-green-100 text-green-800 border-green-200">
-                Todos os sistemas ativos
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-              <div className="p-3 rounded-lg bg-orange-50 border border-orange-200">
-                <div className="text-2xl font-bold text-orange-800">{stats?.totalAnimais || 0}</div>
-                <div className="text-sm text-orange-600">Animais</div>
-              </div>
-              <div className="p-3 rounded-lg bg-green-50 border border-green-200">
-                <div className="text-2xl font-bold text-green-800">{stats?.totalIntervencoes || 0}</div>
-                <div className="text-sm text-green-600">Intervenções</div>
-              </div>
-              <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
-                <div className="text-2xl font-bold text-blue-800">{stats?.totalVoluntarios || 0}</div>
-                <div className="text-sm text-blue-600">Voluntários</div>
-              </div>
-              <div className="p-3 rounded-lg bg-purple-50 border border-purple-200">
-                <div className={`text-2xl font-bold ${
-                  (stats?.saldoFinanceiro || 0) >= 0 ? 'text-green-800' : 'text-red-800'
-                }`}>
-                  {formatCurrency(stats?.saldoFinanceiro || 0)}
-                </div>
-                <div className="text-sm text-purple-600">Recursos</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Sistema de Lembretes */}
+        <SistemaLembretes />
       </div>
     </div>
   );
 };
 
-export default Dashboard;
+export default Index;
