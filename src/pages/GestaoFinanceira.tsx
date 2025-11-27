@@ -331,7 +331,7 @@ const GestaoFinanceira = () => {
         valor: valorNumerico,
         data_movimento: dataMovimento,
         observacoes: observacoes.trim() || null,
-        animal_id: animalSelecionado || null // 🐶 EKO: Associação com animal
+        animal_nome: animalSelecionado.trim() || null // 🐶 EKO: Nome do animal
       };
 
       console.log('📤 [FINANCEIRO] Dados para inserir:', dadosInserir);
@@ -628,8 +628,21 @@ const GestaoFinanceira = () => {
                       />
                     </div>
                     
+                    {/* 🐶 EKO: ANIMAL (CAMPO MANUAL) */}
+                    <div>
+                      <Label htmlFor="animal_nome">Animal (Opcional)</Label>
+                      <Input
+                        id="animal_nome"
+                        value={animalSelecionado}
+                        onChange={(e) => setAnimalSelecionado(e.target.value)}
+                        placeholder="Nome do animal (ex: Max, Luna, etc.)"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        📝 Exemplo: "Max" para donativo específico, "Luna" para transporte
+                      </p>
+                    </div>
 
-                    {/* Valor e Data */
+                    {/* Valor e Data */}
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="valor">Valor (€) *</Label>
