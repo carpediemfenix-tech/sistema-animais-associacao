@@ -188,9 +188,18 @@ const GestaoMovimentos = () => {
   };
 
   useEffect(() => {
+    console.log('🔄 EKO: GestaoMovimentos iniciando...');
     fetchCategorias();
     fetchMovimentos();
   }, []);
+  
+  // Log quando categorias mudam
+  useEffect(() => {
+    console.log('🏷️ EKO: Categorias atualizadas no estado:', categorias.length);
+    if (categorias.length > 0) {
+      console.log('📊 EKO: Primeiras categorias no estado:', categorias.slice(0, 3).map(c => c.nome));
+    }
+  }, [categorias]);
 
   // Filtrar categorias baseadas no tipo e escopo selecionados
   const categoriasFiltradasPorEscopo = categorias.filter(cat => 

@@ -173,9 +173,16 @@ const Administracao = () => {
       setTiposEventos(tiposEventosData.data || []);
       setTiposLocalizacoes(tiposLocalizacoesData.data || []);
       setTiposIntervencoes(tiposIntervencoesData.data || []);
-      setCategoriasFinanceiras(categoriasFinanceirasData.data || []);
+      const categoriasData = categoriasFinanceirasData.data || [];
+      setCategoriasFinanceiras(categoriasData);
       
-      console.log('📊 Estado final categorias financeiras:', categoriasFinanceiras.length);
+      console.log('📊 EKO: Dados recebidos das categorias:', categoriasData.length);
+      console.log('📊 EKO: Primeiras 3 categorias:', categoriasData.slice(0, 3).map(c => c.nome));
+      
+      // Forçar re-render após um pequeno delay para verificar estado
+      setTimeout(() => {
+        console.log('🔄 EKO: Estado após setState:', categoriasFinanceiras.length);
+      }, 100);
       
       // Estados atualizados
       
@@ -329,6 +336,17 @@ const Administracao = () => {
 
   const renderTable = (title: string, data: any[], tableName: string, icon: any) => {
     const IconComponent = icon;
+    
+    // Log especial para categorias financeiras
+    if (tableName === 'categorias_financeiras') {
+      console.log('🏷️ EKO: renderTable para categorias financeiras:', {
+        title,
+        dataLength: data.length,
+        data: data.slice(0, 2),
+        tableName
+      });
+    }
+    
     const activeCount = data.filter(item => item.ativo).length;
     const totalCount = data.length;
     const filteredData = showInactive ? data : data.filter(item => item.ativo);
