@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import DebugLoggerComponent, { debugLogger } from "@/components/DebugLogger";
 
 const GestaoMovimentos = () => {
   const { hasPermission } = useAuth();
@@ -50,7 +51,7 @@ const GestaoMovimentos = () => {
 
   const fetchCategorias = async () => {
     try {
-      console.log('🏷️ Carregando categorias...');
+      debugLogger.log('info', 'Carregando categorias...');
       
       const { data, error } = await supabase
         .from('categorias_financeiras')
@@ -59,18 +60,16 @@ const GestaoMovimentos = () => {
         .order('ordem');
 
       if (error) {
-        console.error('❌ Erro ao carregar categorias:', error);
-        console.error('📊 Detalhes do erro:', error.message, error.details, error.hint);
+        debugLogger.log('error', 'Erro ao carregar categorias', error);
         setCategorias([]);
         return;
       }
 
-      console.log('✅ Categorias carregadas:', data?.length || 0);
-      console.log('📊 Primeiras categorias:', data?.slice(0, 3));
+      debugLogger.log('success', `Categorias carregadas: ${data?.length || 0}`, data?.slice(0, 3));
       setCategorias(data || []);
 
     } catch (error: any) {
-      console.error('💥 Erro ao carregar categorias:', error);
+      debugLogger.log('error', 'Erro geral ao carregar categorias', error);
       setCategorias([]);
     }
   };
@@ -188,16 +187,16 @@ const GestaoMovimentos = () => {
   };
 
   useEffect(() => {
-    console.log('🔄 EKO: GestaoMovimentos iniciando...');
+    debugLogger.log('info', 'EKO: GestaoMovimentos iniciando...');
     fetchCategorias();
     fetchMovimentos();
   }, []);
   
   // Log quando categorias mudam
   useEffect(() => {
-    console.log('🏷️ EKO: Categorias atualizadas no estado:', categorias.length);
+    debugLogger.log('debug', `EKO: Categorias atualizadas no estado: ${categorias.length}`);
     if (categorias.length > 0) {
-      console.log('📊 EKO: Primeiras categorias no estado:', categorias.slice(0, 3).map(c => c.nome));
+      debugLogger.log('debug', 'EKO: Primeiras categorias no estado', categorias.slice(0, 3).map(c => c.nome));
     }
   }, [categorias]);
 
@@ -208,7 +207,7 @@ const GestaoMovimentos = () => {
   );
   
   // Debug logs
-  console.log('🔍 Debug categorias:', {
+  debugLogger.log('debug', 'Debug categorias filtradas', {
     totalCategorias: categorias.length,
     categoriasFiltradasPorEscopo: categoriasFiltradasPorEscopo.length,
     formData: { tipo: formData.tipo_movimento, escopo: formData.escopo },
@@ -499,6 +498,9 @@ const GestaoMovimentos = () => {
           </CardContent>
         </Card>
       </div>
+      
+      {/* Debug Logger */}
+      <DebugLoggerComponent title="Gestão Movimentos - Debug" />
     </div>
   );
 };

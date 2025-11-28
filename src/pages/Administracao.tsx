@@ -52,6 +52,7 @@ import {
   CategoriaFinanceira,
   TipoIntervencao 
 } from "@/types/animal";
+import DebugLoggerComponent, { debugLogger } from "@/components/DebugLogger";
 
 const Administracao = () => {
   const [especies, setEspecies] = useState<Especie[]>([]);
@@ -112,18 +113,18 @@ const Administracao = () => {
   const fetchAllData = async () => {
     try {
       setLoading(true);
-      console.log('🔄 EKO: Iniciando carregamento de dados de administração...');
+      debugLogger.log('info', 'EKO: Iniciando carregamento de dados de administração...');
       // Teste rápido das categorias financeiras
-      console.log('🏷️ EKO: Testando acesso às categorias financeiras...');
+      debugLogger.log('debug', 'EKO: Testando acesso às categorias financeiras...');
       try {
         const testeCategoria = await supabase
           .from('categorias_financeiras')
           .select('id, nome')
           .limit(1);
         
-        console.log('📊 EKO: Teste de categoria:', testeCategoria);
+        debugLogger.log('success', 'EKO: Teste de categoria realizado', testeCategoria);
       } catch (testError) {
-        console.error('❌ EKO: Erro no teste de categoria:', testError);
+        debugLogger.log('error', 'EKO: Erro no teste de categoria', testError);
       }
       
       // Carregando dados de administração
@@ -159,11 +160,9 @@ const Administracao = () => {
       if (tiposLocalizacoesData.error) console.error('❌ Erro tipos localizações:', tiposLocalizacoesData.error);
       if (tiposIntervencoesData.error) console.error('❌ Erro tipos intervenções:', tiposIntervencoesData.error);
       if (categoriasFinanceirasData.error) {
-        console.error('❌ Erro categorias financeiras:', categoriasFinanceirasData.error);
-        console.error('📊 Detalhes do erro:', categoriasFinanceirasData.error.message, categoriasFinanceirasData.error.details);
+        debugLogger.log('error', 'Erro categorias financeiras', categoriasFinanceirasData.error);
       } else {
-        console.log('✅ Categorias financeiras carregadas:', categoriasFinanceirasData.data?.length || 0);
-        console.log('📊 Primeiras categorias:', categoriasFinanceirasData.data?.slice(0, 3));
+        debugLogger.log('success', `Categorias financeiras carregadas: ${categoriasFinanceirasData.data?.length || 0}`, categoriasFinanceirasData.data?.slice(0, 3));
       }
 
       setEspecies(especiesData.data || []);
@@ -176,12 +175,11 @@ const Administracao = () => {
       const categoriasData = categoriasFinanceirasData.data || [];
       setCategoriasFinanceiras(categoriasData);
       
-      console.log('📊 EKO: Dados recebidos das categorias:', categoriasData.length);
-      console.log('📊 EKO: Primeiras 3 categorias:', categoriasData.slice(0, 3).map(c => c.nome));
+      debugLogger.log('debug', `EKO: Dados recebidos das categorias: ${categoriasData.length}`, categoriasData.slice(0, 3).map(c => c.nome));
       
       // Forçar re-render após um pequeno delay para verificar estado
       setTimeout(() => {
-        console.log('🔄 EKO: Estado após setState:', categoriasFinanceiras.length);
+        debugLogger.log('debug', `EKO: Estado após setState: ${categoriasFinanceiras.length}`);
       }, 100);
       
       // Estados atualizados
@@ -339,10 +337,9 @@ const Administracao = () => {
     
     // Log especial para categorias financeiras
     if (tableName === 'categorias_financeiras') {
-      console.log('🏷️ EKO: renderTable para categorias financeiras:', {
-        title,
+      debugLogger.log('debug', `EKO: renderTable para ${title}`, {
         dataLength: data.length,
-        data: data.slice(0, 2),
+        primeirasEntradas: data.slice(0, 2),
         tableName
       });
     }
@@ -684,6 +681,9 @@ const Administracao = () => {
           </DialogContent>
         </Dialog>
       </div>
+      
+      {/* Debug Logger */}
+      <DebugLoggerComponent title="Administração - Debug" />
     </div>
   );
 };
