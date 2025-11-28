@@ -17,6 +17,8 @@ import EventosPage from "./pages/EventosPage";
 import GestaoVoluntarios from "./pages/GestaoVoluntarios";
 import VoluntarioDetail from "./pages/VoluntarioDetail";
 import GestaoFinanceira from "./pages/GestaoFinanceira";
+import DashboardFinanceiro from "./pages/DashboardFinanceiro";
+import GestaoMovimentos from "./pages/GestaoMovimentos";
 import Relatorios from "./pages/Relatorios";
 import Configuracoes from "./pages/Configuracoes";
 import GestaoUtilizadores from "./pages/GestaoUtilizadores";
@@ -50,6 +52,9 @@ const App = () => (
             <Route path="/voluntarios" element={<ProtectedRoute><GestaoVoluntarios /></ProtectedRoute>} />
             <Route path="/voluntario/:id" element={<ProtectedRoute><VoluntarioDetail /></ProtectedRoute>} />
             <Route path="/gestao-financeira" element={<ProtectedRoute><GestaoFinanceira /></ProtectedRoute>} />
+            <Route path="/financeiro" element={<ProtectedRoute><DashboardFinanceiro /></ProtectedRoute>} />
+            <Route path="/financeiro/movimentos" element={<ProtectedRoute><GestaoMovimentos /></ProtectedRoute>} />
+            <Route path="/financeiro/movimentos/novo" element={<ProtectedRoute><GestaoMovimentos /></ProtectedRoute>} />
             <Route path="/relatorios" element={<ProtectedRoute><Relatorios /></ProtectedRoute>} />
             <Route path="/configuracoes" element={<ProtectedRoute><Configuracoes /></ProtectedRoute>} />
             <Route path="/utilizadores" element={<ProtectedRoute><GestaoUtilizadores /></ProtectedRoute>} />

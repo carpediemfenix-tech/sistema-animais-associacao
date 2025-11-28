@@ -269,33 +269,38 @@ const AnimalDetail = () => {
     }
   };
 
-  // 💰 EKO: Função para buscar movimentos financeiros
+  // 💰 EKO: Função para buscar movimentos financeiros (SISTEMA ROBUSTO)
   const fetchMovimentosFinanceiros = async () => {
     if (!id) return;
     
     try {
       console.log('💰 [ANIMAL] Carregando movimentos financeiros para animal:', id);
       
-      const { data, error } = await supabase
-        .from('movimentos_financeiros')
-        .select('*')
-        .eq('animal_id', id)
-        .order('data_movimento', { ascending: false });
+      // Usar função SQL para buscar movimentos do animal
+      const { data: movimentos, error: movimentosError } = await supabase
+        .rpc('get_movimentos_animal', { animal_uuid: id });
 
-      if (error) {
-        console.error('❌ [ANIMAL] Erro ao carregar movimentos:', error);
+      if (movimentosError) {
+        console.error('❌ [ANIMAL] Erro ao carregar movimentos:', movimentosError);
+        setMovimentosFinanceiros([]);
         return;
       }
 
-      console.log('✅ [ANIMAL] Movimentos carregados:', data?.length || 0);
-      setMovimentosFinanceiros(data || []);
+      console.log('✅ [ANIMAL] Movimentos carregados:', movimentos?.length || 0);
+      setMovimentosFinanceiros(movimentos || []);
       
-      // Calcular totais
-      const receitas = (data || []).filter(m => m.tipo_movimento === 'Receita').reduce((sum, m) => sum + m.valor, 0);
-      const despesas = (data || []).filter(m => m.tipo_movimento === 'Despesa').reduce((sum, m) => sum + m.valor, 0);
-      
-      setTotalReceitas(receitas);
-      setTotalDespesas(despesas);
+      // Usar função SQL para calcular resumo
+      const { data: resumo, error: resumoError } = await supabase
+        .rpc('get_resumo_animal', { animal_uuid: id })
+        .single();
+
+      if (!resumoError && resumo) {
+        setTotalReceitas(parseFloat(resumo.total_receitas) || 0);
+        setTotalDespesas(parseFloat(resumo.total_despesas) || 0);
+      } else {
+        setTotalReceitas(0);
+        setTotalDespesas(0);
+      }
       
     } catch (error: any) {
       console.error('💥 [ANIMAL] Erro ao buscar movimentos financeiros:', error);
@@ -1123,13 +1128,13 @@ const AnimalDetail = () => {
                     </CardDescription>
                   </div>
                   {hasPermission('create') && (
-                    <Link to="/gestao-financeira">
+                    <Link to="/financeiro/movimentos">
                       <Button
                         size="sm"
                         className="bg-green-600 hover:bg-green-700"
                       >
                         <Plus className="h-4 w-4 mr-2" />
-                        Novo Movimento
+                        Associar Movimento
                       </Button>
                     </Link>
                   )}
@@ -1210,19 +1215,27 @@ const AnimalDetail = () => {
                               </TableCell>
                               <TableCell>
                                 <Badge 
-                                  className={movimento.tipo_movimento === 'Receita' 
+                                  className={movimento.tipo_movimento === 'receita' 
                                     ? "bg-green-100 text-green-800" 
                                     : "bg-red-100 text-red-800"
                                   }
                                 >
-                                  {movimento.tipo_movimento === 'Receita' ? '💰' : '💸'} {movimento.tipo_movimento}
+                                  {movimento.tipo_movimento === 'receita' ? '💰' : '💸'} {movimento.tipo_movimento}
                                 </Badge>
                               </TableCell>
-                              <TableCell>{movimento.categoria}</TableCell>
+                              <TableCell>
+                                <div className="flex items-center space-x-2">
+                                  <div 
+                                    className="w-3 h-3 rounded-full" 
+                                    style={{ backgroundColor: movimento.categoria_cor }}
+                                  />
+                                  <span>{movimento.categoria_nome}</span>
+                                </div>
+                              </TableCell>
                               <TableCell>{movimento.descricao}</TableCell>
                               <TableCell className="text-right font-medium">
-                                <span className={movimento.tipo_movimento === 'Receita' ? 'text-green-600' : 'text-red-600'}>
-                                  {movimento.tipo_movimento === 'Receita' ? '+' : '-'}
+                                <span className={movimento.tipo_movimento === 'receita' ? 'text-green-600' : 'text-red-600'}>
+                                  {movimento.tipo_movimento === 'receita' ? '+' : '-'}
                                   {new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(movimento.valor)}
                                 </span>
                               </TableCell>

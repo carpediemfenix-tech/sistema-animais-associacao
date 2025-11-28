@@ -809,8 +809,14 @@ const Index = () => {
                 <p className="text-sm text-green-600 mb-4">Receitas, despesas e relatórios</p>
                 <div className="space-y-2">
                   <Button asChild variant="outline" size="sm" className="w-full border-green-200 hover:bg-green-50">
-                    <Link to="/gestao-financeira">
+                    <Link to="/financeiro">
                       <DollarSign className="h-4 w-4 mr-2" />
+                      Dashboard
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" size="sm" className="w-full border-green-200 hover:bg-green-50">
+                    <Link to="/financeiro/movimentos">
+                      <BarChart3 className="h-4 w-4 mr-2" />
                       Movimentos
                     </Link>
                   </Button>
