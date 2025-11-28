@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import UserHeader from "@/components/UserHeader";
 import { Button } from "@/components/ui/button";
@@ -63,6 +63,7 @@ const Administracao = () => {
   const [tiposLocalizacoes, setTiposLocalizacoes] = useState<TipoLocalizacao[]>([]);
   const [tiposIntervencoes, setTiposIntervencoes] = useState<TipoIntervencao[]>([]);
   const [categoriasFinanceiras, setCategoriasFinanceiras] = useState<CategoriaFinanceira[]>([]);
+  const [categoriasFinanceirasForceUpdate, setCategoriasFinanceirasForceUpdate] = useState(0);
   
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -118,6 +119,19 @@ const Administracao = () => {
     }
   }, [categoriasFinanceiras]);
   
+  // Função estável para atualizar categorias
+  const atualizarCategoriasFinanceiras = useCallback((novasCategorias: CategoriaFinanceira[]) => {
+    debugLogger.log('info', `ATUALIZAÇÃO: Definindo ${novasCategorias.length} categorias`);
+    setCategoriasFinanceiras(novasCategorias);
+    setCategoriasFinanceirasForceUpdate(prev => prev + 1);
+  }, []);
+  
+  // Memo para garantir estabilidade das categorias
+  const categoriasFinanceirasStable = useMemo(() => {
+    debugLogger.log('debug', `MEMO: Categorias recalculadas - ${categoriasFinanceiras.length} itens`);
+    return categoriasFinanceiras;
+  }, [categoriasFinanceiras, categoriasFinanceirasForceUpdate]);
+  
   const testarCategorias = async () => {
     debugLogger.log('info', 'TESTE: Forçando carregamento de categorias...');
     
@@ -134,12 +148,9 @@ const Administracao = () => {
       
       debugLogger.log('success', `TESTE: ${data?.length || 0} categorias carregadas`, data?.slice(0, 3));
       
-      // Forçar atualização com novo array
-      setCategoriasFinanceiras([]);
-      setTimeout(() => {
-        setCategoriasFinanceiras([...data]);
-        debugLogger.log('info', `TESTE: Estado forçado para ${data.length} categorias`);
-      }, 100);
+      // Usar função estável para atualizar
+      atualizarCategoriasFinanceiras([...data]);
+      debugLogger.log('info', `TESTE: Estado forçado para ${data.length} categorias`);
       
     } catch (error) {
       debugLogger.log('error', 'TESTE: Erro geral', error);
@@ -211,8 +222,8 @@ const Administracao = () => {
       const categoriasData = categoriasFinanceirasData.data || [];
       debugLogger.log('debug', `EKO: Dados recebidos das categorias: ${categoriasData.length}`, categoriasData.slice(0, 3).map(c => c.nome));
       
-      // Forçar atualização do estado
-      setCategoriasFinanceiras([...categoriasData]); // Usar spread para forçar re-render
+      // Usar função estável para atualizar
+      atualizarCategoriasFinanceiras([...categoriasData]);
       
       // Verificar estado após um delay
       setTimeout(() => {
@@ -381,8 +392,14 @@ const Administracao = () => {
       debugLogger.log('debug', `EKO: renderTable para ${title}`, {
         dataLength: data.length,
         primeirasEntradas: data.slice(0, 2),
-        tableName
+        tableName,
+        dataType: typeof data,
+        isArray: Array.isArray(data)
       });
+      
+      if (data.length === 0) {
+        debugLogger.log('error', 'RENDERIZAÇÃO: Dados vazios recebidos no renderTable!');
+      }
     }
     
     const activeCount = data.filter(item => item.ativo).length;
@@ -568,7 +585,7 @@ const Administracao = () => {
           {renderTable("Tipos de Eventos", tiposEventos, "tipos_eventos", Calendar)}
           {renderTable("Tipos de Localizações", tiposLocalizacoes, "tipos_localizacoes", MapPin)}
           {renderTable("Tipos de Intervenções", tiposIntervencoes, "tipos_intervencoes", Settings)}
-          {renderTable("Categorias Financeiras", categoriasFinanceiras, "categorias_financeiras", DollarSign)}
+          {renderTable("Categorias Financeiras", categoriasFinanceirasStable, "categorias_financeiras", DollarSign)}
         </div>
 
         {/* Dialog para Edição/Criação */}
