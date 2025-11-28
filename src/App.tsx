@@ -27,6 +27,7 @@ import GestaoGrupos from "./pages/GestaoGrupos";
 import GrupoDetail from "./pages/GrupoDetail";
 import ManualUtilizador from "./pages/ManualUtilizador";
 import Administracao from "./pages/Administracao";
+import TesteCategorias from "./pages/TesteCategorias";
 
 const queryClient = new QueryClient();
 
@@ -63,6 +64,7 @@ const App = () => (
             <Route path="/grupo/:id" element={<ProtectedRoute><GrupoDetail /></ProtectedRoute>} />
             <Route path="/manual" element={<ProtectedRoute><ManualUtilizador /></ProtectedRoute>} />
             <Route path="/administracao" element={<ProtectedRoute><Administracao /></ProtectedRoute>} />
+            <Route path="/teste-categorias" element={<ProtectedRoute><TesteCategorias /></ProtectedRoute>} />
             
             {/* Rota 404 */}
             <Route path="*" element={<NotFound />} />

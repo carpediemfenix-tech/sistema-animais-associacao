@@ -53,7 +53,7 @@ const GestaoMovimentos = () => {
       console.log('🏷️ Carregando categorias...');
       
       const { data, error } = await supabase
-        .from('categorias_financeiras_2025_11_28_05_52')
+        .from('categorias_financeiras')
         .select('*')
         .eq('ativo', true)
         .order('ordem');
@@ -81,7 +81,7 @@ const GestaoMovimentos = () => {
       console.log('🔄 Carregando movimentos...');
 
       const { data, error } = await supabase
-        .from('movimentos_financeiros_2025_11_28_05_52')
+        .from('movimentos_financeiros')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(20);
@@ -161,7 +161,7 @@ const GestaoMovimentos = () => {
       };
 
       const { error } = await supabase
-        .from('movimentos_financeiros_2025_11_28_05_52')
+        .from('movimentos_financeiros')
         .insert([dadosInserir]);
 
       if (error) throw error;

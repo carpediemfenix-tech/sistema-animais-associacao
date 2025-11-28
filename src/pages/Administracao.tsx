@@ -131,7 +131,7 @@ const Administracao = () => {
         supabase.from('tipos_eventos').select('*').order('nome'),
         supabase.from('tipos_localizacoes').select('*').order('nome'),
         supabase.from('tipos_intervencoes').select('*').order('nome'),
-        supabase.from('categorias_financeiras_2025_11_28_05_52').select('*').order('ordem')
+        supabase.from('categorias_financeiras').select('*').order('ordem')
       ]);
 
       // Dados carregados com sucesso
@@ -144,7 +144,13 @@ const Administracao = () => {
       if (tiposEventosData.error) console.error('❌ Erro tipos eventos:', tiposEventosData.error);
       if (tiposLocalizacoesData.error) console.error('❌ Erro tipos localizações:', tiposLocalizacoesData.error);
       if (tiposIntervencoesData.error) console.error('❌ Erro tipos intervenções:', tiposIntervencoesData.error);
-      if (categoriasFinanceirasData.error) console.error('❌ Erro categorias financeiras:', categoriasFinanceirasData.error);
+      if (categoriasFinanceirasData.error) {
+        console.error('❌ Erro categorias financeiras:', categoriasFinanceirasData.error);
+        console.error('📊 Detalhes do erro:', categoriasFinanceirasData.error.message, categoriasFinanceirasData.error.details);
+      } else {
+        console.log('✅ Categorias financeiras carregadas:', categoriasFinanceirasData.data?.length || 0);
+        console.log('📊 Primeiras categorias:', categoriasFinanceirasData.data?.slice(0, 3));
+      }
 
       setEspecies(especiesData.data || []);
       setSexos(sexosData.data || []);
@@ -154,6 +160,8 @@ const Administracao = () => {
       setTiposLocalizacoes(tiposLocalizacoesData.data || []);
       setTiposIntervencoes(tiposIntervencoesData.data || []);
       setCategoriasFinanceiras(categoriasFinanceirasData.data || []);
+      
+      console.log('📊 Estado final categorias financeiras:', categoriasFinanceiras.length);
       
       // Estados atualizados
       
@@ -482,7 +490,7 @@ const Administracao = () => {
           {renderTable("Tipos de Eventos", tiposEventos, "tipos_eventos", Calendar)}
           {renderTable("Tipos de Localizações", tiposLocalizacoes, "tipos_localizacoes", MapPin)}
           {renderTable("Tipos de Intervenções", tiposIntervencoes, "tipos_intervencoes", Settings)}
-          {renderTable("Categorias Financeiras", categoriasFinanceiras, "categorias_financeiras_2025_11_28_05_52", DollarSign)}
+          {renderTable("Categorias Financeiras", categoriasFinanceiras, "categorias_financeiras", DollarSign)}
         </div>
 
         {/* Dialog para Edição/Criação */}
@@ -562,7 +570,7 @@ const Administracao = () => {
               )}
               
               {/* 💰 EKO: CAMPOS ESPECÍFICOS PARA CATEGORIAS FINANCEIRAS */}
-              {currentTable === 'categorias_financeiras_2025_11_28_05_52' && (
+              {currentTable === 'categorias_financeiras' && (
                 <>
                   <div>
                     <Label htmlFor="tipo" className="text-orange-700 font-medium">Tipo *</Label>
