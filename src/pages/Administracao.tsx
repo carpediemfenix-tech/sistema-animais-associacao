@@ -27,15 +27,72 @@ import {
   Trash2,
   Loader2,
   Shield,
+  Users,
+  PawPrint,
+  Stethoscope,
+  Activity,
   Eye,
   EyeOff,
   Save,
   X,
+  Calendar,
+  MapPin,
+  Settings,
   DollarSign
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import DebugLoggerComponent, { debugLogger } from "@/components/DebugLogger";
+
+// Interfaces para todas as tabelas
+interface Especie {
+  id: string;
+  nome: string;
+  descricao?: string;
+  ativo: boolean;
+}
+
+interface Sexo {
+  id: string;
+  nome: string;
+  descricao?: string;
+  ativo: boolean;
+}
+
+interface EspecialidadeVoluntario {
+  id: string;
+  nome: string;
+  descricao?: string;
+  ativo: boolean;
+}
+
+interface TipoGrupo {
+  id: string;
+  nome: string;
+  descricao?: string;
+  ativo: boolean;
+}
+
+interface TipoEvento {
+  id: string;
+  nome: string;
+  descricao?: string;
+  ativo: boolean;
+}
+
+interface TipoLocalizacao {
+  id: string;
+  nome: string;
+  descricao?: string;
+  ativo: boolean;
+}
+
+interface TipoIntervencao {
+  id: string;
+  nome: string;
+  descricao?: string;
+  ativo: boolean;
+}
 
 interface CategoriaFinanceira {
   id: string;
@@ -47,15 +104,23 @@ interface CategoriaFinanceira {
   icone: string;
   ativo: boolean;
   ordem?: number;
-  created_at?: string;
-  updated_at?: string;
 }
 
 const Administracao = () => {
+  // Estados para todas as tabelas
+  const [especies, setEspecies] = useState<Especie[]>([]);
+  const [sexos, setSexos] = useState<Sexo[]>([]);
+  const [especialidadesVoluntarios, setEspecialidadesVoluntarios] = useState<EspecialidadeVoluntario[]>([]);
+  const [tiposGrupos, setTiposGrupos] = useState<TipoGrupo[]>([]);
+  const [tiposEventos, setTiposEventos] = useState<TipoEvento[]>([]);
+  const [tiposLocalizacoes, setTiposLocalizacoes] = useState<TipoLocalizacao[]>([]);
+  const [tiposIntervencoes, setTiposIntervencoes] = useState<TipoIntervencao[]>([]);
   const [categoriasFinanceiras, setCategoriasFinanceiras] = useState<CategoriaFinanceira[]>([]);
+  
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<CategoriaFinanceira | null>(null);
+  const [editingItem, setEditingItem] = useState<any>(null);
+  const [currentTable, setCurrentTable] = useState<string>('');
   const [showInactive, setShowInactive] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -93,225 +158,64 @@ const Administracao = () => {
     );
   }
 
-  const testarConexao = async () => {
+  const fetchAllData = async () => {
     try {
-      debugLogger.log('info', 'TESTE: Verificando conexão com Supabase...');
-      
-      // Testar conexão básica
-      const { data: testData, error: testError } = await supabase
-        .from('categorias_financeiras')
-        .select('count')
-        .limit(1);
-      
-      if (testError) {
-        debugLogger.log('error', 'TESTE: Erro de conexão', testError);
-        throw testError;
-      }
-      
-      debugLogger.log('success', 'TESTE: Conexão com Supabase OK');
-      
-      // Testar estrutura da tabela
-      const { data: estrutura, error: estruturaError } = await supabase
-        .from('categorias_financeiras')
-        .select('id, nome, tipo, escopo, ativo')
-        .limit(3);
-      
-      if (estruturaError) {
-        debugLogger.log('error', 'TESTE: Erro na estrutura da tabela', estruturaError);
-        throw estruturaError;
-      }
-      
-      debugLogger.log('success', `TESTE: Estrutura da tabela OK - ${estrutura?.length || 0} registros encontrados`, estrutura);
-      
-      toast({
-        title: "Teste de Conexão",
-        description: `Conexão OK! ${estrutura?.length || 0} categorias encontradas.`,
-      });
-      
-    } catch (error: any) {
-      debugLogger.log('error', 'TESTE: Falha no teste de conexão', error);
-      toast({
-        title: "Erro de Conexão",
-        description: error.message || "Erro ao conectar com a base de dados",
-        variant: "destructive",
-      });
-    }
-  };
+      setLoading(true);
+      debugLogger.log('info', 'ADMIN: Carregando todas as tabelas de administração...');
 
-  const testarCriacaoCategoria = async () => {
-    try {
-      debugLogger.log('info', 'TESTE RLS: Testando criação de categoria...');
-      
-      const categoriaTest = {
-        nome: `Teste RLS ${new Date().getTime()}`,
-        descricao: 'Categoria de teste para verificar RLS',
-        tipo: 'despesa' as const,
-        escopo: 'associacao' as const,
-        cor: '#FF0000',
-        icone: 'TestTube',
-        ativo: true
-      };
-      
-      const { data, error } = await supabase
-        .from('categorias_financeiras')
-        .insert([categoriaTest])
-        .select();
-      
-      if (error) {
-        debugLogger.log('error', 'TESTE RLS: Erro ao criar categoria de teste', error);
-        
-        if (error.message.includes('row-level security policy')) {
-          debugLogger.log('error', 'RLS: Políticas de segurança estão bloqueando a inserção');
-          toast({
-            title: "Erro RLS Detectado",
-            description: "Políticas de segurança bloqueiam a criação. Executando correção...",
-            variant: "destructive",
-          });
-        }
-        throw error;
-      }
-      
-      debugLogger.log('success', 'TESTE RLS: Categoria de teste criada com sucesso!', data);
-      
-      // Remover categoria de teste
-      if (data && data[0]) {
-        await supabase
-          .from('categorias_financeiras')
-          .delete()
-          .eq('id', data[0].id);
-        debugLogger.log('info', 'TESTE RLS: Categoria de teste removida');
-      }
-      
-      toast({
-        title: "Teste RLS Bem-sucedido",
-        description: "Criação de categorias está funcionando corretamente!",
-      });
-      
-      fetchCategorias();
-      
-    } catch (error: any) {
-      debugLogger.log('error', 'TESTE RLS: Falha no teste de criação', error);
-      toast({
-        title: "Teste RLS Falhou",
-        description: error.message || "Erro ao testar criação de categoria",
-        variant: "destructive",
-      });
-    }
-  };
+      // Carregar todas as tabelas em paralelo
+      const [
+        especiesData,
+        sexosData,
+        especialidadesVoluntariosData,
+        tiposGruposData,
+        tiposEventosData,
+        tiposLocalizacoesData,
+        tiposIntervencoesData,
+        categoriasFinanceirasData
+      ] = await Promise.all([
+        supabase.from('especies').select('*').order('nome'),
+        supabase.from('sexos').select('*').order('nome'),
+        supabase.from('especialidades_voluntarios').select('*').order('nome'),
+        supabase.from('tipos_grupos').select('*').order('nome'),
+        supabase.from('tipos_eventos').select('*').order('nome'),
+        supabase.from('tipos_localizacoes').select('*').order('nome'),
+        supabase.from('tipos_intervencoes').select('*').order('nome'),
+        supabase.from('categorias_financeiras').select('*').order('ordem')
+      ]);
 
-  const testeSimplesCRUD = async () => {
-    try {
-      debugLogger.log('info', 'TESTE SIMPLES: Testando operações CRUD básicas...');
-      
-      // Teste 1: SELECT
-      const { data: selectData, error: selectError } = await supabase
-        .from('categorias_financeiras')
-        .select('id, nome')
-        .limit(3);
-      
-      if (selectError) {
-        debugLogger.log('error', 'TESTE SIMPLES: Erro no SELECT', selectError);
-        throw selectError;
-      }
-      
-      debugLogger.log('success', `TESTE SIMPLES: SELECT OK - ${selectData?.length || 0} registros`);
-      
-      // Teste 2: INSERT
-      const categoriaTest = {
-        nome: `Teste CRUD ${Date.now()}`,
-        descricao: 'Teste de operações CRUD',
-        tipo: 'despesa' as const,
-        escopo: 'associacao' as const,
-        cor: '#00FF00',
-        icone: 'TestTube',
-        ativo: true,
-        ordem: 9999
-      };
-      
-      const { data: insertData, error: insertError } = await supabase
-        .from('categorias_financeiras')
-        .insert([categoriaTest])
-        .select()
-        .single();
-      
-      if (insertError) {
-        debugLogger.log('error', 'TESTE SIMPLES: Erro no INSERT', insertError);
-        throw insertError;
-      }
-      
-      debugLogger.log('success', 'TESTE SIMPLES: INSERT OK', insertData);
-      
-      // Teste 3: UPDATE
-      const { error: updateError } = await supabase
-        .from('categorias_financeiras')
-        .update({ descricao: 'Teste atualizado' })
-        .eq('id', insertData.id);
-      
-      if (updateError) {
-        debugLogger.log('error', 'TESTE SIMPLES: Erro no UPDATE', updateError);
-      } else {
-        debugLogger.log('success', 'TESTE SIMPLES: UPDATE OK');
-      }
-      
-      // Teste 4: DELETE
-      const { error: deleteError } = await supabase
-        .from('categorias_financeiras')
-        .delete()
-        .eq('id', insertData.id);
-      
-      if (deleteError) {
-        debugLogger.log('error', 'TESTE SIMPLES: Erro no DELETE', deleteError);
-      } else {
-        debugLogger.log('success', 'TESTE SIMPLES: DELETE OK');
-      }
-      
-      toast({
-        title: "Teste CRUD Completo",
-        description: "Todas as operações funcionaram corretamente!",
-      });
-      
-      // Recarregar lista
-      fetchCategorias();
-      
-    } catch (error: any) {
-      debugLogger.log('error', 'TESTE SIMPLES: Falha geral', error);
-      
-      let errorMessage = error.message || "Erro no teste CRUD";
-      if (error.message && error.message.includes('row-level security')) {
-        errorMessage = "RLS ainda está bloqueando operações. Executando correção...";
-      }
-      
-      toast({
-        title: "Teste CRUD Falhou",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    }
-  };
+      // Verificar erros e definir dados
+      if (especiesData.error) debugLogger.log('error', 'Erro ao carregar espécies', especiesData.error);
+      else setEspecies(especiesData.data || []);
 
-  const fetchCategorias = async () => {
-    try {
-      debugLogger.log('info', 'ADMIN: Carregando categorias financeiras...');
-      
-      const { data, error } = await supabase
-        .from('categorias_financeiras')
-        .select('*')
-        .order('ordem');
+      if (sexosData.error) debugLogger.log('error', 'Erro ao carregar sexos', sexosData.error);
+      else setSexos(sexosData.data || []);
 
-      if (error) {
-        debugLogger.log('error', 'ADMIN: Erro ao carregar categorias', error);
-        throw error;
-      }
+      if (especialidadesVoluntariosData.error) debugLogger.log('error', 'Erro ao carregar especialidades', especialidadesVoluntariosData.error);
+      else setEspecialidadesVoluntarios(especialidadesVoluntariosData.data || []);
 
-      debugLogger.log('success', `ADMIN: ${data?.length || 0} categorias carregadas`);
-      setCategoriasFinanceiras(data || []);
+      if (tiposGruposData.error) debugLogger.log('error', 'Erro ao carregar tipos de grupos', tiposGruposData.error);
+      else setTiposGrupos(tiposGruposData.data || []);
+
+      if (tiposEventosData.error) debugLogger.log('error', 'Erro ao carregar tipos de eventos', tiposEventosData.error);
+      else setTiposEventos(tiposEventosData.data || []);
+
+      if (tiposLocalizacoesData.error) debugLogger.log('error', 'Erro ao carregar tipos de localizações', tiposLocalizacoesData.error);
+      else setTiposLocalizacoes(tiposLocalizacoesData.data || []);
+
+      if (tiposIntervencoesData.error) debugLogger.log('error', 'Erro ao carregar tipos de intervenções', tiposIntervencoesData.error);
+      else setTiposIntervencoes(tiposIntervencoesData.data || []);
+
+      if (categoriasFinanceirasData.error) debugLogger.log('error', 'Erro ao carregar categorias financeiras', categoriasFinanceirasData.error);
+      else setCategoriasFinanceiras(categoriasFinanceirasData.data || []);
+
+      debugLogger.log('success', 'ADMIN: Todas as tabelas carregadas com sucesso');
 
     } catch (error: any) {
-      debugLogger.log('error', 'ADMIN: Erro geral ao carregar categorias', error);
-      setCategoriasFinanceiras([]);
+      debugLogger.log('error', 'ADMIN: Erro geral ao carregar dados', error);
       toast({
         title: "Erro",
-        description: "Erro ao carregar categorias financeiras",
+        description: "Erro ao carregar dados de administração",
         variant: "destructive",
       });
     } finally {
@@ -320,121 +224,139 @@ const Administracao = () => {
   };
 
   useEffect(() => {
-    fetchCategorias();
+    fetchAllData();
   }, []);
 
-  const openDialog = (item?: CategoriaFinanceira) => {
-    setEditingItem(item || null);
-    setFormData({
-      nome: item?.nome || '',
-      descricao: item?.descricao || '',
-      tipo: item?.tipo || '',
-      escopo: item?.escopo || '',
-      cor: item?.cor || '#6B7280',
-      icone: item?.icone || 'DollarSign'
-    });
+  const openDialog = (tableName: string, item?: any) => {
+    setCurrentTable(tableName);
+    setEditingItem(item);
+    
+    if (tableName === 'categorias_financeiras') {
+      setFormData({
+        nome: item?.nome || '',
+        descricao: item?.descricao || '',
+        tipo: item?.tipo || '',
+        escopo: item?.escopo || '',
+        cor: item?.cor || '#6B7280',
+        icone: item?.icone || 'DollarSign'
+      });
+    } else {
+      setFormData({
+        nome: item?.nome || '',
+        descricao: item?.descricao || '',
+        tipo: '',
+        escopo: '',
+        cor: '#6B7280',
+        icone: 'DollarSign'
+      });
+    }
+    
     setDialogOpen(true);
   };
 
   const closeDialog = () => {
     setDialogOpen(false);
     setEditingItem(null);
+    setCurrentTable('');
     setFormData({ nome: '', descricao: '', tipo: '', escopo: '', cor: '#6B7280', icone: 'DollarSign' });
   };
 
   const handleSubmit = async () => {
-    if (!formData.nome.trim() || !formData.tipo || !formData.escopo) {
+    if (!formData.nome.trim()) {
       toast({
         title: "Erro de Validação",
-        description: "Nome, tipo e escopo são obrigatórios",
+        description: "Nome é obrigatório",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validação específica para categorias financeiras
+    if (currentTable === 'categorias_financeiras' && (!formData.tipo || !formData.escopo)) {
+      toast({
+        title: "Erro de Validação",
+        description: "Tipo e escopo são obrigatórios para categorias financeiras",
         variant: "destructive",
       });
       return;
     }
 
     try {
-      debugLogger.log('info', `ADMIN: ${editingItem ? 'Atualizando' : 'Criando'} categoria...`);
+      debugLogger.log('info', `ADMIN: ${editingItem ? 'Atualizando' : 'Criando'} item na tabela ${currentTable}`);
       
-      const dataToSubmit = {
+      let dataToSubmit: any = {
         nome: formData.nome.trim(),
         descricao: formData.descricao.trim() || null,
-        tipo: formData.tipo as 'receita' | 'despesa',
-        escopo: formData.escopo as 'animal' | 'associacao' | 'ambos',
-        cor: formData.cor,
-        icone: formData.icone,
         ativo: true
       };
 
+      // Campos específicos para categorias financeiras
+      if (currentTable === 'categorias_financeiras') {
+        dataToSubmit = {
+          ...dataToSubmit,
+          tipo: formData.tipo,
+          escopo: formData.escopo,
+          cor: formData.cor,
+          icone: formData.icone
+        };
+      }
+
       if (editingItem) {
         const { error } = await supabase
-          .from('categorias_financeiras')
+          .from(currentTable)
           .update(dataToSubmit)
           .eq('id', editingItem.id);
         
         if (error) throw error;
         
-        debugLogger.log('success', 'ADMIN: Categoria atualizada com sucesso');
         toast({
           title: "Sucesso",
-          description: "Categoria atualizada com sucesso",
+          description: "Item atualizado com sucesso",
         });
       } else {
         const { error } = await supabase
-          .from('categorias_financeiras')
+          .from(currentTable)
           .insert([dataToSubmit]);
         
         if (error) throw error;
         
-        debugLogger.log('success', 'ADMIN: Categoria criada com sucesso');
         toast({
           title: "Sucesso",
-          description: "Categoria criada com sucesso",
+          description: "Item criado com sucesso",
         });
       }
 
       closeDialog();
-      fetchCategorias();
+      fetchAllData();
     } catch (error: any) {
-      debugLogger.log('error', 'ADMIN: Erro ao salvar categoria', error);
-      
-      let errorMessage = error.message || "Erro ao salvar categoria";
-      let errorTitle = "Erro";
-      
-      // Detectar erro RLS
-      if (error.message && error.message.includes('row-level security policy')) {
-        errorTitle = "Erro de Permissão";
-        errorMessage = "Sem permissão para criar/editar categorias. Verifique se está autenticado como administrador.";
-        debugLogger.log('error', 'RLS: Políticas de segurança bloquearam a operação');
-      }
-      
+      debugLogger.log('error', `ADMIN: Erro ao salvar item na tabela ${currentTable}`, error);
       toast({
-        title: errorTitle,
-        description: errorMessage,
+        title: "Erro",
+        description: error.message || "Erro ao salvar item",
         variant: "destructive",
       });
     }
   };
 
-  const toggleActive = async (id: string, currentStatus: boolean) => {
+  const toggleActive = async (tableName: string, id: string, currentStatus: boolean) => {
     try {
-      debugLogger.log('info', `ADMIN: ${currentStatus ? 'Desativando' : 'Ativando'} categoria...`);
+      debugLogger.log('info', `ADMIN: ${currentStatus ? 'Desativando' : 'Ativando'} item na tabela ${tableName}`);
       
       const { error } = await supabase
-        .from('categorias_financeiras')
+        .from(tableName)
         .update({ ativo: !currentStatus })
         .eq('id', id);
       
       if (error) throw error;
       
-      debugLogger.log('success', `ADMIN: Categoria ${!currentStatus ? 'ativada' : 'desativada'} com sucesso`);
       toast({
         title: "Sucesso",
-        description: `Categoria ${!currentStatus ? 'ativada' : 'desativada'} com sucesso`,
+        description: `Item ${!currentStatus ? 'ativado' : 'desativado'} com sucesso`,
       });
       
-      fetchCategorias();
+      fetchAllData();
     } catch (error: any) {
-      debugLogger.log('error', 'ADMIN: Erro ao alterar status da categoria', error);
+      debugLogger.log('error', `ADMIN: Erro ao alterar status na tabela ${tableName}`, error);
       toast({
         title: "Erro",
         description: error.message || "Erro ao alterar status",
@@ -443,41 +365,139 @@ const Administracao = () => {
     }
   };
 
-  const deleteItem = async (id: string) => {
-    if (!confirm('Tem certeza que deseja eliminar esta categoria?')) return;
+  const deleteItem = async (tableName: string, id: string) => {
+    if (!confirm('Tem certeza que deseja eliminar este item?')) return;
     
     try {
-      debugLogger.log('info', 'ADMIN: Eliminando categoria...');
+      debugLogger.log('info', `ADMIN: Eliminando item da tabela ${tableName}`);
       
       const { error } = await supabase
-        .from('categorias_financeiras')
+        .from(tableName)
         .delete()
         .eq('id', id);
       
       if (error) throw error;
       
-      debugLogger.log('success', 'ADMIN: Categoria eliminada com sucesso');
       toast({
         title: "Sucesso",
-        description: "Categoria eliminada com sucesso",
+        description: "Item eliminado com sucesso",
       });
       
-      fetchCategorias();
+      fetchAllData();
     } catch (error: any) {
-      debugLogger.log('error', 'ADMIN: Erro ao eliminar categoria', error);
+      debugLogger.log('error', `ADMIN: Erro ao eliminar item da tabela ${tableName}`, error);
       toast({
         title: "Erro",
-        description: error.message || "Erro ao eliminar categoria",
+        description: error.message || "Erro ao eliminar item",
         variant: "destructive",
       });
     }
   };
 
-  const filteredData = showInactive ? categoriasFinanceiras : categoriasFinanceiras.filter(item => item.ativo);
-  const activeCount = categoriasFinanceiras.filter(item => item.ativo).length;
-  const totalCount = categoriasFinanceiras.length;
+  const renderTable = (title: string, data: any[], tableName: string, icon: any) => {
+    const IconComponent = icon;
+    const filteredData = showInactive ? data : data.filter(item => item.ativo);
+    const activeCount = data.filter(item => item.ativo).length;
+    const totalCount = data.length;
 
-  debugLogger.log('debug', `ADMIN: Renderizando ${filteredData.length} categorias (${totalCount} total, ${activeCount} ativas)`);
+    return (
+      <Card key={tableName} className="animal-card">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <IconComponent className="h-5 w-5 text-orange-500" />
+              <div>
+                <CardTitle className="text-sm text-orange-800">{title}</CardTitle>
+                <CardDescription className="text-xs text-orange-600">
+                  {totalCount} itens • {activeCount} ativos
+                </CardDescription>
+              </div>
+            </div>
+            <Button
+              onClick={() => openDialog(tableName)}
+              size="sm"
+              className="animal-button text-xs"
+            >
+              <Plus className="h-3 w-3 mr-1" />
+              Novo
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="p-4">
+          <div className="space-y-2">
+            {filteredData.length === 0 ? (
+              <div className="text-center py-4 text-orange-400">
+                <IconComponent className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">
+                  {totalCount === 0 ? 'Nenhum item encontrado' : 'Nenhum item ativo'}
+                </p>
+              </div>
+            ) : (
+              filteredData.slice(0, 5).map((item) => (
+                <div key={item.id} className="flex items-center justify-between p-2 bg-white rounded border border-orange-100">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm font-medium text-orange-800 truncate">{item.nome}</span>
+                      <Badge variant={item.ativo ? "default" : "secondary"} className="text-xs">
+                        {item.ativo ? 'Ativo' : 'Inativo'}
+                      </Badge>
+                      {tableName === 'categorias_financeiras' && (
+                        <>
+                          <Badge variant="outline" className="text-xs">
+                            {item.tipo === 'receita' ? '💰' : '💸'}
+                          </Badge>
+                          <div 
+                            className="w-3 h-3 rounded-full border"
+                            style={{ backgroundColor: item.cor }}
+                          />
+                        </>
+                      )}
+                    </div>
+                    {item.descricao && (
+                      <p className="text-xs text-orange-600 truncate mt-1">{item.descricao}</p>
+                    )}
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleActive(tableName, item.id, item.ativo)}
+                      className="h-6 w-6 p-0"
+                    >
+                      {item.ativo ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => openDialog(tableName, item)}
+                      className="h-6 w-6 p-0"
+                    >
+                      <Edit className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => deleteItem(tableName, item.id)}
+                      className="h-6 w-6 p-0 text-red-600"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+              ))
+            )}
+            {filteredData.length > 5 && (
+              <div className="text-center pt-2">
+                <Badge variant="outline" className="text-xs">
+                  +{filteredData.length - 5} mais itens
+                </Badge>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
 
   if (loading) {
     return (
@@ -494,7 +514,7 @@ const Administracao = () => {
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-green-50">
       <UserHeader 
         title="Administração do Sistema" 
-        description="Gestão de categorias financeiras"
+        description="Gestão de campos e configurações do sistema"
         showBackButton
         backTo="/"
       />
@@ -506,11 +526,11 @@ const Administracao = () => {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <DollarSign className="h-6 w-6 text-orange-500" />
+                <Shield className="h-6 w-6 text-orange-500" />
                 <div>
-                  <CardTitle className="text-orange-800">Categorias Financeiras</CardTitle>
+                  <CardTitle className="text-orange-800">Painel de Administração</CardTitle>
                   <CardDescription className="text-orange-600">
-                    {totalCount} categorias • {activeCount} ativas
+                    Gerir campos com opções e configurações do sistema
                   </CardDescription>
                 </div>
               </div>
@@ -531,158 +551,52 @@ const Administracao = () => {
                   {showInactive ? 'Todos os itens' : 'Apenas ativos'}
                 </Badge>
                 <Button
-                  onClick={fetchCategorias}
+                  onClick={fetchAllData}
                   variant="outline"
                   size="sm"
                   className="text-blue-600 border-blue-300 hover:bg-blue-50"
                 >
-                  🔄 Recarregar
-                </Button>
-                <Button
-                  onClick={testarConexao}
-                  variant="outline"
-                  size="sm"
-                  className="text-green-600 border-green-300 hover:bg-green-50"
-                >
-                  🔍 Testar BD
-                </Button>
-                <Button
-                  onClick={testarCriacaoCategoria}
-                  variant="outline"
-                  size="sm"
-                  className="text-purple-600 border-purple-300 hover:bg-purple-50"
-                >
-                  🔒 Testar RLS
-                </Button>
-                <Button
-                  onClick={testeSimplesCRUD}
-                  variant="outline"
-                  size="sm"
-                  className="text-yellow-600 border-yellow-300 hover:bg-yellow-50"
-                >
-                  ⚙️ Teste CRUD
-                </Button>
-                <Button
-                  onClick={() => openDialog()}
-                  className="animal-button"
-                  size="sm"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Nova Categoria
+                  🔄 Recarregar Tudo
                 </Button>
               </div>
             </div>
           </CardHeader>
         </Card>
 
-        {/* Lista de Categorias */}
-        <Card className="animal-card">
-          <CardContent className="p-6">
-            <div className="space-y-3">
-              {filteredData.length === 0 ? (
-                <div className="text-center py-8 text-orange-400">
-                  <DollarSign className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p className="text-lg font-medium mb-2">
-                    {totalCount === 0 ? 'Nenhuma categoria encontrada' : 
-                     showInactive ? 'Nenhuma categoria encontrada' : 'Nenhuma categoria ativa encontrada'}
-                  </p>
-                  <p className="text-sm text-orange-500 mb-4">
-                    {totalCount === 0 ? 
-                      'Clique em "Nova Categoria" para adicionar a primeira categoria.' :
-                      showInactive ? 
-                        'Todas as categorias foram eliminadas.' :
-                        'Todas as categorias estão desativadas. Ative algumas categorias ou marque "Mostrar inativos".'}
-                  </p>
-                  <Button onClick={() => openDialog()} className="animal-button">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Nova Categoria
-                  </Button>
-                </div>
-              ) : (
-                filteredData.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between p-4 bg-white rounded-lg border border-orange-100 hover:border-orange-200 transition-colors">
-                    <div className="flex items-center space-x-3">
-                      <div 
-                        className="w-4 h-4 rounded-full border-2 border-gray-300"
-                        style={{ backgroundColor: item.cor }}
-                      />
-                      <div>
-                        <div className="flex items-center space-x-2">
-                          <span className="font-medium text-orange-800">{item.nome}</span>
-                          <Badge variant={item.ativo ? "default" : "secondary"} className="text-xs">
-                            {item.ativo ? 'Ativo' : 'Inativo'}
-                          </Badge>
-                          <Badge variant="outline" className="text-xs">
-                            {item.tipo === 'receita' ? '💰 Receita' : '💸 Despesa'}
-                          </Badge>
-                          <Badge variant="outline" className="text-xs">
-                            {item.escopo === 'animal' ? '🐾 Animal' : 
-                             item.escopo === 'associacao' ? '🏢 Associação' : '🔄 Ambos'}
-                          </Badge>
-                        </div>
-                        {item.descricao && (
-                          <div className="text-sm text-orange-600 mt-1">{item.descricao}</div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => toggleActive(item.id, item.ativo)}
-                        className={`${item.ativo ? 'text-orange-600 hover:text-orange-800' : 'text-green-600 hover:text-green-800'}`}
-                        title={item.ativo ? 'Desativar' : 'Ativar'}
-                      >
-                        {item.ativo ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => openDialog(item)}
-                        className="text-blue-600 hover:text-blue-800"
-                        title="Editar"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => deleteItem(item.id)}
-                        className="text-red-600 hover:text-red-800"
-                        title="Eliminar"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        {/* Tabelas de Gestão */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {renderTable("Espécies de Animais", especies, "especies", PawPrint)}
+          {renderTable("Sexos de Animais", sexos, "sexos", Users)}
+          {renderTable("Especialidades de Voluntários", especialidadesVoluntarios, "especialidades_voluntarios", Stethoscope)}
+          {renderTable("Tipos de Grupos", tiposGrupos, "tipos_grupos", Users)}
+          {renderTable("Tipos de Eventos", tiposEventos, "tipos_eventos", Calendar)}
+          {renderTable("Tipos de Localizações", tiposLocalizacoes, "tipos_localizacoes", MapPin)}
+          {renderTable("Tipos de Intervenções", tiposIntervencoes, "tipos_intervencoes", Settings)}
+          {renderTable("Categorias Financeiras", categoriasFinanceiras, "categorias_financeiras", DollarSign)}
+        </div>
 
         {/* Dialog para Edição/Criação */}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle className="text-orange-800">
-                {editingItem ? 'Editar Categoria' : 'Nova Categoria'}
+                {editingItem ? 'Editar Item' : 'Novo Item'}
               </DialogTitle>
               <DialogDescription className="text-orange-600">
-                {editingItem ? 'Editar as informações da categoria' : 'Adicionar nova categoria financeira'}
+                {editingItem ? 'Editar as informações do item' : `Adicionar novo item à tabela ${currentTable}`}
               </DialogDescription>
             </DialogHeader>
             
             <div className="space-y-4">
               <div>
                 <Label htmlFor="nome" className="text-orange-700 font-medium">
-                  Nome da Categoria *
+                  Nome *
                 </Label>
                 <Input
                   id="nome"
                   value={formData.nome}
                   onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                  placeholder="Ex: Veterinário, Donativos, etc."
+                  placeholder="Nome do item"
                   className="border-orange-200 focus:border-orange-400"
                 />
               </div>
@@ -695,46 +609,49 @@ const Administracao = () => {
                   id="descricao"
                   value={formData.descricao}
                   onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
-                  placeholder="Descrição detalhada da categoria"
+                  placeholder="Descrição detalhada (opcional)"
                   className="border-orange-200 focus:border-orange-400"
                   rows={3}
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="tipo" className="text-orange-700 font-medium">Tipo *</Label>
-                  <Select 
-                    value={formData.tipo} 
-                    onValueChange={(value) => setFormData({ ...formData, tipo: value })}
-                  >
-                    <SelectTrigger className="border-orange-200 focus:border-orange-400">
-                      <SelectValue placeholder="Selecionar tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="receita">💰 Receita</SelectItem>
-                      <SelectItem value="despesa">💸 Despesa</SelectItem>
-                    </SelectContent>
-                  </Select>
+              {/* Campos específicos para categorias financeiras */}
+              {currentTable === 'categorias_financeiras' && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="tipo" className="text-orange-700 font-medium">Tipo *</Label>
+                    <Select 
+                      value={formData.tipo} 
+                      onValueChange={(value) => setFormData({ ...formData, tipo: value })}
+                    >
+                      <SelectTrigger className="border-orange-200 focus:border-orange-400">
+                        <SelectValue placeholder="Selecionar tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="receita">💰 Receita</SelectItem>
+                        <SelectItem value="despesa">💸 Despesa</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="escopo" className="text-orange-700 font-medium">Escopo *</Label>
+                    <Select 
+                      value={formData.escopo} 
+                      onValueChange={(value) => setFormData({ ...formData, escopo: value })}
+                    >
+                      <SelectTrigger className="border-orange-200 focus:border-orange-400">
+                        <SelectValue placeholder="Selecionar escopo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="animal">🐾 Animal</SelectItem>
+                        <SelectItem value="associacao">🏢 Associação</SelectItem>
+                        <SelectItem value="ambos">🔄 Ambos</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-                
-                <div>
-                  <Label htmlFor="escopo" className="text-orange-700 font-medium">Escopo *</Label>
-                  <Select 
-                    value={formData.escopo} 
-                    onValueChange={(value) => setFormData({ ...formData, escopo: value })}
-                  >
-                    <SelectTrigger className="border-orange-200 focus:border-orange-400">
-                      <SelectValue placeholder="Selecionar escopo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="animal">🐾 Animal</SelectItem>
-                      <SelectItem value="associacao">🏢 Associação</SelectItem>
-                      <SelectItem value="ambos">🔄 Ambos</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+              )}
             </div>
             
             <div className="flex justify-end space-x-2 pt-4">
@@ -752,7 +669,7 @@ const Administracao = () => {
       </div>
       
       {/* Debug Logger */}
-      <DebugLoggerComponent title="Administração - Debug" />
+      <DebugLoggerComponent title="Administração Completa - Debug" />
     </div>
   );
 };
