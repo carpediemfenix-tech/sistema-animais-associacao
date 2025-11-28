@@ -112,6 +112,20 @@ const Administracao = () => {
   const fetchAllData = async () => {
     try {
       setLoading(true);
+      console.log('🔄 EKO: Iniciando carregamento de dados de administração...');
+      // Teste rápido das categorias financeiras
+      console.log('🏷️ EKO: Testando acesso às categorias financeiras...');
+      try {
+        const testeCategoria = await supabase
+          .from('categorias_financeiras')
+          .select('id, nome')
+          .limit(1);
+        
+        console.log('📊 EKO: Teste de categoria:', testeCategoria);
+      } catch (testError) {
+        console.error('❌ EKO: Erro no teste de categoria:', testError);
+      }
+      
       // Carregando dados de administração
       
       const [

@@ -16,43 +16,72 @@ const TesteCategorias = () => {
     try {
       console.log('🧪 Iniciando teste de categorias...');
 
-      // Teste 1: Verificar se a tabela existe
-      const { data: tabelas, error: errorTabelas } = await supabase
-        .from('information_schema.tables')
-        .select('table_name')
-        .like('table_name', '%categorias_financeiras%');
+      // Teste 1: Verificar acesso direto à tabela
+      console.log('📋 Teste 1: Verificando acesso à tabela...');
+      let tabelaExiste = false;
+      let errorTabelas = null;
+      
+      try {
+        const { data: testeTabela, error } = await supabase
+          .from('categorias_financeiras')
+          .select('id')
+          .limit(1);
+        
+        if (!error) {
+          tabelaExiste = true;
+          console.log('✅ Tabela categorias_financeiras existe e é acessível');
+        } else {
+          errorTabelas = error;
+          console.log('❌ Erro ao acessar tabela:', error);
+        }
+      } catch (err) {
+        errorTabelas = err;
+        console.log('💥 Erro na consulta da tabela:', err);
+      }
 
-      console.log('📋 Tabelas encontradas:', tabelas);
-
-      // Teste 2: Tentar consulta direta
+      // Teste 2: Tentar consulta completa
+      console.log('📊 Teste 2: Consultando categorias...');
       const { data: categorias, error: errorCategorias } = await supabase
-        .from('categorias_financeiras_2025_11_28_05_52')
+        .from('categorias_financeiras')
         .select('*')
         .limit(5);
 
       console.log('📊 Resultado da consulta:', { categorias, errorCategorias });
 
       // Teste 3: Contar registos
+      console.log('🔢 Teste 3: Contando registos...');
       const { count, error: errorCount } = await supabase
-        .from('categorias_financeiras_2025_11_28_05_52')
+        .from('categorias_financeiras')
         .select('*', { count: 'exact', head: true });
 
       console.log('🔢 Contagem:', { count, errorCount });
 
-      // Teste 4: Verificar RLS
+      // Teste 4: Verificar categorias ativas
+      console.log('🔐 Teste 4: Verificando categorias ativas...');
       const { data: rlsTest, error: rlsError } = await supabase
-        .from('categorias_financeiras_2025_11_28_05_52')
-        .select('id, nome, ativo')
+        .from('categorias_financeiras')
+        .select('id, nome, ativo, tipo, escopo')
         .eq('ativo', true)
         .limit(3);
 
       console.log('🔐 Teste RLS:', { rlsTest, rlsError });
 
+      // Teste 5: Verificar estrutura específica
+      console.log('🏗️ Teste 5: Verificando estrutura...');
+      const { data: estrutura, error: errorEstrutura } = await supabase
+        .from('categorias_financeiras')
+        .select('id, nome, tipo, escopo, cor, icone, ativo, ordem')
+        .order('ordem')
+        .limit(2);
+
+      console.log('🏗️ Estrutura:', { estrutura, errorEstrutura });
+
       setResultado({
-        tabelas: { data: tabelas, error: errorTabelas },
+        tabela: { existe: tabelaExiste, error: errorTabelas },
         categorias: { data: categorias, error: errorCategorias },
         count: { count, error: errorCount },
-        rls: { data: rlsTest, error: rlsError }
+        ativas: { data: rlsTest, error: rlsError },
+        estrutura: { data: estrutura, error: errorEstrutura }
       });
 
     } catch (error) {
@@ -96,37 +125,35 @@ const TesteCategorias = () => {
             ) : resultado ? (
               <div className="space-y-6">
                 
-                {/* Teste 1: Tabelas */}
+                {/* Teste 1: Acesso à Tabela */}
                 <div className="border rounded-lg p-4">
                   <h3 className="font-semibold mb-2 flex items-center">
-                    {resultado.tabelas?.error ? 
+                    {resultado.tabela?.error ? 
                       <AlertCircle className="h-5 w-5 mr-2 text-red-500" /> : 
                       <CheckCircle className="h-5 w-5 mr-2 text-green-500" />
                     }
-                    Teste 1: Verificar Tabelas
+                    Teste 1: Acesso à Tabela
                   </h3>
-                  {resultado.tabelas?.error ? (
+                  {resultado.tabela?.error ? (
                     <div className="text-red-600">
-                      <p><strong>Erro:</strong> {resultado.tabelas.error.message}</p>
+                      <p><strong>Erro:</strong> {resultado.tabela.error.message}</p>
+                      <p><strong>Código:</strong> {resultado.tabela.error.code}</p>
                     </div>
                   ) : (
                     <div className="text-green-600">
-                      <p><strong>Tabelas encontradas:</strong> {resultado.tabelas?.data?.length || 0}</p>
-                      <pre className="text-xs bg-gray-100 p-2 rounded mt-2">
-                        {JSON.stringify(resultado.tabelas?.data, null, 2)}
-                      </pre>
+                      <p><strong>Status:</strong> {resultado.tabela?.existe ? 'Tabela acessível ✅' : 'Tabela não encontrada ❌'}</p>
                     </div>
                   )}
                 </div>
 
-                {/* Teste 2: Consulta Direta */}
+                {/* Teste 2: Consulta Completa */}
                 <div className="border rounded-lg p-4">
                   <h3 className="font-semibold mb-2 flex items-center">
                     {resultado.categorias?.error ? 
                       <AlertCircle className="h-5 w-5 mr-2 text-red-500" /> : 
                       <CheckCircle className="h-5 w-5 mr-2 text-green-500" />
                     }
-                    Teste 2: Consulta Direta
+                    Teste 2: Consulta de Categorias
                   </h3>
                   {resultado.categorias?.error ? (
                     <div className="text-red-600">
@@ -137,9 +164,16 @@ const TesteCategorias = () => {
                   ) : (
                     <div className="text-green-600">
                       <p><strong>Categorias encontradas:</strong> {resultado.categorias?.data?.length || 0}</p>
-                      <pre className="text-xs bg-gray-100 p-2 rounded mt-2 max-h-40 overflow-y-auto">
-                        {JSON.stringify(resultado.categorias?.data, null, 2)}
-                      </pre>
+                      {resultado.categorias?.data?.length > 0 && (
+                        <div className="mt-2">
+                          <p><strong>Primeiras categorias:</strong></p>
+                          <ul className="list-disc list-inside text-sm">
+                            {resultado.categorias.data.slice(0, 3).map((cat: any, idx: number) => (
+                              <li key={idx}>{cat.nome} ({cat.tipo} - {cat.escopo})</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -164,28 +198,82 @@ const TesteCategorias = () => {
                   )}
                 </div>
 
-                {/* Teste 4: RLS */}
+                {/* Teste 4: Categorias Ativas */}
                 <div className="border rounded-lg p-4">
                   <h3 className="font-semibold mb-2 flex items-center">
-                    {resultado.rls?.error ? 
+                    {resultado.ativas?.error ? 
                       <AlertCircle className="h-5 w-5 mr-2 text-red-500" /> : 
                       <CheckCircle className="h-5 w-5 mr-2 text-green-500" />
                     }
-                    Teste 4: Row Level Security
+                    Teste 4: Categorias Ativas
                   </h3>
-                  {resultado.rls?.error ? (
+                  {resultado.ativas?.error ? (
                     <div className="text-red-600">
-                      <p><strong>Erro RLS:</strong> {resultado.rls.error.message}</p>
-                      <p><strong>Código:</strong> {resultado.rls.error.code}</p>
+                      <p><strong>Erro:</strong> {resultado.ativas.error.message}</p>
+                      <p><strong>Código:</strong> {resultado.ativas.error.code}</p>
                     </div>
                   ) : (
                     <div className="text-green-600">
-                      <p><strong>Registos acessíveis:</strong> {resultado.rls?.data?.length || 0}</p>
-                      <pre className="text-xs bg-gray-100 p-2 rounded mt-2">
-                        {JSON.stringify(resultado.rls?.data, null, 2)}
-                      </pre>
+                      <p><strong>Categorias ativas:</strong> {resultado.ativas?.data?.length || 0}</p>
+                      {resultado.ativas?.data?.length > 0 && (
+                        <div className="mt-2">
+                          <p><strong>Exemplos:</strong></p>
+                          <ul className="list-disc list-inside text-sm">
+                            {resultado.ativas.data.map((cat: any, idx: number) => (
+                              <li key={idx}>{cat.nome} ({cat.tipo} - {cat.escopo})</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
                   )}
+                </div>
+
+                {/* Teste 5: Estrutura */}
+                <div className="border rounded-lg p-4">
+                  <h3 className="font-semibold mb-2 flex items-center">
+                    {resultado.estrutura?.error ? 
+                      <AlertCircle className="h-5 w-5 mr-2 text-red-500" /> : 
+                      <CheckCircle className="h-5 w-5 mr-2 text-green-500" />
+                    }
+                    Teste 5: Estrutura da Tabela
+                  </h3>
+                  {resultado.estrutura?.error ? (
+                    <div className="text-red-600">
+                      <p><strong>Erro:</strong> {resultado.estrutura.error.message}</p>
+                    </div>
+                  ) : (
+                    <div className="text-green-600">
+                      <p><strong>Estrutura verificada:</strong> ✅</p>
+                      {resultado.estrutura?.data?.length > 0 && (
+                        <pre className="text-xs bg-gray-100 p-2 rounded mt-2 max-h-40 overflow-y-auto">
+                          {JSON.stringify(resultado.estrutura.data, null, 2)}
+                        </pre>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Resumo Final */}
+                <div className="border-2 border-blue-200 rounded-lg p-4 bg-blue-50">
+                  <h3 className="font-bold text-blue-800 mb-2">📊 RESUMO DO DIAGNÓSTICO</h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p><strong>Tabela Acessível:</strong> {resultado.tabela?.existe ? '✅ Sim' : '❌ Não'}</p>
+                      <p><strong>Categorias Carregadas:</strong> {resultado.categorias?.data?.length || 0}</p>
+                      <p><strong>Total de Registos:</strong> {resultado.count?.count || 0}</p>
+                    </div>
+                    <div>
+                      <p><strong>Categorias Ativas:</strong> {resultado.ativas?.data?.length || 0}</p>
+                      <p><strong>Estrutura OK:</strong> {resultado.estrutura?.error ? '❌ Não' : '✅ Sim'}</p>
+                      <p><strong>Status Geral:</strong> {
+                        resultado.tabela?.existe && 
+                        !resultado.categorias?.error && 
+                        (resultado.count?.count || 0) > 0 ? 
+                        '✅ FUNCIONANDO' : '❌ PROBLEMAS'
+                      }</p>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Erro Geral */}
