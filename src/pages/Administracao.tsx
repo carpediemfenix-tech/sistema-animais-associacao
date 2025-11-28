@@ -138,6 +138,67 @@ const Administracao = () => {
     }
   };
 
+  const testarCriacaoCategoria = async () => {
+    try {
+      debugLogger.log('info', 'TESTE RLS: Testando criação de categoria...');
+      
+      const categoriaTest = {
+        nome: `Teste RLS ${new Date().getTime()}`,
+        descricao: 'Categoria de teste para verificar RLS',
+        tipo: 'despesa' as const,
+        escopo: 'associacao' as const,
+        cor: '#FF0000',
+        icone: 'TestTube',
+        ativo: true
+      };
+      
+      const { data, error } = await supabase
+        .from('categorias_financeiras')
+        .insert([categoriaTest])
+        .select();
+      
+      if (error) {
+        debugLogger.log('error', 'TESTE RLS: Erro ao criar categoria de teste', error);
+        
+        if (error.message.includes('row-level security policy')) {
+          debugLogger.log('error', 'RLS: Políticas de segurança estão bloqueando a inserção');
+          toast({
+            title: "Erro RLS Detectado",
+            description: "Políticas de segurança bloqueiam a criação. Executando correção...",
+            variant: "destructive",
+          });
+        }
+        throw error;
+      }
+      
+      debugLogger.log('success', 'TESTE RLS: Categoria de teste criada com sucesso!', data);
+      
+      // Remover categoria de teste
+      if (data && data[0]) {
+        await supabase
+          .from('categorias_financeiras')
+          .delete()
+          .eq('id', data[0].id);
+        debugLogger.log('info', 'TESTE RLS: Categoria de teste removida');
+      }
+      
+      toast({
+        title: "Teste RLS Bem-sucedido",
+        description: "Criação de categorias está funcionando corretamente!",
+      });
+      
+      fetchCategorias();
+      
+    } catch (error: any) {
+      debugLogger.log('error', 'TESTE RLS: Falha no teste de criação', error);
+      toast({
+        title: "Teste RLS Falhou",
+        description: error.message || "Erro ao testar criação de categoria",
+        variant: "destructive",
+      });
+    }
+  };
+
   const fetchCategorias = async () => {
     try {
       debugLogger.log('info', 'ADMIN: Carregando categorias financeiras...');
@@ -245,9 +306,20 @@ const Administracao = () => {
       fetchCategorias();
     } catch (error: any) {
       debugLogger.log('error', 'ADMIN: Erro ao salvar categoria', error);
+      
+      let errorMessage = error.message || "Erro ao salvar categoria";
+      let errorTitle = "Erro";
+      
+      // Detectar erro RLS
+      if (error.message && error.message.includes('row-level security policy')) {
+        errorTitle = "Erro de Permissão";
+        errorMessage = "Sem permissão para criar/editar categorias. Verifique se está autenticado como administrador.";
+        debugLogger.log('error', 'RLS: Políticas de segurança bloquearam a operação');
+      }
+      
       toast({
-        title: "Erro",
-        description: error.message || "Erro ao salvar categoria",
+        title: errorTitle,
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -383,6 +455,14 @@ const Administracao = () => {
                   className="text-green-600 border-green-300 hover:bg-green-50"
                 >
                   🔍 Testar BD
+                </Button>
+                <Button
+                  onClick={testarCriacaoCategoria}
+                  variant="outline"
+                  size="sm"
+                  className="text-purple-600 border-purple-300 hover:bg-purple-50"
+                >
+                  🔒 Testar RLS
                 </Button>
                 <Button
                   onClick={() => openDialog()}
