@@ -48,6 +48,16 @@ const GestaoFinanceira = () => {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  
+  // Estados do formulário
+  const [tipoMovimento, setTipoMovimento] = useState("");
+  const [categoria, setCategoria] = useState("");
+  const [descricao, setDescricao] = useState("");
+  const [valor, setValor] = useState("");
+  const [dataMovimento, setDataMovimento] = useState(new Date().toISOString().split('T')[0]);
+  const [observacoes, setObservacoes] = useState("");
+  const [animalSelecionado, setAnimalSelecionado] = useState("");
   
   const { toast } = useToast();
 
@@ -83,6 +93,78 @@ const GestaoFinanceira = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const resetForm = () => {
+    setTipoMovimento("");
+    setCategoria("");
+    setDescricao("");
+    setValor("");
+    setDataMovimento(new Date().toISOString().split('T')[0]);
+    setObservacoes("");
+    setAnimalSelecionado("");
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!tipoMovimento || !categoria || !descricao || !valor) {
+      toast({
+        title: "❌ Campos obrigatórios",
+        description: "Preencha todos os campos obrigatórios",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const valorNumerico = parseFloat(valor);
+    if (isNaN(valorNumerico) || valorNumerico <= 0) {
+      toast({
+        title: "❌ Valor inválido",
+        description: "O valor deve ser um número positivo",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      
+      const dadosInserir = {
+        tipo_movimento: tipoMovimento,
+        categoria: categoria,
+        descricao: descricao.trim(),
+        valor: valorNumerico,
+        data_movimento: dataMovimento,
+        observacoes: observacoes.trim() || null,
+        animal_id: animalSelecionado || null
+      };
+
+      const { data, error } = await supabase
+        .from('movimentos_financeiros')
+        .insert([dadosInserir])
+        .select('*');
+
+      if (error) throw error;
+
+      toast({
+        title: "✅ Movimento registado!",
+        description: `${tipoMovimento} de €${valorNumerico.toFixed(2)} registada com sucesso`,
+      });
+
+      setDialogOpen(false);
+      resetForm();
+      await fetchMovimentos();
+
+    } catch (error: any) {
+      toast({
+        title: "❌ Erro ao registar",
+        description: error.message || "Não foi possível registar o movimento",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -169,15 +251,129 @@ const GestaoFinanceira = () => {
               </DialogTrigger>
               <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                  <DialogTitle>Teste Modal</DialogTitle>
-                  <DialogDescription>Modal básico funcionando</DialogDescription>
+                  <DialogTitle>Novo Movimento Financeiro</DialogTitle>
+                  <DialogDescription>Registar nova receita ou despesa</DialogDescription>
                 </DialogHeader>
                 
-                <div className="space-y-4">
-                  <p>✅ Modal básico funcionando!</p>
-                  <p>🔧 Eko identificou que o problema não é estrutural.</p>
-                  <Button onClick={() => setDialogOpen(false)}>Fechar</Button>
-                </div>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  {/* Tipo */}
+                  <div>
+                    <Label htmlFor="tipo_movimento">Tipo *</Label>
+                    <Select value={tipoMovimento} onValueChange={setTipoMovimento}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Receita">💰 Receita</SelectItem>
+                        <SelectItem value="Despesa">💸 Despesa</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {/* Categoria */}
+                  <div>
+                    <Label htmlFor="categoria">Categoria *</Label>
+                    <Select value={categoria} onValueChange={setCategoria}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a categoria" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Veterinário">🏥 Veterinário</SelectItem>
+                        <SelectItem value="Medicação">💊 Medicação</SelectItem>
+                        <SelectItem value="Alimentação">🍖 Alimentação</SelectItem>
+                        <SelectItem value="Transporte">🚗 Transporte</SelectItem>
+                        <SelectItem value="Doação">❤️ Doação</SelectItem>
+                        <SelectItem value="Adoção">🏠 Adoção</SelectItem>
+                        <SelectItem value="Equipamento">🔧 Equipamento</SelectItem>
+                        <SelectItem value="Outros">📝 Outros</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {/* Descrição */}
+                  <div>
+                    <Label htmlFor="descricao">Descrição *</Label>
+                    <Input
+                      id="descricao"
+                      value={descricao}
+                      onChange={(e) => setDescricao(e.target.value)}
+                      placeholder="Descrição do movimento"
+                      required
+                    />
+                  </div>
+                  
+                  {/* Valor e Data */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="valor">Valor (€) *</Label>
+                      <Input
+                        id="valor"
+                        type="number"
+                        step="0.01"
+                        min="0.01"
+                        value={valor}
+                        onChange={(e) => setValor(e.target.value)}
+                        placeholder="0.00"
+                        required
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="data_movimento">Data *</Label>
+                      <Input
+                        id="data_movimento"
+                        type="date"
+                        value={dataMovimento}
+                        onChange={(e) => setDataMovimento(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Observações */}
+                  <div>
+                    <Label htmlFor="observacoes">Observações</Label>
+                    <Textarea
+                      id="observacoes"
+                      value={observacoes}
+                      onChange={(e) => setObservacoes(e.target.value)}
+                      placeholder="Observações adicionais (opcional)"
+                      rows={3}
+                    />
+                  </div>
+                  
+                  {/* Botões */}
+                  <div className="flex justify-end space-x-2 pt-4 border-t">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => {
+                        setDialogOpen(false);
+                        resetForm();
+                      }}
+                      disabled={submitting}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button 
+                      type="submit" 
+                      className="bg-green-600 hover:bg-green-700"
+                      disabled={submitting}
+                    >
+                      {submitting ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          A registar...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          Registar
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </form>
               </DialogContent>
             </Dialog>
           )}
