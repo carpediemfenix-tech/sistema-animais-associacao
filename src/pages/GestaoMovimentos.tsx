@@ -60,10 +60,13 @@ const GestaoMovimentos = () => {
 
       if (error) {
         console.error('❌ Erro ao carregar categorias:', error);
-        throw error;
+        console.error('📊 Detalhes do erro:', error.message, error.details, error.hint);
+        setCategorias([]);
+        return;
       }
 
       console.log('✅ Categorias carregadas:', data?.length || 0);
+      console.log('📊 Primeiras categorias:', data?.slice(0, 3));
       setCategorias(data || []);
 
     } catch (error: any) {
@@ -194,6 +197,15 @@ const GestaoMovimentos = () => {
     (!formData.escopo || cat.escopo === formData.escopo || cat.escopo === 'ambos') &&
     (!formData.tipo_movimento || cat.tipo === formData.tipo_movimento)
   );
+  
+  // Debug logs
+  console.log('🔍 Debug categorias:', {
+    totalCategorias: categorias.length,
+    categoriasFiltradasPorEscopo: categoriasFiltradasPorEscopo.length,
+    formData: { tipo: formData.tipo_movimento, escopo: formData.escopo },
+    primeirasCategoriasOriginais: categorias.slice(0, 2),
+    primeirasCategoriasFiltradasPorEscopo: categoriasFiltradasPorEscopo.slice(0, 2)
+  });
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-PT', {

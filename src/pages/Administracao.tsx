@@ -75,7 +75,8 @@ const Administracao = () => {
     categoria: '',
     cor: '',
     tipo: '', // Para categorias financeiras
-    icone: '' // Para categorias financeiras
+    icone: '', // Para categorias financeiras
+    escopo: '' // Para categorias financeiras
   });
 
   const { toast } = useToast();
@@ -130,7 +131,7 @@ const Administracao = () => {
         supabase.from('tipos_eventos').select('*').order('nome'),
         supabase.from('tipos_localizacoes').select('*').order('nome'),
         supabase.from('tipos_intervencoes').select('*').order('nome'),
-        supabase.from('categorias_financeiras').select('*').order('nome')
+        supabase.from('categorias_financeiras_2025_11_28_05_52').select('*').order('ordem')
       ]);
 
       // Dados carregados com sucesso
@@ -177,7 +178,8 @@ const Administracao = () => {
       categoria: item?.categoria || '',
       cor: item?.cor || '',
       tipo: item?.tipo || '',
-      icone: item?.icone || ''
+      icone: item?.icone || '',
+      escopo: item?.escopo || ''
     });
     setDialogOpen(true);
   };
@@ -186,7 +188,7 @@ const Administracao = () => {
     setDialogOpen(false);
     setEditingItem(null);
     setCurrentTable('');
-    setFormData({ nome: '', descricao: '', categoria: '', cor: '', tipo: '', icone: '' });
+    setFormData({ nome: '', descricao: '', categoria: '', cor: '', tipo: '', icone: '', escopo: '' });
   };
 
   const handleSubmit = async () => {
@@ -208,6 +210,7 @@ const Administracao = () => {
         ...(formData.cor && { cor: formData.cor.trim() }),
         ...(formData.tipo && { tipo: formData.tipo.trim() }),
         ...(formData.icone && { icone: formData.icone.trim() }),
+        ...(formData.escopo && { escopo: formData.escopo.trim() }),
         ativo: true
       };
 
@@ -479,7 +482,7 @@ const Administracao = () => {
           {renderTable("Tipos de Eventos", tiposEventos, "tipos_eventos", Calendar)}
           {renderTable("Tipos de Localizações", tiposLocalizacoes, "tipos_localizacoes", MapPin)}
           {renderTable("Tipos de Intervenções", tiposIntervencoes, "tipos_intervencoes", Settings)}
-          {renderTable("Categorias Financeiras", categoriasFinanceiras, "categorias_financeiras", DollarSign)}
+          {renderTable("Categorias Financeiras", categoriasFinanceiras, "categorias_financeiras_2025_11_28_05_52", DollarSign)}
         </div>
 
         {/* Dialog para Edição/Criação */}
@@ -559,7 +562,7 @@ const Administracao = () => {
               )}
               
               {/* 💰 EKO: CAMPOS ESPECÍFICOS PARA CATEGORIAS FINANCEIRAS */}
-              {currentTable === 'categorias_financeiras' && (
+              {currentTable === 'categorias_financeiras_2025_11_28_05_52' && (
                 <>
                   <div>
                     <Label htmlFor="tipo" className="text-orange-700 font-medium">Tipo *</Label>
@@ -571,8 +574,8 @@ const Administracao = () => {
                         <SelectValue placeholder="Selecionar tipo" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Receita">💰 Receita</SelectItem>
-                        <SelectItem value="Despesa">💸 Despesa</SelectItem>
+                        <SelectItem value="receita">💰 Receita</SelectItem>
+                        <SelectItem value="despesa">💸 Despesa</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -604,6 +607,23 @@ const Administracao = () => {
                         <SelectItem value="Megaphone">📢 Megaphone</SelectItem>
                         <SelectItem value="GraduationCap">🎓 GraduationCap</SelectItem>
                         <SelectItem value="AlertTriangle">⚠️ AlertTriangle</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="escopo" className="text-orange-700 font-medium">Escopo *</Label>
+                    <Select 
+                      value={formData.escopo || ''} 
+                      onValueChange={(value) => setFormData({ ...formData, escopo: value })}
+                    >
+                      <SelectTrigger className="border-orange-200 focus:border-orange-400">
+                        <SelectValue placeholder="Selecionar escopo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="animal">🐾 Animal</SelectItem>
+                        <SelectItem value="associacao">🏢 Associação</SelectItem>
+                        <SelectItem value="ambos">🔄 Ambos</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
