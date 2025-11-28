@@ -31,20 +31,46 @@ import { useToast } from "@/hooks/use-toast";
 const GestaoMovimentos = () => {
   const { hasPermission } = useAuth();
   const [movimentos, setMovimentos] = useState<any[]>([]);
+  const [categorias, setCategorias] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // Estados do formulário básico
+  // Estados do formulário melhorado
   const [formData, setFormData] = useState({
     tipo_movimento: '',
     escopo: '',
+    categoria_id: '',
     descricao: '',
     valor: '',
     data_movimento: new Date().toISOString().split('T')[0]
   });
 
   const { toast } = useToast();
+
+  const fetchCategorias = async () => {
+    try {
+      console.log('🏷️ Carregando categorias...');
+      
+      const { data, error } = await supabase
+        .from('categorias_financeiras_2025_11_28_05_52')
+        .select('*')
+        .eq('ativo', true)
+        .order('ordem');
+
+      if (error) {
+        console.error('❌ Erro ao carregar categorias:', error);
+        throw error;
+      }
+
+      console.log('✅ Categorias carregadas:', data?.length || 0);
+      setCategorias(data || []);
+
+    } catch (error: any) {
+      console.error('💥 Erro ao carregar categorias:', error);
+      setCategorias([]);
+    }
+  };
 
   const fetchMovimentos = async () => {
     try {
@@ -81,6 +107,7 @@ const GestaoMovimentos = () => {
     setFormData({
       tipo_movimento: '',
       escopo: '',
+      categoria_id: '',
       descricao: '',
       valor: '',
       data_movimento: new Date().toISOString().split('T')[0]
@@ -90,7 +117,7 @@ const GestaoMovimentos = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.tipo_movimento || !formData.escopo || !formData.descricao || !formData.valor) {
+    if (!formData.tipo_movimento || !formData.escopo || !formData.categoria_id || !formData.descricao || !formData.valor) {
       toast({
         title: "Campos obrigatórios",
         description: "Preencha todos os campos obrigatórios",
@@ -118,22 +145,12 @@ const GestaoMovimentos = () => {
 
       if (numeroError) throw numeroError;
 
-      // Usar primeira categoria disponível como fallback
-      const { data: categorias, error: categoriasError } = await supabase
-        .from('categorias_financeiras_2025_11_28_05_52')
-        .select('id')
-        .eq('ativo', true)
-        .limit(1);
-
-      if (categoriasError || !categorias || categorias.length === 0) {
-        throw new Error('Nenhuma categoria disponível');
-      }
-
+      // Usar categoria selecionada
       const dadosInserir = {
         numero_movimento: numeroData,
         tipo_movimento: formData.tipo_movimento,
         escopo: formData.escopo,
-        categoria_id: categorias[0].id,
+        categoria_id: formData.categoria_id,
         descricao: formData.descricao.trim(),
         valor: valorNumerico,
         data_movimento: formData.data_movimento,
@@ -168,8 +185,15 @@ const GestaoMovimentos = () => {
   };
 
   useEffect(() => {
+    fetchCategorias();
     fetchMovimentos();
   }, []);
+
+  // Filtrar categorias baseadas no tipo e escopo selecionados
+  const categoriasFiltradasPorEscopo = categorias.filter(cat => 
+    (!formData.escopo || cat.escopo === formData.escopo || cat.escopo === 'ambos') &&
+    (!formData.tipo_movimento || cat.tipo === formData.tipo_movimento)
+  );
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-PT', {
@@ -281,7 +305,7 @@ const GestaoMovimentos = () => {
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <Label htmlFor="tipo_movimento">Tipo *</Label>
-                          <Select value={formData.tipo_movimento} onValueChange={(value) => setFormData({...formData, tipo_movimento: value})}>
+                          <Select value={formData.tipo_movimento} onValueChange={(value) => setFormData({...formData, tipo_movimento: value, categoria_id: ''})}>
                             <SelectTrigger>
                               <SelectValue placeholder="Tipo" />
                             </SelectTrigger>
@@ -294,7 +318,7 @@ const GestaoMovimentos = () => {
                         
                         <div>
                           <Label htmlFor="escopo">Escopo *</Label>
-                          <Select value={formData.escopo} onValueChange={(value) => setFormData({...formData, escopo: value})}>
+                          <Select value={formData.escopo} onValueChange={(value) => setFormData({...formData, escopo: value, categoria_id: ''})}>
                             <SelectTrigger>
                               <SelectValue placeholder="Escopo" />
                             </SelectTrigger>
@@ -304,6 +328,32 @@ const GestaoMovimentos = () => {
                             </SelectContent>
                           </Select>
                         </div>
+                      </div>
+                      
+                      {/* Categoria */}
+                      <div>
+                        <Label htmlFor="categoria_id">Categoria *</Label>
+                        <Select value={formData.categoria_id} onValueChange={(value) => setFormData({...formData, categoria_id: value})}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione a categoria" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {categoriasFiltradasPorEscopo.map((categoria) => (
+                              <SelectItem key={categoria.id} value={categoria.id}>
+                                <div className="flex items-center space-x-2">
+                                  <div 
+                                    className="w-3 h-3 rounded-full" 
+                                    style={{ backgroundColor: categoria.cor }}
+                                  />
+                                  <span>{categoria.nome}</span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {categoriasFiltradasPorEscopo.length} categorias disponíveis
+                        </p>
                       </div>
                       
                       {/* Descrição */}
