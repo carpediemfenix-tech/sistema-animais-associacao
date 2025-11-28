@@ -109,6 +109,42 @@ const Administracao = () => {
   useEffect(() => {
     fetchAllData();
   }, []);
+  
+  // Monitorizar mudanças no estado das categorias financeiras
+  useEffect(() => {
+    debugLogger.log('info', `Estado categorias financeiras mudou: ${categoriasFinanceiras.length}`);
+    if (categoriasFinanceiras.length > 0) {
+      debugLogger.log('success', 'Categorias financeiras no estado React', categoriasFinanceiras.slice(0, 3).map(c => c.nome));
+    }
+  }, [categoriasFinanceiras]);
+  
+  const testarCategorias = async () => {
+    debugLogger.log('info', 'TESTE: Forçando carregamento de categorias...');
+    
+    try {
+      const { data, error } = await supabase
+        .from('categorias_financeiras')
+        .select('*')
+        .order('ordem');
+      
+      if (error) {
+        debugLogger.log('error', 'TESTE: Erro ao carregar categorias', error);
+        return;
+      }
+      
+      debugLogger.log('success', `TESTE: ${data?.length || 0} categorias carregadas`, data?.slice(0, 3));
+      
+      // Forçar atualização com novo array
+      setCategoriasFinanceiras([]);
+      setTimeout(() => {
+        setCategoriasFinanceiras([...data]);
+        debugLogger.log('info', `TESTE: Estado forçado para ${data.length} categorias`);
+      }, 100);
+      
+    } catch (error) {
+      debugLogger.log('error', 'TESTE: Erro geral', error);
+    }
+  };
 
   const fetchAllData = async () => {
     try {
@@ -173,14 +209,19 @@ const Administracao = () => {
       setTiposLocalizacoes(tiposLocalizacoesData.data || []);
       setTiposIntervencoes(tiposIntervencoesData.data || []);
       const categoriasData = categoriasFinanceirasData.data || [];
-      setCategoriasFinanceiras(categoriasData);
-      
       debugLogger.log('debug', `EKO: Dados recebidos das categorias: ${categoriasData.length}`, categoriasData.slice(0, 3).map(c => c.nome));
       
-      // Forçar re-render após um pequeno delay para verificar estado
+      // Forçar atualização do estado
+      setCategoriasFinanceiras([...categoriasData]); // Usar spread para forçar re-render
+      
+      // Verificar estado após um delay
       setTimeout(() => {
-        debugLogger.log('debug', `EKO: Estado após setState: ${categoriasFinanceiras.length}`);
-      }, 100);
+        debugLogger.log('debug', `EKO: Estado após setState (deve ser ${categoriasData.length}): ${categoriasFinanceiras.length}`);
+        if (categoriasFinanceiras.length === 0 && categoriasData.length > 0) {
+          debugLogger.log('error', 'PROBLEMA: Estado não foi atualizado! Forçando nova atualização...');
+          setCategoriasFinanceiras([...categoriasData]);
+        }
+      }, 200);
       
       // Estados atualizados
       
@@ -505,6 +546,14 @@ const Administracao = () => {
                 <Badge variant="outline" className="text-orange-700 border-orange-300">
                   {showInactive ? 'Todos os itens' : 'Apenas ativos'}
                 </Badge>
+                <Button
+                  onClick={testarCategorias}
+                  variant="outline"
+                  size="sm"
+                  className="text-blue-600 border-blue-300 hover:bg-blue-50"
+                >
+                  🔄 Testar Categorias
+                </Button>
               </div>
             </div>
           </CardHeader>
