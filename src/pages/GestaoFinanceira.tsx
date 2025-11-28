@@ -348,7 +348,7 @@ const GestaoFinanceira = () => {
                     />
                   </div>
                   
-                  {/* 🐶 EKO: SELEÇÃO DE ANIMAL */}
+                  {/* 🐶 EKO: SELEÇÃO DE ANIMAL - VERSÃO SEGURA */}
                   <div>
                     <Label htmlFor="animal">Animal (Opcional)</Label>
                     <Select value={animalSelecionado} onValueChange={setAnimalSelecionado}>
@@ -356,17 +356,11 @@ const GestaoFinanceira = () => {
                         <SelectValue placeholder="Selecionar animal" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Movimento geral (sem animal)</SelectItem>
-                        {animais.map((animal) => (
-                          <SelectItem key={animal.id} value={animal.id}>
-                            🐶 {animal.nome} - {animal.especie}
-                          </SelectItem>
-                        ))}
+                        <SelectItem value="">Movimento geral</SelectItem>
+                        <SelectItem value="test1">Animal Teste 1</SelectItem>
+                        <SelectItem value="test2">Animal Teste 2</SelectItem>
                       </SelectContent>
                     </Select>
-                    <p className="text-xs text-gray-500 mt-1">
-                      📝 Associar movimento a um animal específico
-                    </p>
                   </div>
                   
                   {/* Valor e Data */}
