@@ -64,6 +64,7 @@ const Administracao = () => {
   const [tiposIntervencoes, setTiposIntervencoes] = useState<TipoIntervencao[]>([]);
   const [categoriasFinanceiras, setCategoriasFinanceiras] = useState<CategoriaFinanceira[]>([]);
   const [categoriasFinanceirasForceUpdate, setCategoriasFinanceirasForceUpdate] = useState(0);
+  const [categoriasBackup, setCategoriasBackup] = useState<CategoriaFinanceira[]>([]);
   
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -111,6 +112,18 @@ const Administracao = () => {
     fetchAllData();
   }, []);
   
+  // Tentar recuperar backup se o estado estiver vazio
+  useEffect(() => {
+    if (categoriasFinanceiras.length === 0 && !loading) {
+      debugLogger.log('info', 'AUTO-RECUPERAÇÃO: Estado vazio detectado, tentando backup...');
+      setTimeout(() => {
+        if (categoriasFinanceiras.length === 0) {
+          recuperarBackupCategorias();
+        }
+      }, 1000);
+    }
+  }, [categoriasFinanceiras.length, loading, recuperarBackupCategorias]);
+  
   // Monitorizar mudanças no estado das categorias financeiras
   useEffect(() => {
     debugLogger.log('info', `Estado categorias financeiras mudou: ${categoriasFinanceiras.length}`);
@@ -119,18 +132,84 @@ const Administracao = () => {
     }
   }, [categoriasFinanceiras]);
   
-  // Função estável para atualizar categorias
+  // Função RADICAL para garantir que categorias nunca sejam perdidas
   const atualizarCategoriasFinanceiras = useCallback((novasCategorias: CategoriaFinanceira[]) => {
-    debugLogger.log('info', `ATUALIZAÇÃO: Definindo ${novasCategorias.length} categorias`);
+    debugLogger.log('info', `ATUALIZAÇÃO RADICAL: Definindo ${novasCategorias.length} categorias`);
+    
+    // Salvar em múltiplos locais
     setCategoriasFinanceiras(novasCategorias);
+    setCategoriasBackup(novasCategorias);
     setCategoriasFinanceirasForceUpdate(prev => prev + 1);
+    
+    // Salvar no localStorage como backup
+    try {
+      localStorage.setItem('categoriasFinanceiras_backup', JSON.stringify(novasCategorias));
+      debugLogger.log('success', 'Backup salvo no localStorage');
+    } catch (error) {
+      debugLogger.log('error', 'Erro ao salvar backup', error);
+    }
   }, []);
   
-  // Memo para garantir estabilidade das categorias
+  // Função para recuperar backup
+  const recuperarBackupCategorias = useCallback(() => {
+    debugLogger.log('info', 'RECUPERAÇÃO: Tentando recuperar backup...');
+    
+    // Tentar do estado backup primeiro
+    if (categoriasBackup.length > 0) {
+      debugLogger.log('success', `Backup do estado: ${categoriasBackup.length} categorias`);
+      setCategoriasFinanceiras([...categoriasBackup]);
+      setCategoriasFinanceirasForceUpdate(prev => prev + 1);
+      return categoriasBackup;
+    }
+    
+    // Tentar do localStorage
+    try {
+      const backup = localStorage.getItem('categoriasFinanceiras_backup');
+      if (backup) {
+        const categorias = JSON.parse(backup);
+        debugLogger.log('success', `Backup do localStorage: ${categorias.length} categorias`);
+        setCategoriasFinanceiras(categorias);
+        setCategoriasBackup(categorias);
+        setCategoriasFinanceirasForceUpdate(prev => prev + 1);
+        return categorias;
+      }
+    } catch (error) {
+      debugLogger.log('error', 'Erro ao recuperar backup do localStorage', error);
+    }
+    
+    debugLogger.log('error', 'Nenhum backup encontrado!');
+    return [];
+  }, [categoriasBackup]);
+  
+  // Memo RADICAL para garantir que sempre temos dados
   const categoriasFinanceirasStable = useMemo(() => {
-    debugLogger.log('debug', `MEMO: Categorias recalculadas - ${categoriasFinanceiras.length} itens`);
-    return categoriasFinanceiras;
-  }, [categoriasFinanceiras, categoriasFinanceirasForceUpdate]);
+    let categoriasParaUsar = categoriasFinanceiras;
+    
+    // Se o estado principal está vazio, tentar recuperar backup
+    if (categoriasFinanceiras.length === 0) {
+      debugLogger.log('error', 'MEMO: Estado principal vazio! Tentando backup...');
+      
+      if (categoriasBackup.length > 0) {
+        debugLogger.log('success', `MEMO: Usando backup do estado: ${categoriasBackup.length}`);
+        categoriasParaUsar = categoriasBackup;
+      } else {
+        // Tentar localStorage
+        try {
+          const backup = localStorage.getItem('categoriasFinanceiras_backup');
+          if (backup) {
+            const categorias = JSON.parse(backup);
+            debugLogger.log('success', `MEMO: Usando backup do localStorage: ${categorias.length}`);
+            categoriasParaUsar = categorias;
+          }
+        } catch (error) {
+          debugLogger.log('error', 'MEMO: Erro ao acessar localStorage', error);
+        }
+      }
+    }
+    
+    debugLogger.log('debug', `MEMO: Retornando ${categoriasParaUsar.length} categorias`);
+    return categoriasParaUsar;
+  }, [categoriasFinanceiras, categoriasBackup, categoriasFinanceirasForceUpdate]);
   
   const testarCategorias = async () => {
     debugLogger.log('info', 'TESTE: Forçando carregamento de categorias...');
@@ -570,6 +649,19 @@ const Administracao = () => {
                   className="text-blue-600 border-blue-300 hover:bg-blue-50"
                 >
                   🔄 Testar Categorias
+                </Button>
+                <Button
+                  onClick={() => {
+                    const recuperadas = recuperarBackupCategorias();
+                    if (recuperadas.length > 0) {
+                      debugLogger.log('success', `Backup recuperado: ${recuperadas.length} categorias`);
+                    }
+                  }}
+                  variant="outline"
+                  size="sm"
+                  className="text-green-600 border-green-300 hover:bg-green-50"
+                >
+                  🔄 Recuperar Backup
                 </Button>
               </div>
             </div>
