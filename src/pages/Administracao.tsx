@@ -93,6 +93,51 @@ const Administracao = () => {
     );
   }
 
+  const testarConexao = async () => {
+    try {
+      debugLogger.log('info', 'TESTE: Verificando conexão com Supabase...');
+      
+      // Testar conexão básica
+      const { data: testData, error: testError } = await supabase
+        .from('categorias_financeiras')
+        .select('count')
+        .limit(1);
+      
+      if (testError) {
+        debugLogger.log('error', 'TESTE: Erro de conexão', testError);
+        throw testError;
+      }
+      
+      debugLogger.log('success', 'TESTE: Conexão com Supabase OK');
+      
+      // Testar estrutura da tabela
+      const { data: estrutura, error: estruturaError } = await supabase
+        .from('categorias_financeiras')
+        .select('id, nome, tipo, escopo, ativo')
+        .limit(3);
+      
+      if (estruturaError) {
+        debugLogger.log('error', 'TESTE: Erro na estrutura da tabela', estruturaError);
+        throw estruturaError;
+      }
+      
+      debugLogger.log('success', `TESTE: Estrutura da tabela OK - ${estrutura?.length || 0} registros encontrados`, estrutura);
+      
+      toast({
+        title: "Teste de Conexão",
+        description: `Conexão OK! ${estrutura?.length || 0} categorias encontradas.`,
+      });
+      
+    } catch (error: any) {
+      debugLogger.log('error', 'TESTE: Falha no teste de conexão', error);
+      toast({
+        title: "Erro de Conexão",
+        description: error.message || "Erro ao conectar com a base de dados",
+        variant: "destructive",
+      });
+    }
+  };
+
   const fetchCategorias = async () => {
     try {
       debugLogger.log('info', 'ADMIN: Carregando categorias financeiras...');
@@ -330,6 +375,14 @@ const Administracao = () => {
                   className="text-blue-600 border-blue-300 hover:bg-blue-50"
                 >
                   🔄 Recarregar
+                </Button>
+                <Button
+                  onClick={testarConexao}
+                  variant="outline"
+                  size="sm"
+                  className="text-green-600 border-green-300 hover:bg-green-50"
+                >
+                  🔍 Testar BD
                 </Button>
                 <Button
                   onClick={() => openDialog()}
