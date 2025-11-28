@@ -199,6 +199,52 @@ const Administracao = () => {
     }
   };
 
+  const verificarRLS = async () => {
+    try {
+      debugLogger.log('info', 'DIAGNÓSTICO: Verificando estado do RLS...');
+      
+      // Verificar se conseguimos fazer uma consulta simples
+      const { data: testSelect, error: selectError } = await supabase
+        .from('categorias_financeiras')
+        .select('id, nome')
+        .limit(1);
+      
+      if (selectError) {
+        debugLogger.log('error', 'DIAGNÓSTICO: Erro no SELECT', selectError);
+      } else {
+        debugLogger.log('success', 'DIAGNÓSTICO: SELECT funciona corretamente');
+      }
+      
+      // Verificar informações do usuário atual
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError) {
+        debugLogger.log('error', 'DIAGNÓSTICO: Erro ao obter usuário', userError);
+      } else if (user) {
+        debugLogger.log('success', `DIAGNÓSTICO: Usuário autenticado: ${user.email}`, {
+          id: user.id,
+          email: user.email,
+          role: user.role
+        });
+      } else {
+        debugLogger.log('error', 'DIAGNÓSTICO: Nenhum usuário autenticado!');
+      }
+      
+      toast({
+        title: "Diagnóstico RLS",
+        description: `Usuário: ${user?.email || 'Não autenticado'}`,
+      });
+      
+    } catch (error: any) {
+      debugLogger.log('error', 'DIAGNÓSTICO: Erro geral', error);
+      toast({
+        title: "Erro no Diagnóstico",
+        description: error.message || "Erro ao verificar RLS",
+        variant: "destructive",
+      });
+    }
+  };
+
   const fetchCategorias = async () => {
     try {
       debugLogger.log('info', 'ADMIN: Carregando categorias financeiras...');
@@ -463,6 +509,14 @@ const Administracao = () => {
                   className="text-purple-600 border-purple-300 hover:bg-purple-50"
                 >
                   🔒 Testar RLS
+                </Button>
+                <Button
+                  onClick={verificarRLS}
+                  variant="outline"
+                  size="sm"
+                  className="text-yellow-600 border-yellow-300 hover:bg-yellow-50"
+                >
+                  🔍 Diagnóstico
                 </Button>
                 <Button
                   onClick={() => openDialog()}
