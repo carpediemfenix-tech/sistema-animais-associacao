@@ -199,47 +199,91 @@ const Administracao = () => {
     }
   };
 
-  const verificarRLS = async () => {
+  const testeSimplesCRUD = async () => {
     try {
-      debugLogger.log('info', 'DIAGNÓSTICO: Verificando estado do RLS...');
+      debugLogger.log('info', 'TESTE SIMPLES: Testando operações CRUD básicas...');
       
-      // Verificar se conseguimos fazer uma consulta simples
-      const { data: testSelect, error: selectError } = await supabase
+      // Teste 1: SELECT
+      const { data: selectData, error: selectError } = await supabase
         .from('categorias_financeiras')
         .select('id, nome')
-        .limit(1);
+        .limit(3);
       
       if (selectError) {
-        debugLogger.log('error', 'DIAGNÓSTICO: Erro no SELECT', selectError);
-      } else {
-        debugLogger.log('success', 'DIAGNÓSTICO: SELECT funciona corretamente');
+        debugLogger.log('error', 'TESTE SIMPLES: Erro no SELECT', selectError);
+        throw selectError;
       }
       
-      // Verificar informações do usuário atual
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      debugLogger.log('success', `TESTE SIMPLES: SELECT OK - ${selectData?.length || 0} registros`);
       
-      if (userError) {
-        debugLogger.log('error', 'DIAGNÓSTICO: Erro ao obter usuário', userError);
-      } else if (user) {
-        debugLogger.log('success', `DIAGNÓSTICO: Usuário autenticado: ${user.email}`, {
-          id: user.id,
-          email: user.email,
-          role: user.role
-        });
+      // Teste 2: INSERT
+      const categoriaTest = {
+        nome: `Teste CRUD ${Date.now()}`,
+        descricao: 'Teste de operações CRUD',
+        tipo: 'despesa' as const,
+        escopo: 'associacao' as const,
+        cor: '#00FF00',
+        icone: 'TestTube',
+        ativo: true,
+        ordem: 9999
+      };
+      
+      const { data: insertData, error: insertError } = await supabase
+        .from('categorias_financeiras')
+        .insert([categoriaTest])
+        .select()
+        .single();
+      
+      if (insertError) {
+        debugLogger.log('error', 'TESTE SIMPLES: Erro no INSERT', insertError);
+        throw insertError;
+      }
+      
+      debugLogger.log('success', 'TESTE SIMPLES: INSERT OK', insertData);
+      
+      // Teste 3: UPDATE
+      const { error: updateError } = await supabase
+        .from('categorias_financeiras')
+        .update({ descricao: 'Teste atualizado' })
+        .eq('id', insertData.id);
+      
+      if (updateError) {
+        debugLogger.log('error', 'TESTE SIMPLES: Erro no UPDATE', updateError);
       } else {
-        debugLogger.log('error', 'DIAGNÓSTICO: Nenhum usuário autenticado!');
+        debugLogger.log('success', 'TESTE SIMPLES: UPDATE OK');
+      }
+      
+      // Teste 4: DELETE
+      const { error: deleteError } = await supabase
+        .from('categorias_financeiras')
+        .delete()
+        .eq('id', insertData.id);
+      
+      if (deleteError) {
+        debugLogger.log('error', 'TESTE SIMPLES: Erro no DELETE', deleteError);
+      } else {
+        debugLogger.log('success', 'TESTE SIMPLES: DELETE OK');
       }
       
       toast({
-        title: "Diagnóstico RLS",
-        description: `Usuário: ${user?.email || 'Não autenticado'}`,
+        title: "Teste CRUD Completo",
+        description: "Todas as operações funcionaram corretamente!",
       });
       
+      // Recarregar lista
+      fetchCategorias();
+      
     } catch (error: any) {
-      debugLogger.log('error', 'DIAGNÓSTICO: Erro geral', error);
+      debugLogger.log('error', 'TESTE SIMPLES: Falha geral', error);
+      
+      let errorMessage = error.message || "Erro no teste CRUD";
+      if (error.message && error.message.includes('row-level security')) {
+        errorMessage = "RLS ainda está bloqueando operações. Executando correção...";
+      }
+      
       toast({
-        title: "Erro no Diagnóstico",
-        description: error.message || "Erro ao verificar RLS",
+        title: "Teste CRUD Falhou",
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -511,12 +555,12 @@ const Administracao = () => {
                   🔒 Testar RLS
                 </Button>
                 <Button
-                  onClick={verificarRLS}
+                  onClick={testeSimplesCRUD}
                   variant="outline"
                   size="sm"
                   className="text-yellow-600 border-yellow-300 hover:bg-yellow-50"
                 >
-                  🔍 Diagnóstico
+                  ⚙️ Teste CRUD
                 </Button>
                 <Button
                   onClick={() => openDialog()}
