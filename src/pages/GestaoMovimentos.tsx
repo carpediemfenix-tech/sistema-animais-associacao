@@ -11,19 +11,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Plus, 
-  Search, 
-  Filter, 
-  Download, 
   RefreshCw,
-  Edit,
-  Trash2,
-  Eye,
   CheckCircle,
   Loader2,
-  AlertCircle,
   DollarSign,
   TrendingUp,
   TrendingDown,
@@ -36,121 +28,45 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-interface Categoria {
-  id: string;
-  nome: string;
-  tipo: 'receita' | 'despesa';
-  escopo: 'animal' | 'associacao' | 'ambos';
-  cor: string;
-  icone: string;
-}
-
-interface Animal {
-  id: string;
-  nome: string;
-  especie: string;
-  numero_processo?: string;
-}
-
-interface MovimentoFinanceiro {
-  id: string;
-  numero_movimento: string;
-  tipo_movimento: 'receita' | 'despesa';
-  escopo: 'animal' | 'associacao';
-  categoria: Categoria;
-  animal?: Animal;
-  descricao: string;
-  valor: number;
-  data_movimento: string;
-  status: 'pendente' | 'confirmado' | 'cancelado';
-  metodo_pagamento?: string;
-  observacoes?: string;
-  created_at: string;
-}
-
 const GestaoMovimentos = () => {
   const { hasPermission } = useAuth();
-  const [movimentos, setMovimentos] = useState<MovimentoFinanceiro[]>([]);
-  const [categorias, setCategorias] = useState<Categoria[]>([]);
-  const [animais, setAnimais] = useState<Animal[]>([]);
+  const [movimentos, setMovimentos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [filtros, setFiltros] = useState({
-    escopo: '',
-    tipo: '',
-    categoria: '',
-    status: '',
-    dataInicio: '',
-    dataFim: '',
-    busca: ''
-  });
 
-  // Estados do formulário
+  // Estados do formulário básico
   const [formData, setFormData] = useState({
     tipo_movimento: '',
     escopo: '',
-    categoria_id: '',
-    animal_id: '',
     descricao: '',
     valor: '',
-    data_movimento: new Date().toISOString().split('T')[0],
-    metodo_pagamento: '',
-    observacoes: ''
+    data_movimento: new Date().toISOString().split('T')[0]
   });
 
   const { toast } = useToast();
 
-  const fetchDados = async () => {
+  const fetchMovimentos = async () => {
     try {
       setLoading(true);
+      console.log('🔄 Carregando movimentos...');
 
-      // Buscar movimentos
-      let query = supabase
+      const { data, error } = await supabase
         .from('movimentos_financeiros_2025_11_28_05_52')
-        .select(`
-          *,
-          categoria:categorias_financeiras_2025_11_28_05_52(id, nome, tipo, escopo, cor, icone),
-          animal:animais(id, nome, especie, numero_processo)
-        `)
-        .order('created_at', { ascending: false });
-
-      // Aplicar filtros
-      if (filtros.escopo) query = query.eq('escopo', filtros.escopo);
-      if (filtros.tipo) query = query.eq('tipo_movimento', filtros.tipo);
-      if (filtros.categoria) query = query.eq('categoria_id', filtros.categoria);
-      if (filtros.status) query = query.eq('status', filtros.status);
-      if (filtros.dataInicio) query = query.gte('data_movimento', filtros.dataInicio);
-      if (filtros.dataFim) query = query.lte('data_movimento', filtros.dataFim);
-      if (filtros.busca) query = query.ilike('descricao', `%${filtros.busca}%`);
-
-      const { data: movimentosData, error: movimentosError } = await query;
-
-      if (movimentosError) throw movimentosError;
-      setMovimentos(movimentosData || []);
-
-      // Buscar categorias
-      const { data: categoriasData, error: categoriasError } = await supabase
-        .from('categorias_financeiras_2025_11_28_05_52')
         .select('*')
-        .eq('ativo', true)
-        .order('ordem');
+        .order('created_at', { ascending: false })
+        .limit(20);
 
-      if (categoriasError) throw categoriasError;
-      setCategorias(categoriasData || []);
+      if (error) {
+        console.error('❌ Erro ao carregar movimentos:', error);
+        throw error;
+      }
 
-      // Buscar animais
-      const { data: animaisData, error: animaisError } = await supabase
-        .from('animais')
-        .select('id, nome, especie, numero_processo')
-        .eq('arquivado', false)
-        .order('nome');
-
-      if (animaisError) throw animaisError;
-      setAnimais(animaisData || []);
+      console.log('✅ Movimentos carregados:', data?.length || 0);
+      setMovimentos(data || []);
 
     } catch (error: any) {
-      console.error('Erro ao carregar dados:', error);
+      console.error('💥 Erro geral:', error);
       toast({
         title: "Erro ao carregar dados",
         description: error.message,
@@ -165,20 +81,16 @@ const GestaoMovimentos = () => {
     setFormData({
       tipo_movimento: '',
       escopo: '',
-      categoria_id: '',
-      animal_id: '',
       descricao: '',
       valor: '',
-      data_movimento: new Date().toISOString().split('T')[0],
-      metodo_pagamento: '',
-      observacoes: ''
+      data_movimento: new Date().toISOString().split('T')[0]
     });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.tipo_movimento || !formData.escopo || !formData.categoria_id || !formData.descricao || !formData.valor) {
+    if (!formData.tipo_movimento || !formData.escopo || !formData.descricao || !formData.valor) {
       toast({
         title: "Campos obrigatórios",
         description: "Preencha todos os campos obrigatórios",
@@ -206,17 +118,25 @@ const GestaoMovimentos = () => {
 
       if (numeroError) throw numeroError;
 
+      // Usar primeira categoria disponível como fallback
+      const { data: categorias, error: categoriasError } = await supabase
+        .from('categorias_financeiras_2025_11_28_05_52')
+        .select('id')
+        .eq('ativo', true)
+        .limit(1);
+
+      if (categoriasError || !categorias || categorias.length === 0) {
+        throw new Error('Nenhuma categoria disponível');
+      }
+
       const dadosInserir = {
         numero_movimento: numeroData,
         tipo_movimento: formData.tipo_movimento,
         escopo: formData.escopo,
-        categoria_id: formData.categoria_id,
-        animal_id: formData.animal_id || null,
+        categoria_id: categorias[0].id,
         descricao: formData.descricao.trim(),
         valor: valorNumerico,
         data_movimento: formData.data_movimento,
-        metodo_pagamento: formData.metodo_pagamento || null,
-        observacoes: formData.observacoes.trim() || null,
         status: 'confirmado'
       };
 
@@ -233,9 +153,10 @@ const GestaoMovimentos = () => {
 
       setDialogOpen(false);
       resetForm();
-      await fetchDados();
+      await fetchMovimentos();
 
     } catch (error: any) {
+      console.error('❌ Erro ao registar:', error);
       toast({
         title: "Erro ao registar",
         description: error.message,
@@ -247,8 +168,8 @@ const GestaoMovimentos = () => {
   };
 
   useEffect(() => {
-    fetchDados();
-  }, [filtros]);
+    fetchMovimentos();
+  }, []);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-PT', {
@@ -261,29 +182,14 @@ const GestaoMovimentos = () => {
     return new Date(dateString).toLocaleDateString('pt-PT');
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'confirmado': return 'bg-green-100 text-green-800';
-      case 'pendente': return 'bg-yellow-100 text-yellow-800';
-      case 'cancelado': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const categoriasFiltradasPorEscopo = categorias.filter(cat => 
-    !formData.escopo || cat.escopo === formData.escopo || cat.escopo === 'ambos'
-  ).filter(cat => 
-    !formData.tipo_movimento || cat.tipo === formData.tipo_movimento
-  );
-
-  // Cálculos
+  // Cálculos básicos
   const totalReceitas = movimentos
     .filter(m => m.tipo_movimento === 'receita')
-    .reduce((sum, m) => sum + m.valor, 0);
+    .reduce((sum, m) => sum + (parseFloat(m.valor) || 0), 0);
 
   const totalDespesas = movimentos
     .filter(m => m.tipo_movimento === 'despesa')
-    .reduce((sum, m) => sum + m.valor, 0);
+    .reduce((sum, m) => sum + (parseFloat(m.valor) || 0), 0);
 
   const saldoAtual = totalReceitas - totalDespesas;
 
@@ -308,8 +214,8 @@ const GestaoMovimentos = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         
-        {/* Resumo */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        {/* Resumo Básico */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card className="border-green-200">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -347,21 +253,9 @@ const GestaoMovimentos = () => {
               </div>
             </CardContent>
           </Card>
-
-          <Card className="border-purple-200">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-purple-600">Movimentos</p>
-                  <p className="text-2xl font-bold text-purple-700">{movimentos.length}</p>
-                </div>
-                <Calendar className="h-8 w-8 text-purple-600" />
-              </div>
-            </CardContent>
-          </Card>
         </div>
 
-        {/* Ações e Filtros */}
+        {/* Ações e Lista */}
         <Card>
           <CardHeader>
             <div className="flex justify-between items-center">
@@ -374,11 +268,11 @@ const GestaoMovimentos = () => {
                       Novo Movimento
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-lg">
+                  <DialogContent className="sm:max-w-md">
                     <DialogHeader>
                       <DialogTitle>Novo Movimento Financeiro</DialogTitle>
                       <DialogDescription>
-                        Registar nova receita ou despesa
+                        Registar nova receita ou despesa (versão simplificada)
                       </DialogDescription>
                     </DialogHeader>
                     
@@ -411,49 +305,6 @@ const GestaoMovimentos = () => {
                           </Select>
                         </div>
                       </div>
-                      
-                      {/* Categoria */}
-                      <div>
-                        <Label htmlFor="categoria_id">Categoria *</Label>
-                        <Select value={formData.categoria_id} onValueChange={(value) => setFormData({...formData, categoria_id: value})}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione a categoria" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {categoriasFiltradasPorEscopo.map((categoria) => (
-                              <SelectItem key={categoria.id} value={categoria.id}>
-                                <div className="flex items-center space-x-2">
-                                  <div 
-                                    className="w-3 h-3 rounded-full" 
-                                    style={{ backgroundColor: categoria.cor }}
-                                  />
-                                  <span>{categoria.nome}</span>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      {/* Animal (se escopo for animal) */}
-                      {formData.escopo === 'animal' && (
-                        <div>
-                          <Label htmlFor="animal_id">Animal</Label>
-                          <Select value={formData.animal_id} onValueChange={(value) => setFormData({...formData, animal_id: value})}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecionar animal" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="">Nenhum animal específico</SelectItem>
-                              {animais.map((animal) => (
-                                <SelectItem key={animal.id} value={animal.id}>
-                                  🐶 {animal.nome} - {animal.especie}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      )}
                       
                       {/* Descrição */}
                       <div>
@@ -495,36 +346,6 @@ const GestaoMovimentos = () => {
                         </div>
                       </div>
                       
-                      {/* Método de Pagamento */}
-                      <div>
-                        <Label htmlFor="metodo_pagamento">Método de Pagamento</Label>
-                        <Select value={formData.metodo_pagamento} onValueChange={(value) => setFormData({...formData, metodo_pagamento: value})}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecionar método" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="dinheiro">💵 Dinheiro</SelectItem>
-                            <SelectItem value="transferencia">🏦 Transferência</SelectItem>
-                            <SelectItem value="cartao">💳 Cartão</SelectItem>
-                            <SelectItem value="cheque">📝 Cheque</SelectItem>
-                            <SelectItem value="mbway">📱 MB WAY</SelectItem>
-                            <SelectItem value="paypal">🌐 PayPal</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      {/* Observações */}
-                      <div>
-                        <Label htmlFor="observacoes">Observações</Label>
-                        <Textarea
-                          id="observacoes"
-                          value={formData.observacoes}
-                          onChange={(e) => setFormData({...formData, observacoes: e.target.value})}
-                          placeholder="Observações adicionais (opcional)"
-                          rows={3}
-                        />
-                      </div>
-                      
                       {/* Botões */}
                       <div className="flex justify-end space-x-2 pt-4 border-t">
                         <Button 
@@ -560,7 +381,7 @@ const GestaoMovimentos = () => {
                   </DialogContent>
                 </Dialog>
                 
-                <Button variant="outline" onClick={fetchDados}>
+                <Button variant="outline" onClick={fetchMovimentos}>
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Atualizar
                 </Button>
@@ -568,65 +389,8 @@ const GestaoMovimentos = () => {
             </div>
           </CardHeader>
           
-          {/* Filtros */}
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
-              <Select value={filtros.escopo} onValueChange={(value) => setFiltros({...filtros, escopo: value})}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Escopo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
-                  <SelectItem value="associacao">🏢 Associação</SelectItem>
-                  <SelectItem value="animal">🐾 Animal</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              <Select value={filtros.tipo} onValueChange={(value) => setFiltros({...filtros, tipo: value})}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
-                  <SelectItem value="receita">💰 Receita</SelectItem>
-                  <SelectItem value="despesa">💸 Despesa</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              <Select value={filtros.status} onValueChange={(value) => setFiltros({...filtros, status: value})}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
-                  <SelectItem value="confirmado">Confirmado</SelectItem>
-                  <SelectItem value="pendente">Pendente</SelectItem>
-                  <SelectItem value="cancelado">Cancelado</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              <Input
-                placeholder="Data início"
-                type="date"
-                value={filtros.dataInicio}
-                onChange={(e) => setFiltros({...filtros, dataInicio: e.target.value})}
-              />
-              
-              <Input
-                placeholder="Data fim"
-                type="date"
-                value={filtros.dataFim}
-                onChange={(e) => setFiltros({...filtros, dataFim: e.target.value})}
-              />
-              
-              <Input
-                placeholder="Buscar..."
-                value={filtros.busca}
-                onChange={(e) => setFiltros({...filtros, busca: e.target.value})}
-              />
-            </div>
-
-            {/* Tabela */}
+            {/* Lista Simples */}
             {movimentos.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <DollarSign className="h-12 w-12 mx-auto mb-4 text-gray-300" />
@@ -634,92 +398,32 @@ const GestaoMovimentos = () => {
                 <p className="text-sm">Os movimentos financeiros aparecerão aqui</p>
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nº</TableHead>
-                    <TableHead>Data</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Escopo</TableHead>
-                    <TableHead>Categoria</TableHead>
-                    <TableHead>Descrição</TableHead>
-                    <TableHead>Animal</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Valor</TableHead>
-                    <TableHead>Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {movimentos.map((movimento) => (
-                    <TableRow key={movimento.id}>
-                      <TableCell className="font-mono text-sm">{movimento.numero_movimento}</TableCell>
-                      <TableCell>{formatDate(movimento.data_movimento)}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          {movimento.tipo_movimento === 'receita' ? 
-                            <ArrowUpRight className="h-4 w-4 text-green-600" /> : 
-                            <ArrowDownRight className="h-4 w-4 text-red-600" />
-                          }
-                          <span className={movimento.tipo_movimento === 'receita' ? 'text-green-600' : 'text-red-600'}>
-                            {movimento.tipo_movimento}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          {movimento.escopo === 'associacao' ? 
-                            <Building className="h-4 w-4 text-blue-600" /> : 
-                            <PawPrint className="h-4 w-4 text-green-600" />
-                          }
-                          <span>{movimento.escopo}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <div 
-                            className="w-3 h-3 rounded-full" 
-                            style={{ backgroundColor: movimento.categoria?.cor }}
-                          />
-                          <span>{movimento.categoria?.nome}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>{movimento.descricao}</TableCell>
-                      <TableCell>
-                        {movimento.animal ? (
-                          <span className="text-blue-600">
-                            🐶 {movimento.animal.nome}
-                          </span>
-                        ) : (
-                          <span className="text-gray-500">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={getStatusColor(movimento.status)} variant="secondary">
-                          {movimento.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right font-medium">
-                        <span className={movimento.tipo_movimento === 'receita' ? 'text-green-600' : 'text-red-600'}>
-                          {movimento.tipo_movimento === 'receita' ? '+' : '-'}{formatCurrency(movimento.valor)}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex space-x-2">
-                          <Button variant="ghost" size="sm">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <div className="space-y-3">
+                {movimentos.map((movimento) => (
+                  <div key={movimento.id} className="flex justify-between items-center p-4 border rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <div className={`p-2 rounded-full ${movimento.tipo_movimento === 'receita' ? 'bg-green-100' : 'bg-red-100'}`}>
+                        {movimento.tipo_movimento === 'receita' ? 
+                          <ArrowUpRight className="h-4 w-4 text-green-600" /> : 
+                          <ArrowDownRight className="h-4 w-4 text-red-600" />
+                        }
+                      </div>
+                      <div>
+                        <p className="font-medium">{movimento.descricao}</p>
+                        <p className="text-sm text-gray-500">
+                          {movimento.escopo} • {formatDate(movimento.data_movimento)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className={`font-bold ${movimento.tipo_movimento === 'receita' ? 'text-green-600' : 'text-red-600'}`}>
+                        {movimento.tipo_movimento === 'receita' ? '+' : '-'}{formatCurrency(parseFloat(movimento.valor) || 0)}
+                      </p>
+                      <p className="text-xs text-gray-500">{movimento.numero_movimento}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </CardContent>
         </Card>
