@@ -21,7 +21,6 @@ import {
   TrendingUp,
   TrendingDown,
   Calendar,
-  CreditCard,
   FileText,
   Euro,
   Calculator,
@@ -60,7 +59,6 @@ const AnimalFinanceiro = () => {
     descricao: '',
     valor: '',
     data_movimento: '',
-    metodo_pagamento: '',
     observacoes: ''
   });
 
@@ -167,7 +165,6 @@ const AnimalFinanceiro = () => {
       descricao: '',
       valor: '',
       data_movimento: new Date().toISOString().split('T')[0],
-      metodo_pagamento: 'nao_especificado',
       observacoes: ''
     });
   };
@@ -181,7 +178,6 @@ const AnimalFinanceiro = () => {
         descricao: movimento.descricao || '',
         valor: movimento.valor.toString(),
         data_movimento: movimento.data_movimento || '',
-        metodo_pagamento: movimento.metodo_pagamento || 'nao_especificado',
         observacoes: movimento.observacoes || ''
       });
     } else {
@@ -202,7 +198,6 @@ const AnimalFinanceiro = () => {
         descricao: movimentoForm.descricao,
         valor: parseFloat(movimentoForm.valor),
         data_movimento: movimentoForm.data_movimento,
-        metodo_pagamento: movimentoForm.metodo_pagamento === 'nao_especificado' ? null : movimentoForm.metodo_pagamento,
         observacoes: movimentoForm.observacoes || null
       };
 
@@ -623,12 +618,7 @@ const AnimalFinanceiro = () => {
                                 {categoria.nome}
                               </Badge>
                             )}
-                            {movimento.metodo_pagamento && (
-                              <div className="flex items-center">
-                                <CreditCard className="h-3 w-3 mr-1" />
-                                {movimento.metodo_pagamento}
-                              </div>
-                            )}
+
                           </div>
                           {movimento.observacoes && (
                             <p className="text-sm text-gray-600 mt-1">{movimento.observacoes}</p>
@@ -776,29 +766,6 @@ const AnimalFinanceiro = () => {
               />
             </div>
 
-            <div>
-              <Label htmlFor="metodo_pagamento" className="text-emerald-700 font-medium">
-                Método de Pagamento
-              </Label>
-              <Select 
-                value={movimentoForm.metodo_pagamento} 
-                onValueChange={(value) => setMovimentoForm({ ...movimentoForm, metodo_pagamento: value })}
-              >
-                <SelectTrigger className="border-emerald-200 focus:border-emerald-400">
-                  <SelectValue placeholder="Selecionar método (opcional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="nao_especificado">Ão especificado</SelectItem>
-                  <SelectItem value="Dinheiro">💵 Dinheiro</SelectItem>
-                  <SelectItem value="Cartão de Débito">💳 Cartão de Débito</SelectItem>
-                  <SelectItem value="Cartão de Crédito">💳 Cartão de Crédito</SelectItem>
-                  <SelectItem value="Transferência Bancária">🏦 Transferência Bancária</SelectItem>
-                  <SelectItem value="MB Way">📱 MB Way</SelectItem>
-                  <SelectItem value="PayPal">🌐 PayPal</SelectItem>
-                  <SelectItem value="Outro">🔄 Outro</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
             
             <div>
               <Label htmlFor="observacoes" className="text-emerald-700 font-medium">
