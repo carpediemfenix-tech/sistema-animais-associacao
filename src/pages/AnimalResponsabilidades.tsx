@@ -25,7 +25,7 @@ import {
   Star
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Animal, ResponsabilidadeAnimal, Voluntario } from "@/types/animal";
+import { Animal, ResponsabilidadeVoluntario, Voluntario } from "@/types/animal";
 import { useToast } from "@/hooks/use-toast";
 import UserHeader from "@/components/UserHeader";
 
@@ -58,11 +58,11 @@ const AnimalResponsabilidades = () => {
   const { toast } = useToast();
   const { hasPermission } = useAuth();
 
-  // Estados para responsabilidades
-  const [responsabilidades, setResponsabilidades] = useState<ResponsabilidadeAnimal[]>([]);
+  // Estados para responsabilidades - CORRIGIDO: ResponsabilidadeVoluntario
+  const [responsabilidades, setResponsabilidades] = useState<ResponsabilidadeVoluntario[]>([]);
   const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
   const [responsabilidadeDialogOpen, setResponsabilidadeDialogOpen] = useState(false);
-  const [editingResponsabilidade, setEditingResponsabilidade] = useState<ResponsabilidadeAnimal | null>(null);
+  const [editingResponsabilidade, setEditingResponsabilidade] = useState<ResponsabilidadeVoluntario | null>(null);
 
   // Formulário de responsabilidade
   const [responsabilidadeForm, setResponsabilidadeForm] = useState({
@@ -113,7 +113,7 @@ const AnimalResponsabilidades = () => {
   // Função para carregar dados relacionados
   const loadRelatedData = async () => {
     try {
-      // Carregar responsabilidades
+      // Carregar responsabilidades - CORRIGIDO: tabela responsabilidades_animal
       const { data: responsabilidadesData, error: responsabilidadesError } = await supabase
         .from('responsabilidades_animal')
         .select(`
@@ -169,7 +169,7 @@ const AnimalResponsabilidades = () => {
     });
   };
 
-  const openResponsabilidadeDialog = (responsabilidade?: ResponsabilidadeAnimal) => {
+  const openResponsabilidadeDialog = (responsabilidade?: ResponsabilidadeVoluntario) => {
     if (responsabilidade) {
       setEditingResponsabilidade(responsabilidade);
       setResponsabilidadeForm({
@@ -177,7 +177,7 @@ const AnimalResponsabilidades = () => {
         tipo_responsabilidade: responsabilidade.tipo_responsabilidade || '',
         data_inicio: responsabilidade.data_inicio || '',
         observacoes: responsabilidade.observacoes || '',
-        prioridade: responsabilidade.prioridade || 'media'
+        prioridade: 'media' // Campo não existe na interface original, usar default
       });
     } else {
       setEditingResponsabilidade(null);
@@ -196,7 +196,6 @@ const AnimalResponsabilidades = () => {
         tipo_responsabilidade: responsabilidadeForm.tipo_responsabilidade,
         data_inicio: responsabilidadeForm.data_inicio,
         observacoes: responsabilidadeForm.observacoes,
-        prioridade: responsabilidadeForm.prioridade,
         ativo: true
       };
 
@@ -332,10 +331,9 @@ const AnimalResponsabilidades = () => {
     };
   };
 
-  // Função para obter informações da prioridade
-  const getPrioridadeInfo = (prioridade: string) => {
-    const prioridadeInfo = PRIORIDADES.find(p => p.value === prioridade);
-    return prioridadeInfo || PRIORIDADES[1]; // Default: média
+  // Função para obter informações da prioridade - SIMPLIFICADO
+  const getPrioridadeInfo = (prioridade?: string) => {
+    return PRIORIDADES[1]; // Default: média (já que prioridade não existe na interface)
   };
 
   // Função para formatar duração
@@ -446,7 +444,7 @@ const AnimalResponsabilidades = () => {
               <div className="space-y-4">
                 {responsabilidadesAtivas.map((responsabilidade) => {
                   const tipoInfo = getTipoResponsabilidadeInfo(responsabilidade.tipo_responsabilidade);
-                  const prioridadeInfo = getPrioridadeInfo(responsabilidade.prioridade);
+                  const prioridadeInfo = getPrioridadeInfo();
                   return (
                     <div key={responsabilidade.id} className="border rounded-lg p-4 bg-white shadow-sm">
                       <div className="flex items-start space-x-4">
@@ -458,7 +456,7 @@ const AnimalResponsabilidades = () => {
                             <div>
                               <h4 className="font-medium text-gray-900">{tipoInfo.nome}</h4>
                               <p className="text-sm text-gray-600 mt-1">
-                                {responsabilidade.voluntarios?.nome || 'Voluntário não encontrado'}
+                                {responsabilidade.voluntario?.nome || 'Voluntário não encontrado'}
                               </p>
                               <div className="flex items-center space-x-2 mt-2">
                                 <Badge className={prioridadeInfo.color}>
@@ -505,11 +503,11 @@ const AnimalResponsabilidades = () => {
                             </div>
                           )}
 
-                          {responsabilidade.voluntarios?.email && (
+                          {responsabilidade.voluntario?.email && (
                             <div className="mt-2 text-xs text-gray-500">
-                              📧 {responsabilidade.voluntarios.email}
-                              {responsabilidade.voluntarios.telefone && (
-                                <span className="ml-3">📞 {responsabilidade.voluntarios.telefone}</span>
+                              📧 {responsabilidade.voluntario.email}
+                              {responsabilidade.voluntario.telefone && (
+                                <span className="ml-3">📞 {responsabilidade.voluntario.telefone}</span>
                               )}
                             </div>
                           )}
@@ -545,7 +543,7 @@ const AnimalResponsabilidades = () => {
               <div className="space-y-4">
                 {responsabilidadesFinalizadas.map((responsabilidade) => {
                   const tipoInfo = getTipoResponsabilidadeInfo(responsabilidade.tipo_responsabilidade);
-                  const prioridadeInfo = getPrioridadeInfo(responsabilidade.prioridade);
+                  const prioridadeInfo = getPrioridadeInfo();
                   return (
                     <div key={responsabilidade.id} className="border rounded-lg p-4 bg-gray-50">
                       <div className="flex items-start space-x-4">
@@ -557,7 +555,7 @@ const AnimalResponsabilidades = () => {
                             <div>
                               <h4 className="font-medium text-gray-900">{tipoInfo.nome}</h4>
                               <p className="text-sm text-gray-600 mt-1">
-                                {responsabilidade.voluntarios?.nome || 'Voluntário não encontrado'}
+                                {responsabilidade.voluntario?.nome || 'Voluntário não encontrado'}
                               </p>
                               <div className="flex items-center space-x-2 mt-2">
                                 <Badge className={prioridadeInfo.color}>
@@ -674,27 +672,6 @@ const AnimalResponsabilidades = () => {
                 className="border-blue-200 focus:border-blue-400"
                 required
               />
-            </div>
-
-            <div>
-              <Label htmlFor="prioridade" className="text-blue-700 font-medium">
-                Prioridade
-              </Label>
-              <Select 
-                value={responsabilidadeForm.prioridade} 
-                onValueChange={(value) => setResponsabilidadeForm({ ...responsabilidadeForm, prioridade: value })}
-              >
-                <SelectTrigger className="border-blue-200 focus:border-blue-400">
-                  <SelectValue placeholder="Selecionar prioridade" />
-                </SelectTrigger>
-                <SelectContent>
-                  {PRIORIDADES.map((prioridade) => (
-                    <SelectItem key={prioridade.value} value={prioridade.value}>
-                      {prioridade.icon} {prioridade.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
             
             <div>
