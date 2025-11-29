@@ -39,6 +39,15 @@ export interface TipoIntervencao {
   created_at: string;
 }
 
+export interface TipoEvento {
+  id: string;
+  nome: string;
+  descricao?: string;
+  ativo: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ClinicaVeterinaria {
   id: string;
   nome: string;
@@ -84,11 +93,14 @@ export interface EventoAnimal {
   animal_id: string;
   tipo_evento: string; // Texto simples: 'Nascimento', 'Adoção', 'Retorno', etc.
   data_evento: string;
-  titulo: string;
   descricao?: string;
   observacoes?: string;
+  voluntario_id?: string;
+  documento_referencia?: string;
+  importante: boolean;
   created_at: string;
   updated_at: string;
+  voluntarios?: { nome: string }; // Para joins do Supabase
 }
 
 // ATUALIZADO: Localizações do animal
