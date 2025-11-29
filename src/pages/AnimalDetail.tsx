@@ -1065,27 +1065,33 @@ const AnimalDetail = () => {
                           </TableCell>
                           <TableCell>
                             {(() => {
+                              // Comparar apenas as datas (sem horário)
                               const hoje = new Date();
+                              hoje.setHours(0, 0, 0, 0); // Zerar horário para comparação
+                              
                               const dataIntervencao = new Date(intervencao.data_intervencao);
+                              dataIntervencao.setHours(0, 0, 0, 0); // Zerar horário para comparação
+                              
                               const isPassado = dataIntervencao < hoje;
                               const isFuturo = dataIntervencao > hoje;
+                              const isHoje = dataIntervencao.getTime() === hoje.getTime();
                               
-                              if (isFuturo) {
+                              if (isHoje) {
+                                return (
+                                  <Badge variant="outline" className="text-orange-600 border-orange-600">
+                                    Hoje
+                                  </Badge>
+                                );
+                              } else if (isFuturo) {
                                 return (
                                   <Badge variant="outline" className="text-blue-600 border-blue-600">
                                     Agendada
                                   </Badge>
                                 );
-                              } else if (isPassado) {
+                              } else {
                                 return (
                                   <Badge variant="default" className="bg-green-600">
                                     Concluída
-                                  </Badge>
-                                );
-                              } else {
-                                return (
-                                  <Badge variant="outline" className="text-orange-600 border-orange-600">
-                                    Hoje
                                   </Badge>
                                 );
                               }
