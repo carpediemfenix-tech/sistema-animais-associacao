@@ -81,15 +81,37 @@ const DashboardFinanceiro = () => {
         setResumoAssociacao(resumoAssoc);
       }
 
-      // Resumo dos Animais (soma de todos)
-      const { data: resumoAnim, error: errorAnim } = await supabase
-        .rpc('get_resumo_animais_total');
+      // Resumo dos Animais (consulta direta para evitar NaN)
+      const { data: movimentosAnimais, error: errorAnim } = await supabase
+        .from('movimentos_financeiros')
+        .select('tipo_movimento, valor')
+        .eq('escopo', 'animal')
+        .eq('status', 'confirmado');
 
-      if (!errorAnim && resumoAnim) {
-        setResumoAnimais(resumoAnim);
+      if (!errorAnim && movimentosAnimais) {
+        const receitas = movimentosAnimais
+          .filter(m => m.tipo_movimento === 'receita')
+          .reduce((sum, m) => sum + (Number(m.valor) || 0), 0);
+        
+        const despesas = movimentosAnimais
+          .filter(m => m.tipo_movimento === 'despesa')
+          .reduce((sum, m) => sum + (Number(m.valor) || 0), 0);
+        
+        setResumoAnimais({
+          total_receitas: receitas,
+          total_despesas: despesas,
+          saldo: receitas - despesas
+        });
+      } else {
+        // Fallback seguro se não houver dados
+        setResumoAnimais({
+          total_receitas: 0,
+          total_despesas: 0,
+          saldo: 0
+        });
       }
 
-      // Movimentos Recentes
+      // Movimentos Recentes (ordenados por data)
       const { data: movimentos, error: errorMov } = await supabase
         .from('movimentos_financeiros')
         .select(`
@@ -97,6 +119,7 @@ const DashboardFinanceiro = () => {
           categoria:categorias_financeiras(nome, cor, icone),
           animal:animais(nome, especie)
         `)
+        .order('data_movimento', { ascending: false })
         .order('created_at', { ascending: false })
         .limit(10);
 
@@ -303,7 +326,7 @@ const DashboardFinanceiro = () => {
                           <div>
                             <p className="font-medium text-sm">{movimento.descricao}</p>
                             <p className="text-xs text-gray-500">
-                              {movimento.categoria?.nome} • {formatDate(movimento.data_movimento)}
+                              {movimento.categoria?.nome} • {formatDate(movimento.data_movimento || movimento.created_at)}
                             </p>
                           </div>
                         </div>
