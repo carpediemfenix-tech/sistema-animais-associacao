@@ -14,6 +14,7 @@ import AnimalIntervencoes from "./pages/AnimalIntervencoes";
 import AnimalEventos from "./pages/AnimalEventos";
 import AnimalLocalizacoes from "./pages/AnimalLocalizacoes";
 import AnimalResponsabilidades from "./pages/AnimalResponsabilidades";
+import AnimalFinanceiro from "./pages/AnimalFinanceiro";
 import NovoAnimal from "./pages/NovoAnimal";
 import EditarAnimal from "./pages/EditarAnimal";
 import IntervencoesPage from "./pages/IntervencoesPage";
@@ -55,6 +56,7 @@ const App = () => (
             <Route path="/animal/:id/eventos" element={<ProtectedRoute><AnimalEventos /></ProtectedRoute>} />
             <Route path="/animal/:id/localizacoes" element={<ProtectedRoute><AnimalLocalizacoes /></ProtectedRoute>} />
             <Route path="/animal/:id/responsabilidades" element={<ProtectedRoute><AnimalResponsabilidades /></ProtectedRoute>} />
+            <Route path="/animal/:id/financeiro" element={<ProtectedRoute><AnimalFinanceiro /></ProtectedRoute>} />
             <Route path="/animal/:id/editar" element={<ProtectedRoute><EditarAnimal /></ProtectedRoute>} />
             <Route path="/novo-animal" element={<ProtectedRoute><NovoAnimal /></ProtectedRoute>} />
             <Route path="/intervencoes" element={<ProtectedRoute><IntervencoesPage /></ProtectedRoute>} />
