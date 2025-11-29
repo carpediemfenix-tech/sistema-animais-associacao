@@ -124,6 +124,38 @@ const AnimalDetail = () => {
         backTo="/animais"
       />
 
+      {/* Navegação Adicional */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Link to="/">
+                <Button variant="outline" size="sm">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Dashboard
+                </Button>
+              </Link>
+              <Link to="/animais">
+                <Button variant="outline" size="sm">
+                  <PawPrint className="h-4 w-4 mr-2" />
+                  Lista de Animais
+                </Button>
+              </Link>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Badge className={`${
+                animal.estado === 'disponivel' ? 'bg-green-600' :
+                animal.estado === 'adotado' ? 'bg-blue-600' :
+                animal.estado === 'tratamento' ? 'bg-yellow-600' :
+                'bg-gray-600'
+              }`}>
+                {animal.estado}
+              </Badge>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         
         {/* Informações Básicas do Animal */}
