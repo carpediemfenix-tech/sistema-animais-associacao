@@ -120,14 +120,19 @@ const AnimalEventos = () => {
       }
 
       // Carregar tipos de eventos
-      const { data: tiposEventosData } = await supabase
+      const { data: tiposEventosData, error: tiposError } = await supabase
         .from('tipos_eventos')
         .select('*')
         .eq('ativo', true)
         .order('nome');
 
+      console.log('Tipos de eventos encontrados:', tiposEventosData);
+      console.log('Erro ao carregar tipos:', tiposError);
+
       if (tiposEventosData) {
         setTiposEventos(tiposEventosData);
+      } else {
+        setTiposEventos([]);
       }
 
       // Carregar voluntários
@@ -508,17 +513,30 @@ const AnimalEventos = () => {
               </Label>
               <Select 
                 value={eventoForm.tipo_evento} 
-                onValueChange={(value) => setEventoForm({ ...eventoForm, tipo_evento: value })}
+                onValueChange={(value) => {
+                  console.log('Selecionando tipo de evento:', value);
+                  setEventoForm({ ...eventoForm, tipo_evento: value });
+                  console.log('Formulário atualizado:', { ...eventoForm, tipo_evento: value });
+                }}
               >
                 <SelectTrigger className="border-green-200 focus:border-green-400">
                   <SelectValue placeholder="Selecionar tipo" />
                 </SelectTrigger>
                 <SelectContent>
-                  {tiposEventos.map((tipo) => (
-                    <SelectItem key={tipo.id} value={tipo.id}>
-                      {tipo.emoji} {tipo.nome}
+                  {tiposEventos.length === 0 && (
+                    <SelectItem value="loading" disabled>
+                      Carregando tipos...
                     </SelectItem>
-                  ))}
+                  )}
+                  {tiposEventos.map((tipo) => {
+                    console.log('Renderizando tipo:', tipo);
+                    return (
+                      <SelectItem key={tipo.id} value={tipo.id}>
+                        {tipo.emoji} {tipo.nome}
+                      </SelectItem>
+                    );
+                  })
+                  }
                 </SelectContent>
               </Select>
             </div>
