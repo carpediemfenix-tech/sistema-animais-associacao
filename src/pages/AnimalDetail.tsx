@@ -16,45 +16,20 @@ import {
   Plus, 
   Edit, 
   Trash2,
-  Users,
-  MapPin,
-  Calendar,
-  Phone,
-  User,
   PawPrint,
   Cat,
   Dog,
   Loader2,
   AlertCircle,
-  DollarSign,
-  CalendarDays,
-  Eye,
-  UserMinus,
-  UserPlus,
-  Heart,
-  Archive,
-  ArchiveRestore,
-  UserCheck,
-  Clock,
-  CheckCircle,
-  TrendingUp,
-  TrendingDown,
   Stethoscope,
+  Calendar,
   Home,
-  Activity
+  UserCheck,
+  DollarSign
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { 
-  Animal, 
-  Intervencao, 
-  EventoAnimal, 
-  LocalizacaoAnimal, 
-  ResponsabilidadeAnimal,
-  Voluntario, 
-  TipoIntervencao 
-} from "@/types/animal";
+import { Animal, Intervencao, TipoIntervencao, Voluntario } from "@/types/animal";
 import { useToast } from "@/hooks/use-toast";
-import LogotipoValentao from "@/components/LogotipoValentao";
 import UserHeader from "@/components/UserHeader";
 
 const AnimalDetail = () => {
@@ -65,59 +40,25 @@ const AnimalDetail = () => {
   const { toast } = useToast();
   const { hasPermission } = useAuth();
 
-  // Estados para intervenções
+  // Estados básicos para intervenções
   const [intervencoes, setIntervencoes] = useState<Intervencao[]>([]);
   const [tiposIntervencoes, setTiposIntervencoes] = useState<TipoIntervencao[]>([]);
   const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
   const [intervencaoDialogOpen, setIntervencaoDialogOpen] = useState(false);
   const [editingIntervencao, setEditingIntervencao] = useState<Intervencao | null>(null);
+  
+  // Formulário simplificado
   const [intervencaoForm, setIntervencaoForm] = useState({
     tipo_intervencao_id: '',
-    voluntario_id: '',
     data_intervencao: '',
     veterinario: '',
-    clinica: '',
     observacoes: '',
     custo: '',
-    proxima_data: '',
     urgente: false,
     concluida: false
   });
 
-  // Estados para eventos
-  const [eventos, setEventos] = useState<EventoAnimal[]>([]);
-  const [eventoDialogOpen, setEventoDialogOpen] = useState(false);
-  const [editingEvento, setEditingEvento] = useState<EventoAnimal | null>(null);
-  const [eventoForm, setEventoForm] = useState({
-    tipo_evento: '',
-    data_evento: '',
-    titulo: '',
-    descricao: '',
-    observacoes: ''
-  });
-
-  // Estados para localizações
-  const [localizacoes, setLocalizacoes] = useState<LocalizacaoAnimal[]>([]);
-  const [localizacaoDialogOpen, setLocalizacaoDialogOpen] = useState(false);
-  const [editingLocalizacao, setEditingLocalizacao] = useState<LocalizacaoAnimal | null>(null);
-  const [localizacaoForm, setLocalizacaoForm] = useState({
-    tipo_localizacao: '',
-    data_inicio: '',
-    observacoes: ''
-  });
-
-  // Estados para responsabilidades
-  const [responsabilidades, setResponsabilidades] = useState<ResponsabilidadeAnimal[]>([]);
-  const [responsabilidadeDialogOpen, setResponsabilidadeDialogOpen] = useState(false);
-  const [editingResponsabilidade, setEditingResponsabilidade] = useState<ResponsabilidadeAnimal | null>(null);
-  const [responsabilidadeForm, setResponsabilidadeForm] = useState({
-    voluntario_id: '',
-    data_inicio: '',
-    tipo_responsabilidade: '',
-    observacoes: ''
-  });
-
-  // Função para carregar dados do animal
+  // Função básica para carregar dados do animal
   const fetchAnimalData = async () => {
     if (!id) {
       setError("ID do animal não fornecido");
@@ -148,15 +89,8 @@ const AnimalDetail = () => {
       setAnimal(animalData);
       setError(null);
 
-      // Carregar dados relacionados
-      await Promise.all([
-        fetchIntervencoes(),
-        fetchEventos(),
-        fetchLocalizacoes(),
-        fetchResponsabilidades(),
-        fetchTiposIntervencoes(),
-        fetchVoluntarios()
-      ]);
+      // Carregar dados relacionados de forma segura
+      await loadRelatedData();
 
     } catch (error: any) {
       console.error('💥 [ANIMAL] Erro geral:', error);
@@ -171,204 +105,70 @@ const AnimalDetail = () => {
     }
   };
 
-  // ========================================
-  // FUNÇÕES DE INTERVENÇÕES
-  // ========================================
-
-  const fetchIntervencoes = async () => {
-    if (!id) return;
-
+  // Carregar dados relacionados de forma segura
+  const loadRelatedData = async () => {
     try {
-      console.log('🏥 [INTERVENCOES] Carregando intervenções...');
-      
-      const { data, error } = await supabase
+      // Carregar intervenções
+      const { data: intervencoesData, error: intervencoesError } = await supabase
         .from('intervencoes')
         .select(`
           *,
-          tipos_intervencoes (
-            id,
-            nome,
-            cor
-          ),
-          voluntarios (
-            id,
-            nome
-          )
+          tipos_intervencoes (nome),
+          voluntarios (nome)
         `)
         .eq('animal_id', id)
         .order('data_intervencao', { ascending: false });
 
-      if (error) {
-        console.error('❌ [INTERVENCOES] Erro ao carregar:', error);
+      if (!intervencoesError && intervencoesData) {
+        setIntervencoes(intervencoesData);
+        console.log('✅ [INTERVENCOES] Carregadas:', intervencoesData.length);
+      } else {
+        console.log('ℹ️ [INTERVENCOES] Nenhuma intervenção encontrada ou erro:', intervencoesError?.message);
         setIntervencoes([]);
-        return;
       }
 
-      console.log('✅ [INTERVENCOES] Carregadas:', data?.length || 0);
-      setIntervencoes(data || []);
-    } catch (error: any) {
-      console.error('💥 [INTERVENCOES] Erro geral:', error);
-      setIntervencoes([]);
-    }
-  };
-
-  const fetchTiposIntervencoes = async () => {
-    try {
-      console.log('📋 [TIPOS] Carregando tipos de intervenções...');
-      
-      const { data, error } = await supabase
+      // Carregar tipos de intervenções
+      const { data: tiposData, error: tiposError } = await supabase
         .from('tipos_intervencoes')
         .select('*')
         .eq('ativo', true)
         .order('nome');
 
-      if (error) {
-        console.error('❌ [TIPOS] Erro ao carregar:', error);
+      if (!tiposError && tiposData) {
+        setTiposIntervencoes(tiposData);
+        console.log('✅ [TIPOS] Carregados:', tiposData.length);
+      } else {
+        console.log('ℹ️ [TIPOS] Erro ao carregar tipos:', tiposError?.message);
         setTiposIntervencoes([]);
-        return;
       }
 
-      console.log('✅ [TIPOS] Carregados:', data?.length || 0);
-      setTiposIntervencoes(data || []);
-    } catch (error: any) {
-      console.error('💥 [TIPOS] Erro geral:', error);
-      setTiposIntervencoes([]);
-    }
-  };
-
-  const fetchVoluntarios = async () => {
-    try {
-      console.log('👥 [VOLUNTARIOS] Carregando voluntários...');
-      
-      const { data, error } = await supabase
+      // Carregar voluntários
+      const { data: voluntariosData, error: voluntariosError } = await supabase
         .from('voluntarios')
         .select('id, nome')
         .order('nome');
 
-      if (error) {
-        console.error('❌ [VOLUNTARIOS] Erro ao carregar:', error);
+      if (!voluntariosError && voluntariosData) {
+        setVoluntarios(voluntariosData);
+        console.log('✅ [VOLUNTARIOS] Carregados:', voluntariosData.length);
+      } else {
+        console.log('ℹ️ [VOLUNTARIOS] Erro ao carregar voluntários:', voluntariosError?.message);
         setVoluntarios([]);
-        return;
       }
 
-      console.log('✅ [VOLUNTARIOS] Carregados:', data?.length || 0);
-      setVoluntarios(data || []);
     } catch (error: any) {
-      console.error('💥 [VOLUNTARIOS] Erro geral:', error);
-      setVoluntarios([]);
+      console.error('💥 [RELATED_DATA] Erro ao carregar dados relacionados:', error);
     }
   };
 
-  // ========================================
-  // FUNÇÕES DE EVENTOS
-  // ========================================
-
-  const fetchEventos = async () => {
-    if (!id) return;
-
-    try {
-      console.log('📅 [EVENTOS] Carregando eventos...');
-      
-      const { data, error } = await supabase
-        .from('eventos_animal')
-        .select('*')
-        .eq('animal_id', id)
-        .order('data_evento', { ascending: false });
-
-      if (error) {
-        console.error('❌ [EVENTOS] Erro ao carregar:', error);
-        setEventos([]);
-        return;
-      }
-
-      console.log('✅ [EVENTOS] Carregados:', data?.length || 0);
-      setEventos(data || []);
-    } catch (error: any) {
-      console.error('💥 [EVENTOS] Erro geral:', error);
-      setEventos([]);
-    }
-  };
-
-  // ========================================
-  // FUNÇÕES DE LOCALIZAÇÕES
-  // ========================================
-
-  const fetchLocalizacoes = async () => {
-    if (!id) return;
-
-    try {
-      console.log('📍 [LOCALIZACOES] Carregando localizações...');
-      
-      const { data, error } = await supabase
-        .from('localizacoes_animal')
-        .select('*')
-        .eq('animal_id', id)
-        .order('data_inicio', { ascending: false });
-
-      if (error) {
-        console.error('❌ [LOCALIZACOES] Erro ao carregar:', error);
-        setLocalizacoes([]);
-        return;
-      }
-
-      console.log('✅ [LOCALIZACOES] Carregadas:', data?.length || 0);
-      setLocalizacoes(data || []);
-    } catch (error: any) {
-      console.error('💥 [LOCALIZACOES] Erro geral:', error);
-      setLocalizacoes([]);
-    }
-  };
-
-  // ========================================
-  // FUNÇÕES DE RESPONSABILIDADES
-  // ========================================
-
-  const fetchResponsabilidades = async () => {
-    if (!id) return;
-
-    try {
-      console.log('👥 [RESPONSABILIDADES] Carregando responsabilidades...');
-      
-      const { data, error } = await supabase
-        .from('responsabilidades_animal')
-        .select(`
-          *,
-          voluntarios (
-            id,
-            nome
-          )
-        `)
-        .eq('animal_id', id)
-        .order('data_inicio', { ascending: false });
-
-      if (error) {
-        console.error('❌ [RESPONSABILIDADES] Erro ao carregar:', error);
-        setResponsabilidades([]);
-        return;
-      }
-
-      console.log('✅ [RESPONSABILIDADES] Carregadas:', data?.length || 0);
-      setResponsabilidades(data || []);
-    } catch (error: any) {
-      console.error('💥 [RESPONSABILIDADES] Erro geral:', error);
-      setResponsabilidades([]);
-    }
-  };
-
-  // ========================================
-  // GESTÃO DE INTERVENÇÕES
-  // ========================================
-
+  // Funções de gestão de intervenções
   const resetIntervencaoForm = () => {
     setIntervencaoForm({
       tipo_intervencao_id: '',
-      voluntario_id: '',
       data_intervencao: '',
       veterinario: '',
-      clinica: '',
       observacoes: '',
       custo: '',
-      proxima_data: '',
       urgente: false,
       concluida: false
     });
@@ -380,13 +180,10 @@ const AnimalDetail = () => {
       setEditingIntervencao(intervencao);
       setIntervencaoForm({
         tipo_intervencao_id: intervencao.tipo_intervencao_id,
-        voluntario_id: intervencao.voluntario_id || '',
         data_intervencao: intervencao.data_intervencao.split('T')[0],
         veterinario: intervencao.veterinario || '',
-        clinica: intervencao.clinica || '',
         observacoes: intervencao.observacoes || '',
         custo: intervencao.custo?.toString() || '',
-        proxima_data: intervencao.proxima_data ? intervencao.proxima_data.split('T')[0] : '',
         urgente: intervencao.urgente,
         concluida: intervencao.concluida
       });
@@ -412,13 +209,10 @@ const AnimalDetail = () => {
       const intervencaoData = {
         animal_id: id,
         tipo_intervencao_id: intervencaoForm.tipo_intervencao_id,
-        voluntario_id: intervencaoForm.voluntario_id || null,
         data_intervencao: intervencaoForm.data_intervencao,
         veterinario: intervencaoForm.veterinario || null,
-        clinica: intervencaoForm.clinica || null,
         observacoes: intervencaoForm.observacoes || null,
         custo: intervencaoForm.custo ? parseFloat(intervencaoForm.custo) : null,
-        proxima_data: intervencaoForm.proxima_data || null,
         urgente: intervencaoForm.urgente,
         concluida: intervencaoForm.concluida
       };
@@ -450,7 +244,7 @@ const AnimalDetail = () => {
 
       setIntervencaoDialogOpen(false);
       resetIntervencaoForm();
-      fetchIntervencoes();
+      loadRelatedData(); // Recarregar dados
     } catch (error: any) {
       console.error('Erro ao salvar intervenção:', error);
       toast({
@@ -477,7 +271,7 @@ const AnimalDetail = () => {
         description: "Intervenção eliminada com sucesso",
       });
 
-      fetchIntervencoes();
+      loadRelatedData(); // Recarregar dados
     } catch (error: any) {
       console.error('Erro ao eliminar intervenção:', error);
       toast({
@@ -610,7 +404,7 @@ const AnimalDetail = () => {
           </CardContent>
         </Card>
 
-        {/* Abas de Informações Detalhadas */}
+        {/* Abas Simplificadas */}
         <Tabs defaultValue="intervencoes" className="space-y-6">
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="intervencoes">🏥 Intervenções</TabsTrigger>
@@ -620,7 +414,7 @@ const AnimalDetail = () => {
             <TabsTrigger value="financeiro">💰 Financeiro</TabsTrigger>
           </TabsList>
 
-          {/* Aba de Intervenções */}
+          {/* Aba de Intervenções - FUNCIONAL */}
           <TabsContent value="intervencoes">
             <Card>
               <CardHeader>
@@ -655,7 +449,6 @@ const AnimalDetail = () => {
                         <TableHead>Data</TableHead>
                         <TableHead>Tipo</TableHead>
                         <TableHead>Veterinário</TableHead>
-                        <TableHead>Clínica</TableHead>
                         <TableHead>Custo</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Ações</TableHead>
@@ -665,16 +458,9 @@ const AnimalDetail = () => {
                       {intervencoes.map((intervencao) => (
                         <TableRow key={intervencao.id}>
                           <TableCell>
-                            <div className="flex flex-col">
-                              <span className="font-medium">
-                                {new Date(intervencao.data_intervencao).toLocaleDateString('pt-PT')}
-                              </span>
-                              {intervencao.proxima_data && (
-                                <span className="text-xs text-blue-600">
-                                  Próxima: {new Date(intervencao.proxima_data).toLocaleDateString('pt-PT')}
-                                </span>
-                              )}
-                            </div>
+                            <span className="font-medium">
+                              {new Date(intervencao.data_intervencao).toLocaleDateString('pt-PT')}
+                            </span>
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center space-x-2">
@@ -689,7 +475,6 @@ const AnimalDetail = () => {
                             </div>
                           </TableCell>
                           <TableCell>{intervencao.veterinario || '-'}</TableCell>
-                          <TableCell>{intervencao.clinica || '-'}</TableCell>
                           <TableCell>
                             {intervencao.custo ? `€${intervencao.custo.toFixed(2)}` : '-'}
                           </TableCell>
@@ -726,153 +511,68 @@ const AnimalDetail = () => {
             </Card>
           </TabsContent>
 
-          {/* Aba de Eventos */}
+          {/* Outras abas - SIMPLIFICADAS */}
           <TabsContent value="eventos">
             <Card>
               <CardHeader>
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center space-x-2">
-                    <Activity className="h-5 w-5 text-green-600" />
-                    <div>
-                      <CardTitle>Eventos da Vida do Animal</CardTitle>
-                      <CardDescription>
-                        Marcos importantes na vida do animal (nascimento, adoção, retorno, etc.)
-                      </CardDescription>
-                    </div>
-                  </div>
-                  {hasPermission('create') && (
-                    <Button
-                      onClick={() => {
-                        toast({
-                          title: "🚧 Em Desenvolvimento",
-                          description: "Funcionalidade de eventos será implementada em breve",
-                        });
-                      }}
-                      size="sm"
-                      className="bg-green-600 hover:bg-green-700"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Novo Evento
-                    </Button>
-                  )}
-                </div>
+                <CardTitle>Eventos da Vida do Animal</CardTitle>
+                <CardDescription>
+                  Marcos importantes na vida do animal (nascimento, adoção, retorno, etc.)
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="text-center py-8 text-gray-500">
-                  <Activity className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p className="text-lg font-medium mb-2">Nenhum evento registrado</p>
-                  <p className="text-sm mb-4">Funcionalidade em desenvolvimento...</p>
+                  <Calendar className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p className="text-lg font-medium mb-2">Funcionalidade em desenvolvimento</p>
+                  <p className="text-sm">Sistema de eventos será implementado em breve.</p>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Aba de Localizações */}
           <TabsContent value="localizacoes">
             <Card>
               <CardHeader>
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center space-x-2">
-                    <Home className="h-5 w-5 text-purple-600" />
-                    <div>
-                      <CardTitle>Localizações do Animal</CardTitle>
-                      <CardDescription>
-                        Histórico de localizações - apenas uma localização ativa por vez
-                      </CardDescription>
-                    </div>
-                  </div>
-                  {hasPermission('create') && (
-                    <Button
-                      onClick={() => {
-                        toast({
-                          title: "🚧 Em Desenvolvimento",
-                          description: "Funcionalidade de localizações será implementada em breve",
-                        });
-                      }}
-                      size="sm"
-                      className="bg-purple-600 hover:bg-purple-700"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Nova Localização
-                    </Button>
-                  )}
-                </div>
+                <CardTitle>Localizações do Animal</CardTitle>
+                <CardDescription>
+                  Histórico de localizações - apenas uma localização ativa por vez
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="text-center py-8 text-gray-500">
                   <Home className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p className="text-lg font-medium mb-2">Nenhuma localização registrada</p>
-                  <p className="text-sm mb-4">Funcionalidade em desenvolvimento...</p>
+                  <p className="text-lg font-medium mb-2">Funcionalidade em desenvolvimento</p>
+                  <p className="text-sm">Sistema de localizações será implementado em breve.</p>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Aba de Responsabilidades */}
           <TabsContent value="responsabilidades">
             <Card>
               <CardHeader>
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center space-x-2">
-                    <UserCheck className="h-5 w-5 text-indigo-600" />
-                    <CardTitle>Responsabilidades</CardTitle>
-                  </div>
-                  {hasPermission('create') && (
-                    <Button
-                      onClick={() => {
-                        toast({
-                          title: "🚧 Em Desenvolvimento",
-                          description: "Funcionalidade de responsabilidades será implementada em breve",
-                        });
-                      }}
-                      size="sm"
-                      className="bg-indigo-600 hover:bg-indigo-700"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Nova Responsabilidade
-                    </Button>
-                  )}
-                </div>
+                <CardTitle>Responsabilidades</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-center py-8 text-gray-500">
                   <UserCheck className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p className="text-lg font-medium mb-2">Nenhuma responsabilidade registrada</p>
-                  <p className="text-sm mb-4">Funcionalidade em desenvolvimento...</p>
+                  <p className="text-lg font-medium mb-2">Funcionalidade em desenvolvimento</p>
+                  <p className="text-sm">Sistema de responsabilidades será implementado em breve.</p>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Aba Financeiro */}
           <TabsContent value="financeiro">
             <Card>
               <CardHeader>
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center space-x-2">
-                    <DollarSign className="h-5 w-5 text-yellow-600" />
-                    <CardTitle>Movimentos Financeiros</CardTitle>
-                  </div>
-                  <Button
-                    onClick={() => {
-                      toast({
-                        title: "🚧 Em Desenvolvimento",
-                        description: "Funcionalidade financeira será implementada em breve",
-                      });
-                    }}
-                    size="sm"
-                    className="bg-yellow-600 hover:bg-yellow-700"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Associar Movimento
-                  </Button>
-                </div>
+                <CardTitle>Movimentos Financeiros</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-center py-8 text-gray-500">
                   <DollarSign className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p className="text-lg font-medium mb-2">Nenhum movimento financeiro</p>
-                  <p className="text-sm mb-4">Funcionalidade em desenvolvimento...</p>
+                  <p className="text-lg font-medium mb-2">Funcionalidade em desenvolvimento</p>
+                  <p className="text-sm">Sistema financeiro será implementado em breve.</p>
                 </div>
               </CardContent>
             </Card>
@@ -880,9 +580,9 @@ const AnimalDetail = () => {
         </Tabs>
       </div>
 
-      {/* Diálogo de Intervenção */}
+      {/* Diálogo de Intervenção - SIMPLIFICADO */}
       <Dialog open={intervencaoDialogOpen} onOpenChange={setIntervencaoDialogOpen}>
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="text-blue-800">
               {editingIntervencao ? 'Editar Intervenção' : 'Nova Intervenção Médica'}
@@ -893,121 +593,67 @@ const AnimalDetail = () => {
           </DialogHeader>
           
           <form onSubmit={handleIntervencaoSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="tipo_intervencao_id" className="text-blue-700 font-medium">
-                  Tipo de Intervenção *
-                </Label>
-                <Select 
-                  value={intervencaoForm.tipo_intervencao_id} 
-                  onValueChange={(value) => setIntervencaoForm({ ...intervencaoForm, tipo_intervencao_id: value })}
-                >
-                  <SelectTrigger className="border-blue-200 focus:border-blue-400">
-                    <SelectValue placeholder="Selecionar tipo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {tiposIntervencoes.map((tipo) => (
-                      <SelectItem key={tipo.id} value={tipo.id}>
-                        {tipo.nome}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label htmlFor="data_intervencao" className="text-blue-700 font-medium">
-                  Data da Intervenção *
-                </Label>
-                <Input
-                  id="data_intervencao"
-                  type="date"
-                  value={intervencaoForm.data_intervencao}
-                  onChange={(e) => setIntervencaoForm({ ...intervencaoForm, data_intervencao: e.target.value })}
-                  className="border-blue-200 focus:border-blue-400"
-                  required
-                />
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="veterinario" className="text-blue-700">
-                  Veterinário
-                </Label>
-                <Input
-                  id="veterinario"
-                  value={intervencaoForm.veterinario}
-                  onChange={(e) => setIntervencaoForm({ ...intervencaoForm, veterinario: e.target.value })}
-                  placeholder="Nome do veterinário"
-                  className="border-blue-200 focus:border-blue-400"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="clinica" className="text-blue-700">
-                  Clínica
-                </Label>
-                <Input
-                  id="clinica"
-                  value={intervencaoForm.clinica}
-                  onChange={(e) => setIntervencaoForm({ ...intervencaoForm, clinica: e.target.value })}
-                  placeholder="Nome da clínica"
-                  className="border-blue-200 focus:border-blue-400"
-                />
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="custo" className="text-blue-700">
-                  Custo (€)
-                </Label>
-                <Input
-                  id="custo"
-                  type="number"
-                  step="0.01"
-                  value={intervencaoForm.custo}
-                  onChange={(e) => setIntervencaoForm({ ...intervencaoForm, custo: e.target.value })}
-                  placeholder="0.00"
-                  className="border-blue-200 focus:border-blue-400"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="proxima_data" className="text-blue-700">
-                  Próxima Consulta
-                </Label>
-                <Input
-                  id="proxima_data"
-                  type="date"
-                  value={intervencaoForm.proxima_data}
-                  onChange={(e) => setIntervencaoForm({ ...intervencaoForm, proxima_data: e.target.value })}
-                  className="border-blue-200 focus:border-blue-400"
-                />
-              </div>
-            </div>
-            
             <div>
-              <Label htmlFor="voluntario_id" className="text-blue-700">
-                Voluntário Responsável
+              <Label htmlFor="tipo_intervencao_id" className="text-blue-700 font-medium">
+                Tipo de Intervenção *
               </Label>
               <Select 
-                value={intervencaoForm.voluntario_id} 
-                onValueChange={(value) => setIntervencaoForm({ ...intervencaoForm, voluntario_id: value })}
+                value={intervencaoForm.tipo_intervencao_id} 
+                onValueChange={(value) => setIntervencaoForm({ ...intervencaoForm, tipo_intervencao_id: value })}
               >
                 <SelectTrigger className="border-blue-200 focus:border-blue-400">
-                  <SelectValue placeholder="Selecionar voluntário (opcional)" />
+                  <SelectValue placeholder="Selecionar tipo" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhum voluntário</SelectItem>
-                  {voluntarios.map((voluntario) => (
-                    <SelectItem key={voluntario.id} value={voluntario.id}>
-                      {voluntario.nome}
+                  {tiposIntervencoes.map((tipo) => (
+                    <SelectItem key={tipo.id} value={tipo.id}>
+                      {tipo.nome}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="data_intervencao" className="text-blue-700 font-medium">
+                Data da Intervenção *
+              </Label>
+              <Input
+                id="data_intervencao"
+                type="date"
+                value={intervencaoForm.data_intervencao}
+                onChange={(e) => setIntervencaoForm({ ...intervencaoForm, data_intervencao: e.target.value })}
+                className="border-blue-200 focus:border-blue-400"
+                required
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="veterinario" className="text-blue-700">
+                Veterinário
+              </Label>
+              <Input
+                id="veterinario"
+                value={intervencaoForm.veterinario}
+                onChange={(e) => setIntervencaoForm({ ...intervencaoForm, veterinario: e.target.value })}
+                placeholder="Nome do veterinário"
+                className="border-blue-200 focus:border-blue-400"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="custo" className="text-blue-700">
+                Custo (€)
+              </Label>
+              <Input
+                id="custo"
+                type="number"
+                step="0.01"
+                value={intervencaoForm.custo}
+                onChange={(e) => setIntervencaoForm({ ...intervencaoForm, custo: e.target.value })}
+                placeholder="0.00"
+                className="border-blue-200 focus:border-blue-400"
+              />
             </div>
             
             <div>
@@ -1018,7 +664,7 @@ const AnimalDetail = () => {
                 id="observacoes"
                 value={intervencaoForm.observacoes}
                 onChange={(e) => setIntervencaoForm({ ...intervencaoForm, observacoes: e.target.value })}
-                placeholder="Detalhes da intervenção, diagnóstico, tratamento..."
+                placeholder="Detalhes da intervenção..."
                 className="border-blue-200 focus:border-blue-400"
                 rows={3}
               />
@@ -1034,7 +680,7 @@ const AnimalDetail = () => {
                   className="rounded border-blue-300 text-blue-600 focus:ring-blue-500"
                 />
                 <Label htmlFor="urgente" className="text-blue-700">
-                  Intervenção Urgente
+                  Urgente
                 </Label>
               </div>
               
@@ -1047,7 +693,7 @@ const AnimalDetail = () => {
                   className="rounded border-blue-300 text-blue-600 focus:ring-blue-500"
                 />
                 <Label htmlFor="concluida" className="text-blue-700">
-                  Intervenção Concluída
+                  Concluída
                 </Label>
               </div>
             </div>
@@ -1064,7 +710,7 @@ const AnimalDetail = () => {
                 Cancelar
               </Button>
               <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                {editingIntervencao ? 'Atualizar' : 'Registar'} Intervenção
+                {editingIntervencao ? 'Atualizar' : 'Registar'}
               </Button>
             </div>
           </form>
