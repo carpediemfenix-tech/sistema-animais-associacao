@@ -50,178 +50,55 @@ import UserHeader from "@/components/UserHeader";
 const AnimalDetail = () => {
   const { id } = useParams();
   const [animal, setAnimal] = useState<Animal | null>(null);
-  const [intervencoes, setIntervencoes] = useState<Intervencao[]>([]);
-  const [eventos, setEventos] = useState<Evento[]>([]);
-  const [localizacoes, setLocalizacoes] = useState<Localizacao[]>([]);
-  const [responsabilidades, setResponsabilidades] = useState<ResponsabilidadeVoluntario[]>([]);
-  const [tiposIntervencoes, setTiposIntervencoes] = useState<TipoIntervencao[]>([]);
-  const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
-  const [tiposEventos, setTiposEventos] = useState<any[]>([]);
-  const [tiposLocalizacoes, setTiposLocalizacoes] = useState<any[]>([]);
-  const [grupoInfo, setGrupoInfo] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const { hasPermission } = useAuth();
 
-  // Estados dos modais
-  const [intervencaoDialogOpen, setIntervencaoDialogOpen] = useState(false);
-  const [eventoDialogOpen, setEventoDialogOpen] = useState(false);
-  const [localizacaoDialogOpen, setLocalizacaoDialogOpen] = useState(false);
-  const [responsabilidadeDialogOpen, setResponsabilidadeDialogOpen] = useState(false);
-  
-  // Estados do formulário de intervenção
-  const [editingIntervencao, setEditingIntervencao] = useState<Intervencao | null>(null);
-  const [intervencaoForm, setIntervencaoForm] = useState({
-    tipo_intervencao_id: '',
-    voluntario_id: '',
-    data_intervencao: '',
-    veterinario: '',
-    clinica: '',
-    observacoes: '',
-    custo: '',
-    proxima_data: '',
-    urgente: false,
-    concluida: false
-  });
-  
-  // 📦 EKO: Estados para arquivamento
-  const [arquivarDialogOpen, setArquivarDialogOpen] = useState(false);
-  const [arquivarForm, setArquivarForm] = useState({
-    motivo: "",
-    observacoes: ""
-  });
-
-  // 💰 EKO: Estados para movimentos financeiros
-  const [movimentosFinanceiros, setMovimentosFinanceiros] = useState<any[]>([]);
-  const [totalReceitas, setTotalReceitas] = useState(0);
-  const [totalDespesas, setTotalDespesas] = useState(0);
-
-  // Estados de edição adicionais
-  const [editingEvento, setEditingEvento] = useState<Evento | null>(null);
-  const [editingLocalizacao, setEditingLocalizacao] = useState<Localizacao | null>(null);
-  const [editingResponsabilidade, setEditingResponsabilidade] = useState<ResponsabilidadeVoluntario | null>(null);
-
-  // Estados dos formulários adicionais
-
-  const [eventoForm, setEventoForm] = useState({
-    tipo_evento: "",
-    data_evento: new Date().toISOString().split('T')[0],
-    descricao: "",
-    observacoes: ""
-  });
-
-  const [localizacaoForm, setLocalizacaoForm] = useState({
-    localizacao: "",
-    endereco: "",
-    data_entrada: new Date().toISOString().split('T')[0],
-    data_saida: "",
-    observacoes: "",
-    ativo: true
-  });
-
-  // 👥 NOVO: Estado do formulário de responsabilidade
-  const [responsabilidadeForm, setResponsabilidadeForm] = useState({
-    voluntario_id: "",
-    data_inicio: new Date().toISOString().split('T')[0],
-    data_fim: "",
-    motivo_mudanca: "",
-    observacoes: ""
-  });
-
-  // Função para buscar dados do animal
+  // Função básica para carregar dados do animal
   const fetchAnimalData = async () => {
-    if (!id) return;
+    if (!id) {
+      setError("ID do animal não fornecido");
+      setLoading(false);
+      return;
+    }
 
     try {
       setLoading(true);
-      setError(null);
+      console.log('🔍 [ANIMAL] Carregando dados do animal:', id);
 
-      // Buscar dados do animal com informações do voluntário responsável e grupo
       const { data: animalData, error: animalError } = await supabase
         .from('animais')
         .select(`
           *,
-          voluntarios:voluntario_responsavel_id (
-            id,
-            nome,
-            email,
-            telefone
-          ),
           grupos (
             id,
             nome,
-            tipo
+            descricao
           )
         `)
         .eq('id', id)
         .single();
 
-      if (animalError) throw animalError;
-      setAnimal(animalData);
-
-      // Buscar grupo info se existir
-      if (animalData.grupo_id) {
-        setGrupoInfo(animalData.grupos);
+      if (animalError) {
+        console.error('❌ [ANIMAL] Erro ao carregar animal:', animalError);
+        throw animalError;
       }
 
-      // Buscar intervenções
-      const { data: intervencoesData, error: intervencoesError } = await supabase
-        .from('intervencoes')
-        .select(`
-          *,
-          tipos_intervencoes (nome),
-          voluntarios (nome)
-        `)
-        .eq('animal_id', id)
-        .order('data_intervencao', { ascending: false });
+      if (!animalData) {
+        throw new Error('Animal não encontrado');
+      }
 
-      if (intervencoesError) throw intervencoesError;
-      setIntervencoes(intervencoesData || []);
-
-      // Buscar eventos
-      const { data: eventosData, error: eventosError } = await supabase
-        .from('eventos')
-        .select('*')
-        .eq('animal_id', id)
-        .order('data_evento', { ascending: false });
-
-      if (eventosError) throw eventosError;
-      setEventos(eventosData || []);
-
-      // Buscar localizações
-      const { data: localizacoesData, error: localizacoesError } = await supabase
-        .from('localizacoes')
-        .select('*')
-        .eq('animal_id', id)
-        .order('data_entrada', { ascending: false });
-
-      if (localizacoesError) throw localizacoesError;
-      setLocalizacoes(localizacoesData || []);
-
-      // 👥 NOVO: Buscar responsabilidades
-      const { data: responsabilidadesData, error: responsabilidadesError } = await supabase
-        .from('responsabilidades_voluntarios')
-        .select(`
-          *,
-          voluntarios (
-            nome,
-            email,
-            telefone
-          )
-        `)
-        .eq('animal_id', id)
-        .order('data_inicio', { ascending: false });
-
-      if (responsabilidadesError) throw responsabilidadesError;
-      setResponsabilidades(responsabilidadesData || []);
+      console.log('✅ [ANIMAL] Animal carregado:', animalData.nome);
+      setAnimal(animalData);
+      setError(null);
 
     } catch (error: any) {
-      console.error('💥 [ANIMAL] Erro ao carregar dados:', error);
-      setError(error.message);
+      console.error('💥 [ANIMAL] Erro geral:', error);
+      setError(error.message || 'Erro ao carregar dados do animal');
       toast({
         title: "❌ Erro",
-        description: error.message || "Não foi possível carregar os dados do animal",
+        description: error.message || "Erro ao carregar dados do animal",
         variant: "destructive",
       });
     } finally {
@@ -229,516 +106,8 @@ const AnimalDetail = () => {
     }
   };
 
-  // Buscar dados auxiliares
-  const fetchAuxiliaryData = async () => {
-    try {
-      // Buscar tipos de intervenções
-      const { data: tiposData, error: tiposError } = await supabase
-        .from('tipos_intervencoes')
-        .select('*')
-        .eq('ativo', true)
-        .order('nome');
-
-      if (!tiposError) setTiposIntervencoes(tiposData || []);
-
-      // Buscar voluntários
-      const { data: voluntariosData, error: voluntariosError } = await supabase
-        .from('voluntarios')
-        .select('*')
-        .eq('ativo', true)
-        .order('nome');
-
-      if (!voluntariosError) setVoluntarios(voluntariosData || []);
-
-      // Buscar tipos de eventos
-      const { data: tiposEventosData, error: tiposEventosError } = await supabase
-        .from('tipos_eventos')
-        .select('*')
-        .eq('ativo', true)
-        .order('nome');
-
-      if (!tiposEventosError) setTiposEventos(tiposEventosData || []);
-
-      // Buscar tipos de localizações
-      const { data: tiposLocalizacoesData, error: tiposLocalizacoesError } = await supabase
-        .from('tipos_localizacoes')
-        .select('*')
-        .eq('ativo', true)
-        .order('nome');
-
-      if (!tiposLocalizacoesError) setTiposLocalizacoes(tiposLocalizacoesData || []);
-
-    } catch (error: any) {
-      console.error('💥 [AUXILIAR] Erro ao carregar dados auxiliares:', error);
-    }
-  };
-
-  // 💰 EKO: Função para buscar movimentos financeiros (SISTEMA ROBUSTO)
-  const fetchMovimentosFinanceiros = async () => {
-    if (!id) return;
-    
-    try {
-      console.log('💰 [ANIMAL] Carregando movimentos financeiros para animal:', id);
-      
-      // Usar função SQL para buscar movimentos do animal
-      const { data: movimentos, error: movimentosError } = await supabase
-        .rpc('get_movimentos_animal', { animal_uuid: id });
-
-      if (movimentosError) {
-        console.error('❌ [ANIMAL] Erro ao carregar movimentos:', movimentosError);
-        setMovimentosFinanceiros([]);
-        return;
-      }
-
-      console.log('✅ [ANIMAL] Movimentos carregados:', movimentos?.length || 0);
-      setMovimentosFinanceiros(movimentos || []);
-      
-      // Usar função SQL para calcular resumo
-      const { data: resumo, error: resumoError } = await supabase
-        .rpc('get_resumo_animal', { animal_uuid: id })
-        .single();
-
-      if (!resumoError && resumo) {
-        setTotalReceitas(parseFloat(resumo.total_receitas) || 0);
-        setTotalDespesas(parseFloat(resumo.total_despesas) || 0);
-      } else {
-        setTotalReceitas(0);
-        setTotalDespesas(0);
-      }
-      
-    } catch (error: any) {
-      console.error('💥 [ANIMAL] Erro ao buscar movimentos financeiros:', error);
-    }
-  };
-
-  // 🏥 FUNÇÕES DE INTERVENÇÕES
-  const resetIntervencaoForm = () => {
-    setIntervencaoForm({
-      tipo_intervencao_id: '',
-      voluntario_id: '',
-      data_intervencao: '',
-      veterinario: '',
-      clinica: '',
-      observacoes: '',
-      custo: '',
-      proxima_data: '',
-      urgente: false,
-      concluida: false
-    });
-    setEditingIntervencao(null);
-  };
-
-  const openIntervencaoDialog = (intervencao?: Intervencao) => {
-    if (intervencao) {
-      setEditingIntervencao(intervencao);
-      setIntervencaoForm({
-        tipo_intervencao_id: intervencao.tipo_intervencao_id,
-        voluntario_id: intervencao.voluntario_id || '',
-        data_intervencao: intervencao.data_intervencao.split('T')[0],
-        veterinario: intervencao.veterinario || '',
-        clinica: intervencao.clinica || '',
-        observacoes: intervencao.observacoes || '',
-        custo: intervencao.custo?.toString() || '',
-        proxima_data: intervencao.proxima_data ? intervencao.proxima_data.split('T')[0] : '',
-        urgente: intervencao.urgente,
-        concluida: intervencao.concluida
-      });
-    } else {
-      resetIntervencaoForm();
-    }
-    setIntervencaoDialogOpen(true);
-  };
-
-  const handleIntervencaoSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!intervencaoForm.tipo_intervencao_id || !intervencaoForm.data_intervencao) {
-      toast({
-        title: "❌ Erro",
-        description: "Tipo de intervenção e data são obrigatórios",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const intervencaoData = {
-        animal_id: id,
-        tipo_intervencao_id: intervencaoForm.tipo_intervencao_id,
-        voluntario_id: intervencaoForm.voluntario_id || null,
-        data_intervencao: intervencaoForm.data_intervencao,
-        veterinario: intervencaoForm.veterinario || null,
-        clinica: intervencaoForm.clinica || null,
-        observacoes: intervencaoForm.observacoes || null,
-        custo: intervencaoForm.custo ? parseFloat(intervencaoForm.custo) : null,
-        proxima_data: intervencaoForm.proxima_data || null,
-        urgente: intervencaoForm.urgente,
-        concluida: intervencaoForm.concluida
-      };
-
-      if (editingIntervencao) {
-        const { error } = await supabase
-          .from('intervencoes')
-          .update(intervencaoData)
-          .eq('id', editingIntervencao.id);
-
-        if (error) throw error;
-
-        toast({
-          title: "✅ Sucesso",
-          description: "Intervenção atualizada com sucesso",
-        });
-      } else {
-        const { error } = await supabase
-          .from('intervencoes')
-          .insert([intervencaoData]);
-
-        if (error) throw error;
-
-        toast({
-          title: "✅ Sucesso",
-          description: "Intervenção criada com sucesso",
-        });
-      }
-
-      setIntervencaoDialogOpen(false);
-      resetIntervencaoForm();
-      fetchAnimalData();
-    } catch (error: any) {
-      console.error('Erro ao salvar intervenção:', error);
-      toast({
-        title: "❌ Erro",
-        description: error.message || "Erro ao salvar intervenção",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleDeleteIntervencao = async (intervencaoId: string) => {
-    if (!confirm('Tem certeza que deseja eliminar esta intervenção?')) return;
-
-    try {
-      const { error } = await supabase
-        .from('intervencoes')
-        .delete()
-        .eq('id', intervencaoId);
-
-      if (error) throw error;
-
-      toast({
-        title: "✅ Sucesso",
-        description: "Intervenção eliminada com sucesso",
-      });
-
-      fetchAnimalData();
-    } catch (error: any) {
-      console.error('Erro ao eliminar intervenção:', error);
-      toast({
-        title: "❌ Erro",
-        description: error.message || "Erro ao eliminar intervenção",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // 👥 NOVA FUNÇÃO: Adicionar responsabilidade
-  const handleResponsabilidadeSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!responsabilidadeForm.voluntario_id || !responsabilidadeForm.data_inicio) {
-      toast({
-        title: "❌ Erro",
-        description: "Voluntário e data de início são obrigatórios",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      // Se estamos editando
-      if (editingResponsabilidade) {
-        const { error } = await supabase
-          .from('responsabilidades_voluntarios')
-          .update({
-            voluntario_id: responsabilidadeForm.voluntario_id,
-            data_inicio: responsabilidadeForm.data_inicio,
-            data_fim: responsabilidadeForm.data_fim || null,
-            motivo_mudanca: responsabilidadeForm.motivo_mudanca,
-            observacoes: responsabilidadeForm.observacoes,
-            ativo: !responsabilidadeForm.data_fim, // Se tem data_fim, não está ativo
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', editingResponsabilidade.id);
-
-        if (error) throw error;
-
-        toast({
-          title: "✅ Responsabilidade atualizada",
-          description: "Responsabilidade foi atualizada com sucesso",
-        });
-      } else {
-        // Adicionar nova responsabilidade
-        // Primeiro, terminar responsabilidade ativa atual (se existir)
-        const responsabilidadeAtiva = responsabilidades.find(r => r.ativo && !r.data_fim);
-        
-        if (responsabilidadeAtiva) {
-          await supabase
-            .from('responsabilidades_voluntarios')
-            .update({
-              data_fim: responsabilidadeForm.data_inicio,
-              ativo: false,
-              motivo_mudanca: 'Transferência de responsabilidade',
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', responsabilidadeAtiva.id);
-        }
-
-        // Inserir nova responsabilidade
-        const { error } = await supabase
-          .from('responsabilidades_voluntarios')
-          .insert([{
-            animal_id: id,
-            voluntario_id: responsabilidadeForm.voluntario_id,
-            data_inicio: responsabilidadeForm.data_inicio,
-            data_fim: responsabilidadeForm.data_fim || null,
-            motivo_mudanca: responsabilidadeForm.motivo_mudanca || 'Nova responsabilidade',
-            observacoes: responsabilidadeForm.observacoes,
-            ativo: !responsabilidadeForm.data_fim
-          }]);
-
-        if (error) throw error;
-
-        // Atualizar o voluntário responsável na tabela animais
-        await supabase
-          .from('animais')
-          .update({
-            voluntario_responsavel_id: responsabilidadeForm.voluntario_id,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', id);
-
-        toast({
-          title: "✅ Responsabilidade adicionada",
-          description: "Nova responsabilidade foi registada com sucesso",
-        });
-      }
-
-      // Resetar formulário e fechar modal
-      setResponsabilidadeDialogOpen(false);
-      setEditingResponsabilidade(null);
-      setResponsabilidadeForm({
-        voluntario_id: "",
-        data_inicio: new Date().toISOString().split('T')[0],
-        data_fim: "",
-        motivo_mudanca: "",
-        observacoes: ""
-      });
-
-      // Recarregar dados
-      await fetchAnimalData();
-
-    } catch (error: any) {
-      console.error('💥 [RESPONSABILIDADE] Erro:', error);
-      toast({
-        title: "❌ Erro",
-        description: "Não foi possível salvar a responsabilidade",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // 👥 NOVA FUNÇÃO: Eliminar responsabilidade
-  const handleDeleteResponsabilidade = async (responsabilidadeId: string) => {
-    try {
-      const { error } = await supabase
-        .from('responsabilidades_voluntarios')
-        .delete()
-        .eq('id', responsabilidadeId);
-
-      if (error) throw error;
-
-      toast({
-        title: "✅ Responsabilidade eliminada",
-        description: "Responsabilidade foi eliminada com sucesso",
-      });
-
-      await fetchAnimalData();
-    } catch (error: any) {
-      console.error('💥 [DELETE RESPONSABILIDADE] Erro:', error);
-      toast({
-        title: "❌ Erro",
-        description: "Não foi possível eliminar a responsabilidade",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // 👥 NOVA FUNÇÃO: Abrir edição de responsabilidade
-  const openEditResponsabilidade = (responsabilidade: ResponsabilidadeVoluntario) => {
-    setEditingResponsabilidade(responsabilidade);
-    setResponsabilidadeForm({
-      voluntario_id: responsabilidade.voluntario_id,
-      data_inicio: responsabilidade.data_inicio,
-      data_fim: responsabilidade.data_fim || "",
-      motivo_mudanca: responsabilidade.motivo_mudanca || "",
-      observacoes: responsabilidade.observacoes || ""
-    });
-    setResponsabilidadeDialogOpen(true);
-  };
-
-  // Função para resetar formulário de responsabilidade
-  const resetResponsabilidadeForm = () => {
-    setResponsabilidadeForm({
-      voluntario_id: "",
-      data_inicio: new Date().toISOString().split('T')[0],
-      data_fim: "",
-      motivo_mudanca: "",
-      observacoes: ""
-    });
-    setEditingResponsabilidade(null);
-  };
-
-  // 📦 EKO: FUNÇÕES DE ARQUIVAMENTO
-  const handleArquivar = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!arquivarForm.motivo) {
-      toast({
-        title: "❌ Erro",
-        description: "Motivo do arquivamento é obrigatório",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const confirmArchive = confirm(
-      `Tem certeza que deseja arquivar o animal "${animal?.nome}"?\n\n` +
-      `Motivo: ${arquivarForm.motivo}\n` +
-      `Observações: ${arquivarForm.observacoes || 'Nenhuma'}\n\n` +
-      `Esta ação irá remover o animal da gestão normal.`
-    );
-    
-    if (!confirmArchive) return;
-
-    try {
-      console.log('📦 [ARQUIVO] Arquivando animal:', animal?.nome);
-
-      const { error } = await supabase
-        .from('animais')
-        .update({
-          arquivado: true,
-          data_arquivamento: new Date().toISOString(),
-          motivo_arquivamento: `${arquivarForm.motivo}${arquivarForm.observacoes ? ` - ${arquivarForm.observacoes}` : ''}`,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', animal?.id);
-
-      if (error) {
-        console.error('❌ [ARQUIVO] Erro ao arquivar:', error);
-        throw error;
-      }
-
-      toast({
-        title: "✅ Animal arquivado",
-        description: `${animal?.nome} foi arquivado com sucesso`,
-      });
-
-      // Fechar modal e recarregar dados
-      setArquivarDialogOpen(false);
-      resetArquivarForm();
-      await fetchAnimalData();
-      
-    } catch (error: any) {
-      console.error('💥 [ARQUIVO] Erro:', error);
-      toast({
-        title: "❌ Erro",
-        description: "Não foi possível arquivar o animal",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleDesarquivar = async () => {
-    const confirmRestore = confirm(
-      `Tem certeza que deseja desarquivar o animal "${animal?.nome}"?\n\n` +
-      `O animal voltará a aparecer na gestão normal de animais.`
-    );
-    
-    if (!confirmRestore) return;
-
-    try {
-      console.log('📤 [ARQUIVO] Desarquivando animal:', animal?.nome);
-
-      const { error } = await supabase
-        .from('animais')
-        .update({
-          arquivado: false,
-          data_arquivamento: null,
-          motivo_arquivamento: null,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', animal?.id);
-
-      if (error) {
-        console.error('❌ [ARQUIVO] Erro ao desarquivar:', error);
-        throw error;
-      }
-
-      toast({
-        title: "✅ Animal desarquivado",
-        description: `${animal?.nome} foi desarquivado com sucesso`,
-      });
-
-      // Recarregar dados
-      await fetchAnimalData();
-      
-    } catch (error: any) {
-      console.error('💥 [ARQUIVO] Erro:', error);
-      toast({
-        title: "❌ Erro",
-        description: "Não foi possível desarquivar o animal",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const resetArquivarForm = () => {
-    setArquivarForm({
-      motivo: "",
-      observacoes: ""
-    });
-  };
-
-  // Funções auxiliares
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-PT');
-  };
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-PT', {
-      style: 'currency',
-      currency: 'EUR'
-    }).format(value);
-  };
-
-  const getEstadoBadge = (estado: string) => {
-    switch (estado) {
-      case 'Ativo':
-        return <Badge className="bg-green-100 text-green-800">Ativo</Badge>;
-      case 'Adotado':
-        return <Badge className="bg-blue-100 text-blue-800">Adotado</Badge>;
-      case 'Óbito':
-        return <Badge className="bg-gray-100 text-gray-800">Óbito</Badge>;
-      default:
-        return <Badge className="bg-gray-100 text-gray-800">{estado}</Badge>;
-    }
-  };
-
-  // Carregar dados ao montar o componente
   useEffect(() => {
     fetchAnimalData();
-    fetchAuxiliaryData();
-    fetchMovimentosFinanceiros(); // 💰 EKO: Carregar movimentos financeiros
   }, [id]);
 
   if (loading) {
@@ -755,423 +124,121 @@ const AnimalDetail = () => {
   if (error || !animal) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <AlertCircle className="h-16 w-16 mx-auto mb-4 text-red-600" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Erro ao carregar animal</h2>
-          <p className="text-gray-600 mb-4">{error || "Animal não encontrado"}</p>
-          <Button asChild>
-            <Link to="/animais">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Voltar à Lista
-            </Link>
-          </Button>
-        </div>
+        <Card className="max-w-md mx-auto">
+          <CardContent className="pt-6 text-center">
+            <AlertCircle className="h-16 w-16 mx-auto mb-4 text-red-500" />
+            <h2 className="text-xl font-bold text-red-800 mb-2">Erro ao Carregar Animal</h2>
+            <p className="text-red-600 mb-4">{error}</p>
+            <Button asChild>
+              <Link to="/animais">Voltar à Lista de Animais</Link>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-green-50">
       <UserHeader 
         title={`${animal.nome} - Ficha Completa`}
-        description={`Processo ${animal.numero_processo} • ${animal.especie} • ${animal.sexo}`}
+        description={`${animal.especie} • Processo: ${animal.numero_processo || 'N/A'}`}
+        showBackButton
+        backTo="/animais"
       />
-      
-      {/* ✅ EKO: BOTÃO DE REGRESSO */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <Button asChild variant="outline" className="mb-4">
-          <Link to="/animais">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar aos Animais
-          </Link>
-        </Button>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Informações Básicas */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          {/* Card Principal */}
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <div className="flex justify-between items-start">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        
+        {/* Informações Básicas do Animal */}
+        <Card className="animal-card mb-6">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                {animal.especie === 'Cão' ? (
+                  <Dog className="h-8 w-8 text-orange-500" />
+                ) : animal.especie === 'Gato' ? (
+                  <Cat className="h-8 w-8 text-orange-500" />
+                ) : (
+                  <PawPrint className="h-8 w-8 text-orange-500" />
+                )}
                 <div>
-                  <CardTitle className="text-2xl flex items-center">
-                    <PawPrint className="h-6 w-6 mr-2 text-blue-600" />
-                    {animal.nome}
-                    {animal.arquivado && (
-                      <Badge className="ml-3 bg-gray-100 text-gray-800">
-                        <Archive className="h-3 w-3 mr-1" />
-                        Arquivado
-                      </Badge>
-                    )}
-                  </CardTitle>
-                  <CardDescription className="text-lg">
-                    Processo: {animal.numero_processo} • {getEstadoBadge(animal.estado)}
+                  <CardTitle className="text-2xl text-orange-800">{animal.nome}</CardTitle>
+                  <CardDescription className="text-orange-600">
+                    {animal.especie} • {animal.sexo} • {animal.raca || 'Raça não especificada'}
                   </CardDescription>
                 </div>
-                <div className="flex flex-col items-end space-y-2">
-                  {animal.url_fotografia && (
-                    <img 
-                      src={animal.url_fotografia} 
-                      alt={animal.nome}
-                      className="w-20 h-20 rounded-lg object-cover border-2 border-gray-200"
-                    />
-                  )}
-                  
-                  {/* 📦 EKO: BOTÕES DE ARQUIVAMENTO */}
-                  {hasPermission('admin') && (
-                    <div className="flex space-x-2 mt-2">
-                      {animal.arquivado ? (
-                        <Button
-                          onClick={handleDesarquivar}
-                          variant="outline"
-                          size="sm"
-                          className="border-green-200 hover:bg-green-50"
-                        >
-                          <ArchiveRestore className="h-4 w-4 mr-2" />
-                          Desarquivar
-                        </Button>
-                      ) : (
-                        <Dialog open={arquivarDialogOpen} onOpenChange={setArquivarDialogOpen}>
-                          <DialogTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="border-red-200 hover:bg-red-50"
-                            >
-                              <Archive className="h-4 w-4 mr-2" />
-                              Arquivar
-                            </Button>
-                          </DialogTrigger>
-                        </Dialog>
-                      )}
-                    </div>
-                  )}
-                </div>
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Espécie</p>
-                  <p className="text-lg">{animal.especie}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Sexo</p>
-                  <p className="text-lg">{animal.sexo}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Raça</p>
-                  <p className="text-lg">{animal.raca || 'Não especificada'}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Idade</p>
-                  <p className="text-lg">{animal.idade_estimada ? `${animal.idade_estimada} meses` : 'Não especificada'}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Data de Entrada</p>
-                  <p className="text-lg">{formatDate(animal.data_entrada)}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Peso</p>
-                  <p className="text-lg">{animal.peso ? `${animal.peso} kg` : 'Não especificado'}</p>
-                </div>
-              </div>
-              
-              {animal.observacoes && (
-                <div className="mt-4">
-                  <p className="text-sm font-medium text-gray-500">Observações</p>
-                  <p className="text-gray-700 mt-1">{animal.observacoes}</p>
-                </div>
-              )}
-              
-              {/* 📦 EKO: INFORMAÇÕES DE ARQUIVAMENTO */}
-              {animal.arquivado && (
-                <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                  <div className="flex items-center mb-2">
-                    <Archive className="h-4 w-4 mr-2 text-gray-600" />
-                    <p className="text-sm font-medium text-gray-700">Informações do Arquivamento</p>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                    {animal.data_arquivamento && (
-                      <div>
-                        <span className="text-gray-500">Data:</span>
-                        <span className="ml-2 text-gray-700">{formatDate(animal.data_arquivamento)}</span>
-                      </div>
-                    )}
-                    {animal.motivo_arquivamento && (
-                      <div>
-                        <span className="text-gray-500">Motivo:</span>
-                        <span className="ml-2 text-gray-700">{animal.motivo_arquivamento}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Card de Responsável e Grupo */}
-          <div className="space-y-6">
-            {/* Voluntário Responsável */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center">
-                  <UserCheck className="h-5 w-5 mr-2 text-green-600" />
-                  Voluntário Responsável
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {animal.voluntarios ? (
-                  <div>
-                    <p className="font-medium">{animal.voluntarios.nome}</p>
-                    <p className="text-sm text-gray-600">{animal.voluntarios.email}</p>
-                    <p className="text-sm text-gray-600">{animal.voluntarios.telefone}</p>
-                  </div>
-                ) : (
-                  <p className="text-gray-500">Sem responsável atribuído</p>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Grupo */}
-            {grupoInfo && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center">
-                    <Users className="h-5 w-5 mr-2 text-purple-600" />
-                    Grupo
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="font-medium">{grupoInfo.nome}</p>
-                  <Badge className="mt-2">
-                    {grupoInfo.tipo === 'Matilha' && <Dog className="h-3 w-3 mr-1" />}
-                    {grupoInfo.tipo === 'Colónia' && <Cat className="h-3 w-3 mr-1" />}
-                    {grupoInfo.tipo === 'Sócios' && <Users className="h-3 w-3 mr-1" />}
-                    {grupoInfo.tipo}
+              <div className="flex items-center space-x-2">
+                <Badge variant={animal.estado === 'Ativo' ? 'default' : 'secondary'}>
+                  {animal.estado}
+                </Badge>
+                {animal.arquivado && (
+                  <Badge variant="outline" className="text-gray-600">
+                    Arquivado
                   </Badge>
-                </CardContent>
-              </Card>
+                )}
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div>
+                <Label className="text-orange-700 font-medium">Número de Processo</Label>
+                <p className="text-orange-900">{animal.numero_processo || 'N/A'}</p>
+              </div>
+              <div>
+                <Label className="text-orange-700 font-medium">Data de Entrada</Label>
+                <p className="text-orange-900">
+                  {new Date(animal.data_entrada).toLocaleDateString('pt-PT')}
+                </p>
+              </div>
+              <div>
+                <Label className="text-orange-700 font-medium">Idade Estimada</Label>
+                <p className="text-orange-900">
+                  {animal.idade_estimada ? `${Math.floor(animal.idade_estimada / 12)} anos e ${animal.idade_estimada % 12} meses` : 'N/A'}
+                </p>
+              </div>
+              <div>
+                <Label className="text-orange-700 font-medium">Peso</Label>
+                <p className="text-orange-900">{animal.peso ? `${animal.peso} kg` : 'N/A'}</p>
+              </div>
+              <div>
+                <Label className="text-orange-700 font-medium">Cor</Label>
+                <p className="text-orange-900">{animal.cor || 'N/A'}</p>
+              </div>
+              <div>
+                <Label className="text-orange-700 font-medium">Transponder</Label>
+                <p className="text-orange-900">{animal.transponder || 'N/A'}</p>
+              </div>
+            </div>
+            
+            {animal.caracteristicas_fisicas && (
+              <div className="mt-4">
+                <Label className="text-orange-700 font-medium">Características Físicas</Label>
+                <p className="text-orange-900 mt-1">{animal.caracteristicas_fisicas}</p>
+              </div>
             )}
-          </div>
-        </div>
+            
+            {animal.observacoes && (
+              <div className="mt-4">
+                <Label className="text-orange-700 font-medium">Observações</Label>
+                <p className="text-orange-900 mt-1">{animal.observacoes}</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-        {/* Tabs com Histórico */}
-        <Tabs defaultValue="intervencoes" className="w-full">
+        {/* Abas de Informações Detalhadas */}
+        <Tabs defaultValue="intervencoes" className="space-y-6">
           <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="intervencoes">Intervenções ({intervencoes.length})</TabsTrigger>
-            <TabsTrigger value="eventos">Eventos ({eventos.length})</TabsTrigger>
-            <TabsTrigger value="localizacoes">Localizações ({localizacoes.length})</TabsTrigger>
-            <TabsTrigger value="responsabilidades">Responsabilidades ({responsabilidades.length})</TabsTrigger>
+            <TabsTrigger value="intervencoes">🏥 Intervenções</TabsTrigger>
+            <TabsTrigger value="eventos">📅 Eventos</TabsTrigger>
+            <TabsTrigger value="localizacoes">📍 Localizações</TabsTrigger>
+            <TabsTrigger value="responsabilidades">👥 Responsabilidades</TabsTrigger>
             <TabsTrigger value="financeiro">💰 Financeiro</TabsTrigger>
           </TabsList>
 
-          {/* 👥 NOVA TAB: Responsabilidades */}
-          <TabsContent value="responsabilidades" className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold">Histórico de Responsabilidades</h3>
-              {hasPermission('create') && (
-                <Dialog open={responsabilidadeDialogOpen} onOpenChange={setResponsabilidadeDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button onClick={resetResponsabilidadeForm}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Nova Responsabilidade
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-md">
-                    <DialogHeader>
-                      <DialogTitle>
-                        {editingResponsabilidade ? 'Editar Responsabilidade' : 'Nova Responsabilidade'}
-                      </DialogTitle>
-                      <DialogDescription>
-                        {editingResponsabilidade 
-                          ? 'Editar dados da responsabilidade selecionada'
-                          : 'Adicionar novo voluntário responsável. O responsável atual será automaticamente terminado.'
-                        }
-                      </DialogDescription>
-                    </DialogHeader>
-                    <form onSubmit={handleResponsabilidadeSubmit} className="space-y-4">
-                      <div>
-                        <Label htmlFor="voluntario_id">Voluntário *</Label>
-                        <Select 
-                          value={responsabilidadeForm.voluntario_id} 
-                          onValueChange={(value) => setResponsabilidadeForm({...responsabilidadeForm, voluntario_id: value})}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecionar voluntário" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {voluntarios.map((voluntario) => (
-                              <SelectItem key={voluntario.id} value={voluntario.id}>
-                                {voluntario.nome}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div>
-                        <Label htmlFor="data_inicio">Data de Início *</Label>
-                        <Input
-                          id="data_inicio"
-                          type="date"
-                          value={responsabilidadeForm.data_inicio}
-                          onChange={(e) => setResponsabilidadeForm({...responsabilidadeForm, data_inicio: e.target.value})}
-                          required
-                        />
-                      </div>
-
-                      <div>
-                        <Label htmlFor="data_fim">Data de Fim</Label>
-                        <Input
-                          id="data_fim"
-                          type="date"
-                          value={responsabilidadeForm.data_fim}
-                          onChange={(e) => setResponsabilidadeForm({...responsabilidadeForm, data_fim: e.target.value})}
-                        />
-                      </div>
-
-                      <div>
-                        <Label htmlFor="motivo_mudanca">Motivo</Label>
-                        <Select 
-                          value={responsabilidadeForm.motivo_mudanca} 
-                          onValueChange={(value) => setResponsabilidadeForm({...responsabilidadeForm, motivo_mudanca: value})}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecionar motivo" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Nova responsabilidade">Nova responsabilidade</SelectItem>
-                            <SelectItem value="Transferência">Transferência</SelectItem>
-                            <SelectItem value="Especialização">Especialização</SelectItem>
-                            <SelectItem value="Disponibilidade">Disponibilidade</SelectItem>
-                            <SelectItem value="Adoção">Adoção</SelectItem>
-                            <SelectItem value="Outros">Outros</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div>
-                        <Label htmlFor="observacoes">Observações</Label>
-                        <Textarea
-                          id="observacoes"
-                          value={responsabilidadeForm.observacoes}
-                          onChange={(e) => setResponsabilidadeForm({...responsabilidadeForm, observacoes: e.target.value})}
-                          placeholder="Observações sobre a responsabilidade..."
-                        />
-                      </div>
-
-                      <div className="flex justify-end space-x-2">
-                        <Button type="button" variant="outline" onClick={() => setResponsabilidadeDialogOpen(false)}>
-                          Cancelar
-                        </Button>
-                        <Button type="submit">
-                          {editingResponsabilidade ? 'Atualizar' : 'Adicionar'}
-                        </Button>
-                      </div>
-                    </form>
-                  </DialogContent>
-                </Dialog>
-              )}
-            </div>
-
-            <Card>
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Voluntário</TableHead>
-                      <TableHead>Data Início</TableHead>
-                      <TableHead>Data Fim</TableHead>
-                      <TableHead>Motivo</TableHead>
-                      <TableHead>Status</TableHead>
-                      {hasPermission('update') && <TableHead>Ações</TableHead>}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {responsabilidades.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                          Nenhuma responsabilidade registada
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      responsabilidades.map((responsabilidade) => (
-                        <TableRow key={responsabilidade.id}>
-                          <TableCell>
-                            <div>
-                              <p className="font-medium">{responsabilidade.voluntarios?.nome}</p>
-                              <p className="text-sm text-gray-500">{responsabilidade.voluntarios?.email}</p>
-                            </div>
-                          </TableCell>
-                          <TableCell>{formatDate(responsabilidade.data_inicio)}</TableCell>
-                          <TableCell>
-                            {responsabilidade.data_fim ? formatDate(responsabilidade.data_fim) : (
-                              <Badge className="bg-green-100 text-green-800">
-                                <CheckCircle className="h-3 w-3 mr-1" />
-                                Ativo
-                              </Badge>
-                            )}
-                          </TableCell>
-                          <TableCell>{responsabilidade.motivo_mudanca || '-'}</TableCell>
-                          <TableCell>
-                            {responsabilidade.ativo ? (
-                              <Badge className="bg-green-100 text-green-800">Ativo</Badge>
-                            ) : (
-                              <Badge className="bg-gray-100 text-gray-800">Terminado</Badge>
-                            )}
-                          </TableCell>
-                          {hasPermission('update') && (
-                            <TableCell>
-                              <div className="flex space-x-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => openEditResponsabilidade(responsabilidade)}
-                                >
-                                  <Edit className="h-3 w-3" />
-                                </Button>
-                                {hasPermission('delete') && (
-                                  <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                      <Button size="sm" variant="outline">
-                                        <Trash2 className="h-3 w-3" />
-                                      </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                      <AlertDialogHeader>
-                                        <AlertDialogTitle>Eliminar responsabilidade?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                          Esta ação não pode ser desfeita. A responsabilidade será permanentemente eliminada.
-                                        </AlertDialogDescription>
-                                      </AlertDialogHeader>
-                                      <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                        <AlertDialogAction
-                                          onClick={() => handleDeleteResponsabilidade(responsabilidade.id)}
-                                          className="bg-red-600 hover:bg-red-700"
-                                        >
-                                          Eliminar
-                                        </AlertDialogAction>
-                                      </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                  </AlertDialog>
-                                )}
-                              </div>
-                            </TableCell>
-                          )}
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Outras tabs existentes (simplificadas para este exemplo) */}
+          {/* Aba de Intervenções */}
           <TabsContent value="intervencoes">
             <Card>
               <CardHeader>
@@ -1179,7 +246,12 @@ const AnimalDetail = () => {
                   <CardTitle>Intervenções Médicas</CardTitle>
                   {hasPermission('create') && (
                     <Button
-                      onClick={() => openIntervencaoDialog()}
+                      onClick={() => {
+                        toast({
+                          title: "🚧 Em Desenvolvimento",
+                          description: "Funcionalidade de intervenções será implementada em breve",
+                        });
+                      }}
                       size="sm"
                       className="bg-blue-600 hover:bg-blue-700"
                     >
@@ -1190,111 +262,23 @@ const AnimalDetail = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                {intervencoes.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <Calendar className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                    <p className="text-lg font-medium mb-2">Nenhuma intervenção registrada</p>
-                    <p className="text-sm mb-4">Clique em "Nova Intervenção" para adicionar a primeira intervenção médica.</p>
-                  </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Data</TableHead>
-                        <TableHead>Tipo</TableHead>
-                        <TableHead>Veterinário</TableHead>
-                        <TableHead>Clínica</TableHead>
-                        <TableHead>Custo</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Ações</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {intervencoes.map((intervencao) => (
-                        <TableRow key={intervencao.id}>
-                          <TableCell>
-                            <div className="flex flex-col">
-                              <span className="font-medium">
-                                {new Date(intervencao.data_intervencao).toLocaleDateString('pt-PT')}
-                              </span>
-                              {intervencao.proxima_data && (
-                                <span className="text-xs text-blue-600">
-                                  Próxima: {new Date(intervencao.proxima_data).toLocaleDateString('pt-PT')}
-                                </span>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center space-x-2">
-                              <Badge variant={intervencao.urgente ? "destructive" : "secondary"}>
-                                {intervencao.tipo_intervencao?.nome || 'N/A'}
-                              </Badge>
-                              {intervencao.urgente && (
-                                <Badge variant="destructive" className="text-xs">
-                                  URGENTE
-                                </Badge>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>{intervencao.veterinario || '-'}</TableCell>
-                          <TableCell>{intervencao.clinica || '-'}</TableCell>
-                          <TableCell>
-                            {intervencao.custo ? `€${intervencao.custo.toFixed(2)}` : '-'}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={intervencao.concluida ? "default" : "outline"}>
-                              {intervencao.concluida ? 'Concluída' : 'Pendente'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center space-x-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => openIntervencaoDialog(intervencao)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeleteIntervencao(intervencao.id)}
-                                className="text-red-600 hover:text-red-800"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
+                <div className="text-center py-8 text-gray-500">
+                  <Calendar className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p className="text-lg font-medium mb-2">Nenhuma intervenção registrada</p>
+                  <p className="text-sm mb-4">Clique em "Nova Intervenção" para adicionar a primeira intervenção médica.</p>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
 
+          {/* Outras abas simplificadas */}
           <TabsContent value="eventos">
             <Card>
               <CardHeader>
-                <div className="flex justify-between items-center">
-                  <CardTitle>Eventos</CardTitle>
-                  {hasPermission('create') && (
-                    <Button
-                      onClick={() => {
-                        alert('Funcionalidade Novo Evento em desenvolvimento');
-                      }}
-                      size="sm"
-                      className="bg-purple-600 hover:bg-purple-700"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Novo Evento
-                    </Button>
-                  )}
-                </div>
+                <CardTitle>Eventos</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-500">Lista de eventos será mantida igual...</p>
+                <p className="text-gray-500">Funcionalidade em desenvolvimento...</p>
               </CardContent>
             </Card>
           </TabsContent>
@@ -1302,437 +286,37 @@ const AnimalDetail = () => {
           <TabsContent value="localizacoes">
             <Card>
               <CardHeader>
-                <div className="flex justify-between items-center">
-                  <CardTitle>Localizações</CardTitle>
-                  {hasPermission('create') && (
-                    <Button
-                      onClick={() => {
-                        alert('Funcionalidade Nova Localização em desenvolvimento');
-                      }}
-                      size="sm"
-                      className="bg-green-600 hover:bg-green-700"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Nova Localização
-                    </Button>
-                  )}
-                </div>
+                <CardTitle>Localizações</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-500">Lista de localizações será mantida igual...</p>
+                <p className="text-gray-500">Funcionalidade em desenvolvimento...</p>
               </CardContent>
             </Card>
           </TabsContent>
-          
-          {/* 💰 EKO: NOVA ABA MOVIMENTOS FINANCEIROS */}
+
+          <TabsContent value="responsabilidades">
+            <Card>
+              <CardHeader>
+                <CardTitle>Responsabilidades</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-500">Funcionalidade em desenvolvimento...</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="financeiro">
             <Card>
               <CardHeader>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <CardTitle className="flex items-center">
-                      <DollarSign className="h-5 w-5 mr-2 text-green-600" />
-                      Movimentos Financeiros
-                    </CardTitle>
-                    <CardDescription>
-                      Histórico financeiro associado a este animal
-                    </CardDescription>
-                  </div>
-                  {hasPermission('create') && (
-                    <Link to="/financeiro/movimentos">
-                      <Button
-                        size="sm"
-                        className="bg-green-600 hover:bg-green-700"
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Associar Movimento
-                      </Button>
-                    </Link>
-                  )}
-                </div>
+                <CardTitle>Movimentos Financeiros</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-6">
-                  {/* Resumo Financeiro */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Card className="border-green-200">
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm text-green-600">Total Recebido</p>
-                            <p className="text-2xl font-bold text-green-700">
-                              {new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(totalReceitas)}
-                            </p>
-                          </div>
-                          <TrendingUp className="h-8 w-8 text-green-600" />
-                        </div>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card className="border-red-200">
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm text-red-600">Total Gasto</p>
-                            <p className="text-2xl font-bold text-red-700">
-                              {new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(totalDespesas)}
-                            </p>
-                          </div>
-                          <TrendingDown className="h-8 w-8 text-red-600" />
-                        </div>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card className="border-blue-200">
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm text-blue-600">Saldo</p>
-                            <p className="text-2xl font-bold text-blue-700">
-                              {new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(totalReceitas - totalDespesas)}
-                            </p>
-                          </div>
-                          <DollarSign className="h-8 w-8 text-blue-600" />
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                  
-                  {/* Lista de Movimentos */}
-                  <div>
-                    <h4 className="text-lg font-semibold mb-4">Histórico de Movimentos</h4>
-                    {movimentosFinanceiros.length === 0 ? (
-                      <div className="text-center py-8 text-gray-500">
-                        <DollarSign className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                        <p className="text-lg font-medium">Nenhum movimento financeiro</p>
-                        <p className="text-sm">Os movimentos associados a este animal aparecerão aqui</p>
-                      </div>
-                    ) : (
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Data</TableHead>
-                            <TableHead>Tipo</TableHead>
-                            <TableHead>Categoria</TableHead>
-                            <TableHead>Descrição</TableHead>
-                            <TableHead className="text-right">Valor</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {movimentosFinanceiros.map((movimento) => (
-                            <TableRow key={movimento.id}>
-                              <TableCell>
-                                {new Date(movimento.data_movimento).toLocaleDateString('pt-PT')}
-                              </TableCell>
-                              <TableCell>
-                                <Badge 
-                                  className={movimento.tipo_movimento === 'receita' 
-                                    ? "bg-green-100 text-green-800" 
-                                    : "bg-red-100 text-red-800"
-                                  }
-                                >
-                                  {movimento.tipo_movimento === 'receita' ? '💰' : '💸'} {movimento.tipo_movimento}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex items-center space-x-2">
-                                  <div 
-                                    className="w-3 h-3 rounded-full" 
-                                    style={{ backgroundColor: movimento.categoria_cor }}
-                                  />
-                                  <span>{movimento.categoria_nome}</span>
-                                </div>
-                              </TableCell>
-                              <TableCell>{movimento.descricao}</TableCell>
-                              <TableCell className="text-right font-medium">
-                                <span className={movimento.tipo_movimento === 'receita' ? 'text-green-600' : 'text-red-600'}>
-                                  {movimento.tipo_movimento === 'receita' ? '+' : '-'}
-                                  {new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(movimento.valor)}
-                                </span>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    )}
-                  </div>
-                </div>
+                <p className="text-gray-500">Funcionalidade em desenvolvimento...</p>
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
       </div>
-      
-      {/* 📦 EKO: MODAL DE ARQUIVAMENTO */}
-      <Dialog open={arquivarDialogOpen} onOpenChange={setArquivarDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center">
-              <Archive className="h-5 w-5 mr-2 text-red-600" />
-              Arquivar Animal
-            </DialogTitle>
-            <DialogDescription>
-              O animal será removido da gestão normal e movido para o arquivo.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <form onSubmit={handleArquivar} className="space-y-4">
-            <div>
-              <Label htmlFor="motivo">Motivo do Arquivamento *</Label>
-              <Select 
-                value={arquivarForm.motivo} 
-                onValueChange={(value) => setArquivarForm({...arquivarForm, motivo: value})}
-                required
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecionar motivo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Óbito">🕊 Óbito</SelectItem>
-                  <SelectItem value="Adoção">🏠 Adoção</SelectItem>
-                  <SelectItem value="Transferência">🚚 Transferência</SelectItem>
-                  <SelectItem value="Não Adotável">⚠️ Não Adotável</SelectItem>
-                  <SelectItem value="Fuga">🏃 Fuga</SelectItem>
-                  <SelectItem value="Devolução">🔄 Devolução</SelectItem>
-                  <SelectItem value="Outros">📝 Outros</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="observacoes">Observações</Label>
-              <Textarea
-                id="observacoes"
-                value={arquivarForm.observacoes}
-                onChange={(e) => setArquivarForm({...arquivarForm, observacoes: e.target.value})}
-                placeholder="Observações adicionais sobre o arquivamento..."
-                rows={3}
-              />
-            </div>
-
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-              <div className="flex items-start">
-                <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5 mr-2" />
-                <div className="text-sm text-yellow-800">
-                  <p className="font-medium">Atenção:</p>
-                  <p>Esta ação irá arquivar o animal "{animal?.nome}". O animal não aparecerá mais na gestão normal, mas poderá ser desarquivado posteriormente por administradores.</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-end space-x-2">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => {
-                  setArquivarDialogOpen(false);
-                  resetArquivarForm();
-                }}
-              >
-                Cancelar
-              </Button>
-              <Button 
-                type="submit" 
-                className="bg-red-600 hover:bg-red-700"
-              >
-                <Archive className="h-4 w-4 mr-2" />
-                Arquivar Animal
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Diálogo de Intervenção */}
-      <Dialog open={intervencaoDialogOpen} onOpenChange={setIntervencaoDialogOpen}>
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-blue-800">
-              {editingIntervencao ? 'Editar Intervenção' : 'Nova Intervenção Médica'}
-            </DialogTitle>
-            <DialogDescription className="text-blue-600">
-              {editingIntervencao ? 'Editar informações da intervenção' : `Registar nova intervenção médica para ${animal?.nome}`}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <form onSubmit={handleIntervencaoSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="tipo_intervencao_id" className="text-blue-700 font-medium">
-                  Tipo de Intervenção *
-                </Label>
-                <Select 
-                  value={intervencaoForm.tipo_intervencao_id} 
-                  onValueChange={(value) => setIntervencaoForm({ ...intervencaoForm, tipo_intervencao_id: value })}
-                >
-                  <SelectTrigger className="border-blue-200 focus:border-blue-400">
-                    <SelectValue placeholder="Selecionar tipo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {tiposIntervencoes.filter(tipo => tipo.ativo).map((tipo) => (
-                      <SelectItem key={tipo.id} value={tipo.id}>
-                        {tipo.nome}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label htmlFor="data_intervencao" className="text-blue-700 font-medium">
-                  Data da Intervenção *
-                </Label>
-                <Input
-                  id="data_intervencao"
-                  type="date"
-                  value={intervencaoForm.data_intervencao}
-                  onChange={(e) => setIntervencaoForm({ ...intervencaoForm, data_intervencao: e.target.value })}
-                  className="border-blue-200 focus:border-blue-400"
-                  required
-                />
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="veterinario" className="text-blue-700">
-                  Veterinário
-                </Label>
-                <Input
-                  id="veterinario"
-                  value={intervencaoForm.veterinario}
-                  onChange={(e) => setIntervencaoForm({ ...intervencaoForm, veterinario: e.target.value })}
-                  placeholder="Nome do veterinário"
-                  className="border-blue-200 focus:border-blue-400"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="clinica" className="text-blue-700">
-                  Clínica
-                </Label>
-                <Input
-                  id="clinica"
-                  value={intervencaoForm.clinica}
-                  onChange={(e) => setIntervencaoForm({ ...intervencaoForm, clinica: e.target.value })}
-                  placeholder="Nome da clínica"
-                  className="border-blue-200 focus:border-blue-400"
-                />
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="custo" className="text-blue-700">
-                  Custo (€)
-                </Label>
-                <Input
-                  id="custo"
-                  type="number"
-                  step="0.01"
-                  value={intervencaoForm.custo}
-                  onChange={(e) => setIntervencaoForm({ ...intervencaoForm, custo: e.target.value })}
-                  placeholder="0.00"
-                  className="border-blue-200 focus:border-blue-400"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="proxima_data" className="text-blue-700">
-                  Próxima Consulta
-                </Label>
-                <Input
-                  id="proxima_data"
-                  type="date"
-                  value={intervencaoForm.proxima_data}
-                  onChange={(e) => setIntervencaoForm({ ...intervencaoForm, proxima_data: e.target.value })}
-                  className="border-blue-200 focus:border-blue-400"
-                />
-              </div>
-            </div>
-            
-            <div>
-              <Label htmlFor="voluntario_id" className="text-blue-700">
-                Voluntário Responsável
-              </Label>
-              <Select 
-                value={intervencaoForm.voluntario_id} 
-                onValueChange={(value) => setIntervencaoForm({ ...intervencaoForm, voluntario_id: value })}
-              >
-                <SelectTrigger className="border-blue-200 focus:border-blue-400">
-                  <SelectValue placeholder="Selecionar voluntário (opcional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Nenhum voluntário</SelectItem>
-                  {voluntarios.map((voluntario) => (
-                    <SelectItem key={voluntario.id} value={voluntario.id}>
-                      {voluntario.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div>
-              <Label htmlFor="observacoes" className="text-blue-700">
-                Observações
-              </Label>
-              <Textarea
-                id="observacoes"
-                value={intervencaoForm.observacoes}
-                onChange={(e) => setIntervencaoForm({ ...intervencaoForm, observacoes: e.target.value })}
-                placeholder="Detalhes da intervenção, diagnóstico, tratamento..."
-                className="border-blue-200 focus:border-blue-400"
-                rows={3}
-              />
-            </div>
-            
-            <div className="flex items-center space-x-6">
-              <div className="flex items-center space-x-2">
-                <input
-                  id="urgente"
-                  type="checkbox"
-                  checked={intervencaoForm.urgente}
-                  onChange={(e) => setIntervencaoForm({ ...intervencaoForm, urgente: e.target.checked })}
-                  className="rounded border-blue-300 text-blue-600 focus:ring-blue-500"
-                />
-                <Label htmlFor="urgente" className="text-blue-700">
-                  Intervenção Urgente
-                </Label>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <input
-                  id="concluida"
-                  type="checkbox"
-                  checked={intervencaoForm.concluida}
-                  onChange={(e) => setIntervencaoForm({ ...intervencaoForm, concluida: e.target.checked })}
-                  className="rounded border-blue-300 text-blue-600 focus:ring-blue-500"
-                />
-                <Label htmlFor="concluida" className="text-blue-700">
-                  Intervenção Concluída
-                </Label>
-              </div>
-            </div>
-            
-            <div className="flex justify-end space-x-2 pt-4">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => {
-                  setIntervencaoDialogOpen(false);
-                  resetIntervencaoForm();
-                }}
-              >
-                Cancelar
-              </Button>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                {editingIntervencao ? 'Atualizar' : 'Registar'} Intervenção
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
