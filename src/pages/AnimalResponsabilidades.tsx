@@ -53,7 +53,6 @@ const AnimalResponsabilidades = () => {
 
   // Estados para responsabilidades
   const [responsabilidades, setResponsabilidades] = useState<ResponsabilidadeVoluntario[]>([]);
-  const [tiposResponsabilidades, setTiposResponsabilidades] = useState<any[]>([]);
   const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
   const [responsabilidadeDialogOpen, setResponsabilidadeDialogOpen] = useState(false);
   const [editingResponsabilidade, setEditingResponsabilidade] = useState<ResponsabilidadeVoluntario | null>(null);
@@ -293,11 +292,11 @@ const AnimalResponsabilidades = () => {
   };
 
   // Função para obter emoji do tipo de responsabilidade
-  const getanyInfo = (tipoId: number) => {
-    const tipo = tiposResponsabilidades.find(t => t.id === tipoId);
+  const getTipoResponsabilidadeInfo = (tipo: string) => {
+    const tipoInfo = TIPOS_RESPONSABILIDADES.find(t => t.id === tipo);
     return {
-      emoji: tipo?.emoji || '📅',
-      nome: tipo?.nome || 'Responsabilidade'
+      emoji: tipoInfo?.nome?.split(' ')[0] || '👥',
+      nome: tipoInfo?.nome || 'Responsabilidade'
     };
   };
 
@@ -386,7 +385,7 @@ const AnimalResponsabilidades = () => {
             {responsabilidades.length > 0 ? (
               <div className="space-y-6">
                 {responsabilidades.map((responsabilidade, index) => {
-                  const tipoInfo = getanyInfo(responsabilidade.tipo_responsabilidade);
+                  const tipoInfo = getTipoResponsabilidadeInfo(responsabilidade.tipo_responsabilidade);
                   return (
                     <div key={responsabilidade.id} className="relative">
                       {/* Linha da timeline */}
@@ -517,14 +516,14 @@ const AnimalResponsabilidades = () => {
                   <SelectValue placeholder="Selecionar tipo" />
                 </SelectTrigger>
                 <SelectContent>
-                  {tiposResponsabilidades.length === 0 && (
+                  {TIPOS_RESPONSABILIDADES.length === 0 && (
                     <SelectItem value="loading" disabled>
                       Carregando tipos...
                     </SelectItem>
                   )}
-                  {tiposResponsabilidades.map((tipo) => (
-                    <SelectItem key={tipo.id} value={tipo.id.toString()}>
-                      {tipo.emoji} {tipo.nome}
+                  {TIPOS_RESPONSABILIDADES.map((tipo) => (
+                    <SelectItem key={tipo.id} value={tipo.id}>
+                      {tipo.nome}
                     </SelectItem>
                   ))}
                 </SelectContent>
