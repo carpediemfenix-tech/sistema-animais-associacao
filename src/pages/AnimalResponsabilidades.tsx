@@ -196,8 +196,7 @@ const AnimalResponsabilidades = () => {
     try {
       const responsabilidadeData = {
         animal_id: id,
-        tipo_responsabilidade: parseInt(responsabilidadeForm.tipo_responsabilidade),
-        titulo: responsabilidadeForm.observacoes,
+        tipo_responsabilidade: responsabilidadeForm.tipo_responsabilidade,
         data_inicio: responsabilidadeForm.data_inicio,
         observacoes: responsabilidadeForm.observacoes,
         voluntario_id: responsabilidadeForm.voluntario_id || null,
@@ -542,7 +541,7 @@ const AnimalResponsabilidades = () => {
             
             <div>
               <Label htmlFor="data_inicio" className="text-green-700 font-medium">
-                Data do Responsabilidade *
+                Data de Atribuição *
               </Label>
               <Input
                 id="data_inicio"
@@ -556,14 +555,14 @@ const AnimalResponsabilidades = () => {
             
             <div>
               <Label htmlFor="observacoes" className="text-green-700 font-medium">
-                Descrição do Responsabilidade *
+                Descrição da Responsabilidade
               </Label>
               <Input
                 id="observacoes"
                 value={responsabilidadeForm.observacoes}
                 onChange={(e) => setResponsabilidadeForm({ ...responsabilidadeForm, observacoes: e.target.value })}
                 className="border-green-200 focus:border-green-400"
-                placeholder="Breve descrição do responsabilidade"
+                placeholder="Breve descrição da responsabilidade"
                 required
               />
             </div>
@@ -624,13 +623,13 @@ const AnimalResponsabilidades = () => {
                 onCheckedChange={(checked) => setResponsabilidadeForm({ ...responsabilidadeForm, ativo: !!checked })}
               />
               <Label htmlFor="ativo" className="text-green-700 font-medium">
-                Marcar como responsabilidade ativo
+                Marcar como responsabilidade ativa
               </Label>
             </div>
 
             <div className="bg-green-50 p-3 rounded-lg">
               <p className="text-sm text-green-700">
-                <strong>Dica:</strong> Responsabilidades ativos aparecem destacados na timeline e são úteis para marcos significativos.
+                <strong>Dica:</strong> Responsabilidades ativas aparecem destacadas na timeline e são úteis para marcos significativos.
               </p>
             </div>
             

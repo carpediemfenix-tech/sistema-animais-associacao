@@ -130,6 +130,7 @@ const AnimalLocalizacoes = () => {
         .eq('ativo', true)
         .order('nome');
 
+      console.log('DEBUG - Tipos de localizações carregados:', tiposLocalizacoesData);
       setTiposLocalizacoes(tiposLocalizacoesData || []);
 
       // Carregar voluntários
@@ -584,7 +585,10 @@ const AnimalLocalizacoes = () => {
               </Label>
               <Select 
                 value={localizacaoForm.tipo_localizacao} 
-                onValueChange={(value) => setLocalizacaoForm({ ...localizacaoForm, tipo_localizacao: value })}
+                onValueChange={(value) => {
+                  console.log('DEBUG - Selecionando tipo:', value);
+                  setLocalizacaoForm({ ...localizacaoForm, tipo_localizacao: value });
+                }}
               >
                 <SelectTrigger className="border-blue-200 focus:border-blue-400">
                   <SelectValue placeholder="Selecionar tipo" />
