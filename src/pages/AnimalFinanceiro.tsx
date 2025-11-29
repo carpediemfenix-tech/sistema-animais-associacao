@@ -107,7 +107,10 @@ const AnimalFinanceiro = () => {
       // Carregar movimentos financeiros do animal
       const { data: movimentosData, error: movimentosError } = await supabase
         .from('movimentos_financeiros')
-        .select('*')
+        .select(`
+          *,
+          categorias_financeiras(nome, icone, cor)
+        `)
         .eq('animal_id', id)
         .order('data_movimento', { ascending: false });
 
@@ -191,14 +194,15 @@ const AnimalFinanceiro = () => {
     e.preventDefault();
     
     try {
+      // Usar exatamente a mesma estrutura da GestaoFinanceira.tsx
       const movimentoData = {
-        animal_id: id,
         categoria_id: movimentoForm.categoria_id,
         tipo: movimentoForm.tipo,
-        descricao: movimentoForm.descricao,
+        descricao: movimentoForm.descricao.trim(),
         valor: parseFloat(movimentoForm.valor),
         data_movimento: movimentoForm.data_movimento,
-        observacoes: movimentoForm.observacoes || null
+        observacoes: movimentoForm.observacoes.trim() || null,
+        animal_id: id
       };
 
       let error;
@@ -613,7 +617,11 @@ const AnimalFinanceiro = () => {
                               <Calendar className="h-3 w-3 mr-1" />
                               {new Date(movimento.data_movimento).toLocaleDateString('pt-PT')}
                             </div>
-                            {categoria && (
+                            {movimento.categorias_financeiras ? (
+                              <Badge variant="outline" className="text-xs">
+                                {movimento.categorias_financeiras.icone} {movimento.categorias_financeiras.nome}
+                              </Badge>
+                            ) : categoria && (
                               <Badge variant="outline" className="text-xs">
                                 {categoria.nome}
                               </Badge>
