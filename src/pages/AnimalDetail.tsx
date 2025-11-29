@@ -69,14 +69,7 @@ const AnimalDetail = () => {
 
       const { data: animalData, error: animalError } = await supabase
         .from('animais')
-        .select(`
-          *,
-          grupos (
-            id,
-            nome,
-            descricao
-          )
-        `)
+        .select('*')
         .eq('id', id)
         .single();
 
