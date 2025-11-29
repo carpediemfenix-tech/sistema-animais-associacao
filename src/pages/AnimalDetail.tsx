@@ -70,6 +70,21 @@ const AnimalDetail = () => {
   const [localizacaoDialogOpen, setLocalizacaoDialogOpen] = useState(false);
   const [responsabilidadeDialogOpen, setResponsabilidadeDialogOpen] = useState(false);
   
+  // Estados do formulário de intervenção
+  const [editingIntervencao, setEditingIntervencao] = useState<Intervencao | null>(null);
+  const [intervencaoForm, setIntervencaoForm] = useState({
+    tipo_intervencao_id: '',
+    voluntario_id: '',
+    data_intervencao: '',
+    veterinario: '',
+    clinica: '',
+    observacoes: '',
+    custo: '',
+    proxima_data: '',
+    urgente: false,
+    concluida: false
+  });
+  
   // 📦 EKO: Estados para arquivamento
   const [arquivarDialogOpen, setArquivarDialogOpen] = useState(false);
   const [arquivarForm, setArquivarForm] = useState({
@@ -82,23 +97,12 @@ const AnimalDetail = () => {
   const [totalReceitas, setTotalReceitas] = useState(0);
   const [totalDespesas, setTotalDespesas] = useState(0);
 
-  // Estados de edição
-  const [editingIntervencao, setEditingIntervencao] = useState<Intervencao | null>(null);
+  // Estados de edição adicionais
   const [editingEvento, setEditingEvento] = useState<Evento | null>(null);
   const [editingLocalizacao, setEditingLocalizacao] = useState<Localizacao | null>(null);
   const [editingResponsabilidade, setEditingResponsabilidade] = useState<ResponsabilidadeVoluntario | null>(null);
 
-  // Estados dos formulários
-  const [intervencaoForm, setIntervencaoForm] = useState({
-    tipo_intervencao_id: "",
-    data_intervencao: new Date().toISOString().split('T')[0],
-    veterinario: "",
-    clinica: "",
-    custo: "",
-    observacoes: "",
-    proxima_data: "",
-    voluntario_id: ""
-  });
+  // Estados dos formulários adicionais
 
   const [eventoForm, setEventoForm] = useState({
     tipo_evento: "",
@@ -304,6 +308,136 @@ const AnimalDetail = () => {
       
     } catch (error: any) {
       console.error('💥 [ANIMAL] Erro ao buscar movimentos financeiros:', error);
+    }
+  };
+
+  // 🏥 FUNÇÕES DE INTERVENÇÕES
+  const resetIntervencaoForm = () => {
+    setIntervencaoForm({
+      tipo_intervencao_id: '',
+      voluntario_id: '',
+      data_intervencao: '',
+      veterinario: '',
+      clinica: '',
+      observacoes: '',
+      custo: '',
+      proxima_data: '',
+      urgente: false,
+      concluida: false
+    });
+    setEditingIntervencao(null);
+  };
+
+  const openIntervencaoDialog = (intervencao?: Intervencao) => {
+    if (intervencao) {
+      setEditingIntervencao(intervencao);
+      setIntervencaoForm({
+        tipo_intervencao_id: intervencao.tipo_intervencao_id,
+        voluntario_id: intervencao.voluntario_id || '',
+        data_intervencao: intervencao.data_intervencao.split('T')[0],
+        veterinario: intervencao.veterinario || '',
+        clinica: intervencao.clinica || '',
+        observacoes: intervencao.observacoes || '',
+        custo: intervencao.custo?.toString() || '',
+        proxima_data: intervencao.proxima_data ? intervencao.proxima_data.split('T')[0] : '',
+        urgente: intervencao.urgente,
+        concluida: intervencao.concluida
+      });
+    } else {
+      resetIntervencaoForm();
+    }
+    setIntervencaoDialogOpen(true);
+  };
+
+  const handleIntervencaoSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!intervencaoForm.tipo_intervencao_id || !intervencaoForm.data_intervencao) {
+      toast({
+        title: "❌ Erro",
+        description: "Tipo de intervenção e data são obrigatórios",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const intervencaoData = {
+        animal_id: id,
+        tipo_intervencao_id: intervencaoForm.tipo_intervencao_id,
+        voluntario_id: intervencaoForm.voluntario_id || null,
+        data_intervencao: intervencaoForm.data_intervencao,
+        veterinario: intervencaoForm.veterinario || null,
+        clinica: intervencaoForm.clinica || null,
+        observacoes: intervencaoForm.observacoes || null,
+        custo: intervencaoForm.custo ? parseFloat(intervencaoForm.custo) : null,
+        proxima_data: intervencaoForm.proxima_data || null,
+        urgente: intervencaoForm.urgente,
+        concluida: intervencaoForm.concluida
+      };
+
+      if (editingIntervencao) {
+        const { error } = await supabase
+          .from('intervencoes')
+          .update(intervencaoData)
+          .eq('id', editingIntervencao.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "✅ Sucesso",
+          description: "Intervenção atualizada com sucesso",
+        });
+      } else {
+        const { error } = await supabase
+          .from('intervencoes')
+          .insert([intervencaoData]);
+
+        if (error) throw error;
+
+        toast({
+          title: "✅ Sucesso",
+          description: "Intervenção criada com sucesso",
+        });
+      }
+
+      setIntervencaoDialogOpen(false);
+      resetIntervencaoForm();
+      fetchAnimalData();
+    } catch (error: any) {
+      console.error('Erro ao salvar intervenção:', error);
+      toast({
+        title: "❌ Erro",
+        description: error.message || "Erro ao salvar intervenção",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteIntervencao = async (intervencaoId: string) => {
+    if (!confirm('Tem certeza que deseja eliminar esta intervenção?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('intervencoes')
+        .delete()
+        .eq('id', intervencaoId);
+
+      if (error) throw error;
+
+      toast({
+        title: "✅ Sucesso",
+        description: "Intervenção eliminada com sucesso",
+      });
+
+      fetchAnimalData();
+    } catch (error: any) {
+      console.error('Erro ao eliminar intervenção:', error);
+      toast({
+        title: "❌ Erro",
+        description: error.message || "Erro ao eliminar intervenção",
+        variant: "destructive",
+      });
     }
   };
 
@@ -1045,9 +1179,7 @@ const AnimalDetail = () => {
                   <CardTitle>Intervenções Médicas</CardTitle>
                   {hasPermission('create') && (
                     <Button
-                      onClick={() => {
-                        alert('Funcionalidade Nova Intervenção em desenvolvimento');
-                      }}
+                      onClick={() => openIntervencaoDialog()}
                       size="sm"
                       className="bg-blue-600 hover:bg-blue-700"
                     >
@@ -1058,7 +1190,86 @@ const AnimalDetail = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-500">Lista de intervenções será mantida igual...</p>
+                {intervencoes.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <Calendar className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p className="text-lg font-medium mb-2">Nenhuma intervenção registrada</p>
+                    <p className="text-sm mb-4">Clique em "Nova Intervenção" para adicionar a primeira intervenção médica.</p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Data</TableHead>
+                        <TableHead>Tipo</TableHead>
+                        <TableHead>Veterinário</TableHead>
+                        <TableHead>Clínica</TableHead>
+                        <TableHead>Custo</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {intervencoes.map((intervencao) => (
+                        <TableRow key={intervencao.id}>
+                          <TableCell>
+                            <div className="flex flex-col">
+                              <span className="font-medium">
+                                {new Date(intervencao.data_intervencao).toLocaleDateString('pt-PT')}
+                              </span>
+                              {intervencao.proxima_data && (
+                                <span className="text-xs text-blue-600">
+                                  Próxima: {new Date(intervencao.proxima_data).toLocaleDateString('pt-PT')}
+                                </span>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center space-x-2">
+                              <Badge variant={intervencao.urgente ? "destructive" : "secondary"}>
+                                {intervencao.tipo_intervencao?.nome || 'N/A'}
+                              </Badge>
+                              {intervencao.urgente && (
+                                <Badge variant="destructive" className="text-xs">
+                                  URGENTE
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>{intervencao.veterinario || '-'}</TableCell>
+                          <TableCell>{intervencao.clinica || '-'}</TableCell>
+                          <TableCell>
+                            {intervencao.custo ? `€${intervencao.custo.toFixed(2)}` : '-'}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={intervencao.concluida ? "default" : "outline"}>
+                              {intervencao.concluida ? 'Concluída' : 'Pendente'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center space-x-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => openIntervencaoDialog(intervencao)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteIntervencao(intervencao.id)}
+                                className="text-red-600 hover:text-red-800"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -1326,6 +1537,197 @@ const AnimalDetail = () => {
               >
                 <Archive className="h-4 w-4 mr-2" />
                 Arquivar Animal
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Diálogo de Intervenção */}
+      <Dialog open={intervencaoDialogOpen} onOpenChange={setIntervencaoDialogOpen}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-blue-800">
+              {editingIntervencao ? 'Editar Intervenção' : 'Nova Intervenção Médica'}
+            </DialogTitle>
+            <DialogDescription className="text-blue-600">
+              {editingIntervencao ? 'Editar informações da intervenção' : `Registar nova intervenção médica para ${animal?.nome}`}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleIntervencaoSubmit} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="tipo_intervencao_id" className="text-blue-700 font-medium">
+                  Tipo de Intervenção *
+                </Label>
+                <Select 
+                  value={intervencaoForm.tipo_intervencao_id} 
+                  onValueChange={(value) => setIntervencaoForm({ ...intervencaoForm, tipo_intervencao_id: value })}
+                >
+                  <SelectTrigger className="border-blue-200 focus:border-blue-400">
+                    <SelectValue placeholder="Selecionar tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tiposIntervencoes.filter(tipo => tipo.ativo).map((tipo) => (
+                      <SelectItem key={tipo.id} value={tipo.id}>
+                        {tipo.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="data_intervencao" className="text-blue-700 font-medium">
+                  Data da Intervenção *
+                </Label>
+                <Input
+                  id="data_intervencao"
+                  type="date"
+                  value={intervencaoForm.data_intervencao}
+                  onChange={(e) => setIntervencaoForm({ ...intervencaoForm, data_intervencao: e.target.value })}
+                  className="border-blue-200 focus:border-blue-400"
+                  required
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="veterinario" className="text-blue-700">
+                  Veterinário
+                </Label>
+                <Input
+                  id="veterinario"
+                  value={intervencaoForm.veterinario}
+                  onChange={(e) => setIntervencaoForm({ ...intervencaoForm, veterinario: e.target.value })}
+                  placeholder="Nome do veterinário"
+                  className="border-blue-200 focus:border-blue-400"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="clinica" className="text-blue-700">
+                  Clínica
+                </Label>
+                <Input
+                  id="clinica"
+                  value={intervencaoForm.clinica}
+                  onChange={(e) => setIntervencaoForm({ ...intervencaoForm, clinica: e.target.value })}
+                  placeholder="Nome da clínica"
+                  className="border-blue-200 focus:border-blue-400"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="custo" className="text-blue-700">
+                  Custo (€)
+                </Label>
+                <Input
+                  id="custo"
+                  type="number"
+                  step="0.01"
+                  value={intervencaoForm.custo}
+                  onChange={(e) => setIntervencaoForm({ ...intervencaoForm, custo: e.target.value })}
+                  placeholder="0.00"
+                  className="border-blue-200 focus:border-blue-400"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="proxima_data" className="text-blue-700">
+                  Próxima Consulta
+                </Label>
+                <Input
+                  id="proxima_data"
+                  type="date"
+                  value={intervencaoForm.proxima_data}
+                  onChange={(e) => setIntervencaoForm({ ...intervencaoForm, proxima_data: e.target.value })}
+                  className="border-blue-200 focus:border-blue-400"
+                />
+              </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="voluntario_id" className="text-blue-700">
+                Voluntário Responsável
+              </Label>
+              <Select 
+                value={intervencaoForm.voluntario_id} 
+                onValueChange={(value) => setIntervencaoForm({ ...intervencaoForm, voluntario_id: value })}
+              >
+                <SelectTrigger className="border-blue-200 focus:border-blue-400">
+                  <SelectValue placeholder="Selecionar voluntário (opcional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Nenhum voluntário</SelectItem>
+                  {voluntarios.map((voluntario) => (
+                    <SelectItem key={voluntario.id} value={voluntario.id}>
+                      {voluntario.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="observacoes" className="text-blue-700">
+                Observações
+              </Label>
+              <Textarea
+                id="observacoes"
+                value={intervencaoForm.observacoes}
+                onChange={(e) => setIntervencaoForm({ ...intervencaoForm, observacoes: e.target.value })}
+                placeholder="Detalhes da intervenção, diagnóstico, tratamento..."
+                className="border-blue-200 focus:border-blue-400"
+                rows={3}
+              />
+            </div>
+            
+            <div className="flex items-center space-x-6">
+              <div className="flex items-center space-x-2">
+                <input
+                  id="urgente"
+                  type="checkbox"
+                  checked={intervencaoForm.urgente}
+                  onChange={(e) => setIntervencaoForm({ ...intervencaoForm, urgente: e.target.checked })}
+                  className="rounded border-blue-300 text-blue-600 focus:ring-blue-500"
+                />
+                <Label htmlFor="urgente" className="text-blue-700">
+                  Intervenção Urgente
+                </Label>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <input
+                  id="concluida"
+                  type="checkbox"
+                  checked={intervencaoForm.concluida}
+                  onChange={(e) => setIntervencaoForm({ ...intervencaoForm, concluida: e.target.checked })}
+                  className="rounded border-blue-300 text-blue-600 focus:ring-blue-500"
+                />
+                <Label htmlFor="concluida" className="text-blue-700">
+                  Intervenção Concluída
+                </Label>
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => {
+                  setIntervencaoDialogOpen(false);
+                  resetIntervencaoForm();
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+                {editingIntervencao ? 'Atualizar' : 'Registar'} Intervenção
               </Button>
             </div>
           </form>
