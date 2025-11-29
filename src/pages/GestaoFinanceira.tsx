@@ -31,15 +31,25 @@ import { useToast } from "@/hooks/use-toast";
 interface MovimentoFinanceiro {
   id: string;
   animal_id?: string;
-  tipo_movimento: 'Receita' | 'Despesa';
-  categoria: string;
+  categoria_id: string;
+  tipo: 'receita' | 'despesa';
   descricao: string;
   valor: number;
   data_movimento: string;
-  voluntario_id?: string;
+  metodo_pagamento?: string;
   observacoes?: string;
   animal?: { nome: string; numero_processo?: string };
-  voluntario?: { nome: string };
+  categorias_financeiras?: { nome: string; icone: string; cor: string };
+}
+
+interface CategoriaFinanceira {
+  id: string;
+  nome: string;
+  tipo: 'receita' | 'despesa';
+  escopo: 'animal' | 'associacao' | 'ambos';
+  icone: string;
+  cor: string;
+  ativo: boolean;
 }
 
 const GestaoFinanceira = () => {
@@ -51,16 +61,17 @@ const GestaoFinanceira = () => {
   const [submitting, setSubmitting] = useState(false);
   
   // Estados do formulário
-  const [tipoMovimento, setTipoMovimento] = useState("");
-  const [categoria, setCategoria] = useState("");
+  const [tipoMovimento, setTipoMovimento] = useState<'receita' | 'despesa'>('despesa');
+  const [categoriaId, setCategoriaId] = useState("");
   const [descricao, setDescricao] = useState("");
   const [valor, setValor] = useState("");
   const [dataMovimento, setDataMovimento] = useState(new Date().toISOString().split('T')[0]);
   const [observacoes, setObservacoes] = useState("");
   const [animalSelecionado, setAnimalSelecionado] = useState("");
   
-  // 🐶 EKO: Estados para animais
+  // Estados para dados
   const [animais, setAnimais] = useState<any[]>([]);
+  const [categorias, setCategorias] = useState<CategoriaFinanceira[]>([]);
   const [loadingAnimais, setLoadingAnimais] = useState(false);
   
   const { toast } = useToast();
@@ -75,7 +86,8 @@ const GestaoFinanceira = () => {
         .from('movimentos_financeiros')
         .select(`
           *,
-          animais(nome, numero_processo)
+          animais(nome, numero_processo),
+          categorias_financeiras(nome, icone, cor)
         `)
         .order('data_movimento', { ascending: false });
 
@@ -127,9 +139,33 @@ const GestaoFinanceira = () => {
     }
   };
 
+  const fetchCategorias = async () => {
+    try {
+      console.log('💰 [FINANCEIRO] Carregando categorias...');
+      
+      const { data, error } = await supabase
+        .from('categorias_financeiras')
+        .select('*')
+        .eq('ativo', true)
+        .order('nome');
+
+      if (error) {
+        console.warn('⚠️ [FINANCEIRO] Erro ao carregar categorias:', error.message);
+        setCategorias([]);
+        return;
+      }
+
+      console.log('✅ [FINANCEIRO] Categorias carregadas:', data?.length || 0);
+      setCategorias(Array.isArray(data) ? data : []);
+    } catch (error: any) {
+      console.warn('💥 [FINANCEIRO] Erro ao carregar categorias:', error.message);
+      setCategorias([]);
+    }
+  };
+
   const resetForm = () => {
-    setTipoMovimento("");
-    setCategoria("");
+    setTipoMovimento('despesa');
+    setCategoriaId("");
     setDescricao("");
     setValor("");
     setDataMovimento(new Date().toISOString().split('T')[0]);
@@ -140,7 +176,7 @@ const GestaoFinanceira = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!tipoMovimento || !categoria || !descricao || !valor) {
+    if (!tipoMovimento || !categoriaId || !descricao || !valor) {
       toast({
         title: "❌ Campos obrigatórios",
         description: "Preencha todos os campos obrigatórios",
@@ -163,8 +199,8 @@ const GestaoFinanceira = () => {
       setSubmitting(true);
       
       const dadosInserir = {
-        tipo_movimento: tipoMovimento,
-        categoria: categoria,
+        categoria_id: categoriaId,
+        tipo: tipoMovimento,
         descricao: descricao.trim(),
         valor: valorNumerico,
         data_movimento: dataMovimento,
@@ -201,16 +237,17 @@ const GestaoFinanceira = () => {
 
   useEffect(() => {
     fetchMovimentos();
-    fetchAnimais(); // 🐶 EKO: Carregar animais
+    fetchAnimais();
+    fetchCategorias();
   }, []);
 
   // Cálculos financeiros
   const totalReceitas = movimentos
-    .filter(m => m.tipo_movimento === 'Receita')
+    .filter(m => m.tipo === 'receita')
     .reduce((sum, m) => sum + m.valor, 0);
 
   const totalDespesas = movimentos
-    .filter(m => m.tipo_movimento === 'Despesa')
+    .filter(m => m.tipo === 'despesa')
     .reduce((sum, m) => sum + m.valor, 0);
 
   const saldoAtual = totalReceitas - totalDespesas;
@@ -291,13 +328,13 @@ const GestaoFinanceira = () => {
                   {/* Tipo */}
                   <div>
                     <Label htmlFor="tipo_movimento">Tipo *</Label>
-                    <Select value={tipoMovimento} onValueChange={setTipoMovimento}>
+                    <Select value={tipoMovimento} onValueChange={(value: 'receita' | 'despesa') => setTipoMovimento(value)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione o tipo" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Receita">💰 Receita</SelectItem>
-                        <SelectItem value="Despesa">💸 Despesa</SelectItem>
+                        <SelectItem value="receita">💰 Receita</SelectItem>
+                        <SelectItem value="despesa">💸 Despesa</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -305,19 +342,18 @@ const GestaoFinanceira = () => {
                   {/* Categoria */}
                   <div>
                     <Label htmlFor="categoria">Categoria *</Label>
-                    <Select value={categoria} onValueChange={setCategoria}>
+                    <Select value={categoriaId} onValueChange={setCategoriaId}>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione a categoria" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Veterinário">🏥 Veterinário</SelectItem>
-                        <SelectItem value="Medicação">💊 Medicação</SelectItem>
-                        <SelectItem value="Alimentação">🍖 Alimentação</SelectItem>
-                        <SelectItem value="Transporte">🚗 Transporte</SelectItem>
-                        <SelectItem value="Doação">❤️ Doação</SelectItem>
-                        <SelectItem value="Adoção">🏠 Adoção</SelectItem>
-                        <SelectItem value="Equipamento">🔧 Equipamento</SelectItem>
-                        <SelectItem value="Outros">📝 Outros</SelectItem>
+                        {categorias
+                          .filter(c => c.tipo === tipoMovimento)
+                          .map((categoria) => (
+                          <SelectItem key={categoria.id} value={categoria.id}>
+                            {categoria.icone} {categoria.nome}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -519,15 +555,23 @@ const GestaoFinanceira = () => {
                       <TableCell>{formatDate(movimento.data_movimento)}</TableCell>
                       <TableCell>
                         <Badge 
-                          className={movimento.tipo_movimento === 'Receita' 
+                          className={movimento.tipo === 'receita' 
                             ? "bg-green-100 text-green-800" 
                             : "bg-red-100 text-red-800"
                           }
                         >
-                          {movimento.tipo_movimento === 'Receita' ? '💰' : '💸'} {movimento.tipo_movimento}
+                          {movimento.tipo === 'receita' ? '💰' : '💸'} {movimento.tipo === 'receita' ? 'Receita' : 'Despesa'}
                         </Badge>
                       </TableCell>
-                      <TableCell>{movimento.categoria}</TableCell>
+                      <TableCell>
+                        {movimento.categorias_financeiras ? (
+                          <span>
+                            {movimento.categorias_financeiras.icone} {movimento.categorias_financeiras.nome}
+                          </span>
+                        ) : (
+                          <span className="text-gray-500">-</span>
+                        )}
+                      </TableCell>
                       <TableCell>{movimento.descricao}</TableCell>
                       <TableCell>
                         {movimento.animal ? (
@@ -539,8 +583,8 @@ const GestaoFinanceira = () => {
                         )}
                       </TableCell>
                       <TableCell className="text-right font-medium">
-                        <span className={movimento.tipo_movimento === 'Receita' ? 'text-green-600' : 'text-red-600'}>
-                          {movimento.tipo_movimento === 'Receita' ? '+' : '-'}{formatCurrency(movimento.valor)}
+                        <span className={movimento.tipo === 'receita' ? 'text-green-600' : 'text-red-600'}>
+                          {movimento.tipo === 'receita' ? '+' : '-'}{formatCurrency(movimento.valor)}
                         </span>
                       </TableCell>
                     </TableRow>
