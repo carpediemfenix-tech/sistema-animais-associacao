@@ -13,7 +13,6 @@ import AnimalDetail from "./pages/AnimalDetail";
 import AnimalIntervencoes from "./pages/AnimalIntervencoes";
 import AnimalEventos from "./pages/AnimalEventos";
 import AnimalLocalizacoes from "./pages/AnimalLocalizacoes";
-// import AnimalResponsabilidades from "./pages/AnimalResponsabilidades"; // TEMPORARIAMENTE DESABILITADO
 import NovoAnimal from "./pages/NovoAnimal";
 import EditarAnimal from "./pages/EditarAnimal";
 import IntervencoesPage from "./pages/IntervencoesPage";
@@ -27,62 +26,59 @@ import Relatorios from "./pages/Relatorios";
 import Configuracoes from "./pages/Configuracoes";
 import GestaoUtilizadores from "./pages/GestaoUtilizadores";
 import AnimaisArquivados from "./pages/AnimaisArquivados";
-import Administracao from "./pages/Administracao";
 import GestaoGrupos from "./pages/GestaoGrupos";
 import GrupoDetail from "./pages/GrupoDetail";
-import Dashboard from "./pages/Dashboard";
 import ManualUtilizador from "./pages/ManualUtilizador";
+import Administracao from "./pages/Administracao";
+import Dashboard from "./pages/Dashboard";
 
 const queryClient = new QueryClient();
 
-function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <AuthProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <AuthProvider>
-          <HashRouter>
-            <Routes>
-              {/* Rota pública de login */}
-              <Route path="/login" element={<Login />} />
-              
-              {/* Rotas protegidas */}
-              <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/animais" element={<ProtectedRoute><AnimaisList /></ProtectedRoute>} />
-              <Route path="/animal/:id" element={<ProtectedRoute><AnimalDetail /></ProtectedRoute>} />
-              <Route path="/animal/:id/intervencoes" element={<ProtectedRoute><AnimalIntervencoes /></ProtectedRoute>} />
-              <Route path="/animal/:id/eventos" element={<ProtectedRoute><AnimalEventos /></ProtectedRoute>} />
-              <Route path="/animal/:id/localizacoes" element={<ProtectedRoute><AnimalLocalizacoes /></ProtectedRoute>} />
-              {/* <Route path="/animal/:id/responsabilidades" element={<ProtectedRoute><AnimalResponsabilidades /></ProtectedRoute>} /> */}
-              <Route path="/novo-animal" element={<ProtectedRoute><NovoAnimal /></ProtectedRoute>} />
-              <Route path="/editar-animal/:id" element={<ProtectedRoute><EditarAnimal /></ProtectedRoute>} />
-              <Route path="/intervencoes" element={<ProtectedRoute><IntervencoesPage /></ProtectedRoute>} />
-              <Route path="/eventos" element={<ProtectedRoute><EventosPage /></ProtectedRoute>} />
-              <Route path="/voluntarios" element={<ProtectedRoute><GestaoVoluntarios /></ProtectedRoute>} />
-              <Route path="/voluntario/:id" element={<ProtectedRoute><VoluntarioDetail /></ProtectedRoute>} />
-              <Route path="/gestao-financeira" element={<ProtectedRoute><GestaoFinanceira /></ProtectedRoute>} />
-              <Route path="/financeiro" element={<ProtectedRoute><DashboardFinanceiro /></ProtectedRoute>} />
-              <Route path="/financeiro/movimentos" element={<ProtectedRoute><GestaoMovimentos /></ProtectedRoute>} />
-              <Route path="/financeiro/movimentos/novo" element={<ProtectedRoute><GestaoMovimentos /></ProtectedRoute>} />
-              <Route path="/relatorios" element={<ProtectedRoute><Relatorios /></ProtectedRoute>} />
-              <Route path="/configuracoes" element={<ProtectedRoute><Configuracoes /></ProtectedRoute>} />
-              <Route path="/utilizadores" element={<ProtectedRoute><GestaoUtilizadores /></ProtectedRoute>} />
-              <Route path="/animais-arquivados" element={<ProtectedRoute><AnimaisArquivados /></ProtectedRoute>} />
-              <Route path="/administracao" element={<ProtectedRoute><Administracao /></ProtectedRoute>} />
-              <Route path="/grupos" element={<ProtectedRoute><GestaoGrupos /></ProtectedRoute>} />
-              <Route path="/grupo/:id" element={<ProtectedRoute><GrupoDetail /></ProtectedRoute>} />
-              <Route path="/manual" element={<ProtectedRoute><ManualUtilizador /></ProtectedRoute>} />
-              
-              {/* Rota 404 */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </HashRouter>
-        </AuthProvider>
+        <HashRouter>
+          <Routes>
+            {/* Rota pública de login */}
+            <Route path="/login" element={<Login />} />
+            
+            {/* Rotas protegidas */}
+            <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/animais" element={<ProtectedRoute><AnimaisList /></ProtectedRoute>} />
+            <Route path="/animal/:id" element={<ProtectedRoute><AnimalDetail /></ProtectedRoute>} />
+            <Route path="/animal/:id/intervencoes" element={<ProtectedRoute><AnimalIntervencoes /></ProtectedRoute>} />
+            <Route path="/animal/:id/eventos" element={<ProtectedRoute><AnimalEventos /></ProtectedRoute>} />
+            <Route path="/animal/:id/localizacoes" element={<ProtectedRoute><AnimalLocalizacoes /></ProtectedRoute>} />
+            <Route path="/animal/:id/editar" element={<ProtectedRoute><EditarAnimal /></ProtectedRoute>} />
+            <Route path="/novo-animal" element={<ProtectedRoute><NovoAnimal /></ProtectedRoute>} />
+            <Route path="/intervencoes" element={<ProtectedRoute><IntervencoesPage /></ProtectedRoute>} />
+            <Route path="/eventos" element={<ProtectedRoute><EventosPage /></ProtectedRoute>} />
+            <Route path="/voluntarios" element={<ProtectedRoute><GestaoVoluntarios /></ProtectedRoute>} />
+            <Route path="/voluntario/:id" element={<ProtectedRoute><VoluntarioDetail /></ProtectedRoute>} />
+            <Route path="/gestao-financeira" element={<ProtectedRoute><GestaoFinanceira /></ProtectedRoute>} />
+            <Route path="/financeiro" element={<ProtectedRoute><DashboardFinanceiro /></ProtectedRoute>} />
+            <Route path="/financeiro/movimentos" element={<ProtectedRoute><GestaoMovimentos /></ProtectedRoute>} />
+            <Route path="/financeiro/movimentos/novo" element={<ProtectedRoute><GestaoMovimentos /></ProtectedRoute>} />
+            <Route path="/relatorios" element={<ProtectedRoute><Relatorios /></ProtectedRoute>} />
+            <Route path="/configuracoes" element={<ProtectedRoute><Configuracoes /></ProtectedRoute>} />
+            <Route path="/utilizadores" element={<ProtectedRoute><GestaoUtilizadores /></ProtectedRoute>} />
+            <Route path="/animais-arquivados" element={<ProtectedRoute><AnimaisArquivados /></ProtectedRoute>} />
+            <Route path="/grupos" element={<ProtectedRoute><GestaoGrupos /></ProtectedRoute>} />
+            <Route path="/grupo/:id" element={<ProtectedRoute><GrupoDetail /></ProtectedRoute>} />
+            <Route path="/manual" element={<ProtectedRoute><ManualUtilizador /></ProtectedRoute>} />
+            <Route path="/administracao" element={<ProtectedRoute><Administracao /></ProtectedRoute>} />
+            
+            {/* Rota 404 */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </HashRouter>
       </TooltipProvider>
-    </QueryClientProvider>
-  );
-}
+    </AuthProvider>
+  </QueryClientProvider>
+);
 
 export default App;

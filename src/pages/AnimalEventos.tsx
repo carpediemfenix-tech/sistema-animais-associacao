@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { 
   ArrowLeft, 
   Plus, 
@@ -17,40 +18,18 @@ import {
   PawPrint,
   Loader2,
   AlertCircle,
-  Users,
+  Calendar,
+  Star,
   Clock,
   User,
-  CheckCircle,
-  AlertTriangle,
-  Star
+  FileText
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Animal, ResponsabilidadeAnimal, Voluntario } from "@/types/animal";
+import { Animal, EventoAnimal, TipoEvento, Voluntario } from "@/types/animal";
 import { useToast } from "@/hooks/use-toast";
 import UserHeader from "@/components/UserHeader";
 
-// Tipos de responsabilidades predefinidos
-const TIPOS_RESPONSABILIDADES = [
-  { id: 'cuidador_principal', nome: '👨‍⚕️ Cuidador Principal', emoji: '👨‍⚕️' },
-  { id: 'veterinario_responsavel', nome: '🩺 Veterinário Responsável', emoji: '🩺' },
-  { id: 'transporte', nome: '🚗 Transporte', emoji: '🚗' },
-  { id: 'alimentacao', nome: '🍽️ Alimentação', emoji: '🍽️' },
-  { id: 'exercicio', nome: '🏃‍♂️ Exercício e Passeios', emoji: '🏃‍♂️' },
-  { id: 'socializacao', nome: '🤝 Socialização', emoji: '🤝' },
-  { id: 'medicacao', nome: '💊 Administração de Medicação', emoji: '💊' },
-  { id: 'higiene', nome: '🛁 Higiene e Limpeza', emoji: '🛁' },
-  { id: 'adocao', nome: '🏡 Processo de Adoção', emoji: '🏡' },
-  { id: 'emergencia', nome: '🚨 Contacto de Emergência', emoji: '🚨' }
-];
-
-// Níveis de prioridade
-const PRIORIDADES = [
-  { value: 'alta', label: 'Alta Prioridade', color: 'bg-red-100 text-red-800', icon: '🔴' },
-  { value: 'media', label: 'Média Prioridade', color: 'bg-yellow-100 text-yellow-800', icon: '🟡' },
-  { value: 'baixa', label: 'Baixa Prioridade', color: 'bg-green-100 text-green-800', icon: '🟢' }
-];
-
-const AnimalResponsabilidades = () => {
+const AnimalEventos = () => {
   const { id } = useParams();
   const [animal, setAnimal] = useState<Animal | null>(null);
   const [loading, setLoading] = useState(true);
@@ -58,19 +37,22 @@ const AnimalResponsabilidades = () => {
   const { toast } = useToast();
   const { hasPermission } = useAuth();
 
-  // Estados para responsabilidades
-  const [responsabilidades, setResponsabilidades] = useState<ResponsabilidadeAnimal[]>([]);
+  // Estados para eventos
+  const [eventos, setEventos] = useState<EventoAnimal[]>([]);
+  const [tiposEventos, setTiposEventos] = useState<TipoEvento[]>([]);
   const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
-  const [responsabilidadeDialogOpen, setResponsabilidadeDialogOpen] = useState(false);
-  const [editingResponsabilidade, setEditingResponsabilidade] = useState<ResponsabilidadeAnimal | null>(null);
+  const [eventoDialogOpen, setEventoDialogOpen] = useState(false);
+  const [editingEvento, setEditingEvento] = useState<EventoAnimal | null>(null);
 
-  // Formulário de responsabilidade
-  const [responsabilidadeForm, setResponsabilidadeForm] = useState({
-    voluntario_id: '',
-    tipo_responsabilidade: '',
-    data_inicio: '',
+  // Formulário de evento
+  const [eventoForm, setEventoForm] = useState({
+    tipo_evento: '',
+    data_evento: '',
+    descricao: '',
     observacoes: '',
-    prioridade: 'media'
+    voluntario_id: '',
+    documento_referencia: '',
+    importante: false
   });
 
   // Função para carregar dados do animal
