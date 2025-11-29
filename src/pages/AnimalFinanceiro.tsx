@@ -75,7 +75,6 @@ const AnimalFinanceiro = () => {
     try {
       setLoading(true);
       setError(null);
-      console.log('DEBUG: Iniciando carregamento do animal:', id);
 
       const { data, error } = await supabase
         .from('animais')
@@ -90,12 +89,10 @@ const AnimalFinanceiro = () => {
       }
 
       if (!data) {
-        console.log('DEBUG: Animal não encontrado');
         setError('Animal não encontrado');
         return;
       }
 
-      console.log('DEBUG: Animal carregado:', data.nome);
       setAnimal(data);
       await loadRelatedData();
     } catch (error) {
@@ -109,9 +106,7 @@ const AnimalFinanceiro = () => {
   // Função para carregar dados relacionados
   const loadRelatedData = async () => {
     try {
-      console.log('DEBUG: Carregando dados relacionados para animal:', id);
-      
-      // Carregar movimentos financeiros do animal (consulta simplificada)
+      // Carregar movimentos financeiros do animal
       const { data: movimentosData, error: movimentosError } = await supabase
         .from('movimentos_financeiros')
         .select('*')
@@ -172,7 +167,7 @@ const AnimalFinanceiro = () => {
       descricao: '',
       valor: '',
       data_movimento: new Date().toISOString().split('T')[0],
-      metodo_pagamento: '',
+      metodo_pagamento: 'nao_especificado',
       observacoes: ''
     });
   };
@@ -186,7 +181,7 @@ const AnimalFinanceiro = () => {
         descricao: movimento.descricao || '',
         valor: movimento.valor.toString(),
         data_movimento: movimento.data_movimento || '',
-        metodo_pagamento: movimento.metodo_pagamento || '',
+        metodo_pagamento: movimento.metodo_pagamento || 'nao_especificado',
         observacoes: movimento.observacoes || ''
       });
     } else {
@@ -207,7 +202,7 @@ const AnimalFinanceiro = () => {
         descricao: movimentoForm.descricao,
         valor: parseFloat(movimentoForm.valor),
         data_movimento: movimentoForm.data_movimento,
-        metodo_pagamento: movimentoForm.metodo_pagamento || null,
+        metodo_pagamento: movimentoForm.metodo_pagamento === 'nao_especificado' ? null : movimentoForm.metodo_pagamento,
         observacoes: movimentoForm.observacoes || null
       };
 
@@ -793,7 +788,7 @@ const AnimalFinanceiro = () => {
                   <SelectValue placeholder="Selecionar método (opcional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Não especificado</SelectItem>
+                  <SelectItem value="nao_especificado">Ão especificado</SelectItem>
                   <SelectItem value="Dinheiro">💵 Dinheiro</SelectItem>
                   <SelectItem value="Cartão de Débito">💳 Cartão de Débito</SelectItem>
                   <SelectItem value="Cartão de Crédito">💳 Cartão de Crédito</SelectItem>
