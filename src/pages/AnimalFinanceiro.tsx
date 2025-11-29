@@ -75,6 +75,7 @@ const AnimalFinanceiro = () => {
     try {
       setLoading(true);
       setError(null);
+      console.log('DEBUG: Iniciando carregamento do animal:', id);
 
       const { data, error } = await supabase
         .from('animais')
@@ -89,10 +90,12 @@ const AnimalFinanceiro = () => {
       }
 
       if (!data) {
+        console.log('DEBUG: Animal não encontrado');
         setError('Animal não encontrado');
         return;
       }
 
+      console.log('DEBUG: Animal carregado:', data.nome);
       setAnimal(data);
       await loadRelatedData();
     } catch (error) {
@@ -106,45 +109,51 @@ const AnimalFinanceiro = () => {
   // Função para carregar dados relacionados
   const loadRelatedData = async () => {
     try {
-      // Carregar movimentos financeiros do animal
+      console.log('DEBUG: Carregando dados relacionados para animal:', id);
+      
+      // Carregar movimentos financeiros do animal (consulta simplificada)
       const { data: movimentosData, error: movimentosError } = await supabase
         .from('movimentos_financeiros')
-        .select(`
-          *,
-          categorias_financeiras(id, nome, tipo, cor, icone)
-        `)
+        .select('*')
         .eq('animal_id', id)
         .order('data_movimento', { ascending: false });
 
       if (movimentosError) {
         console.error('Erro ao carregar movimentos:', movimentosError);
       } else {
+        console.log('DEBUG: Movimentos carregados:', movimentosData?.length || 0);
         setMovimentos(movimentosData || []);
       }
 
       // Carregar categorias financeiras
-      const { data: categoriasData } = await supabase
+      const { data: categoriasData, error: categoriasError } = await supabase
         .from('categorias_financeiras')
         .select('*')
         .in('escopo', ['animal', 'ambos'])
         .eq('ativo', true)
         .order('nome');
 
-      setCategorias(categoriasData || []);
+      if (categoriasError) {
+        console.error('Erro ao carregar categorias:', categoriasError);
+      } else {
+        console.log('DEBUG: Categorias carregadas:', categoriasData?.length || 0);
+        setCategorias(categoriasData || []);
+      }
 
-      // Carregar intervenções com custos
-      const { data: intervencoesData } = await supabase
+      // Carregar intervenções com custos (consulta simplificada)
+      const { data: intervencoesData, error: intervencoesError } = await supabase
         .from('intervencoes')
-        .select(`
-          *,
-          tipos_intervencoes(nome),
-          clinicas_veterinarias(nome)
-        `)
+        .select('*')
         .eq('animal_id', id)
         .not('custo_final', 'is', null)
         .order('data_intervencao', { ascending: false });
 
-      setIntervencoes(intervencoesData || []);
+      if (intervencoesError) {
+        console.error('Erro ao carregar intervenções:', intervencoesError);
+      } else {
+        console.log('DEBUG: Intervenções carregadas:', intervencoesData?.length || 0);
+        setIntervencoes(intervencoesData || []);
+      }
 
     } catch (error) {
       console.error('Erro ao carregar dados relacionados:', error);
