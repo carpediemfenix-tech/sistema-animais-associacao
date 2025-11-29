@@ -66,6 +66,43 @@ export interface TipoResponsabilidade {
   updated_at: string;
 }
 
+export interface CustoLocalizacao {
+  id: string;
+  tipo_localizacao: string;
+  custo_diario: number;
+  descricao?: string;
+  ativo: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SubsidioResponsabilidade {
+  id: string;
+  tipo_responsabilidade: string;
+  subsidio_mensal: number;
+  descricao?: string;
+  ativo: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EstatisticasGerais {
+  total_animais: number;
+  total_intervencoes: number;
+  total_eventos: number;
+  total_localizacoes: number;
+  total_responsabilidades: number;
+  total_voluntarios: number;
+}
+
+export interface CustoAnimal {
+  animal_id: string;
+  nome: string;
+  especie: string;
+  total_intervencoes: number;
+  custo_total: number;
+}
+
 export interface ClinicaVeterinaria {
   id: string;
   nome: string;
@@ -92,6 +129,8 @@ export interface Intervencao {
   clinica_id?: string; // Nova referência à tabela de clínicas
   observacoes?: string;
   custo?: number;
+  desconto_protocolo?: number; // Desconto percentual para clínicas com protocolo
+  custo_final?: number; // Custo final após desconto
   proxima_data?: string;
   urgente: boolean;
   concluida: boolean;

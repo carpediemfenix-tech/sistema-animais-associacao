@@ -75,6 +75,7 @@ const AnimalDetail = () => {
     clinica_id: '', // Nova referência à clínica
     observacoes: '',
     custo: '',
+    desconto_protocolo: '',
     urgente: false
     // Removido: concluida (será sempre true)
   });
@@ -337,6 +338,7 @@ const AnimalDetail = () => {
       clinica_id: '',
       observacoes: '',
       custo: '',
+      desconto_protocolo: '',
       urgente: false
       // Removido: concluida (sempre true)
     });
@@ -353,6 +355,7 @@ const AnimalDetail = () => {
         clinica_id: intervencao.clinica_id || '',
         observacoes: intervencao.observacoes || '',
         custo: intervencao.custo?.toString() || '',
+        desconto_protocolo: intervencao.desconto_protocolo?.toString() || '',
         urgente: intervencao.urgente
         // Removido: concluida (sempre true)
       });
@@ -383,6 +386,7 @@ const AnimalDetail = () => {
         clinica_id: intervencaoForm.clinica_id || null,
         observacoes: intervencaoForm.observacoes || null,
         custo: intervencaoForm.custo ? parseFloat(intervencaoForm.custo) : null,
+        desconto_protocolo: intervencaoForm.desconto_protocolo ? parseFloat(intervencaoForm.desconto_protocolo) : null,
         urgente: intervencaoForm.urgente,
         concluida: true // Sempre concluída na data da intervenção
       };
@@ -1654,6 +1658,26 @@ const AnimalDetail = () => {
                 placeholder="0.00"
                 className="border-blue-200 focus:border-blue-400"
               />
+            </div>
+            
+            <div>
+              <Label htmlFor="desconto_protocolo" className="text-blue-700">
+                Desconto Protocolo (%)
+              </Label>
+              <Input
+                id="desconto_protocolo"
+                type="number"
+                step="0.1"
+                min="0"
+                max="100"
+                value={intervencaoForm.desconto_protocolo}
+                onChange={(e) => setIntervencaoForm({ ...intervencaoForm, desconto_protocolo: e.target.value })}
+                placeholder="0.0"
+                className="border-blue-200 focus:border-blue-400"
+              />
+              <p className="text-xs text-blue-600 mt-1">
+                Desconto aplicado automaticamente para clínicas com protocolo
+              </p>
             </div>
             
             <div>
