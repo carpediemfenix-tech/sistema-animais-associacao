@@ -174,20 +174,42 @@ const AnimalLocalizacoes = () => {
     e.preventDefault();
     
     try {
+      // VALIDAÇÃO: Verificar se nova localização não é anterior à atual
+      if (!editingLocalizacao && localizacaoAtual) {
+        const dataNovaLocalizacao = new Date(localizacaoForm.data_inicio);
+        const dataLocalizacaoAtual = new Date(localizacaoAtual.data_inicio);
+        
+        if (dataNovaLocalizacao < dataLocalizacaoAtual) {
+          toast({
+            title: "Data inválida",
+            description: "A nova localização não pode ter data anterior à localização atual",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+      
       // NOVA LÓGICA: Desativar localizações anteriores ANTES de inserir nova
       if (!editingLocalizacao) {
         // Desativar todas as localizações ativas do animal
+        // CORREÇÃO: Data de fim = data de início da nova localização
+        const dataFimAnterior = localizacaoForm.data_inicio;
+        
         const { error: updateError } = await supabase
           .from('localizacoes_animal')
           .update({ 
             ativo: false, 
-            data_fim: new Date().toISOString().split('T')[0] 
+            data_fim: dataFimAnterior // Data de início da nova localização
           })
           .eq('animal_id', id)
           .eq('ativo', true);
 
+        console.log('DEBUG - Desativando localizações anteriores com data_fim:', dataFimAnterior);
+        
         if (updateError) {
           console.error('Erro ao desativar localizações anteriores:', updateError);
+        } else {
+          console.log('DEBUG - Localizações anteriores desativadas com sucesso');
         }
       }
 
