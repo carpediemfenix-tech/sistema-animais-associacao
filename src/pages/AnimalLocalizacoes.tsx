@@ -136,6 +136,8 @@ const AnimalLocalizacoes = () => {
         .order('nome');
 
       console.log('DEBUG - Tipos de localizações carregados:', tiposLocalizacoesData);
+      console.log('DEBUG - Primeiro tipo estrutura:', tiposLocalizacoesData?.[0]);
+      console.log('DEBUG - IDs dos tipos:', tiposLocalizacoesData?.map(t => ({ id: t.id, nome: t.nome })));
       setTiposLocalizacoes(tiposLocalizacoesData || []);
 
       // Carregar voluntários
@@ -607,11 +609,14 @@ const AnimalLocalizacoes = () => {
                       Carregando tipos...
                     </SelectItem>
                   )}
-                  {tiposLocalizacoes.map((tipo) => (
-                    <SelectItem key={tipo.id} value={tipo.id}>
-                      {tipo.nome}
-                    </SelectItem>
-                  ))}
+                  {tiposLocalizacoes.map((tipo, index) => {
+                    console.log(`DEBUG - Mapeando tipo ${index}:`, { id: tipo.id, nome: tipo.nome });
+                    return (
+                      <SelectItem key={tipo.id} value={String(tipo.id)}>
+                        {tipo.nome}
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>
