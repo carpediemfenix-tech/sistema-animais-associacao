@@ -97,19 +97,26 @@ const AnimalEventos = () => {
   // Função para carregar dados relacionados
   const loadRelatedData = async () => {
     try {
-      // Carregar eventos
-      const { data: eventosData } = await supabase
+      // Carregar eventos (consulta simplificada para debug)
+      console.log('Carregando eventos para animal ID:', id);
+      
+      const { data: eventosData, error: eventosError } = await supabase
         .from('eventos_animal')
-        .select(`
-          *,
-          tipos_eventos(nome, emoji),
-          voluntarios(nome, email, telefone)
-        `)
+        .select('*')
         .eq('animal_id', id)
         .order('data_evento', { ascending: false });
 
+      console.log('Eventos encontrados:', eventosData);
+      console.log('Erro na consulta de eventos:', eventosError);
+
+      if (eventosError) {
+        console.error('Erro ao carregar eventos:', eventosError);
+      }
+
       if (eventosData) {
         setEventos(eventosData);
+      } else {
+        setEventos([]);
       }
 
       // Carregar tipos de eventos
@@ -179,6 +186,9 @@ const AnimalEventos = () => {
     e.preventDefault();
     
     try {
+      console.log('Salvando evento para animal ID:', id);
+      console.log('Dados do formulário:', eventoForm);
+      
       const eventoData = {
         animal_id: id,
         tipo_evento: eventoForm.tipo_evento,
@@ -190,6 +200,8 @@ const AnimalEventos = () => {
         documento_referencia: eventoForm.documento_referencia,
         importante: eventoForm.importante
       };
+      
+      console.log('Dados a serem salvos:', eventoData);
 
       let error;
       if (editingEvento) {
@@ -199,10 +211,12 @@ const AnimalEventos = () => {
           .eq('id', editingEvento.id);
         error = updateError;
       } else {
-        const { error: insertError } = await supabase
+        const { data: insertData, error: insertError } = await supabase
           .from('eventos_animal')
-          .insert([eventoData]);
+          .insert([eventoData])
+          .select();
         error = insertError;
+        console.log('Resultado da inserção:', insertData);
       }
 
       if (error) {
@@ -214,6 +228,8 @@ const AnimalEventos = () => {
         });
         return;
       }
+      
+      console.log('Evento salvo com sucesso! Recarregando dados...');
 
       toast({
         title: editingEvento ? "Evento atualizado" : "Evento registrado",
@@ -224,6 +240,7 @@ const AnimalEventos = () => {
       resetEventoForm();
       setEditingEvento(null);
       await loadRelatedData();
+      console.log('Dados recarregados após salvamento');
 
     } catch (error) {
       console.error('Erro:', error);
@@ -385,7 +402,7 @@ const AnimalEventos = () => {
                       <div className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-white text-lg ${
                         evento.importante ? 'bg-red-500' : 'bg-green-500'
                       }`}>
-                        {evento.tipos_eventos?.emoji || '📅'}
+                        📅
                       </div>
                       
                       {/* Conteúdo do evento */}
@@ -413,19 +430,13 @@ const AnimalEventos = () => {
                                     <Clock className="h-4 w-4 mr-1" />
                                     {getRelativeDate(evento.data_evento)}
                                   </div>
-                                  {evento.tipos_eventos?.nome && (
-                                    <Badge variant="outline" className="text-xs">
-                                      {evento.tipos_eventos.nome}
-                                    </Badge>
-                                  )}
+                                  {/* Temporariamente comentado para debug */}
+                                  <Badge variant="outline" className="text-xs">
+                                    Evento
+                                  </Badge>
                                 </div>
                                 
-                                {evento.voluntarios?.nome && (
-                                  <div className="flex items-center text-sm text-gray-600 mb-2">
-                                    <User className="h-4 w-4 mr-1" />
-                                    Responsável: {evento.voluntarios.nome}
-                                  </div>
-                                )}
+                                {/* Voluntário temporariamente comentado para debug */}
                                 
                                 {evento.documento_referencia && (
                                   <div className="flex items-center text-sm text-gray-600 mb-2">
