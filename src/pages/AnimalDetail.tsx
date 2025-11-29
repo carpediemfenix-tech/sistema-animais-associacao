@@ -1592,7 +1592,7 @@ const AnimalDetail = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {/* Resumo de Custos */}
+                {/* Resumo de Custos Simplificado */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                   <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                     <div className="flex items-center space-x-2 mb-2">
@@ -1600,18 +1600,15 @@ const AnimalDetail = () => {
                       <h3 className="font-semibold text-blue-800">Custos Médicos</h3>
                     </div>
                     <p className="text-2xl font-bold text-blue-600">
-                      {(() => {
-                        const custoTotal = intervencoes.reduce((sum, int) => {
-                          return sum + (int.custo_final || int.custo || 0);
-                        }, 0);
-                        return new Intl.NumberFormat('pt-PT', {
-                          style: 'currency',
-                          currency: 'EUR'
-                        }).format(custoTotal);
-                      })()}
+                      {new Intl.NumberFormat('pt-PT', {
+                        style: 'currency',
+                        currency: 'EUR'
+                      }).format(
+                        intervencoes?.reduce((sum, int) => sum + (Number(int.custo_final) || Number(int.custo) || 0), 0) || 0
+                      )}
                     </p>
                     <p className="text-sm text-blue-600">
-                      {intervencoes.filter(i => i.custo && i.custo > 0).length} intervenções
+                      {intervencoes?.filter(i => (i.custo && Number(i.custo) > 0)).length || 0} intervenções
                     </p>
                   </div>
                   
@@ -1621,23 +1618,13 @@ const AnimalDetail = () => {
                       <h3 className="font-semibold text-purple-800">Custos de Localização</h3>
                     </div>
                     <p className="text-2xl font-bold text-purple-600">
-                      {(() => {
-                        // Cálculo estimado baseado em dias de localização
-                        const diasTotais = localizacoes.reduce((sum, loc) => {
-                          const inicio = new Date(loc.data_inicio);
-                          const fim = loc.data_fim ? new Date(loc.data_fim) : new Date();
-                          const dias = Math.ceil((fim.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24));
-                          return sum + Math.max(dias, 0);
-                        }, 0);
-                        const custoEstimado = diasTotais * 5; // €5 por dia (média)
-                        return new Intl.NumberFormat('pt-PT', {
-                          style: 'currency',
-                          currency: 'EUR'
-                        }).format(custoEstimado);
-                      })()}
+                      {new Intl.NumberFormat('pt-PT', {
+                        style: 'currency',
+                        currency: 'EUR'
+                      }).format((localizacoes?.length || 0) * 30)}
                     </p>
                     <p className="text-sm text-purple-600">
-                      {localizacoes.length} localizações
+                      {localizacoes?.length || 0} localizações
                     </p>
                   </div>
                   
@@ -1647,23 +1634,13 @@ const AnimalDetail = () => {
                       <h3 className="font-semibold text-orange-800">Subsídios Pagos</h3>
                     </div>
                     <p className="text-2xl font-bold text-orange-600">
-                      {(() => {
-                        // Cálculo estimado baseado em meses de responsabilidade
-                        const mesesTotais = responsabilidades.reduce((sum, resp) => {
-                          const inicio = new Date(resp.data_inicio);
-                          const fim = resp.data_fim ? new Date(resp.data_fim) : new Date();
-                          const meses = Math.ceil((fim.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24 * 30));
-                          return sum + Math.max(meses, 0);
-                        }, 0);
-                        const subsidioEstimado = mesesTotais * 15; // €15 por mês (média)
-                        return new Intl.NumberFormat('pt-PT', {
-                          style: 'currency',
-                          currency: 'EUR'
-                        }).format(subsidioEstimado);
-                      })()}
+                      {new Intl.NumberFormat('pt-PT', {
+                        style: 'currency',
+                        currency: 'EUR'
+                      }).format((responsabilidades?.length || 0) * 25)}
                     </p>
                     <p className="text-sm text-orange-600">
-                      {responsabilidades.length} responsabilidades
+                      {responsabilidades?.length || 0} responsabilidades
                     </p>
                   </div>
                 </div>
@@ -1683,19 +1660,9 @@ const AnimalDetail = () => {
                     <div className="text-right">
                       <p className="text-3xl font-bold text-green-600">
                         {(() => {
-                          const custoMedico = intervencoes.reduce((sum, int) => sum + (int.custo_final || int.custo || 0), 0);
-                          const custoLocalizacao = localizacoes.reduce((sum, loc) => {
-                            const inicio = new Date(loc.data_inicio);
-                            const fim = loc.data_fim ? new Date(loc.data_fim) : new Date();
-                            const dias = Math.ceil((fim.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24));
-                            return sum + (Math.max(dias, 0) * 5);
-                          }, 0);
-                          const subsidios = responsabilidades.reduce((sum, resp) => {
-                            const inicio = new Date(resp.data_inicio);
-                            const fim = resp.data_fim ? new Date(resp.data_fim) : new Date();
-                            const meses = Math.ceil((fim.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24 * 30));
-                            return sum + (Math.max(meses, 0) * 15);
-                          }, 0);
+                          const custoMedico = intervencoes?.reduce((sum, int) => sum + (Number(int.custo_final) || Number(int.custo) || 0), 0) || 0;
+                          const custoLocalizacao = (localizacoes?.length || 0) * 30;
+                          const subsidios = (responsabilidades?.length || 0) * 25;
                           const total = custoMedico + custoLocalizacao + subsidios;
                           return new Intl.NumberFormat('pt-PT', {
                             style: 'currency',
@@ -1716,9 +1683,9 @@ const AnimalDetail = () => {
                       Intervenções com Custo
                     </h3>
                     <div className="space-y-3">
-                      {intervencoes
-                        .filter(i => i.custo && i.custo > 0)
-                        .sort((a, b) => new Date(b.data_intervencao).getTime() - new Date(a.data_intervencao).getTime())
+                      {(intervencoes || [])
+                        .filter(i => i.custo && Number(i.custo) > 0)
+                        .slice(0, 5)
                         .map((intervencao) => (
                           <div key={intervencao.id} className="bg-gray-50 p-4 rounded-lg border">
                             <div className="flex justify-between items-start">
