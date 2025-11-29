@@ -107,11 +107,18 @@ const AnimalLocalizacoes = () => {
   const loadRelatedData = async () => {
     try {
       // Carregar localizações
-      const { data: localizacoesData } = await supabase
+      const { data: localizacoesData, error: localizacoesError } = await supabase
         .from('localizacoes_animal')
         .select('*')
         .eq('animal_id', id)
         .order('data_inicio', { ascending: false });
+
+      console.log('DEBUG - Localizações carregadas:', localizacoesData);
+      console.log('DEBUG - Erro ao carregar:', localizacoesError);
+      
+      if (localizacoesError) {
+        console.error('Erro ao carregar localizações:', localizacoesError);
+      }
 
       setLocalizacoes(localizacoesData || []);
 
@@ -167,6 +174,23 @@ const AnimalLocalizacoes = () => {
     e.preventDefault();
     
     try {
+      // NOVA LÓGICA: Desativar localizações anteriores ANTES de inserir nova
+      if (!editingLocalizacao) {
+        // Desativar todas as localizações ativas do animal
+        const { error: updateError } = await supabase
+          .from('localizacoes_animal')
+          .update({ 
+            ativo: false, 
+            data_fim: new Date().toISOString().split('T')[0] 
+          })
+          .eq('animal_id', id)
+          .eq('ativo', true);
+
+        if (updateError) {
+          console.error('Erro ao desativar localizações anteriores:', updateError);
+        }
+      }
+
       const localizacaoData = {
         animal_id: id,
         tipo_localizacao: localizacaoForm.tipo_localizacao,
@@ -175,7 +199,7 @@ const AnimalLocalizacoes = () => {
         responsavel_id: localizacaoForm.responsavel_id || null,
         motivo_transferencia: localizacaoForm.motivo_transferencia,
         observacoes: localizacaoForm.observacoes,
-        ativo: true
+        ativo: !editingLocalizacao // Nova localização sempre ativa, edição mantém estado
       };
 
       let error;
@@ -282,6 +306,10 @@ const AnimalLocalizacoes = () => {
   // Obter localização atual
   const localizacaoAtual = localizacoes.find(loc => loc.ativo);
   const historicoLocalizacoes = localizacoes.filter(loc => !loc.ativo);
+  
+  console.log('DEBUG - Total localizações:', localizacoes.length);
+  console.log('DEBUG - Localização atual:', localizacaoAtual);
+  console.log('DEBUG - Histórico:', historicoLocalizacoes.length, historicoLocalizacoes);
 
   if (loading) {
     return (
