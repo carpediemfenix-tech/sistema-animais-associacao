@@ -1583,14 +1583,205 @@ const AnimalDetail = () => {
           <TabsContent value="financeiro">
             <Card>
               <CardHeader>
-                <CardTitle>Movimentos Financeiros</CardTitle>
+                <div className="flex items-center space-x-2">
+                  <DollarSign className="h-5 w-5 text-green-600" />
+                  <CardTitle>Resumo Financeiro do Animal</CardTitle>
+                </div>
+                <CardDescription>
+                  Custos e investimentos relacionados com este animal
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8 text-gray-500">
-                  <DollarSign className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p className="text-lg font-medium mb-2">Funcionalidade em desenvolvimento</p>
-                  <p className="text-sm">Sistema financeiro será implementado em breve.</p>
+                {/* Resumo de Custos */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <Stethoscope className="h-5 w-5 text-blue-600" />
+                      <h3 className="font-semibold text-blue-800">Custos Médicos</h3>
+                    </div>
+                    <p className="text-2xl font-bold text-blue-600">
+                      {(() => {
+                        const custoTotal = intervencoes.reduce((sum, int) => {
+                          return sum + (int.custo_final || int.custo || 0);
+                        }, 0);
+                        return new Intl.NumberFormat('pt-PT', {
+                          style: 'currency',
+                          currency: 'EUR'
+                        }).format(custoTotal);
+                      })()}
+                    </p>
+                    <p className="text-sm text-blue-600">
+                      {intervencoes.filter(i => i.custo && i.custo > 0).length} intervenções
+                    </p>
+                  </div>
+                  
+                  <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <MapPin className="h-5 w-5 text-purple-600" />
+                      <h3 className="font-semibold text-purple-800">Custos de Localização</h3>
+                    </div>
+                    <p className="text-2xl font-bold text-purple-600">
+                      {(() => {
+                        // Cálculo estimado baseado em dias de localização
+                        const diasTotais = localizacoes.reduce((sum, loc) => {
+                          const inicio = new Date(loc.data_inicio);
+                          const fim = loc.data_fim ? new Date(loc.data_fim) : new Date();
+                          const dias = Math.ceil((fim.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24));
+                          return sum + Math.max(dias, 0);
+                        }, 0);
+                        const custoEstimado = diasTotais * 5; // €5 por dia (média)
+                        return new Intl.NumberFormat('pt-PT', {
+                          style: 'currency',
+                          currency: 'EUR'
+                        }).format(custoEstimado);
+                      })()}
+                    </p>
+                    <p className="text-sm text-purple-600">
+                      {localizacoes.length} localizações
+                    </p>
+                  </div>
+                  
+                  <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <Users className="h-5 w-5 text-orange-600" />
+                      <h3 className="font-semibold text-orange-800">Subsídios Pagos</h3>
+                    </div>
+                    <p className="text-2xl font-bold text-orange-600">
+                      {(() => {
+                        // Cálculo estimado baseado em meses de responsabilidade
+                        const mesesTotais = responsabilidades.reduce((sum, resp) => {
+                          const inicio = new Date(resp.data_inicio);
+                          const fim = resp.data_fim ? new Date(resp.data_fim) : new Date();
+                          const meses = Math.ceil((fim.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24 * 30));
+                          return sum + Math.max(meses, 0);
+                        }, 0);
+                        const subsidioEstimado = mesesTotais * 15; // €15 por mês (média)
+                        return new Intl.NumberFormat('pt-PT', {
+                          style: 'currency',
+                          currency: 'EUR'
+                        }).format(subsidioEstimado);
+                      })()}
+                    </p>
+                    <p className="text-sm text-orange-600">
+                      {responsabilidades.length} responsabilidades
+                    </p>
+                  </div>
                 </div>
+                
+                {/* Custo Total */}
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-lg border-2 border-green-200 mb-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="bg-green-500 p-3 rounded-full">
+                        <DollarSign className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-green-800">Investimento Total</h3>
+                        <p className="text-sm text-green-600">Custo total acumulado para este animal</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-3xl font-bold text-green-600">
+                        {(() => {
+                          const custoMedico = intervencoes.reduce((sum, int) => sum + (int.custo_final || int.custo || 0), 0);
+                          const custoLocalizacao = localizacoes.reduce((sum, loc) => {
+                            const inicio = new Date(loc.data_inicio);
+                            const fim = loc.data_fim ? new Date(loc.data_fim) : new Date();
+                            const dias = Math.ceil((fim.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24));
+                            return sum + (Math.max(dias, 0) * 5);
+                          }, 0);
+                          const subsidios = responsabilidades.reduce((sum, resp) => {
+                            const inicio = new Date(resp.data_inicio);
+                            const fim = resp.data_fim ? new Date(resp.data_fim) : new Date();
+                            const meses = Math.ceil((fim.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24 * 30));
+                            return sum + (Math.max(meses, 0) * 15);
+                          }, 0);
+                          const total = custoMedico + custoLocalizacao + subsidios;
+                          return new Intl.NumberFormat('pt-PT', {
+                            style: 'currency',
+                            currency: 'EUR'
+                          }).format(total);
+                        })()}
+                      </p>
+                      <p className="text-sm text-green-600">Desde o registo</p>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Detalhes das Intervenções com Custo */}
+                {intervencoes.filter(i => i.custo && i.custo > 0).length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                      <Stethoscope className="h-5 w-5 mr-2 text-blue-600" />
+                      Intervenções com Custo
+                    </h3>
+                    <div className="space-y-3">
+                      {intervencoes
+                        .filter(i => i.custo && i.custo > 0)
+                        .sort((a, b) => new Date(b.data_intervencao).getTime() - new Date(a.data_intervencao).getTime())
+                        .map((intervencao) => (
+                          <div key={intervencao.id} className="bg-gray-50 p-4 rounded-lg border">
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <div className="flex items-center space-x-2 mb-2">
+                                  <Badge className="bg-blue-600">
+                                    {intervencao.tipos_intervencoes?.nome || 'N/A'}
+                                  </Badge>
+                                  <span className="text-sm text-gray-600">
+                                    {new Date(intervencao.data_intervencao).toLocaleDateString('pt-PT')}
+                                  </span>
+                                </div>
+                                <p className="text-sm text-gray-700">
+                                  <strong>Veterinário:</strong> {intervencao.veterinario || 'N/A'}
+                                </p>
+                                {intervencao.clinicas_veterinarias?.nome && (
+                                  <p className="text-sm text-gray-700">
+                                    <strong>Clínica:</strong> {intervencao.clinicas_veterinarias.nome}
+                                    {intervencao.clinicas_veterinarias.tem_protocolo && (
+                                      <Badge variant="outline" className="ml-2 text-xs text-green-600">
+                                        PROTOCOLO
+                                      </Badge>
+                                    )}
+                                  </p>
+                                )}
+                                {intervencao.observacoes && (
+                                  <p className="text-sm text-gray-600 mt-1">
+                                    {intervencao.observacoes}
+                                  </p>
+                                )}
+                              </div>
+                              <div className="text-right ml-4">
+                                <div className="font-bold text-lg text-green-600">
+                                  {new Intl.NumberFormat('pt-PT', {
+                                    style: 'currency',
+                                    currency: 'EUR'
+                                  }).format(intervencao.custo_final || intervencao.custo || 0)}
+                                </div>
+                                {intervencao.desconto_protocolo && intervencao.desconto_protocolo > 0 && (
+                                  <div className="text-xs text-green-600">
+                                    Base: {new Intl.NumberFormat('pt-PT', {
+                                      style: 'currency',
+                                      currency: 'EUR'
+                                    }).format(intervencao.custo || 0)} (-{intervencao.desconto_protocolo}%)
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      }
+                    </div>
+                  </div>
+                )}
+                
+                {/* Mensagem se não houver custos */}
+                {intervencoes.filter(i => i.custo && i.custo > 0).length === 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    <DollarSign className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p className="text-lg font-medium mb-2">Nenhum custo registrado</p>
+                    <p className="text-sm">Os custos das intervenções aparecerão aqui quando registrados.</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

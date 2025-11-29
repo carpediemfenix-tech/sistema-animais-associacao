@@ -91,10 +91,10 @@ const DashboardFinanceiro = () => {
 
       // Movimentos Recentes
       const { data: movimentos, error: errorMov } = await supabase
-        .from('movimentos_financeiros_2025_11_28_05_52')
+        .from('movimentos_financeiros')
         .select(`
           *,
-          categoria:categorias_financeiras_2025_11_28_05_52(nome, cor, icone),
+          categoria:categorias_financeiras(nome, cor, icone),
           animal:animais(nome, especie)
         `)
         .order('created_at', { ascending: false })
