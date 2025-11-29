@@ -29,6 +29,7 @@ import ManualUtilizador from "./pages/ManualUtilizador";
 import Administracao from "./pages/Administracao";
 import AdministracaoSimples from "./pages/AdministracaoSimples";
 import TesteCategorias from "./pages/TesteCategorias";
+import Dashboard from "./pages/Dashboard";
 
 const queryClient = new QueryClient();
 
@@ -45,6 +46,7 @@ const App = () => (
             
             {/* Rotas protegidas */}
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/animais" element={<ProtectedRoute><AnimaisList /></ProtectedRoute>} />
             <Route path="/animal/:id" element={<ProtectedRoute><AnimalDetail /></ProtectedRoute>} />
             <Route path="/animal/:id/editar" element={<ProtectedRoute><EditarAnimal /></ProtectedRoute>} />

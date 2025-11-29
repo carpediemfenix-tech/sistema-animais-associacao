@@ -829,6 +829,29 @@ const Index = () => {
                 </div>
               </div>
 
+              {/* Dashboard de Estatísticas */}
+              <div className="text-center p-6 rounded-xl bg-gradient-to-br from-indigo-50 to-blue-50 border border-indigo-200 hover:shadow-lg transition-all duration-200">
+                <div className="bg-gradient-to-br from-indigo-500 to-blue-500 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <BarChart3 className="h-8 w-8 text-white" />
+                </div>
+                <h3 className="font-semibold text-indigo-800 mb-2">Dashboard de Estatísticas</h3>
+                <p className="text-sm text-indigo-600 mb-4">Visão geral e métricas</p>
+                <div className="space-y-2">
+                  <Button asChild variant="outline" size="sm" className="w-full border-indigo-200 hover:bg-indigo-50">
+                    <Link to="/dashboard">
+                      <PieChart className="h-4 w-4 mr-2" />
+                      Ver Dashboard
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" size="sm" className="w-full border-indigo-200 hover:bg-indigo-50">
+                    <Link to="/financeiro">
+                      <DollarSign className="h-4 w-4 mr-2" />
+                      Dashboard Financeiro
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+
               {/* Administração */}
               <div className="text-center p-6 rounded-xl bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 hover:shadow-lg transition-all duration-200">
                 <div className="bg-gradient-to-br from-purple-500 to-pink-500 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
