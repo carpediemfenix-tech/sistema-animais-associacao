@@ -8,7 +8,13 @@ import {
   ArrowLeft, 
   PawPrint,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Stethoscope,
+  Calendar,
+  MapPin,
+  Users,
+  DollarSign,
+  ExternalLink
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Animal } from "@/types/animal";
@@ -195,19 +201,108 @@ const AnimalDetail = () => {
           </CardContent>
         </Card>
 
-        {/* Mensagem Temporária */}
+        {/* Navegação para Funcionalidades */}
         <Card>
           <CardHeader>
-            <CardTitle>Sistema em Desenvolvimento</CardTitle>
+            <CardTitle className="flex items-center">
+              <PawPrint className="h-5 w-5 mr-2 text-blue-600" />
+              Gestão do Animal
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-gray-600">
-              As funcionalidades avançadas (intervenções, eventos, localizações, responsabilidades) 
-              estão temporariamente desabilitadas para garantir estabilidade.
-            </p>
-            <p className="text-gray-600 mt-2">
-              Em breve serão reativadas com melhorias.
-            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              
+              {/* Intervenções */}
+              <Link to={`/animal/${id}/intervencoes`}>
+                <Card className="hover:shadow-lg transition-shadow cursor-pointer border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100">
+                  <CardContent className="p-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="bg-blue-600 p-2 rounded-full">
+                        <Stethoscope className="h-5 w-5 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-blue-800">Intervenções</h3>
+                        <p className="text-sm text-blue-600">Histórico médico e consultas</p>
+                      </div>
+                      <ExternalLink className="h-4 w-4 text-blue-600" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+              
+              {/* Eventos */}
+              <Link to={`/animal/${id}/eventos`}>
+                <Card className="hover:shadow-lg transition-shadow cursor-pointer border-green-200 bg-gradient-to-br from-green-50 to-green-100">
+                  <CardContent className="p-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="bg-green-600 p-2 rounded-full">
+                        <Calendar className="h-5 w-5 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-green-800">Eventos</h3>
+                        <p className="text-sm text-green-600">Timeline e marcos importantes</p>
+                      </div>
+                      <ExternalLink className="h-4 w-4 text-green-600" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+              
+              {/* Localizações */}
+              <Link to={`/animal/${id}/localizacoes`}>
+                <Card className="hover:shadow-lg transition-shadow cursor-pointer border-purple-200 bg-gradient-to-br from-purple-50 to-purple-100">
+                  <CardContent className="p-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="bg-purple-600 p-2 rounded-full">
+                        <MapPin className="h-5 w-5 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-purple-800">Localizações</h3>
+                        <p className="text-sm text-purple-600">Histórico de transferências</p>
+                      </div>
+                      <ExternalLink className="h-4 w-4 text-purple-600" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+              
+              {/* Responsabilidades */}
+              <Link to={`/animal/${id}/responsabilidades`}>
+                <Card className="hover:shadow-lg transition-shadow cursor-pointer border-orange-200 bg-gradient-to-br from-orange-50 to-orange-100">
+                  <CardContent className="p-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="bg-orange-600 p-2 rounded-full">
+                        <Users className="h-5 w-5 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-orange-800">Responsabilidades</h3>
+                        <p className="text-sm text-orange-600">Atribuições e voluntários</p>
+                      </div>
+                      <ExternalLink className="h-4 w-4 text-orange-600" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+              
+              {/* Financeiro */}
+              <Link to={`/animal/${id}/financeiro`}>
+                <Card className="hover:shadow-lg transition-shadow cursor-pointer border-emerald-200 bg-gradient-to-br from-emerald-50 to-emerald-100">
+                  <CardContent className="p-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="bg-emerald-600 p-2 rounded-full">
+                        <DollarSign className="h-5 w-5 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-emerald-800">Financeiro</h3>
+                        <p className="text-sm text-emerald-600">Custos e investimentos</p>
+                      </div>
+                      <ExternalLink className="h-4 w-4 text-emerald-600" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+              
+            </div>
           </CardContent>
         </Card>
 
