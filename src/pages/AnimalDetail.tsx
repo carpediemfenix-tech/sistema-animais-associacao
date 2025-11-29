@@ -1048,12 +1048,48 @@ const AnimalDetail = () => {
                             </div>
                           </TableCell>
                           <TableCell>
-                            {intervencao.custo ? `€${intervencao.custo.toFixed(2)}` : '-'}
+                            <div className="text-right">
+                              {intervencao.custo_final ? (
+                                <div>
+                                  <span className="font-semibold">€{intervencao.custo_final.toFixed(2)}</span>
+                                  {intervencao.desconto_protocolo && intervencao.desconto_protocolo > 0 && (
+                                    <div className="text-xs text-green-600">
+                                      Base: €{intervencao.custo?.toFixed(2)} (-{intervencao.desconto_protocolo}%)
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                intervencao.custo ? `€${intervencao.custo.toFixed(2)}` : '-'
+                              )}
+                            </div>
                           </TableCell>
                           <TableCell>
-                            <Badge variant={intervencao.concluida ? "default" : "outline"}>
-                              {intervencao.concluida ? 'Concluída' : 'Pendente'}
-                            </Badge>
+                            {(() => {
+                              const hoje = new Date();
+                              const dataIntervencao = new Date(intervencao.data_intervencao);
+                              const isPassado = dataIntervencao < hoje;
+                              const isFuturo = dataIntervencao > hoje;
+                              
+                              if (isFuturo) {
+                                return (
+                                  <Badge variant="outline" className="text-blue-600 border-blue-600">
+                                    Agendada
+                                  </Badge>
+                                );
+                              } else if (isPassado) {
+                                return (
+                                  <Badge variant="default" className="bg-green-600">
+                                    Concluída
+                                  </Badge>
+                                );
+                              } else {
+                                return (
+                                  <Badge variant="outline" className="text-orange-600 border-orange-600">
+                                    Hoje
+                                  </Badge>
+                                );
+                              }
+                            })()}
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center space-x-2">
