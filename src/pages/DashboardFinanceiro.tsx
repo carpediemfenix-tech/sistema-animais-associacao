@@ -141,9 +141,9 @@ const DashboardFinanceiro = () => {
   };
 
   const totalGeral = {
-    receitas: resumoAssociacao.total_receitas + resumoAnimais.total_receitas,
-    despesas: resumoAssociacao.total_despesas + resumoAnimais.total_despesas,
-    saldo: resumoAssociacao.saldo + resumoAnimais.saldo
+    receitas: (resumoAssociacao.total_receitas || 0) + (resumoAnimais.total_receitas || 0),
+    despesas: (resumoAssociacao.total_despesas || 0) + (resumoAnimais.total_despesas || 0),
+    saldo: (resumoAssociacao.saldo || 0) + (resumoAnimais.saldo || 0)
   };
 
   if (loading) {
