@@ -25,10 +25,11 @@ import {
   Calendar,
   Home,
   UserCheck,
-  DollarSign
+  DollarSign,
+  Clock
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Animal, Intervencao, TipoIntervencao, Voluntario, ClinicaVeterinaria, EventoAnimal, TipoEvento, LocalizacaoAnimal, TipoLocalizacao } from "@/types/animal";
+import { Animal, Intervencao, TipoIntervencao, Voluntario, ClinicaVeterinaria, EventoAnimal, TipoEvento, LocalizacaoAnimal, TipoLocalizacao, ResponsabilidadeAnimal, TipoResponsabilidade } from "@/types/animal";
 import { useToast } from "@/hooks/use-toast";
 import UserHeader from "@/components/UserHeader";
 
@@ -59,6 +60,12 @@ const AnimalDetail = () => {
   const [tiposLocalizacoes, setTiposLocalizacoes] = useState<TipoLocalizacao[]>([]);
   const [localizacaoDialogOpen, setLocalizacaoDialogOpen] = useState(false);
   const [editingLocalizacao, setEditingLocalizacao] = useState<LocalizacaoAnimal | null>(null);
+
+  // Estados para responsabilidades
+  const [responsabilidades, setResponsabilidades] = useState<ResponsabilidadeAnimal[]>([]);
+  const [tiposResponsabilidades, setTiposResponsabilidades] = useState<TipoResponsabilidade[]>([]);
+  const [responsabilidadeDialogOpen, setResponsabilidadeDialogOpen] = useState(false);
+  const [editingResponsabilidade, setEditingResponsabilidade] = useState<ResponsabilidadeAnimal | null>(null);
   
   // Formulário simplificado
   const [intervencaoForm, setIntervencaoForm] = useState({
@@ -91,6 +98,15 @@ const AnimalDetail = () => {
     responsavel_id: '',
     motivo_transferencia: '',
     observacoes: ''
+  });
+
+  // Formulário de responsabilidades
+  const [responsabilidadeForm, setResponsabilidadeForm] = useState({
+    voluntario_id: '',
+    tipo_responsabilidade: '',
+    data_inicio: '',
+    observacoes: '',
+    prioridade: 1
   });
 
   // Função básica para carregar dados do animal
@@ -271,6 +287,40 @@ const AnimalDetail = () => {
       } else {
         console.log('ℹ️ [TIPOS_LOCALIZACOES] Erro ao carregar tipos de localizações:', tiposLocalizacoesError?.message);
         setTiposLocalizacoes([]);
+      }
+
+      // Carregar responsabilidades do animal
+      const { data: responsabilidadesData, error: responsabilidadesError } = await supabase
+        .from('responsabilidades_animal')
+        .select(`
+          *,
+          voluntarios (nome, email, telefone)
+        `)
+        .eq('animal_id', id)
+        .order('prioridade', { ascending: true })
+        .order('data_inicio', { ascending: false });
+
+      if (!responsabilidadesError && responsabilidadesData) {
+        setResponsabilidades(responsabilidadesData);
+        console.log('✅ [RESPONSABILIDADES] Carregadas:', responsabilidadesData.length);
+      } else {
+        console.log('ℹ️ [RESPONSABILIDADES] Erro ao carregar responsabilidades:', responsabilidadesError?.message);
+        setResponsabilidades([]);
+      }
+
+      // Carregar tipos de responsabilidades
+      const { data: tiposResponsabilidadesData, error: tiposResponsabilidadesError } = await supabase
+        .from('tipos_responsabilidades')
+        .select('*')
+        .eq('ativo', true)
+        .order('nome');
+
+      if (!tiposResponsabilidadesError && tiposResponsabilidadesData) {
+        setTiposResponsabilidades(tiposResponsabilidadesData);
+        console.log('✅ [TIPOS_RESPONSABILIDADES] Carregados:', tiposResponsabilidadesData.length);
+      } else {
+        console.log('ℹ️ [TIPOS_RESPONSABILIDADES] Erro ao carregar tipos de responsabilidades:', tiposResponsabilidadesError?.message);
+        setTiposResponsabilidades([]);
       }
 
     } catch (error: any) {
@@ -638,6 +688,152 @@ const AnimalDetail = () => {
       toast({
         title: "❌ Erro",
         description: error.message || "Erro ao eliminar localização",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Funções de gestão de responsabilidades
+  const resetResponsabilidadeForm = () => {
+    setResponsabilidadeForm({
+      voluntario_id: '',
+      tipo_responsabilidade: '',
+      data_inicio: '',
+      observacoes: '',
+      prioridade: 1
+    });
+    setEditingResponsabilidade(null);
+  };
+
+  const openResponsabilidadeDialog = (responsabilidade?: ResponsabilidadeAnimal) => {
+    if (responsabilidade) {
+      setEditingResponsabilidade(responsabilidade);
+      setResponsabilidadeForm({
+        voluntario_id: responsabilidade.voluntario_id,
+        tipo_responsabilidade: responsabilidade.tipo_responsabilidade,
+        data_inicio: responsabilidade.data_inicio.split('T')[0],
+        observacoes: responsabilidade.observacoes || '',
+        prioridade: responsabilidade.prioridade
+      });
+    } else {
+      resetResponsabilidadeForm();
+    }
+    setResponsabilidadeDialogOpen(true);
+  };
+
+  const handleResponsabilidadeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!responsabilidadeForm.voluntario_id || !responsabilidadeForm.tipo_responsabilidade || !responsabilidadeForm.data_inicio) {
+      toast({
+        title: "❌ Erro",
+        description: "Voluntário, tipo de responsabilidade e data são obrigatórios",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const responsabilidadeData = {
+        animal_id: id,
+        voluntario_id: responsabilidadeForm.voluntario_id,
+        tipo_responsabilidade: responsabilidadeForm.tipo_responsabilidade,
+        data_inicio: responsabilidadeForm.data_inicio,
+        observacoes: responsabilidadeForm.observacoes || null,
+        prioridade: responsabilidadeForm.prioridade,
+        ativa: true
+      };
+
+      if (editingResponsabilidade) {
+        const { error } = await supabase
+          .from('responsabilidades_animal')
+          .update(responsabilidadeData)
+          .eq('id', editingResponsabilidade.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "✅ Sucesso",
+          description: "Responsabilidade atualizada com sucesso",
+        });
+      } else {
+        const { error } = await supabase
+          .from('responsabilidades_animal')
+          .insert([responsabilidadeData]);
+
+        if (error) throw error;
+
+        toast({
+          title: "✅ Sucesso",
+          description: "Responsabilidade atribuída com sucesso",
+        });
+      }
+
+      setResponsabilidadeDialogOpen(false);
+      resetResponsabilidadeForm();
+      loadRelatedData(); // Recarregar dados
+    } catch (error: any) {
+      console.error('Erro ao salvar responsabilidade:', error);
+      toast({
+        title: "❌ Erro",
+        description: error.message || "Erro ao salvar responsabilidade",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteResponsabilidade = async (responsabilidadeId: string) => {
+    if (!confirm('Tem certeza que deseja remover esta responsabilidade?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('responsabilidades_animal')
+        .delete()
+        .eq('id', responsabilidadeId);
+
+      if (error) throw error;
+
+      toast({
+        title: "✅ Sucesso",
+        description: "Responsabilidade removida com sucesso",
+      });
+
+      loadRelatedData(); // Recarregar dados
+    } catch (error: any) {
+      console.error('Erro ao remover responsabilidade:', error);
+      toast({
+        title: "❌ Erro",
+        description: error.message || "Erro ao remover responsabilidade",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleFinalizarResponsabilidade = async (responsabilidadeId: string) => {
+    if (!confirm('Tem certeza que deseja finalizar esta responsabilidade?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('responsabilidades_animal')
+        .update({ 
+          ativa: false, 
+          data_fim: new Date().toISOString().split('T')[0] 
+        })
+        .eq('id', responsabilidadeId);
+
+      if (error) throw error;
+
+      toast({
+        title: "✅ Sucesso",
+        description: "Responsabilidade finalizada com sucesso",
+      });
+
+      loadRelatedData(); // Recarregar dados
+    } catch (error: any) {
+      console.error('Erro ao finalizar responsabilidade:', error);
+      toast({
+        title: "❌ Erro",
+        description: error.message || "Erro ao finalizar responsabilidade",
         variant: "destructive",
       });
     }
@@ -1173,14 +1369,167 @@ const AnimalDetail = () => {
           <TabsContent value="responsabilidades">
             <Card>
               <CardHeader>
-                <CardTitle>Responsabilidades</CardTitle>
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center space-x-2">
+                    <UserCheck className="h-5 w-5 text-blue-600" />
+                    <CardTitle>Responsabilidades de {animal?.nome}</CardTitle>
+                  </div>
+                  {hasPermission('create') && (
+                    <Button
+                      onClick={() => openResponsabilidadeDialog()}
+                      size="sm"
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Atribuir Responsabilidade
+                    </Button>
+                  )}
+                </div>
+                <CardDescription>
+                  Voluntários responsáveis pelos cuidados e acompanhamento de {animal?.nome}
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8 text-gray-500">
-                  <UserCheck className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p className="text-lg font-medium mb-2">Funcionalidade em desenvolvimento</p>
-                  <p className="text-sm">Sistema de responsabilidades será implementado em breve.</p>
-                </div>
+                {responsabilidades.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <UserCheck className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p className="text-lg font-medium mb-2">Nenhuma responsabilidade atribuída</p>
+                    <p className="text-sm mb-4">Clique em "Atribuir Responsabilidade" para designar voluntários responsáveis por {animal?.nome}.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Responsabilidades Ativas */}
+                    {responsabilidades.filter(resp => resp.ativa).length > 0 && (
+                      <div>
+                        <h3 className="text-lg font-semibold text-blue-800 mb-3 flex items-center">
+                          <UserCheck className="h-5 w-5 mr-2 text-blue-600" />
+                          Responsabilidades Ativas
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {responsabilidades
+                            .filter(resp => resp.ativa)
+                            .sort((a, b) => a.prioridade - b.prioridade)
+                            .map((responsabilidade) => (
+                            <div key={responsabilidade.id} className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
+                              <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center space-x-2">
+                                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                                  <h4 className="font-semibold text-blue-800">{responsabilidade.tipo_responsabilidade}</h4>
+                                  <Badge className="bg-blue-500 text-white text-xs">ATIVA</Badge>
+                                </div>
+                                <div className="flex items-center space-x-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => openResponsabilidadeDialog(responsabilidade)}
+                                    title="Editar"
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleFinalizarResponsabilidade(responsabilidade.id)}
+                                    className="text-orange-600 hover:text-orange-800"
+                                    title="Finalizar"
+                                  >
+                                    <Clock className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleDeleteResponsabilidade(responsabilidade.id)}
+                                    className="text-red-600 hover:text-red-800"
+                                    title="Remover"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                              
+                              <div className="space-y-2">
+                                <div>
+                                  <p className="text-sm text-blue-600 font-medium">Voluntário Responsável</p>
+                                  <p className="text-blue-900 font-semibold">
+                                    👥 {responsabilidade.voluntarios?.nome || 'Nome não disponível'}
+                                  </p>
+                                  {responsabilidade.voluntarios?.telefone && (
+                                    <p className="text-sm text-blue-700">
+                                      📞 {responsabilidade.voluntarios.telefone}
+                                    </p>
+                                  )}
+                                </div>
+                                
+                                <div>
+                                  <p className="text-sm text-blue-600 font-medium">Desde</p>
+                                  <p className="text-blue-900">
+                                    {new Date(responsabilidade.data_inicio).toLocaleDateString('pt-PT')} 
+                                    ({Math.floor((new Date().getTime() - new Date(responsabilidade.data_inicio).getTime()) / (1000 * 60 * 60 * 24))} dias)
+                                  </p>
+                                </div>
+                                
+                                {responsabilidade.observacoes && (
+                                  <div>
+                                    <p className="text-sm text-blue-600 font-medium">Observações</p>
+                                    <p className="text-blue-800 bg-blue-100 p-2 rounded text-sm">{responsabilidade.observacoes}</p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Histórico de Responsabilidades */}
+                    {responsabilidades.filter(resp => !resp.ativa).length > 0 && (
+                      <div className="mt-6">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                          <UserCheck className="h-5 w-5 mr-2 text-gray-600" />
+                          Histórico de Responsabilidades
+                        </h3>
+                        <div className="space-y-3">
+                          {responsabilidades.filter(resp => !resp.ativa).map((responsabilidade) => (
+                            <div key={responsabilidade.id} className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center space-x-2">
+                                  <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
+                                  <span className="font-medium text-gray-800">{responsabilidade.tipo_responsabilidade}</span>
+                                  <Badge variant="outline" className="text-xs">FINALIZADA</Badge>
+                                </div>
+                                <div className="flex items-center space-x-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleDeleteResponsabilidade(responsabilidade.id)}
+                                    className="text-red-600 hover:text-red-800"
+                                    title="Remover do histórico"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                              
+                              <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                  <span className="text-gray-600">Voluntário:</span>
+                                  <p className="text-gray-800">{responsabilidade.voluntarios?.nome}</p>
+                                </div>
+                                <div>
+                                  <span className="text-gray-600">Período:</span>
+                                  <p className="text-gray-800">
+                                    {new Date(responsabilidade.data_inicio).toLocaleDateString('pt-PT')} - 
+                                    {responsabilidade.data_fim ? new Date(responsabilidade.data_fim).toLocaleDateString('pt-PT') : 'Atual'}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -1632,6 +1981,138 @@ const AnimalDetail = () => {
               </Button>
               <Button type="submit" className="bg-purple-600 hover:bg-purple-700">
                 {editingLocalizacao ? 'Atualizar' : 'Registar Transferência'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo de Responsabilidade - COMPLETO */}
+      <Dialog open={responsabilidadeDialogOpen} onOpenChange={setResponsabilidadeDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-blue-800">
+              {editingResponsabilidade ? 'Editar Responsabilidade' : 'Atribuir Nova Responsabilidade'}
+            </DialogTitle>
+            <DialogDescription className="text-blue-600">
+              {editingResponsabilidade ? 'Editar informações da responsabilidade' : `Atribuir responsabilidade para ${animal?.nome}`}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleResponsabilidadeSubmit} className="space-y-4">
+            <div>
+              <Label htmlFor="voluntario_id" className="text-blue-700 font-medium">
+                Voluntário Responsável *
+              </Label>
+              <Select 
+                value={responsabilidadeForm.voluntario_id} 
+                onValueChange={(value) => setResponsabilidadeForm({ ...responsabilidadeForm, voluntario_id: value })}
+              >
+                <SelectTrigger className="border-blue-200 focus:border-blue-400">
+                  <SelectValue placeholder="Selecionar voluntário" />
+                </SelectTrigger>
+                <SelectContent>
+                  {voluntarios.map((voluntario) => (
+                    <SelectItem key={voluntario.id} value={voluntario.id}>
+                      {voluntario.nome} {voluntario.telefone && `(${voluntario.telefone})`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="tipo_responsabilidade" className="text-blue-700 font-medium">
+                Tipo de Responsabilidade *
+              </Label>
+              <Select 
+                value={responsabilidadeForm.tipo_responsabilidade} 
+                onValueChange={(value) => setResponsabilidadeForm({ ...responsabilidadeForm, tipo_responsabilidade: value })}
+              >
+                <SelectTrigger className="border-blue-200 focus:border-blue-400">
+                  <SelectValue placeholder="Selecionar tipo de responsabilidade" />
+                </SelectTrigger>
+                <SelectContent>
+                  {tiposResponsabilidades.map((tipo) => (
+                    <SelectItem key={tipo.id} value={tipo.nome}>
+                      {tipo.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="data_inicio" className="text-blue-700 font-medium">
+                Data de Início *
+              </Label>
+              <Input
+                id="data_inicio"
+                type="date"
+                value={responsabilidadeForm.data_inicio}
+                onChange={(e) => setResponsabilidadeForm({ ...responsabilidadeForm, data_inicio: e.target.value })}
+                className="border-blue-200 focus:border-blue-400"
+                required
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="prioridade" className="text-blue-700 font-medium">
+                Prioridade
+              </Label>
+              <Select 
+                value={responsabilidadeForm.prioridade.toString()} 
+                onValueChange={(value) => setResponsabilidadeForm({ ...responsabilidadeForm, prioridade: parseInt(value) })}
+              >
+                <SelectTrigger className="border-blue-200 focus:border-blue-400">
+                  <SelectValue placeholder="Selecionar prioridade" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1 - Prioridade Máxima</SelectItem>
+                  <SelectItem value="2">2 - Prioridade Alta</SelectItem>
+                  <SelectItem value="3">3 - Prioridade Média</SelectItem>
+                  <SelectItem value="4">4 - Prioridade Baixa</SelectItem>
+                  <SelectItem value="5">5 - Prioridade Mínima</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-blue-600 mt-1">
+                A prioridade determina a ordem de exibição (1 = mais importante)
+              </p>
+            </div>
+            
+            <div>
+              <Label htmlFor="observacoes" className="text-blue-700">
+                Observações
+              </Label>
+              <Textarea
+                id="observacoes"
+                value={responsabilidadeForm.observacoes}
+                onChange={(e) => setResponsabilidadeForm({ ...responsabilidadeForm, observacoes: e.target.value })}
+                placeholder="Observações sobre a responsabilidade..."
+                className="border-blue-200 focus:border-blue-400"
+                rows={3}
+              />
+            </div>
+            
+            <div className="bg-blue-50 p-3 rounded-md">
+              <p className="text-sm text-blue-700">
+                📝 <strong>Nota:</strong> Esta responsabilidade será marcada como ativa. Pode ser finalizada ou removida posteriormente.
+              </p>
+            </div>
+            
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => {
+                  setResponsabilidadeDialogOpen(false);
+                  resetResponsabilidadeForm();
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+                {editingResponsabilidade ? 'Atualizar' : 'Atribuir Responsabilidade'}
               </Button>
             </div>
           </form>

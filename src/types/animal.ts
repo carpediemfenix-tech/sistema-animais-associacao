@@ -57,6 +57,15 @@ export interface TipoLocalizacao {
   updated_at: string;
 }
 
+export interface TipoResponsabilidade {
+  id: string;
+  nome: string;
+  descricao?: string;
+  ativo: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ClinicaVeterinaria {
   id: string;
   nome: string;
@@ -136,12 +145,13 @@ export interface ResponsabilidadeAnimal {
   voluntario_id: string;
   data_inicio: string;
   data_fim?: string; // NULL se ainda for responsável
-  tipo_responsabilidade: string; // 'cuidador', 'padrinho', 'responsavel_medico', etc.
+  tipo_responsabilidade: string; // Texto com emoji: '🏠 Cuidador Principal', etc.
   observacoes?: string;
-  ativo: boolean;
+  ativa: boolean; // Responsabilidade ativa ou histórica
+  prioridade: number; // Ordem de importância (1 = mais importante)
   created_at: string;
   updated_at: string;
-  voluntario?: Voluntario;
+  voluntarios?: { nome: string; email?: string; telefone?: string }; // Para joins do Supabase
 }
 
 // MANTIDO: Interfaces existentes para compatibilidade
