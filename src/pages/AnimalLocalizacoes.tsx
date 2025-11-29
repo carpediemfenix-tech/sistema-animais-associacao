@@ -67,10 +67,7 @@ const AnimalLocalizacoes = () => {
     observacoes: ''
   });
 
-  // Debug do estado do formulário
-  useEffect(() => {
-    console.log('DEBUG - Estado do formulário mudou:', localizacaoForm);
-  }, [localizacaoForm]);
+  // Debug do estado do formulário removido para evitar loops
 
   // Função para carregar dados do animal
   const fetchAnimalData = async () => {
@@ -347,9 +344,7 @@ const AnimalLocalizacoes = () => {
   const localizacaoAtual = localizacoes.find(loc => loc.ativo);
   const historicoLocalizacoes = localizacoes.filter(loc => !loc.ativo);
   
-  console.log('DEBUG - Total localizações:', localizacoes.length);
-  console.log('DEBUG - Localização atual:', localizacaoAtual);
-  console.log('DEBUG - Histórico:', historicoLocalizacoes.length, historicoLocalizacoes);
+  // Debug logs removidos para evitar loops
 
   if (loading) {
     return (
@@ -594,10 +589,7 @@ const AnimalLocalizacoes = () => {
                 key={`select-${localizacaoDialogOpen}`}
                 value={localizacaoForm.tipo_localizacao || ""} 
                 onValueChange={(value) => {
-                  console.log('DEBUG - Selecionando tipo:', value);
-                  console.log('DEBUG - Estado atual:', localizacaoForm.tipo_localizacao);
                   setLocalizacaoForm(prev => ({ ...prev, tipo_localizacao: value }));
-                  console.log('DEBUG - Novo estado será:', value);
                 }}
               >
                 <SelectTrigger className="border-blue-200 focus:border-blue-400">
@@ -609,14 +601,11 @@ const AnimalLocalizacoes = () => {
                       Carregando tipos...
                     </SelectItem>
                   )}
-                  {tiposLocalizacoes.map((tipo, index) => {
-                    console.log(`DEBUG - Mapeando tipo ${index}:`, { id: tipo.id, nome: tipo.nome });
-                    return (
-                      <SelectItem key={tipo.id} value={String(tipo.id)}>
-                        {tipo.nome}
-                      </SelectItem>
-                    );
-                  })}
+                  {tiposLocalizacoes.map((tipo) => (
+                    <SelectItem key={tipo.id} value={String(tipo.id)}>
+                      {tipo.nome}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
