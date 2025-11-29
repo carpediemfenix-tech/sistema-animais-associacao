@@ -545,18 +545,63 @@ const AnimalFinanceiro = () => {
             <CardContent>
               <div className="space-y-3">
                 {intervencoes.map((intervencao) => (
-                  <div key={intervencao.id} className="flex items-center justify-between p-3 bg-white rounded-lg border border-blue-200">
-                    <div className="flex-1">
-                      <h4 className="font-medium text-blue-900">{intervencao.tipos_intervencoes?.nome}</h4>
-                      <p className="text-sm text-blue-600">
-                        {new Date(intervencao.data_intervencao).toLocaleDateString('pt-PT')}
-                        {intervencao.clinicas_veterinarias?.nome && ` • ${intervencao.clinicas_veterinarias.nome}`}
-                      </p>
+                  <div key={intervencao.id} className="flex items-start justify-between p-4 bg-white rounded-lg border border-blue-200 hover:border-blue-300 transition-colors">
+                    <div className="flex-1 space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <h4 className="font-semibold text-blue-900">{intervencao.tipos_intervencoes?.nome || 'Intervenção'}</h4>
+                        {intervencao.urgente && (
+                          <span className="px-2 py-1 text-xs font-medium bg-red-100 text-red-700 rounded-full">
+                            URGENTE
+                          </span>
+                        )}
+                      </div>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-blue-700">
+                        <div className="flex items-center">
+                          <Calendar className="h-3 w-3 mr-1" />
+                          {new Date(intervencao.data_intervencao).toLocaleDateString('pt-PT')}
+                        </div>
+                        
+                        {intervencao.clinicas_veterinarias?.nome && (
+                          <div className="flex items-center">
+                            <FileText className="h-3 w-3 mr-1" />
+                            {intervencao.clinicas_veterinarias.nome}
+                          </div>
+                        )}
+                        
+                        {intervencao.veterinario && (
+                          <div className="flex items-center">
+                            <span className="h-3 w-3 mr-1">👨‍⚕️</span>
+                            Dr(a). {intervencao.veterinario}
+                          </div>
+                        )}
+                        
+                        {intervencao.estado && (
+                          <div className="flex items-center">
+                            <span className={`h-2 w-2 rounded-full mr-2 ${
+                              intervencao.estado === 'concluida' ? 'bg-green-500' :
+                              intervencao.estado === 'agendada' ? 'bg-yellow-500' :
+                              intervencao.estado === 'cancelada' ? 'bg-red-500' : 'bg-gray-500'
+                            }`} />
+                            {intervencao.estado.charAt(0).toUpperCase() + intervencao.estado.slice(1)}
+                          </div>
+                        )}
+                      </div>
+                      
+                      {intervencao.observacoes && (
+                        <p className="text-sm text-blue-600 bg-blue-50 p-2 rounded border-l-2 border-blue-200">
+                          {intervencao.observacoes}
+                        </p>
+                      )}
                     </div>
-                    <div className="text-right">
-                      <p className="font-bold text-blue-800">€{(intervencao.custo_final || 0).toFixed(2)}</p>
+                    
+                    <div className="text-right ml-4">
+                      <p className="font-bold text-lg text-blue-800">€{(intervencao.custo_final || 0).toFixed(2)}</p>
                       {intervencao.custo !== intervencao.custo_final && (
-                        <p className="text-xs text-blue-600 line-through">€{(intervencao.custo || 0).toFixed(2)}</p>
+                        <p className="text-sm text-blue-600 line-through">€{(intervencao.custo || 0).toFixed(2)}</p>
+                      )}
+                      {intervencao.custo_final === 0 && (
+                        <p className="text-xs text-blue-500">Gratuito</p>
                       )}
                     </div>
                   </div>
