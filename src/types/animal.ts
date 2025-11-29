@@ -39,6 +39,21 @@ export interface TipoIntervencao {
   created_at: string;
 }
 
+export interface ClinicaVeterinaria {
+  id: string;
+  nome: string;
+  endereco?: string;
+  telefone?: string;
+  email?: string;
+  contacto_responsavel?: string;
+  especialidades?: string[];
+  tem_protocolo: boolean;
+  observacoes?: string;
+  ativo: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Intervencao {
   id: string;
   animal_id: string;
@@ -46,7 +61,8 @@ export interface Intervencao {
   voluntario_id?: string;
   data_intervencao: string;
   veterinario?: string;
-  clinica?: string;
+  clinica?: string; // Campo legado - manter para compatibilidade
+  clinica_id?: string; // Nova referência à tabela de clínicas
   observacoes?: string;
   custo?: number;
   proxima_data?: string;
@@ -57,7 +73,9 @@ export interface Intervencao {
   animal?: Animal;
   tipo_intervencao?: TipoIntervencao;
   voluntario?: Voluntario;
+  clinica_veterinaria?: ClinicaVeterinaria; // Join com clínica
   tipos_intervencoes?: TipoIntervencao; // Para joins do Supabase
+  clinicas_veterinarias?: ClinicaVeterinaria; // Para joins do Supabase
 }
 
 // NOVO: Eventos da vida do animal

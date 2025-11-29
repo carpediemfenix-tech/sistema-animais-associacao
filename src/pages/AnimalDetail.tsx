@@ -28,7 +28,7 @@ import {
   DollarSign
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Animal, Intervencao, TipoIntervencao, Voluntario } from "@/types/animal";
+import { Animal, Intervencao, TipoIntervencao, Voluntario, ClinicaVeterinaria } from "@/types/animal";
 import { useToast } from "@/hooks/use-toast";
 import UserHeader from "@/components/UserHeader";
 
@@ -44,6 +44,7 @@ const AnimalDetail = () => {
   const [intervencoes, setIntervencoes] = useState<Intervencao[]>([]);
   const [tiposIntervencoes, setTiposIntervencoes] = useState<TipoIntervencao[]>([]);
   const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
+  const [clinicas, setClinicas] = useState<ClinicaVeterinaria[]>([]);
   const [intervencaoDialogOpen, setIntervencaoDialogOpen] = useState(false);
   const [editingIntervencao, setEditingIntervencao] = useState<Intervencao | null>(null);
   
@@ -52,10 +53,11 @@ const AnimalDetail = () => {
     tipo_intervencao_id: '',
     data_intervencao: '',
     veterinario: '',
+    clinica_id: '', // Nova referência à clínica
     observacoes: '',
     custo: '',
-    urgente: false,
-    concluida: false
+    urgente: false
+    // Removido: concluida (será sempre true)
   });
 
   // Função básica para carregar dados do animal
@@ -114,7 +116,8 @@ const AnimalDetail = () => {
         .select(`
           *,
           tipos_intervencoes (nome),
-          voluntarios (nome)
+          voluntarios (nome),
+          clinicas_veterinarias (nome, tem_protocolo)
         `)
         .eq('animal_id', id)
         .order('data_intervencao', { ascending: false });
@@ -156,6 +159,21 @@ const AnimalDetail = () => {
         setVoluntarios([]);
       }
 
+      // Carregar clínicas
+      const { data: clinicasData, error: clinicasError } = await supabase
+        .from('clinicas_veterinarias')
+        .select('*')
+        .eq('ativo', true)
+        .order('nome');
+
+      if (!clinicasError && clinicasData) {
+        setClinicas(clinicasData);
+        console.log('✅ [CLINICAS] Carregadas:', clinicasData.length);
+      } else {
+        console.log('ℹ️ [CLINICAS] Erro ao carregar clínicas:', clinicasError?.message);
+        setClinicas([]);
+      }
+
     } catch (error: any) {
       console.error('💥 [RELATED_DATA] Erro ao carregar dados relacionados:', error);
     }
@@ -167,10 +185,11 @@ const AnimalDetail = () => {
       tipo_intervencao_id: '',
       data_intervencao: '',
       veterinario: '',
+      clinica_id: '',
       observacoes: '',
       custo: '',
-      urgente: false,
-      concluida: false
+      urgente: false
+      // Removido: concluida (sempre true)
     });
     setEditingIntervencao(null);
   };
@@ -182,10 +201,11 @@ const AnimalDetail = () => {
         tipo_intervencao_id: intervencao.tipo_intervencao_id,
         data_intervencao: intervencao.data_intervencao.split('T')[0],
         veterinario: intervencao.veterinario || '',
+        clinica_id: intervencao.clinica_id || '',
         observacoes: intervencao.observacoes || '',
         custo: intervencao.custo?.toString() || '',
-        urgente: intervencao.urgente,
-        concluida: intervencao.concluida
+        urgente: intervencao.urgente
+        // Removido: concluida (sempre true)
       });
     } else {
       resetIntervencaoForm();
@@ -211,10 +231,11 @@ const AnimalDetail = () => {
         tipo_intervencao_id: intervencaoForm.tipo_intervencao_id,
         data_intervencao: intervencaoForm.data_intervencao,
         veterinario: intervencaoForm.veterinario || null,
+        clinica_id: intervencaoForm.clinica_id || null,
         observacoes: intervencaoForm.observacoes || null,
         custo: intervencaoForm.custo ? parseFloat(intervencaoForm.custo) : null,
         urgente: intervencaoForm.urgente,
-        concluida: intervencaoForm.concluida
+        concluida: true // Sempre concluída na data da intervenção
       };
 
       if (editingIntervencao) {
@@ -449,6 +470,7 @@ const AnimalDetail = () => {
                         <TableHead>Data</TableHead>
                         <TableHead>Tipo</TableHead>
                         <TableHead>Veterinário</TableHead>
+                        <TableHead>Clínica</TableHead>
                         <TableHead>Custo</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Ações</TableHead>
@@ -475,6 +497,16 @@ const AnimalDetail = () => {
                             </div>
                           </TableCell>
                           <TableCell>{intervencao.veterinario || '-'}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center space-x-2">
+                              <span>{intervencao.clinicas_veterinarias?.nome || intervencao.clinica || '-'}</span>
+                              {intervencao.clinicas_veterinarias?.tem_protocolo && (
+                                <Badge variant="outline" className="text-xs text-green-600">
+                                  PROTOCOLO
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
                           <TableCell>
                             {intervencao.custo ? `€${intervencao.custo.toFixed(2)}` : '-'}
                           </TableCell>
@@ -642,6 +674,35 @@ const AnimalDetail = () => {
             </div>
             
             <div>
+              <Label htmlFor="clinica_id" className="text-blue-700">
+                Clínica Veterinária
+              </Label>
+              <Select 
+                value={intervencaoForm.clinica_id} 
+                onValueChange={(value) => setIntervencaoForm({ ...intervencaoForm, clinica_id: value === 'none' ? '' : value })}
+              >
+                <SelectTrigger className="border-blue-200 focus:border-blue-400">
+                  <SelectValue placeholder="Selecionar clínica" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Outra clínica</SelectItem>
+                  {clinicas.map((clinica) => (
+                    <SelectItem key={clinica.id} value={clinica.id}>
+                      <div className="flex items-center space-x-2">
+                        <span>{clinica.nome}</span>
+                        {clinica.tem_protocolo && (
+                          <Badge variant="outline" className="text-xs text-green-600 ml-2">
+                            PROTOCOLO
+                          </Badge>
+                        )}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
               <Label htmlFor="custo" className="text-blue-700">
                 Custo (€)
               </Label>
@@ -670,7 +731,7 @@ const AnimalDetail = () => {
               />
             </div>
             
-            <div className="flex items-center space-x-6">
+            <div className="space-y-3">
               <div className="flex items-center space-x-2">
                 <input
                   id="urgente"
@@ -680,21 +741,14 @@ const AnimalDetail = () => {
                   className="rounded border-blue-300 text-blue-600 focus:ring-blue-500"
                 />
                 <Label htmlFor="urgente" className="text-blue-700">
-                  Urgente
+                  Intervenção Urgente
                 </Label>
               </div>
               
-              <div className="flex items-center space-x-2">
-                <input
-                  id="concluida"
-                  type="checkbox"
-                  checked={intervencaoForm.concluida}
-                  onChange={(e) => setIntervencaoForm({ ...intervencaoForm, concluida: e.target.checked })}
-                  className="rounded border-blue-300 text-blue-600 focus:ring-blue-500"
-                />
-                <Label htmlFor="concluida" className="text-blue-700">
-                  Concluída
-                </Label>
+              <div className="bg-blue-50 p-3 rounded-md">
+                <p className="text-sm text-blue-700">
+                  📝 <strong>Nota:</strong> A intervenção será automaticamente marcada como concluída na data especificada.
+                </p>
               </div>
             </div>
             

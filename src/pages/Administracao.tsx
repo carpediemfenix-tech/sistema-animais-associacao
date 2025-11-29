@@ -38,7 +38,8 @@ import {
   Calendar,
   MapPin,
   Settings,
-  DollarSign
+  DollarSign,
+  Hospital
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -106,6 +107,19 @@ interface CategoriaFinanceira {
   ordem?: number;
 }
 
+interface ClinicaVeterinaria {
+  id: string;
+  nome: string;
+  endereco?: string;
+  telefone?: string;
+  email?: string;
+  contacto_responsavel?: string;
+  especialidades?: string[];
+  tem_protocolo: boolean;
+  observacoes?: string;
+  ativo: boolean;
+}
+
 const Administracao = () => {
   // Estados para todas as tabelas
   const [especies, setEspecies] = useState<Especie[]>([]);
@@ -116,6 +130,7 @@ const Administracao = () => {
   const [tiposLocalizacoes, setTiposLocalizacoes] = useState<TipoLocalizacao[]>([]);
   const [tiposIntervencoes, setTiposIntervencoes] = useState<TipoIntervencao[]>([]);
   const [categoriasFinanceiras, setCategoriasFinanceiras] = useState<CategoriaFinanceira[]>([]);
+  const [clinicasVeterinarias, setClinicasVeterinarias] = useState<ClinicaVeterinaria[]>([]);
   
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -129,7 +144,13 @@ const Administracao = () => {
     tipo: '',
     escopo: '',
     cor: '#6B7280',
-    icone: 'DollarSign'
+    icone: 'DollarSign',
+    // Campos específicos para clínicas
+    endereco: '',
+    telefone: '',
+    email: '',
+    contacto_responsavel: '',
+    tem_protocolo: false
   });
 
   const { toast } = useToast();
@@ -172,7 +193,8 @@ const Administracao = () => {
         tiposEventosData,
         tiposLocalizacoesData,
         tiposIntervencoesData,
-        categoriasFinanceirasData
+        categoriasFinanceirasData,
+        clinicasVeterinariasData
       ] = await Promise.all([
         supabase.from('especies').select('*').order('nome'),
         supabase.from('sexos').select('*').order('nome'),
@@ -181,7 +203,8 @@ const Administracao = () => {
         supabase.from('tipos_eventos').select('*').order('nome'),
         supabase.from('tipos_localizacoes').select('*').order('nome'),
         supabase.from('tipos_intervencoes').select('*').order('nome'),
-        supabase.from('categorias_financeiras').select('*').order('ordem')
+        supabase.from('categorias_financeiras').select('*').order('ordem'),
+        supabase.from('clinicas_veterinarias').select('*').order('nome')
       ]);
 
       // Verificar erros e definir dados
@@ -208,6 +231,9 @@ const Administracao = () => {
 
       if (categoriasFinanceirasData.error) debugLogger.log('error', 'Erro ao carregar categorias financeiras', categoriasFinanceirasData.error);
       else setCategoriasFinanceiras(categoriasFinanceirasData.data || []);
+
+      if (clinicasVeterinariasData.error) debugLogger.log('error', 'Erro ao carregar clínicas veterinárias', clinicasVeterinariasData.error);
+      else setClinicasVeterinarias(clinicasVeterinariasData.data || []);
 
       debugLogger.log('success', 'ADMIN: Todas as tabelas carregadas com sucesso');
 
@@ -238,7 +264,26 @@ const Administracao = () => {
         tipo: item?.tipo || '',
         escopo: item?.escopo || '',
         cor: item?.cor || '#6B7280',
-        icone: item?.icone || 'DollarSign'
+        icone: item?.icone || 'DollarSign',
+        endereco: '',
+        telefone: '',
+        email: '',
+        contacto_responsavel: '',
+        tem_protocolo: false
+      });
+    } else if (tableName === 'clinicas_veterinarias') {
+      setFormData({
+        nome: item?.nome || '',
+        descricao: item?.observacoes || '',
+        endereco: item?.endereco || '',
+        telefone: item?.telefone || '',
+        email: item?.email || '',
+        contacto_responsavel: item?.contacto_responsavel || '',
+        tem_protocolo: item?.tem_protocolo || false,
+        tipo: '',
+        escopo: '',
+        cor: '#6B7280',
+        icone: 'DollarSign'
       });
     } else {
       setFormData({
@@ -247,7 +292,12 @@ const Administracao = () => {
         tipo: '',
         escopo: '',
         cor: '#6B7280',
-        icone: 'DollarSign'
+        icone: 'DollarSign',
+        endereco: '',
+        telefone: '',
+        email: '',
+        contacto_responsavel: '',
+        tem_protocolo: false
       });
     }
     
@@ -299,6 +349,21 @@ const Administracao = () => {
           cor: formData.cor,
           icone: formData.icone
         };
+      }
+
+      // Campos específicos para clínicas veterinárias
+      if (currentTable === 'clinicas_veterinarias') {
+        dataToSubmit = {
+          ...dataToSubmit,
+          endereco: formData.endereco?.trim() || null,
+          telefone: formData.telefone?.trim() || null,
+          email: formData.email?.trim() || null,
+          contacto_responsavel: formData.contacto_responsavel?.trim() || null,
+          tem_protocolo: formData.tem_protocolo || false,
+          observacoes: formData.descricao?.trim() || null
+        };
+        // Para clínicas, usar observacoes em vez de descricao
+        delete dataToSubmit.descricao;
       }
 
       if (editingItem) {
@@ -573,6 +638,7 @@ const Administracao = () => {
           {renderTable("Tipos de Localizações", tiposLocalizacoes, "tipos_localizacoes", MapPin)}
           {renderTable("Tipos de Intervenções", tiposIntervencoes, "tipos_intervencoes", Settings)}
           {renderTable("Categorias Financeiras", categoriasFinanceiras, "categorias_financeiras", DollarSign)}
+          {renderTable("Clínicas Veterinárias", clinicasVeterinarias, "clinicas_veterinarias", Hospital)}
         </div>
 
         {/* Dialog para Edição/Criação */}
@@ -649,6 +715,69 @@ const Administracao = () => {
                         <SelectItem value="ambos">🔄 Ambos</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+                </div>
+              )}
+
+              {/* Campos específicos para clínicas veterinárias */}
+              {currentTable === 'clinicas_veterinarias' && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="endereco" className="text-orange-700">Endereço</Label>
+                      <Input
+                        id="endereco"
+                        value={formData.endereco || ''}
+                        onChange={(e) => setFormData({ ...formData, endereco: e.target.value })}
+                        placeholder="Endereço da clínica"
+                        className="border-orange-200 focus:border-orange-400"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="telefone" className="text-orange-700">Telefone</Label>
+                      <Input
+                        id="telefone"
+                        value={formData.telefone || ''}
+                        onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
+                        placeholder="Telefone de contacto"
+                        className="border-orange-200 focus:border-orange-400"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="email" className="text-orange-700">Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={formData.email || ''}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        placeholder="email@clinica.com"
+                        className="border-orange-200 focus:border-orange-400"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="contacto_responsavel" className="text-orange-700">Contacto Responsável</Label>
+                      <Input
+                        id="contacto_responsavel"
+                        value={formData.contacto_responsavel || ''}
+                        onChange={(e) => setFormData({ ...formData, contacto_responsavel: e.target.value })}
+                        placeholder="Nome do responsável"
+                        className="border-orange-200 focus:border-orange-400"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      id="tem_protocolo"
+                      type="checkbox"
+                      checked={formData.tem_protocolo || false}
+                      onChange={(e) => setFormData({ ...formData, tem_protocolo: e.target.checked })}
+                      className="rounded border-orange-300 text-orange-600 focus:ring-orange-500"
+                    />
+                    <Label htmlFor="tem_protocolo" className="text-orange-700">
+                      Tem Protocolo/Parceria
+                    </Label>
                   </div>
                 </div>
               )}
