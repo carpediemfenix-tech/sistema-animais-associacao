@@ -48,6 +48,15 @@ export interface TipoEvento {
   updated_at: string;
 }
 
+export interface TipoLocalizacao {
+  id: string;
+  nome: string;
+  descricao?: string;
+  ativo: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ClinicaVeterinaria {
   id: string;
   nome: string;
@@ -110,10 +119,14 @@ export interface LocalizacaoAnimal {
   tipo_localizacao: string; // Texto simples: 'Canil', 'Gatil', 'Casa de Acolhimento', etc.
   data_inicio: string;
   data_fim?: string; // NULL se for a localização atual
+  endereco_detalhes?: string; // Endereço ou detalhes da localização
+  responsavel_id?: string; // Voluntário responsável
+  motivo_transferencia?: string; // Motivo da transferência
   observacoes?: string;
-  ativo: boolean; // Apenas uma localização ativa por animal
+  ativa: boolean; // Apenas uma localização ativa por animal
   created_at: string;
   updated_at: string;
+  voluntarios?: { nome: string }; // Para joins do Supabase
 }
 
 // NOVO: Responsabilidades de voluntários

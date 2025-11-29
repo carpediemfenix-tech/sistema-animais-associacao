@@ -28,7 +28,7 @@ import {
   DollarSign
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Animal, Intervencao, TipoIntervencao, Voluntario, ClinicaVeterinaria, EventoAnimal, TipoEvento } from "@/types/animal";
+import { Animal, Intervencao, TipoIntervencao, Voluntario, ClinicaVeterinaria, EventoAnimal, TipoEvento, LocalizacaoAnimal, TipoLocalizacao } from "@/types/animal";
 import { useToast } from "@/hooks/use-toast";
 import UserHeader from "@/components/UserHeader";
 
@@ -53,6 +53,12 @@ const AnimalDetail = () => {
   const [tiposEventos, setTiposEventos] = useState<TipoEvento[]>([]);
   const [eventoDialogOpen, setEventoDialogOpen] = useState(false);
   const [editingEvento, setEditingEvento] = useState<EventoAnimal | null>(null);
+
+  // Estados para localizações
+  const [localizacoes, setLocalizacoes] = useState<LocalizacaoAnimal[]>([]);
+  const [tiposLocalizacoes, setTiposLocalizacoes] = useState<TipoLocalizacao[]>([]);
+  const [localizacaoDialogOpen, setLocalizacaoDialogOpen] = useState(false);
+  const [editingLocalizacao, setEditingLocalizacao] = useState<LocalizacaoAnimal | null>(null);
   
   // Formulário simplificado
   const [intervencaoForm, setIntervencaoForm] = useState({
@@ -75,6 +81,16 @@ const AnimalDetail = () => {
     voluntario_id: '',
     documento_referencia: '',
     importante: false
+  });
+
+  // Formulário de localizações
+  const [localizacaoForm, setLocalizacaoForm] = useState({
+    tipo_localizacao: '',
+    data_inicio: '',
+    endereco_detalhes: '',
+    responsavel_id: '',
+    motivo_transferencia: '',
+    observacoes: ''
   });
 
   // Função básica para carregar dados do animal
@@ -222,6 +238,39 @@ const AnimalDetail = () => {
       } else {
         console.log('ℹ️ [TIPOS_EVENTOS] Erro ao carregar tipos de eventos:', tiposEventosError?.message);
         setTiposEventos([]);
+      }
+
+      // Carregar localizações do animal
+      const { data: localizacoesData, error: localizacoesError } = await supabase
+        .from('localizacoes_animal')
+        .select(`
+          *,
+          voluntarios (nome)
+        `)
+        .eq('animal_id', id)
+        .order('data_inicio', { ascending: false });
+
+      if (!localizacoesError && localizacoesData) {
+        setLocalizacoes(localizacoesData);
+        console.log('✅ [LOCALIZACOES] Carregadas:', localizacoesData.length);
+      } else {
+        console.log('ℹ️ [LOCALIZACOES] Erro ao carregar localizações:', localizacoesError?.message);
+        setLocalizacoes([]);
+      }
+
+      // Carregar tipos de localizações
+      const { data: tiposLocalizacoesData, error: tiposLocalizacoesError } = await supabase
+        .from('tipos_localizacoes')
+        .select('*')
+        .eq('ativo', true)
+        .order('nome');
+
+      if (!tiposLocalizacoesError && tiposLocalizacoesData) {
+        setTiposLocalizacoes(tiposLocalizacoesData);
+        console.log('✅ [TIPOS_LOCALIZACOES] Carregados:', tiposLocalizacoesData.length);
+      } else {
+        console.log('ℹ️ [TIPOS_LOCALIZACOES] Erro ao carregar tipos de localizações:', tiposLocalizacoesError?.message);
+        setTiposLocalizacoes([]);
       }
 
     } catch (error: any) {
@@ -470,6 +519,125 @@ const AnimalDetail = () => {
       toast({
         title: "❌ Erro",
         description: error.message || "Erro ao eliminar evento",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Funções de gestão de localizações
+  const resetLocalizacaoForm = () => {
+    setLocalizacaoForm({
+      tipo_localizacao: '',
+      data_inicio: '',
+      endereco_detalhes: '',
+      responsavel_id: '',
+      motivo_transferencia: '',
+      observacoes: ''
+    });
+    setEditingLocalizacao(null);
+  };
+
+  const openLocalizacaoDialog = (localizacao?: LocalizacaoAnimal) => {
+    if (localizacao) {
+      setEditingLocalizacao(localizacao);
+      setLocalizacaoForm({
+        tipo_localizacao: localizacao.tipo_localizacao,
+        data_inicio: localizacao.data_inicio.split('T')[0],
+        endereco_detalhes: localizacao.endereco_detalhes || '',
+        responsavel_id: localizacao.responsavel_id || '',
+        motivo_transferencia: localizacao.motivo_transferencia || '',
+        observacoes: localizacao.observacoes || ''
+      });
+    } else {
+      resetLocalizacaoForm();
+    }
+    setLocalizacaoDialogOpen(true);
+  };
+
+  const handleLocalizacaoSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!localizacaoForm.tipo_localizacao || !localizacaoForm.data_inicio) {
+      toast({
+        title: "❌ Erro",
+        description: "Tipo de localização e data são obrigatórios",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const localizacaoData = {
+        animal_id: id,
+        tipo_localizacao: localizacaoForm.tipo_localizacao,
+        data_inicio: localizacaoForm.data_inicio,
+        endereco_detalhes: localizacaoForm.endereco_detalhes || null,
+        responsavel_id: localizacaoForm.responsavel_id || null,
+        motivo_transferencia: localizacaoForm.motivo_transferencia || null,
+        observacoes: localizacaoForm.observacoes || null,
+        ativa: true // Nova localização sempre ativa (trigger desativa as outras)
+      };
+
+      if (editingLocalizacao) {
+        const { error } = await supabase
+          .from('localizacoes_animal')
+          .update(localizacaoData)
+          .eq('id', editingLocalizacao.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "✅ Sucesso",
+          description: "Localização atualizada com sucesso",
+        });
+      } else {
+        const { error } = await supabase
+          .from('localizacoes_animal')
+          .insert([localizacaoData]);
+
+        if (error) throw error;
+
+        toast({
+          title: "✅ Sucesso",
+          description: "Transferência realizada com sucesso",
+        });
+      }
+
+      setLocalizacaoDialogOpen(false);
+      resetLocalizacaoForm();
+      loadRelatedData(); // Recarregar dados
+    } catch (error: any) {
+      console.error('Erro ao salvar localização:', error);
+      toast({
+        title: "❌ Erro",
+        description: error.message || "Erro ao salvar localização",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteLocalizacao = async (localizacaoId: string) => {
+    if (!confirm('Tem certeza que deseja eliminar esta localização?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('localizacoes_animal')
+        .delete()
+        .eq('id', localizacaoId);
+
+      if (error) throw error;
+
+      toast({
+        title: "✅ Sucesso",
+        description: "Localização eliminada com sucesso",
+      });
+
+      loadRelatedData(); // Recarregar dados
+    } catch (error: any) {
+      console.error('Erro ao eliminar localização:', error);
+      toast({
+        title: "❌ Erro",
+        description: error.message || "Erro ao eliminar localização",
         variant: "destructive",
       });
     }
@@ -849,17 +1017,155 @@ const AnimalDetail = () => {
           <TabsContent value="localizacoes">
             <Card>
               <CardHeader>
-                <CardTitle>Localizações do Animal</CardTitle>
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center space-x-2">
+                    <Home className="h-5 w-5 text-purple-600" />
+                    <CardTitle>Localizações do Animal</CardTitle>
+                  </div>
+                  {hasPermission('create') && (
+                    <Button
+                      onClick={() => openLocalizacaoDialog()}
+                      size="sm"
+                      className="bg-purple-600 hover:bg-purple-700"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Nova Transferência
+                    </Button>
+                  )}
+                </div>
                 <CardDescription>
-                  Histórico de localizações - apenas uma localização ativa por vez
+                  Histórico de localizações de {animal?.nome} - apenas uma localização ativa por vez
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8 text-gray-500">
-                  <Home className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p className="text-lg font-medium mb-2">Funcionalidade em desenvolvimento</p>
-                  <p className="text-sm">Sistema de localizações será implementado em breve.</p>
-                </div>
+                {localizacoes.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <Home className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p className="text-lg font-medium mb-2">Nenhuma localização registrada</p>
+                    <p className="text-sm mb-4">Clique em "Nova Transferência" para registar a primeira localização de {animal?.nome}.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Localização Atual */}
+                    {localizacoes.filter(loc => loc.ativa).map((localizacao) => (
+                      <div key={localizacao.id} className="bg-purple-50 border-2 border-purple-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-4 h-4 bg-purple-500 rounded-full animate-pulse"></div>
+                            <h3 className="text-lg font-semibold text-purple-800">Localização Atual</h3>
+                            <Badge className="bg-purple-500 text-white">ATIVA</Badge>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openLocalizacaoDialog(localizacao)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteLocalizacao(localizacao.id)}
+                              className="text-red-600 hover:text-red-800"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-sm text-purple-600 font-medium">Tipo de Localização</p>
+                            <p className="text-purple-900 font-semibold">{localizacao.tipo_localizacao}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-purple-600 font-medium">Desde</p>
+                            <p className="text-purple-900">
+                              {new Date(localizacao.data_inicio).toLocaleDateString('pt-PT')} 
+                              ({Math.floor((new Date().getTime() - new Date(localizacao.data_inicio).getTime()) / (1000 * 60 * 60 * 24))} dias)
+                            </p>
+                          </div>
+                          {localizacao.endereco_detalhes && (
+                            <div>
+                              <p className="text-sm text-purple-600 font-medium">Endereço/Detalhes</p>
+                              <p className="text-purple-900">{localizacao.endereco_detalhes}</p>
+                            </div>
+                          )}
+                          {localizacao.voluntarios?.nome && (
+                            <div>
+                              <p className="text-sm text-purple-600 font-medium">Responsável</p>
+                              <p className="text-purple-900">👥 {localizacao.voluntarios.nome}</p>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {localizacao.observacoes && (
+                          <div className="mt-3">
+                            <p className="text-sm text-purple-600 font-medium">Observações</p>
+                            <p className="text-purple-800 bg-purple-100 p-2 rounded">{localizacao.observacoes}</p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    
+                    {/* Histórico de Localizações */}
+                    {localizacoes.filter(loc => !loc.ativa).length > 0 && (
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                          <Home className="h-5 w-5 mr-2 text-gray-600" />
+                          Histórico de Localizações
+                        </h3>
+                        <div className="space-y-3">
+                          {localizacoes.filter(loc => !loc.ativa).map((localizacao, index) => (
+                            <div key={localizacao.id} className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center space-x-2">
+                                  <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
+                                  <span className="font-medium text-gray-800">{localizacao.tipo_localizacao}</span>
+                                  <Badge variant="outline" className="text-xs">HISTÓRICO</Badge>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => openLocalizacaoDialog(localizacao)}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleDeleteLocalizacao(localizacao.id)}
+                                    className="text-red-600 hover:text-red-800"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                              
+                              <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                  <span className="text-gray-600">Período:</span>
+                                  <p className="text-gray-800">
+                                    {new Date(localizacao.data_inicio).toLocaleDateString('pt-PT')} - 
+                                    {localizacao.data_fim ? new Date(localizacao.data_fim).toLocaleDateString('pt-PT') : 'Atual'}
+                                  </p>
+                                </div>
+                                {localizacao.motivo_transferencia && (
+                                  <div>
+                                    <span className="text-gray-600">Motivo:</span>
+                                    <p className="text-gray-800">{localizacao.motivo_transferencia}</p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -1191,6 +1497,141 @@ const AnimalDetail = () => {
               </Button>
               <Button type="submit" className="bg-green-600 hover:bg-green-700">
                 {editingEvento ? 'Atualizar' : 'Registar'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo de Localização - COMPLETO */}
+      <Dialog open={localizacaoDialogOpen} onOpenChange={setLocalizacaoDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-purple-800">
+              {editingLocalizacao ? 'Editar Localização' : 'Nova Transferência'}
+            </DialogTitle>
+            <DialogDescription className="text-purple-600">
+              {editingLocalizacao ? 'Editar informações da localização' : `Registar nova localização para ${animal?.nome}`}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleLocalizacaoSubmit} className="space-y-4">
+            <div>
+              <Label htmlFor="tipo_localizacao" className="text-purple-700 font-medium">
+                Tipo de Localização *
+              </Label>
+              <Select 
+                value={localizacaoForm.tipo_localizacao} 
+                onValueChange={(value) => setLocalizacaoForm({ ...localizacaoForm, tipo_localizacao: value })}
+              >
+                <SelectTrigger className="border-purple-200 focus:border-purple-400">
+                  <SelectValue placeholder="Selecionar tipo de localização" />
+                </SelectTrigger>
+                <SelectContent>
+                  {tiposLocalizacoes.map((tipo) => (
+                    <SelectItem key={tipo.id} value={tipo.nome}>
+                      {tipo.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="data_inicio" className="text-purple-700 font-medium">
+                Data de Início *
+              </Label>
+              <Input
+                id="data_inicio"
+                type="date"
+                value={localizacaoForm.data_inicio}
+                onChange={(e) => setLocalizacaoForm({ ...localizacaoForm, data_inicio: e.target.value })}
+                className="border-purple-200 focus:border-purple-400"
+                required
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="endereco_detalhes" className="text-purple-700">
+                Endereço/Detalhes
+              </Label>
+              <Input
+                id="endereco_detalhes"
+                value={localizacaoForm.endereco_detalhes}
+                onChange={(e) => setLocalizacaoForm({ ...localizacaoForm, endereco_detalhes: e.target.value })}
+                placeholder="Endereço ou detalhes da localização"
+                className="border-purple-200 focus:border-purple-400"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="responsavel_id" className="text-purple-700">
+                Voluntário Responsável
+              </Label>
+              <Select 
+                value={localizacaoForm.responsavel_id} 
+                onValueChange={(value) => setLocalizacaoForm({ ...localizacaoForm, responsavel_id: value === 'none' ? '' : value })}
+              >
+                <SelectTrigger className="border-purple-200 focus:border-purple-400">
+                  <SelectValue placeholder="Selecionar responsável" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Nenhum responsável</SelectItem>
+                  {voluntarios.map((voluntario) => (
+                    <SelectItem key={voluntario.id} value={voluntario.id}>
+                      {voluntario.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="motivo_transferencia" className="text-purple-700">
+                Motivo da Transferência
+              </Label>
+              <Input
+                id="motivo_transferencia"
+                value={localizacaoForm.motivo_transferencia}
+                onChange={(e) => setLocalizacaoForm({ ...localizacaoForm, motivo_transferencia: e.target.value })}
+                placeholder="Motivo da mudança de localização"
+                className="border-purple-200 focus:border-purple-400"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="observacoes" className="text-purple-700">
+                Observações
+              </Label>
+              <Textarea
+                id="observacoes"
+                value={localizacaoForm.observacoes}
+                onChange={(e) => setLocalizacaoForm({ ...localizacaoForm, observacoes: e.target.value })}
+                placeholder="Observações sobre a localização..."
+                className="border-purple-200 focus:border-purple-400"
+                rows={3}
+              />
+            </div>
+            
+            <div className="bg-purple-50 p-3 rounded-md">
+              <p className="text-sm text-purple-700">
+                📝 <strong>Nota:</strong> Esta nova localização será automaticamente marcada como ativa, e a localização anterior será desativada.
+              </p>
+            </div>
+            
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => {
+                  setLocalizacaoDialogOpen(false);
+                  resetLocalizacaoForm();
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" className="bg-purple-600 hover:bg-purple-700">
+                {editingLocalizacao ? 'Atualizar' : 'Registar Transferência'}
               </Button>
             </div>
           </form>
