@@ -52,6 +52,7 @@ const AnimalLocalizacoes = () => {
 
   // Estados para localizações
   const [localizacoes, setLocalizacoes] = useState<LocalizacaoAnimal[]>([]);
+  const [tiposLocalizacoes, setTiposLocalizacoes] = useState<any[]>([]);
   const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
   const [localizacaoDialogOpen, setLocalizacaoDialogOpen] = useState(false);
   const [editingLocalizacao, setEditingLocalizacao] = useState<LocalizacaoAnimal | null>(null);
@@ -121,6 +122,15 @@ const AnimalLocalizacoes = () => {
       }
 
       setLocalizacoes(localizacoesData || []);
+
+      // Carregar tipos de localizações
+      const { data: tiposLocalizacoesData } = await supabase
+        .from('tipos_localizacoes')
+        .select('*')
+        .eq('ativo', true)
+        .order('nome');
+
+      setTiposLocalizacoes(tiposLocalizacoesData || []);
 
       // Carregar voluntários
       const { data: voluntariosData } = await supabase
@@ -304,9 +314,9 @@ const AnimalLocalizacoes = () => {
 
   // Função para obter informações do tipo de localização
   const getTipoLocalizacaoInfo = (tipo: string) => {
-    const tipoInfo = TIPOS_LOCALIZACOES.find(t => t.id === tipo);
+    const tipoInfo = tiposLocalizacoes.find(t => t.id === tipo);
     return {
-      emoji: tipoInfo?.emoji || '📍',
+      emoji: tipoInfo?.nome?.split(' ')[0] || '📍',
       nome: tipoInfo?.nome || tipo
     };
   };
@@ -580,7 +590,12 @@ const AnimalLocalizacoes = () => {
                   <SelectValue placeholder="Selecionar tipo" />
                 </SelectTrigger>
                 <SelectContent>
-                  {TIPOS_LOCALIZACOES.map((tipo) => (
+                  {tiposLocalizacoes.length === 0 && (
+                    <SelectItem value="loading" disabled>
+                      Carregando tipos...
+                    </SelectItem>
+                  )}
+                  {tiposLocalizacoes.map((tipo) => (
                     <SelectItem key={tipo.id} value={tipo.id}>
                       {tipo.nome}
                     </SelectItem>

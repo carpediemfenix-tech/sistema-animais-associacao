@@ -128,6 +128,7 @@ const Administracao = () => {
   const [tiposGrupos, setTiposGrupos] = useState<TipoGrupo[]>([]);
   const [tiposEventos, setTiposEventos] = useState<TipoEvento[]>([]);
   const [tiposLocalizacoes, setTiposLocalizacoes] = useState<TipoLocalizacao[]>([]);
+  const [tiposResponsabilidades, setTiposResponsabilidades] = useState<any[]>([]);
   const [tiposIntervencoes, setTiposIntervencoes] = useState<TipoIntervencao[]>([]);
   const [categoriasFinanceiras, setCategoriasFinanceiras] = useState<CategoriaFinanceira[]>([]);
   const [clinicasVeterinarias, setClinicasVeterinarias] = useState<ClinicaVeterinaria[]>([]);
@@ -192,6 +193,7 @@ const Administracao = () => {
         tiposGruposData,
         tiposEventosData,
         tiposLocalizacoesData,
+        tiposResponsabilidadesData,
         tiposIntervencoesData,
         categoriasFinanceirasData,
         clinicasVeterinariasData
@@ -202,6 +204,7 @@ const Administracao = () => {
         supabase.from('tipos_grupos').select('*').order('nome'),
         supabase.from('tipos_eventos').select('*').order('nome'),
         supabase.from('tipos_localizacoes').select('*').order('nome'),
+        supabase.from('tipos_responsabilidades').select('*').order('nome'),
         supabase.from('tipos_intervencoes').select('*').order('nome'),
         supabase.from('categorias_financeiras').select('*').order('ordem'),
         supabase.from('clinicas_veterinarias').select('*').order('nome')
@@ -225,6 +228,9 @@ const Administracao = () => {
 
       if (tiposLocalizacoesData.error) debugLogger.log('error', 'Erro ao carregar tipos de localizações', tiposLocalizacoesData.error);
       else setTiposLocalizacoes(tiposLocalizacoesData.data || []);
+
+      if (tiposResponsabilidadesData.error) debugLogger.log('error', 'Erro ao carregar tipos de responsabilidades', tiposResponsabilidadesData.error);
+      else setTiposResponsabilidades(tiposResponsabilidadesData.data || []);
 
       if (tiposIntervencoesData.error) debugLogger.log('error', 'Erro ao carregar tipos de intervenções', tiposIntervencoesData.error);
       else setTiposIntervencoes(tiposIntervencoesData.data || []);
@@ -636,6 +642,7 @@ const Administracao = () => {
           {renderTable("Tipos de Grupos", tiposGrupos, "tipos_grupos", Users)}
           {renderTable("Tipos de Eventos", tiposEventos, "tipos_eventos", Calendar)}
           {renderTable("Tipos de Localizações", tiposLocalizacoes, "tipos_localizacoes", MapPin)}
+          {renderTable("Tipos de Responsabilidades", tiposResponsabilidades, "tipos_responsabilidades", Users)}
           {renderTable("Tipos de Intervenções", tiposIntervencoes, "tipos_intervencoes", Settings)}
           {renderTable("Categorias Financeiras", categoriasFinanceiras, "categorias_financeiras", DollarSign)}
           {renderTable("Clínicas Veterinárias", clinicasVeterinarias, "clinicas_veterinarias", Hospital)}

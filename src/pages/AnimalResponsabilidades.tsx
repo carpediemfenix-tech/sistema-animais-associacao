@@ -53,6 +53,7 @@ const AnimalResponsabilidades = () => {
 
   // Estados para responsabilidades
   const [responsabilidades, setResponsabilidades] = useState<ResponsabilidadeVoluntario[]>([]);
+  const [tiposResponsabilidades, setTiposResponsabilidades] = useState<any[]>([]);
   const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
   const [responsabilidadeDialogOpen, setResponsabilidadeDialogOpen] = useState(false);
   const [editingResponsabilidade, setEditingResponsabilidade] = useState<ResponsabilidadeVoluntario | null>(null);
@@ -133,6 +134,15 @@ const AnimalResponsabilidades = () => {
         setResponsabilidades(responsabilidadesData || []);
       }
 
+
+      // Carregar tipos de responsabilidades
+      const { data: tiposResponsabilidadesData } = await supabase
+        .from('tipos_responsabilidades')
+        .select('*')
+        .eq('ativo', true)
+        .order('nome');
+
+      setTiposResponsabilidades(tiposResponsabilidadesData || []);
 
       // Carregar voluntários
       const { data: voluntariosData } = await supabase
@@ -293,7 +303,7 @@ const AnimalResponsabilidades = () => {
 
   // Função para obter emoji do tipo de responsabilidade
   const getTipoResponsabilidadeInfo = (tipo: string) => {
-    const tipoInfo = TIPOS_RESPONSABILIDADES.find(t => t.id === tipo);
+    const tipoInfo = tiposResponsabilidades.find(t => t.id === tipo);
     return {
       emoji: tipoInfo?.nome?.split(' ')[0] || '👥',
       nome: tipoInfo?.nome || 'Responsabilidade'
@@ -516,12 +526,12 @@ const AnimalResponsabilidades = () => {
                   <SelectValue placeholder="Selecionar tipo" />
                 </SelectTrigger>
                 <SelectContent>
-                  {TIPOS_RESPONSABILIDADES.length === 0 && (
+                  {tiposResponsabilidades.length === 0 && (
                     <SelectItem value="loading" disabled>
                       Carregando tipos...
                     </SelectItem>
                   )}
-                  {TIPOS_RESPONSABILIDADES.map((tipo) => (
+                  {tiposResponsabilidades.map((tipo) => (
                     <SelectItem key={tipo.id} value={tipo.id}>
                       {tipo.nome}
                     </SelectItem>
