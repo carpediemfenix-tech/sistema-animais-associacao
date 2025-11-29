@@ -67,6 +67,11 @@ const AnimalLocalizacoes = () => {
     observacoes: ''
   });
 
+  // Debug do estado do formulário
+  useEffect(() => {
+    console.log('DEBUG - Estado do formulário mudou:', localizacaoForm);
+  }, [localizacaoForm]);
+
   // Função para carregar dados do animal
   const fetchAnimalData = async () => {
     if (!id) {
@@ -584,10 +589,13 @@ const AnimalLocalizacoes = () => {
                 Tipo de Localização *
               </Label>
               <Select 
-                value={localizacaoForm.tipo_localizacao} 
+                key={`select-${localizacaoDialogOpen}`}
+                value={localizacaoForm.tipo_localizacao || ""} 
                 onValueChange={(value) => {
                   console.log('DEBUG - Selecionando tipo:', value);
-                  setLocalizacaoForm({ ...localizacaoForm, tipo_localizacao: value });
+                  console.log('DEBUG - Estado atual:', localizacaoForm.tipo_localizacao);
+                  setLocalizacaoForm(prev => ({ ...prev, tipo_localizacao: value }));
+                  console.log('DEBUG - Novo estado será:', value);
                 }}
               >
                 <SelectTrigger className="border-blue-200 focus:border-blue-400">

@@ -623,7 +623,7 @@ const AnimalResponsabilidades = () => {
                 onCheckedChange={(checked) => setResponsabilidadeForm({ ...responsabilidadeForm, ativo: !!checked })}
               />
               <Label htmlFor="ativo" className="text-green-700 font-medium">
-                Marcar como responsabilidade ativa
+                IMPORTANTE
               </Label>
             </div>
 
