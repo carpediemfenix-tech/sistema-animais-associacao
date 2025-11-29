@@ -166,10 +166,10 @@ const AnimalResponsabilidades = () => {
   const resetResponsabilidadeForm = () => {
     setResponsabilidadeForm({
       tipo_responsabilidade: '',
-      data_inicio: '',
+      data_inicio: new Date().toISOString().split('T')[0], // Data atual por padrão
       observacoes: '',
       voluntario_id: '',
-      ativo: false
+      ativo: true // Novas responsabilidades são ativas por padrão
     });
   };
 
@@ -247,8 +247,50 @@ const AnimalResponsabilidades = () => {
     }
   };
 
+  // Função para encerrar responsabilidade (nova funcionalidade)
+  const handleEncerrarResponsabilidade = async (responsabilidadeId: string) => {
+    if (!confirm('Tem certeza que deseja encerrar esta responsabilidade? Ela será movida para o histórico.')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('responsabilidades_animal')
+        .update({
+          ativo: false,
+          data_fim: new Date().toISOString().split('T')[0]
+        })
+        .eq('id', responsabilidadeId);
+
+      if (error) {
+        console.error('Erro ao encerrar responsabilidade:', error);
+        toast({
+          title: "Erro ao encerrar",
+          description: "Não foi possível encerrar a responsabilidade",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Responsabilidade encerrada",
+        description: "Responsabilidade movida para o histórico com sucesso",
+      });
+
+      await loadRelatedData();
+
+    } catch (error) {
+      console.error('Erro:', error);
+      toast({
+        title: "Erro inesperado",
+        description: "Ocorreu um erro inesperado",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleDeleteResponsabilidade = async (responsabilidadeId: string) => {
-    if (!confirm('Tem certeza que deseja eliminar este responsabilidade?')) {
+    if (!confirm('Tem certeza que deseja eliminar este responsabilidade? Esta ação não pode ser desfeita.')) {
       return;
     }
 
@@ -379,97 +421,158 @@ const AnimalResponsabilidades = () => {
           </Button>
         </div>
 
-        {/* Timeline de Responsabilidades */}
+        {/* Responsabilidades Ativas */}
         <Card className="border-green-200 bg-gradient-to-br from-green-50 to-green-100">
           <CardHeader>
             <CardTitle className="flex items-center text-green-800">
-              <Calendar className="h-6 w-6 mr-2" />
-              Timeline de Responsabilidades ({responsabilidades.length})
+              <Star className="h-6 w-6 mr-2" />
+              Responsabilidades Ativas ({responsabilidades.filter(r => r.ativo).length})
             </CardTitle>
             <CardDescription className="text-green-600">
-              Histórico cronológico de marcos ativos na vida do animal
+              Voluntários atualmente responsáveis pelo animal
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {responsabilidades.length > 0 ? (
-              <div className="space-y-6">
-                {responsabilidades.map((responsabilidade, index) => {
+            {responsabilidades.filter(r => r.ativo).length > 0 ? (
+              <div className="grid gap-4 md:grid-cols-2">
+                {responsabilidades.filter(r => r.ativo).map((responsabilidade) => {
+                  const tipoInfo = getTipoResponsabilidadeInfo(responsabilidade.tipo_responsabilidade);
+                  return (
+                    <Card key={responsabilidade.id} className="border-green-300 bg-white shadow-md">
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start space-x-3">
+                            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-green-500 flex items-center justify-center text-white text-lg">
+                              {tipoInfo.emoji}
+                            </div>
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-gray-900 mb-1">{tipoInfo.nome}</h3>
+                              {responsabilidade.voluntarios?.nome && (
+                                <div className="flex items-center text-sm text-gray-600 mb-2">
+                                  <User className="h-4 w-4 mr-1" />
+                                  {responsabilidade.voluntarios.nome}
+                                </div>
+                              )}
+                              <div className="flex items-center text-xs text-gray-500">
+                                <Calendar className="h-3 w-3 mr-1" />
+                                Desde {new Date(responsabilidade.data_inicio).toLocaleDateString('pt-PT')}
+                              </div>
+                              {responsabilidade.observacoes && (
+                                <p className="text-sm text-gray-700 mt-2 p-2 bg-gray-50 rounded">
+                                  {responsabilidade.observacoes}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex flex-col space-y-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openResponsabilidadeDialog(responsabilidade)}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEncerrarResponsabilidade(responsabilidade.id)}
+                              className="h-8 w-8 p-0 text-orange-600 hover:text-orange-700"
+                              title="Encerrar Responsabilidade"
+                            >
+                              <Clock className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeleteResponsabilidade(responsabilidade.id)}
+                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <Star className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <p className="text-lg font-medium mb-2">Nenhuma responsabilidade ativa</p>
+                <p className="text-sm">Clique em "Novo Responsabilidade" para atribuir a primeira responsabilidade.</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Histórico de Responsabilidades */}
+        <Card className="border-gray-200 bg-white">
+          <CardHeader>
+            <CardTitle className="flex items-center text-gray-800">
+              <Calendar className="h-6 w-6 mr-2" />
+              Histórico de Responsabilidades ({responsabilidades.filter(r => !r.ativo).length})
+            </CardTitle>
+            <CardDescription className="text-gray-600">
+              Responsabilidades anteriores já encerradas
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {responsabilidades.filter(r => !r.ativo).length > 0 ? (
+              <div className="space-y-4">
+                {responsabilidades.filter(r => !r.ativo).map((responsabilidade, index) => {
                   const tipoInfo = getTipoResponsabilidadeInfo(responsabilidade.tipo_responsabilidade);
                   return (
                     <div key={responsabilidade.id} className="relative">
                       {/* Linha da timeline */}
-                      {index < responsabilidades.length - 1 && (
-                        <div className="absolute left-6 top-12 w-0.5 h-16 bg-green-200"></div>
+                      {index < responsabilidades.filter(r => !r.ativo).length - 1 && (
+                        <div className="absolute left-6 top-12 w-0.5 h-16 bg-gray-200"></div>
                       )}
                       
-                      {/* Card do responsabilidade */}
+                      {/* Card do histórico */}
                       <div className="flex items-start space-x-4">
-                        {/* Ícone do responsabilidade */}
-                        <div className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-white text-lg ${
-                          responsabilidade.ativo ? 'bg-red-500' : 'bg-green-500'
-                        }`}>
+                        <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gray-400 flex items-center justify-center text-white text-lg">
                           {tipoInfo.emoji}
                         </div>
                         
-                        {/* Conteúdo do responsabilidade */}
                         <div className="flex-1 min-w-0">
-                          <Card className={`${responsabilidade.ativo ? 'border-red-200 bg-red-50' : 'border-gray-200 bg-white'}`}>
+                          <Card className="border-gray-200 bg-gray-50">
                             <CardContent className="p-4">
                               <div className="flex items-start justify-between">
                                 <div className="flex-1">
                                   <div className="flex items-center space-x-2 mb-2">
-                                    <h3 className="font-semibold text-gray-900">{responsabilidade.observacoes}</h3>
-                                    {responsabilidade.ativo && (
-                                      <Badge className="bg-red-100 text-red-800">
-                                        <Star className="h-3 w-3 mr-1" />
-                                        IMPORTANTE
-                                      </Badge>
-                                    )}
+                                    <h3 className="font-semibold text-gray-700">{tipoInfo.nome}</h3>
+                                    <Badge variant="outline" className="text-xs bg-gray-100">
+                                      Encerrada
+                                    </Badge>
                                   </div>
                                   
                                   <div className="flex items-center space-x-4 text-sm text-gray-600 mb-2">
                                     <div className="flex items-center">
                                       <Calendar className="h-4 w-4 mr-1" />
                                       {new Date(responsabilidade.data_inicio).toLocaleDateString('pt-PT')}
+                                      {responsabilidade.data_fim && (
+                                        <span> - {new Date(responsabilidade.data_fim).toLocaleDateString('pt-PT')}</span>
+                                      )}
                                     </div>
-                                    <div className="flex items-center">
-                                      <Clock className="h-4 w-4 mr-1" />
-                                      {getRelativeDate(responsabilidade.data_inicio)}
-                                    </div>
-                                    <Badge variant="outline" className="text-xs">
-                                      {tipoInfo.nome}
-                                    </Badge>
                                   </div>
                                   
                                   {responsabilidade.voluntarios?.nome && (
                                     <div className="flex items-center text-sm text-gray-600 mb-2">
                                       <User className="h-4 w-4 mr-1" />
-                                      Responsável: {responsabilidade.voluntarios.nome}
+                                      {responsabilidade.voluntarios.nome}
                                     </div>
                                   )}
                                   
                                   {responsabilidade.observacoes && (
-                                    <div className="flex items-center text-sm text-gray-600 mb-2">
-                                      <FileText className="h-4 w-4 mr-1" />
-                                      Documento: {responsabilidade.observacoes}
-                                    </div>
-                                  )}
-                                  
-                                  {responsabilidade.observacoes && (
-                                    <p className="text-sm text-gray-700 mt-2 p-2 bg-gray-50 rounded">
+                                    <p className="text-sm text-gray-600 mt-2 p-2 bg-white rounded">
                                       {responsabilidade.observacoes}
                                     </p>
                                   )}
                                 </div>
                                 
                                 <div className="flex space-x-2 ml-4">
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => openResponsabilidadeDialog(responsabilidade)}
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
                                   <Button
                                     variant="outline"
                                     size="sm"
@@ -491,8 +594,8 @@ const AnimalResponsabilidades = () => {
             ) : (
               <div className="text-center py-8 text-gray-500">
                 <Calendar className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p className="text-lg font-medium mb-2">Nenhum responsabilidade registrado</p>
-                <p className="text-sm">Clique em "Novo Responsabilidade" para registrar o primeiro marco ativo.</p>
+                <p className="text-lg font-medium mb-2">Nenhuma responsabilidade no histórico</p>
+                <p className="text-sm">As responsabilidades encerradas aparecerão aqui.</p>
               </div>
             )}
           </CardContent>
@@ -554,20 +657,6 @@ const AnimalResponsabilidades = () => {
             </div>
             
             <div>
-              <Label htmlFor="observacoes" className="text-green-700 font-medium">
-                Descrição da Responsabilidade
-              </Label>
-              <Input
-                id="observacoes"
-                value={responsabilidadeForm.observacoes}
-                onChange={(e) => setResponsabilidadeForm({ ...responsabilidadeForm, observacoes: e.target.value })}
-                className="border-green-200 focus:border-green-400"
-                placeholder="Breve descrição da responsabilidade"
-                required
-              />
-            </div>
-
-            <div>
               <Label htmlFor="voluntario_id" className="text-green-700 font-medium">
                 Voluntário Responsável
               </Label>
@@ -588,19 +677,6 @@ const AnimalResponsabilidades = () => {
                 </SelectContent>
               </Select>
             </div>
-
-            <div>
-              <Label htmlFor="observacoes" className="text-green-700 font-medium">
-                Documento de Referência
-              </Label>
-              <Input
-                id="observacoes"
-                value={responsabilidadeForm.observacoes}
-                onChange={(e) => setResponsabilidadeForm({ ...responsabilidadeForm, observacoes: e.target.value })}
-                className="border-green-200 focus:border-green-400"
-                placeholder="Ex: Certificado, Relatório, etc."
-              />
-            </div>
             
             <div>
               <Label htmlFor="observacoes" className="text-green-700 font-medium">
@@ -611,7 +687,7 @@ const AnimalResponsabilidades = () => {
                 value={responsabilidadeForm.observacoes}
                 onChange={(e) => setResponsabilidadeForm({ ...responsabilidadeForm, observacoes: e.target.value })}
                 className="border-green-200 focus:border-green-400"
-                placeholder="Detalhes adicionais sobre o responsabilidade..."
+                placeholder="Detalhes adicionais sobre a responsabilidade..."
                 rows={3}
               />
             </div>
@@ -623,13 +699,13 @@ const AnimalResponsabilidades = () => {
                 onCheckedChange={(checked) => setResponsabilidadeForm({ ...responsabilidadeForm, ativo: !!checked })}
               />
               <Label htmlFor="ativo" className="text-green-700 font-medium">
-                IMPORTANTE
+                Responsabilidade Ativa
               </Label>
             </div>
 
             <div className="bg-green-50 p-3 rounded-lg">
               <p className="text-sm text-green-700">
-                <strong>Dica:</strong> Responsabilidades ativas aparecem destacadas na timeline e são úteis para marcos significativos.
+                <strong>Dica:</strong> Responsabilidades ativas aparecem na seção "Ativas" e podem ser encerradas a qualquer momento.
               </p>
             </div>
             
