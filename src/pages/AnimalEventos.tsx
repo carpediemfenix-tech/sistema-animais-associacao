@@ -97,12 +97,16 @@ const AnimalEventos = () => {
   // Função para carregar dados relacionados
   const loadRelatedData = async () => {
     try {
-      // Carregar eventos (consulta simplificada para debug)
+      // Carregar eventos com joins para exibição completa
       console.log('Carregando eventos para animal ID:', id);
       
       const { data: eventosData, error: eventosError } = await supabase
         .from('eventos_animal')
-        .select('*')
+        .select(`
+          *,
+          tipos_eventos(id, nome, emoji, descricao),
+          voluntarios(id, nome, email, telefone)
+        `)
         .eq('animal_id', id)
         .order('data_evento', { ascending: false });
 
@@ -407,7 +411,7 @@ const AnimalEventos = () => {
                       <div className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-white text-lg ${
                         evento.importante ? 'bg-red-500' : 'bg-green-500'
                       }`}>
-                        📅
+                        {evento.tipos_eventos?.emoji || '📅'}
                       </div>
                       
                       {/* Conteúdo do evento */}
@@ -435,13 +439,19 @@ const AnimalEventos = () => {
                                     <Clock className="h-4 w-4 mr-1" />
                                     {getRelativeDate(evento.data_evento)}
                                   </div>
-                                  {/* Temporariamente comentado para debug */}
-                                  <Badge variant="outline" className="text-xs">
-                                    Evento
-                                  </Badge>
+                                  {evento.tipos_eventos?.nome && (
+                                    <Badge variant="outline" className="text-xs">
+                                      {evento.tipos_eventos.nome}
+                                    </Badge>
+                                  )}
                                 </div>
                                 
-                                {/* Voluntário temporariamente comentado para debug */}
+                                {evento.voluntarios?.nome && (
+                                  <div className="flex items-center text-sm text-gray-600 mb-2">
+                                    <User className="h-4 w-4 mr-1" />
+                                    Responsável: {evento.voluntarios.nome}
+                                  </div>
+                                )}
                                 
                                 {evento.documento_referencia && (
                                   <div className="flex items-center text-sm text-gray-600 mb-2">
