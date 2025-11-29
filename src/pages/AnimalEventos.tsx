@@ -97,9 +97,7 @@ const AnimalEventos = () => {
   // Função para carregar dados relacionados
   const loadRelatedData = async () => {
     try {
-      // Carregar eventos com joins para exibição completa
-      console.log('Carregando eventos para animal ID:', id);
-      
+      // Carregar eventos com joins robustos
       const { data: eventosData, error: eventosError } = await supabase
         .from('eventos_animal')
         .select(`
@@ -110,34 +108,28 @@ const AnimalEventos = () => {
         .eq('animal_id', id)
         .order('data_evento', { ascending: false });
 
-      console.log('Eventos encontrados:', eventosData);
-      console.log('Erro na consulta de eventos:', eventosError);
-
       if (eventosError) {
         console.error('Erro ao carregar eventos:', eventosError);
-      }
-
-      if (eventosData) {
-        setEventos(eventosData);
+        // Fallback: carregar eventos sem joins se houver erro
+        const { data: eventosFallback } = await supabase
+          .from('eventos_animal')
+          .select('*')
+          .eq('animal_id', id)
+          .order('data_evento', { ascending: false });
+        
+        setEventos(eventosFallback || []);
       } else {
-        setEventos([]);
+        setEventos(eventosData || []);
       }
 
       // Carregar tipos de eventos
-      const { data: tiposEventosData, error: tiposError } = await supabase
+      const { data: tiposEventosData } = await supabase
         .from('tipos_eventos')
         .select('*')
         .eq('ativo', true)
         .order('nome');
 
-      console.log('Tipos de eventos encontrados:', tiposEventosData);
-      console.log('Erro ao carregar tipos:', tiposError);
-
-      if (tiposEventosData) {
-        setTiposEventos(tiposEventosData);
-      } else {
-        setTiposEventos([]);
-      }
+      setTiposEventos(tiposEventosData || []);
 
       // Carregar voluntários
       const { data: voluntariosData } = await supabase
@@ -146,9 +138,7 @@ const AnimalEventos = () => {
         .eq('ativo', true)
         .order('nome');
 
-      if (voluntariosData) {
-        setVoluntarios(voluntariosData);
-      }
+      setVoluntarios(voluntariosData || []);
 
     } catch (error) {
       console.error('Erro ao carregar dados relacionados:', error);
@@ -176,7 +166,7 @@ const AnimalEventos = () => {
     if (evento) {
       setEditingEvento(evento);
       setEventoForm({
-        tipo_evento: evento.tipo_evento || '',
+        tipo_evento: evento.tipo_evento?.toString() || '',
         data_evento: evento.data_evento || '',
         descricao: evento.descricao || '',
         observacoes: evento.observacoes || '',
@@ -195,13 +185,10 @@ const AnimalEventos = () => {
     e.preventDefault();
     
     try {
-      console.log('Salvando evento para animal ID:', id);
-      console.log('Dados do formulário:', eventoForm);
-      
       const eventoData = {
         animal_id: id,
-        tipo_evento: eventoForm.tipo_evento,
-        titulo: eventoForm.descricao, // Usar descrição como título
+        tipo_evento: parseInt(eventoForm.tipo_evento),
+        titulo: eventoForm.descricao,
         data_evento: eventoForm.data_evento,
         descricao: eventoForm.descricao,
         observacoes: eventoForm.observacoes,
@@ -209,8 +196,6 @@ const AnimalEventos = () => {
         documento_referencia: eventoForm.documento_referencia,
         importante: eventoForm.importante
       };
-      
-      console.log('Dados a serem salvos:', eventoData);
 
       let error;
       if (editingEvento) {
@@ -220,12 +205,10 @@ const AnimalEventos = () => {
           .eq('id', editingEvento.id);
         error = updateError;
       } else {
-        const { data: insertData, error: insertError } = await supabase
+        const { error: insertError } = await supabase
           .from('eventos_animal')
-          .insert([eventoData])
-          .select();
+          .insert([eventoData]);
         error = insertError;
-        console.log('Resultado da inserção:', insertData);
       }
 
       if (error) {
@@ -237,8 +220,6 @@ const AnimalEventos = () => {
         });
         return;
       }
-      
-      console.log('Evento salvo com sucesso! Recarregando dados...');
 
       toast({
         title: editingEvento ? "Evento atualizado" : "Evento registrado",
@@ -249,7 +230,6 @@ const AnimalEventos = () => {
       resetEventoForm();
       setEditingEvento(null);
       await loadRelatedData();
-      console.log('Dados recarregados após salvamento');
 
     } catch (error) {
       console.error('Erro:', error);
@@ -312,6 +292,15 @@ const AnimalEventos = () => {
     if (diffDays > 0) return `Em ${diffDays} dias`;
     if (diffDays < 0) return `Há ${Math.abs(diffDays)} dias`;
     return eventDate.toLocaleDateString('pt-PT');
+  };
+
+  // Função para obter emoji do tipo de evento
+  const getTipoEventoInfo = (tipoId: number) => {
+    const tipo = tiposEventos.find(t => t.id === tipoId);
+    return {
+      emoji: tipo?.emoji || '📅',
+      nome: tipo?.nome || 'Evento'
+    };
   };
 
   if (loading) {
@@ -389,7 +378,7 @@ const AnimalEventos = () => {
           <CardHeader>
             <CardTitle className="flex items-center text-green-800">
               <Calendar className="h-6 w-6 mr-2" />
-              Timeline de Eventos
+              Timeline de Eventos ({eventos.length})
             </CardTitle>
             <CardDescription className="text-green-600">
               Histórico cronológico de marcos importantes na vida do animal
@@ -398,99 +387,100 @@ const AnimalEventos = () => {
           <CardContent>
             {eventos.length > 0 ? (
               <div className="space-y-6">
-                {eventos.map((evento, index) => (
-                  <div key={evento.id} className="relative">
-                    {/* Linha da timeline */}
-                    {index < eventos.length - 1 && (
-                      <div className="absolute left-6 top-12 w-0.5 h-16 bg-green-200"></div>
-                    )}
-                    
-                    {/* Card do evento */}
-                    <div className="flex items-start space-x-4">
-                      {/* Ícone do evento */}
-                      <div className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-white text-lg ${
-                        evento.importante ? 'bg-red-500' : 'bg-green-500'
-                      }`}>
-                        {evento.tipos_eventos?.emoji || '📅'}
-                      </div>
+                {eventos.map((evento, index) => {
+                  const tipoInfo = getTipoEventoInfo(evento.tipo_evento);
+                  return (
+                    <div key={evento.id} className="relative">
+                      {/* Linha da timeline */}
+                      {index < eventos.length - 1 && (
+                        <div className="absolute left-6 top-12 w-0.5 h-16 bg-green-200"></div>
+                      )}
                       
-                      {/* Conteúdo do evento */}
-                      <div className="flex-1 min-w-0">
-                        <Card className={`${evento.importante ? 'border-red-200 bg-red-50' : 'border-gray-200 bg-white'}`}>
-                          <CardContent className="p-4">
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <div className="flex items-center space-x-2 mb-2">
-                                  <h3 className="font-semibold text-gray-900">{evento.descricao}</h3>
-                                  {evento.importante && (
-                                    <Badge className="bg-red-100 text-red-800">
-                                      <Star className="h-3 w-3 mr-1" />
-                                      IMPORTANTE
-                                    </Badge>
-                                  )}
-                                </div>
-                                
-                                <div className="flex items-center space-x-4 text-sm text-gray-600 mb-2">
-                                  <div className="flex items-center">
-                                    <Calendar className="h-4 w-4 mr-1" />
-                                    {new Date(evento.data_evento).toLocaleDateString('pt-PT')}
+                      {/* Card do evento */}
+                      <div className="flex items-start space-x-4">
+                        {/* Ícone do evento */}
+                        <div className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-white text-lg ${
+                          evento.importante ? 'bg-red-500' : 'bg-green-500'
+                        }`}>
+                          {tipoInfo.emoji}
+                        </div>
+                        
+                        {/* Conteúdo do evento */}
+                        <div className="flex-1 min-w-0">
+                          <Card className={`${evento.importante ? 'border-red-200 bg-red-50' : 'border-gray-200 bg-white'}`}>
+                            <CardContent className="p-4">
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center space-x-2 mb-2">
+                                    <h3 className="font-semibold text-gray-900">{evento.descricao}</h3>
+                                    {evento.importante && (
+                                      <Badge className="bg-red-100 text-red-800">
+                                        <Star className="h-3 w-3 mr-1" />
+                                        IMPORTANTE
+                                      </Badge>
+                                    )}
                                   </div>
-                                  <div className="flex items-center">
-                                    <Clock className="h-4 w-4 mr-1" />
-                                    {getRelativeDate(evento.data_evento)}
-                                  </div>
-                                  {evento.tipos_eventos?.nome && (
+                                  
+                                  <div className="flex items-center space-x-4 text-sm text-gray-600 mb-2">
+                                    <div className="flex items-center">
+                                      <Calendar className="h-4 w-4 mr-1" />
+                                      {new Date(evento.data_evento).toLocaleDateString('pt-PT')}
+                                    </div>
+                                    <div className="flex items-center">
+                                      <Clock className="h-4 w-4 mr-1" />
+                                      {getRelativeDate(evento.data_evento)}
+                                    </div>
                                     <Badge variant="outline" className="text-xs">
-                                      {evento.tipos_eventos.nome}
+                                      {tipoInfo.nome}
                                     </Badge>
+                                  </div>
+                                  
+                                  {evento.voluntarios?.nome && (
+                                    <div className="flex items-center text-sm text-gray-600 mb-2">
+                                      <User className="h-4 w-4 mr-1" />
+                                      Responsável: {evento.voluntarios.nome}
+                                    </div>
+                                  )}
+                                  
+                                  {evento.documento_referencia && (
+                                    <div className="flex items-center text-sm text-gray-600 mb-2">
+                                      <FileText className="h-4 w-4 mr-1" />
+                                      Documento: {evento.documento_referencia}
+                                    </div>
+                                  )}
+                                  
+                                  {evento.observacoes && (
+                                    <p className="text-sm text-gray-700 mt-2 p-2 bg-gray-50 rounded">
+                                      {evento.observacoes}
+                                    </p>
                                   )}
                                 </div>
                                 
-                                {evento.voluntarios?.nome && (
-                                  <div className="flex items-center text-sm text-gray-600 mb-2">
-                                    <User className="h-4 w-4 mr-1" />
-                                    Responsável: {evento.voluntarios.nome}
-                                  </div>
-                                )}
-                                
-                                {evento.documento_referencia && (
-                                  <div className="flex items-center text-sm text-gray-600 mb-2">
-                                    <FileText className="h-4 w-4 mr-1" />
-                                    Documento: {evento.documento_referencia}
-                                  </div>
-                                )}
-                                
-                                {evento.observacoes && (
-                                  <p className="text-sm text-gray-700 mt-2 p-2 bg-gray-50 rounded">
-                                    {evento.observacoes}
-                                  </p>
-                                )}
+                                <div className="flex space-x-2 ml-4">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => openEventoDialog(evento)}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleDeleteEvento(evento.id)}
+                                    className="text-red-600 hover:text-red-700"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
                               </div>
-                              
-                              <div className="flex space-x-2 ml-4">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => openEventoDialog(evento)}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleDeleteEvento(evento.id)}
-                                  className="text-red-600 hover:text-red-700"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
+                            </CardContent>
+                          </Card>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="text-center py-8 text-gray-500">
@@ -523,11 +513,7 @@ const AnimalEventos = () => {
               </Label>
               <Select 
                 value={eventoForm.tipo_evento} 
-                onValueChange={(value) => {
-                  console.log('Selecionando tipo de evento:', value);
-                  setEventoForm({ ...eventoForm, tipo_evento: value });
-                  console.log('Formulário atualizado:', { ...eventoForm, tipo_evento: value });
-                }}
+                onValueChange={(value) => setEventoForm({ ...eventoForm, tipo_evento: value })}
               >
                 <SelectTrigger className="border-green-200 focus:border-green-400">
                   <SelectValue placeholder="Selecionar tipo" />
@@ -538,15 +524,11 @@ const AnimalEventos = () => {
                       Carregando tipos...
                     </SelectItem>
                   )}
-                  {tiposEventos.map((tipo) => {
-                    console.log('Renderizando tipo:', tipo);
-                    return (
-                      <SelectItem key={tipo.id} value={tipo.id}>
-                        {tipo.emoji} {tipo.nome}
-                      </SelectItem>
-                    );
-                  })
-                  }
+                  {tiposEventos.map((tipo) => (
+                    <SelectItem key={tipo.id} value={tipo.id.toString()}>
+                      {tipo.emoji} {tipo.nome}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
