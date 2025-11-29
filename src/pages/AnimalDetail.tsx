@@ -402,6 +402,7 @@ const AnimalDetail = () => {
         animal_id: id,
         tipo_evento: eventoForm.tipo_evento,
         data_evento: eventoForm.data_evento,
+        titulo: eventoForm.descricao || eventoForm.tipo_evento, // Usar descrição como título ou tipo de evento
         descricao: eventoForm.descricao || null,
         observacoes: eventoForm.observacoes || null,
         voluntario_id: eventoForm.voluntario_id || null,
