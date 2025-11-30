@@ -44,11 +44,9 @@ const Login = () => {
     try {
       const success = await login(username.trim(), password);
       if (success) {
-        console.log('✅ [LOGIN] Login bem-sucedido, redirecionando...');
-        // Forçar redirecionamento manual
-        setTimeout(() => {
-          window.location.href = '/';
-        }, 1000);
+        console.log('✅ [LOGIN] Login bem-sucedido, aguardando mensagens de boas-vindas...');
+        // O redirecionamento será controlado pelas mensagens de boas-vindas
+        // Não há mais redirecionamento automático aqui
       }
     } catch (error) {
       console.error('💥 [LOGIN] Erro no submit:', error);
