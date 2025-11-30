@@ -67,6 +67,38 @@ const NovoAnimal = () => {
     return '';
   };
 
+  // Função para sugerir grupo automaticamente baseado na espécie
+  const suggestGroupForSpecies = (especie: string) => {
+    if (!especie || grupos.length === 0) return;
+    
+    let suggestedGroup = null;
+    
+    if (especie === 'Cão') {
+      // Procurar matilha disponível
+      suggestedGroup = grupos.find(grupo => 
+        grupo.tipo === 'matilha' && grupo.ativo
+      );
+    } else if (especie === 'Gato') {
+      // Procurar colónia disponível
+      suggestedGroup = grupos.find(grupo => 
+        grupo.tipo === 'colonia' && grupo.ativo
+      );
+    } else {
+      // Para outras espécies, procurar grupos sem espécie específica
+      suggestedGroup = grupos.find(grupo => 
+        grupo.tipo !== 'matilha' && grupo.tipo !== 'colonia' && grupo.ativo
+      );
+    }
+    
+    if (suggestedGroup && !formData.grupo_id) {
+      setFormData(prev => ({ ...prev, grupo_id: suggestedGroup.id }));
+      toast({
+        title: "🏠 Grupo Sugerido",
+        description: `${especie === 'Cão' ? '🐕' : especie === 'Gato' ? '🐱' : '🐾'} Sugerimos o grupo "${suggestedGroup.nome}" para esta espécie`,
+      });
+    }
+  };
+
   const generateNextProcessNumber = async (): Promise<string> => {
     try {
       console.log('Gerando número de processo...');
@@ -372,6 +404,15 @@ const NovoAnimal = () => {
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // Sugerir grupo automaticamente quando a espécie for alterada
+    if (field === 'especie' && value) {
+      // Usar setTimeout para garantir que o estado seja atualizado primeiro
+      setTimeout(() => {
+        suggestGroupForSpecies(value);
+      }, 100);
+    }
+    
     // Limpar erro do campo quando o usuário começar a digitar
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: "" }));
@@ -700,15 +741,23 @@ const NovoAnimal = () => {
                       .filter(grupo => {
                         // Filtrar grupos compatíveis com a espécie
                         if (!formData.especie) return true;
-                        return (
-                          (grupo.tipo === 'matilha' && formData.especie === 'Cão') ||
-                          (grupo.tipo === 'colonia' && formData.especie === 'Gato')
-                        );
+                        
+                        if (formData.especie === 'Cão') {
+                          // Cães podem ir para matilhas
+                          return grupo.tipo === 'matilha';
+                        } else if (formData.especie === 'Gato') {
+                          // Gatos podem ir para colónias
+                          return grupo.tipo === 'colonia';
+                        } else {
+                          // Outras espécies podem ir para grupos genéricos (não matilha nem colónia)
+                          return grupo.tipo !== 'matilha' && grupo.tipo !== 'colonia';
+                        }
                       })
                       .map((grupo) => (
                         <SelectItem key={grupo.id} value={grupo.id}>
                           <div className="flex items-center">
-                            {grupo.tipo === 'matilha' ? '🐕' : '🐱'} {grupo.nome}
+                            {grupo.tipo === 'matilha' ? '🐕' : grupo.tipo === 'colonia' ? '🐱' : '🏠'} {grupo.nome}
+                            <span className="text-xs text-gray-500 ml-2">({grupo.tipo})</span>
                           </div>
                         </SelectItem>
                       ))
@@ -718,10 +767,10 @@ const NovoAnimal = () => {
                 {formData.especie && grupos.length > 0 && (
                   <p className="text-xs text-gray-500 mt-1">
                     {formData.especie === 'Cão' 
-                      ? 'Apenas matilhas são compatíveis com cães'
+                      ? '🐕 Cães podem ser associados a matilhas'
                       : formData.especie === 'Gato'
-                      ? 'Apenas colónias são compatíveis com gatos'
-                      : 'Outros animais não podem pertencer a grupos'
+                      ? '🐱 Gatos podem ser associados a colónias'
+                      : '🏠 Esta espécie pode ser associada a grupos genéricos'
                     }
                   </p>
                 )}
