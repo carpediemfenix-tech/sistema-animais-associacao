@@ -19,12 +19,15 @@ import {
   MapPin,
   Filter,
   Users,
-  PawPrint
+  PawPrint,
+  Hash,
+  Home
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Animal {
   id: string;
+  numero_processo?: string;
   nome: string;
   especie: string;
   raca?: string;
@@ -37,7 +40,13 @@ interface Animal {
   localizacao_atual?: string;
   foto_url?: string;
   observacoes?: string;
+  grupo_id?: string;
   created_at: string;
+  // Dados do grupo (via join)
+  grupos?: {
+    nome: string;
+    tipo: string;
+  };
 }
 
 const AnimaisList: React.FC = () => {
@@ -54,7 +63,13 @@ const AnimaisList: React.FC = () => {
       setLoading(true);
       const { data, error } = await supabase
         .from('animais')
-        .select('*')
+        .select(`
+          *,
+          grupos:grupo_id (
+            nome,
+            tipo
+          )
+        `)
         .neq('estado', 'arquivado')
         .order('created_at', { ascending: false });
 
@@ -88,7 +103,8 @@ const AnimaisList: React.FC = () => {
   const filteredAnimais = animais.filter(animal => {
     const matchesSearch = animal.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          animal.especie.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (animal.raca && animal.raca.toLowerCase().includes(searchTerm.toLowerCase()));
+                         (animal.raca && animal.raca.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                         (animal.numero_processo && animal.numero_processo.toLowerCase().includes(searchTerm.toLowerCase()));
     
     const matchesEspecie = filtroEspecie === "todas" || 
                           (filtroEspecie === "outros" && animal.especie !== "Cão" && animal.especie !== "Gato") ||
@@ -109,6 +125,25 @@ const AnimaisList: React.FC = () => {
       'critico': 'bg-red-100 text-red-800'
     };
     return variants[estado as keyof typeof variants] || 'bg-gray-100 text-gray-800';
+  };
+
+  // Nova função para cores baseadas no sexo
+  const getCardColorBySex = (sexo: string) => {
+    if (sexo === 'Macho') {
+      return 'border-l-4 border-l-blue-400 bg-gradient-to-r from-blue-50 to-white';
+    } else if (sexo === 'Fêmea') {
+      return 'border-l-4 border-l-pink-400 bg-gradient-to-r from-pink-50 to-white';
+    }
+    return 'border-l-4 border-l-gray-400 bg-gradient-to-r from-gray-50 to-white';
+  };
+
+  const getSexBadge = (sexo: string) => {
+    if (sexo === 'Macho') {
+      return 'bg-blue-100 text-blue-800 border border-blue-200';
+    } else if (sexo === 'Fêmea') {
+      return 'bg-pink-100 text-pink-800 border border-pink-200';
+    }
+    return 'bg-gray-100 text-gray-800 border border-gray-200';
   };
 
   const getIdadeTexto = (idade?: number) => {
@@ -140,7 +175,7 @@ const AnimaisList: React.FC = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         
-        {/* Barra de Ações - LINKS CORRIGIDOS */}
+        {/* Barra de Ações */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <div className="flex items-center space-x-4">
             <Link to="/">
@@ -176,7 +211,7 @@ const AnimaisList: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
               <div>
                 <Input
-                  placeholder="Pesquisar por nome, espécie ou raça..."
+                  placeholder="Pesquisar por nome, espécie, raça ou nº processo..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full"
@@ -220,8 +255,8 @@ const AnimaisList: React.FC = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="todos">Todos</SelectItem>
-                    <SelectItem value="Macho">Macho</SelectItem>
-                    <SelectItem value="Fêmea">Fêmea</SelectItem>
+                    <SelectItem value="Macho">♂️ Macho</SelectItem>
+                    <SelectItem value="Fêmea">♀️ Fêmea</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -269,16 +304,40 @@ const AnimaisList: React.FC = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredAnimais.map((animal) => (
-              <Card key={animal.id} className="hover:shadow-lg transition-shadow duration-200">
+              <Card 
+                key={animal.id} 
+                className={`hover:shadow-lg transition-shadow duration-200 ${getCardColorBySex(animal.sexo)}`}
+              >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <CardTitle className="text-lg font-bold text-gray-900 mb-1">
-                        {animal.nome}
-                      </CardTitle>
+                      <div className="flex items-center gap-2 mb-1">
+                        <CardTitle className="text-lg font-bold text-gray-900">
+                          {animal.nome}
+                        </CardTitle>
+                        <Badge className={getSexBadge(animal.sexo)}>
+                          {animal.sexo === 'Macho' ? '♂️' : '♀️'} {animal.sexo}
+                        </Badge>
+                      </div>
                       <CardDescription className="text-sm text-gray-600">
-                        {animal.especie} {animal.raca && `• ${animal.raca}`} • {animal.sexo}
+                        {animal.especie} {animal.raca && `• ${animal.raca}`}
                       </CardDescription>
+                      
+                      {/* Número do Processo */}
+                      {animal.numero_processo && (
+                        <div className="flex items-center text-xs text-gray-500 mt-1">
+                          <Hash className="h-3 w-3 mr-1" />
+                          Processo: {animal.numero_processo}
+                        </div>
+                      )}
+                      
+                      {/* Grupo */}
+                      {animal.grupos && (
+                        <div className="flex items-center text-xs text-gray-500 mt-1">
+                          <Home className="h-3 w-3 mr-1" />
+                          Grupo: {animal.grupos.nome}
+                        </div>
+                      )}
                     </div>
                     <Badge className={getEstadoBadge(animal.estado)}>
                       {animal.estado}
@@ -326,7 +385,7 @@ const AnimaisList: React.FC = () => {
                     </div>
                   )}
 
-                  {/* BOTÕES COM LINKS CORRETOS */}
+                  {/* BOTÕES */}
                   <div className="flex space-x-2 pt-2">
                     <Link to={`/animal/${animal.id}`} className="flex-1">
                       <Button variant="outline" size="sm" className="w-full">
