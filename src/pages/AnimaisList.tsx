@@ -11,7 +11,9 @@ import {
   Search,
   Plus,
   Eye,
+  Edit,
   Archive,
+  ArrowLeft,
   Heart,
   Calendar,
   MapPin,
@@ -138,9 +140,15 @@ const AnimaisList: React.FC = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         
-        {/* Barra de Ações */}
+        {/* Barra de Ações - CORRIGIDA */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <div className="flex items-center space-x-4">
+            <Link to="/">
+              <Button variant="outline">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Dashboard
+              </Button>
+            </Link>
             <Link to="/animais/novo">
               <Button className="bg-emerald-600 hover:bg-emerald-700">
                 <Plus className="h-4 w-4 mr-2" />
@@ -318,11 +326,18 @@ const AnimaisList: React.FC = () => {
                     </div>
                   )}
 
+                  {/* BOTÕES CORRIGIDOS - Adicionado botão Editar */}
                   <div className="flex space-x-2 pt-2">
                     <Link to={`/animal/${animal.id}`} className="flex-1">
                       <Button variant="outline" size="sm" className="w-full">
                         <Eye className="h-3 w-3 mr-1" />
                         Ver Detalhes
+                      </Button>
+                    </Link>
+                    <Link to={`/animal/${animal.id}/editar`} className="flex-1">
+                      <Button variant="outline" size="sm" className="w-full">
+                        <Edit className="h-3 w-3 mr-1" />
+                        Editar
                       </Button>
                     </Link>
                   </div>
