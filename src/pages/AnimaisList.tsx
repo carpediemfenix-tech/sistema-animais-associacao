@@ -140,7 +140,7 @@ const AnimaisList: React.FC = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         
-        {/* Barra de Ações - CORRIGIDA */}
+        {/* Barra de Ações - LINKS CORRIGIDOS */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <div className="flex items-center space-x-4">
             <Link to="/">
@@ -149,13 +149,13 @@ const AnimaisList: React.FC = () => {
                 Dashboard
               </Button>
             </Link>
-            <Link to="/animais/novo">
+            <Link to="/novo-animal">
               <Button className="bg-emerald-600 hover:bg-emerald-700">
                 <Plus className="h-4 w-4 mr-2" />
                 Novo Animal
               </Button>
             </Link>
-            <Link to="/animais/arquivados">
+            <Link to="/animais-arquivados">
               <Button variant="outline">
                 <Archive className="h-4 w-4 mr-2" />
                 Arquivados
@@ -257,7 +257,7 @@ const AnimaisList: React.FC = () => {
                 }
               </p>
               {!searchTerm && filtroEspecie === "todas" && filtroEstado === "todos" && filtroSexo === "todos" && (
-                <Link to="/animais/novo">
+                <Link to="/novo-animal">
                   <Button className="bg-emerald-600 hover:bg-emerald-700">
                     <Plus className="h-4 w-4 mr-2" />
                     Adicionar Primeiro Animal
@@ -326,7 +326,7 @@ const AnimaisList: React.FC = () => {
                     </div>
                   )}
 
-                  {/* BOTÕES CORRIGIDOS - Adicionado botão Editar */}
+                  {/* BOTÕES COM LINKS CORRETOS */}
                   <div className="flex space-x-2 pt-2">
                     <Link to={`/animal/${animal.id}`} className="flex-1">
                       <Button variant="outline" size="sm" className="w-full">
