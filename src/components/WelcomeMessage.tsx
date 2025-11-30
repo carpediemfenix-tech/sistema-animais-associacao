@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { CheckCircle, Heart, Shield } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface WelcomeMessageProps {
   type: 'welcome' | 'goodbye';
@@ -11,36 +12,18 @@ const WelcomeMessage = ({ type, userName, onComplete }: WelcomeMessageProps) => 
   const [currentMessage, setCurrentMessage] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
 
-  useEffect(() => {
-    if (type === 'welcome') {
-      // Para login: mostrar duas mensagens sequenciais
-      const firstMessageTimer = setTimeout(() => {
-        setCurrentMessage(1); // Mudar para segunda mensagem
-      }, 6000); // Primeira mensagem por 6 segundos
-
-      const secondMessageTimer = setTimeout(() => {
-        setIsVisible(false);
-        if (onComplete) {
-          setTimeout(onComplete, 300); // Aguarda a animação de saída
-        }
-      }, 12000); // Segunda mensagem por mais 6 segundos (total 12s)
-
-      return () => {
-        clearTimeout(firstMessageTimer);
-        clearTimeout(secondMessageTimer);
-      };
+  const handleNextMessage = () => {
+    if (type === 'welcome' && currentMessage === 0) {
+      // Passar para a segunda mensagem
+      setCurrentMessage(1);
     } else {
-      // Para logout: apenas uma mensagem
-      const timer = setTimeout(() => {
-        setIsVisible(false);
-        if (onComplete) {
-          setTimeout(onComplete, 300);
-        }
-      }, 4000);
-
-      return () => clearTimeout(timer);
+      // Finalizar e fechar
+      setIsVisible(false);
+      if (onComplete) {
+        setTimeout(onComplete, 300); // Aguarda a animação de saída
+      }
     }
-  }, [onComplete, type]);
+  };
 
   if (!isVisible) return null;
 
@@ -51,7 +34,9 @@ const WelcomeMessage = ({ type, userName, onComplete }: WelcomeMessageProps) => 
       message: "O nosso lema de resistência e dedicação",
       bgColor: "bg-emerald-50",
       borderColor: "border-emerald-200",
-      textColor: "text-emerald-800"
+      textColor: "text-emerald-800",
+      buttonColor: "bg-emerald-600 hover:bg-emerald-700",
+      buttonText: "Continuar"
     },
     {
       icon: <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />,
@@ -59,7 +44,9 @@ const WelcomeMessage = ({ type, userName, onComplete }: WelcomeMessageProps) => 
       message: "Acesso autorizado com sucesso",
       bgColor: "bg-green-50",
       borderColor: "border-green-200",
-      textColor: "text-green-800"
+      textColor: "text-green-800",
+      buttonColor: "bg-green-600 hover:bg-green-700",
+      buttonText: "Entrar no Sistema"
     }
   ];
 
@@ -69,7 +56,9 @@ const WelcomeMessage = ({ type, userName, onComplete }: WelcomeMessageProps) => 
     message: "Por lutar pelos animais",
     bgColor: "bg-red-50",
     borderColor: "border-red-200",
-    textColor: "text-red-800"
+    textColor: "text-red-800",
+    buttonColor: "bg-red-600 hover:bg-red-700",
+    buttonText: "OK"
   };
 
   const content = type === 'welcome' ? welcomeMessages[currentMessage] : goodbyeContent;
@@ -81,9 +70,17 @@ const WelcomeMessage = ({ type, userName, onComplete }: WelcomeMessageProps) => 
         <h2 className={`text-2xl font-bold ${content.textColor} mb-2`}>
           {content.title}
         </h2>
-        <p className={`${content.textColor} opacity-80`}>
+        <p className={`${content.textColor} opacity-80 mb-6`}>
           {content.message}
         </p>
+        
+        {/* Botão OK/Continuar */}
+        <Button
+          onClick={handleNextMessage}
+          className={`${content.buttonColor} text-white px-8 py-2 rounded-lg font-medium shadow-lg hover:shadow-xl transition-all duration-200`}
+        >
+          {content.buttonText}
+        </Button>
         
         {/* Indicador de progresso para as duas mensagens de boas-vindas */}
         {type === 'welcome' && (
