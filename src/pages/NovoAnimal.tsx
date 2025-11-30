@@ -67,27 +67,37 @@ const NovoAnimal = () => {
     return '';
   };
 
-  // Função para sugerir grupo automaticamente baseado na espécie
+  // Função para sugerir grupo automaticamente baseado na espécie - CORRIGIDA
   const suggestGroupForSpecies = (especie: string) => {
     if (!especie || grupos.length === 0) return;
+    
+    console.log('🔍 Sugerindo grupo para espécie:', especie);
+    console.log('📋 Grupos disponíveis:', grupos.map(g => ({ nome: g.nome, tipo: g.tipo })));
     
     let suggestedGroup = null;
     
     if (especie === 'Cão') {
-      // Procurar matilha disponível
+      // Procurar matilha disponível (tipo contém "Matilha")
       suggestedGroup = grupos.find(grupo => 
-        grupo.tipo === 'matilha' && grupo.ativo
+        grupo.tipo && grupo.tipo.toLowerCase().includes('matilha') && grupo.ativo
       );
+      console.log('🐕 Matilha encontrada:', suggestedGroup);
     } else if (especie === 'Gato') {
-      // Procurar colónia disponível
+      // Procurar colónia disponível (tipo contém "colónia" ou "colonia")
       suggestedGroup = grupos.find(grupo => 
-        grupo.tipo === 'colonia' && grupo.ativo
+        grupo.tipo && (grupo.tipo.toLowerCase().includes('colónia') || grupo.tipo.toLowerCase().includes('colonia')) && grupo.ativo
       );
+      console.log('🐱 Colónia encontrada:', suggestedGroup);
     } else {
-      // Para outras espécies, procurar grupos sem espécie específica
+      // Para outras espécies, procurar grupos que não sejam matilha nem colónia
       suggestedGroup = grupos.find(grupo => 
-        grupo.tipo !== 'matilha' && grupo.tipo !== 'colonia' && grupo.ativo
+        grupo.tipo && 
+        !grupo.tipo.toLowerCase().includes('matilha') && 
+        !grupo.tipo.toLowerCase().includes('colónia') && 
+        !grupo.tipo.toLowerCase().includes('colonia') && 
+        grupo.ativo
       );
+      console.log('🐾 Grupo genérico encontrado:', suggestedGroup);
     }
     
     if (suggestedGroup && !formData.grupo_id) {
@@ -96,6 +106,9 @@ const NovoAnimal = () => {
         title: "🏠 Grupo Sugerido",
         description: `${especie === 'Cão' ? '🐕' : especie === 'Gato' ? '🐱' : '🐾'} Sugerimos o grupo "${suggestedGroup.nome}" para esta espécie`,
       });
+      console.log('✅ Grupo sugerido e selecionado:', suggestedGroup.nome);
+    } else {
+      console.log('❌ Nenhum grupo adequado encontrado ou já existe seleção');
     }
   };
 
@@ -131,23 +144,19 @@ const NovoAnimal = () => {
             return match ? parseInt(match[1]) : 0;
           })
           .filter(num => num > 0);
-        
-        console.log('Números do ano atual:', currentYearNumbers);
-        
+
         if (currentYearNumbers.length > 0) {
           nextSequence = Math.max(...currentYearNumbers) + 1;
         }
       }
 
-      const formattedSequence = nextSequence.toString().padStart(3, '0');
-      const numeroProcesso = `P${yearSuffix}${formattedSequence}`;
-      
-      console.log('Número de processo gerado:', numeroProcesso);
-      return numeroProcesso;
-      
+      const processNumber = `P${yearSuffix}${nextSequence.toString().padStart(3, '0')}`;
+      console.log('Número de processo gerado:', processNumber);
+      return processNumber;
+
     } catch (error) {
       console.error('Erro ao gerar número de processo:', error);
-      // Fallback: gerar um número baseado no timestamp
+      // Fallback: usar timestamp
       const currentYear = new Date().getFullYear();
       const yearSuffix = currentYear.toString().slice(-2);
       const timestamp = Date.now().toString().slice(-3);
@@ -168,6 +177,7 @@ const NovoAnimal = () => {
 
       if (error) throw error;
       setGrupos(data || []);
+      console.log('📋 Grupos carregados:', data?.map(g => ({ nome: g.nome, tipo: g.tipo })));
     } catch (error: any) {
       console.error('Erro ao carregar grupos:', error);
     }
@@ -198,6 +208,7 @@ const NovoAnimal = () => {
 
       if (error) throw error;
       setSexos(data || []);
+      console.log('⚧ Sexos carregados:', data?.map(s => s.nome));
     } catch (error: any) {
       console.error('Erro ao carregar sexos:', error);
     }
@@ -207,22 +218,42 @@ const NovoAnimal = () => {
     try {
       const { data, error } = await supabase
         .from('voluntarios')
-        .select('*')
+        .select(`
+          id,
+          nome,
+          especialidades_voluntarios!inner(
+            especialidades(nome)
+          )
+        `)
         .eq('ativo', true)
         .order('nome');
 
       if (error) throw error;
-      setVoluntarios(data || []);
+
+      // Processar dados para incluir especialidade
+      const voluntariosProcessados = data?.map(voluntario => ({
+        ...voluntario,
+        especialidade: voluntario.especialidades_voluntarios?.[0]?.especialidades?.nome || 'Sem especialidade'
+      })) || [];
+
+      setVoluntarios(voluntariosProcessados);
     } catch (error: any) {
       console.error('Erro ao carregar voluntários:', error);
     }
   };
 
   useEffect(() => {
-    fetchGrupos();
-    fetchEspecies();
-    fetchSexos();
-    fetchVoluntarios();
+    const initializeData = async () => {
+      await Promise.all([
+        generateNextProcessNumber().then(setNumeroProcesso),
+        fetchGrupos(),
+        fetchEspecies(),
+        fetchSexos(),
+        fetchVoluntarios()
+      ]);
+    };
+
+    initializeData();
   }, []);
 
   const validateForm = () => {
@@ -240,50 +271,20 @@ const NovoAnimal = () => {
       newErrors.sexo = "Sexo é obrigatório";
     }
 
-    if (!formData.voluntario_responsavel_id) {
-      newErrors.voluntario_responsavel_id = "Voluntário responsável é obrigatório";
-    }
-
     if (!formData.data_entrada) {
       newErrors.data_entrada = "Data de entrada é obrigatória";
+    }
+
+    if (!formData.voluntario_responsavel_id) {
+      newErrors.voluntario_responsavel_id = "Voluntário responsável é obrigatório";
     }
 
     if (formData.idade_estimada && (isNaN(Number(formData.idade_estimada)) || Number(formData.idade_estimada) < 0)) {
       newErrors.idade_estimada = "Idade deve ser um número válido";
     }
 
-    // CORREÇÃO: Validar data de nascimento não pode ser futura
-    if (formData.data_nascimento) {
-      const dataNascimento = new Date(formData.data_nascimento);
-      const hoje = new Date();
-      hoje.setHours(0, 0, 0, 0); // Zerar horas para comparação apenas de data
-      
-      if (dataNascimento > hoje) {
-        newErrors.data_nascimento = "Data de nascimento não pode ser no futuro";
-      }
-      
-      // Verificar se a data não é muito antiga (mais de 30 anos)
-      const trintaAnosAtras = new Date();
-      trintaAnosAtras.setFullYear(trintaAnosAtras.getFullYear() - 30);
-      
-      if (dataNascimento < trintaAnosAtras) {
-        newErrors.data_nascimento = "Data de nascimento muito antiga (máximo 30 anos)";
-      }
-    }
-
     if (formData.peso && (isNaN(Number(formData.peso)) || Number(formData.peso) <= 0)) {
       newErrors.peso = "Peso deve ser um número válido maior que zero";
-    }
-
-    // CORREÇÃO: Validar data de entrada não pode ser futura
-    if (formData.data_entrada) {
-      const dataEntrada = new Date(formData.data_entrada);
-      const hoje = new Date();
-      hoje.setHours(23, 59, 59, 999); // Permitir data de hoje
-      
-      if (dataEntrada > hoje) {
-        newErrors.data_entrada = "Data de entrada não pode ser no futuro";
-      }
     }
 
     setErrors(newErrors);
@@ -305,28 +306,16 @@ const NovoAnimal = () => {
     setLoading(true);
 
     try {
-      // Gerar número de processo automático
-      const numeroProcessoGerado = await generateNextProcessNumber();
-      setNumeroProcesso(numeroProcessoGerado);
+      const numeroProcessoGerado = numeroProcesso || await generateNextProcessNumber();
 
-      // Calcular idade estimada se temos data de nascimento
-      let idadeEstimada = formData.idade_estimada ? parseInt(formData.idade_estimada) : null;
-      if (formData.data_nascimento && !formData.idade_estimada) {
-        const nascimento = new Date(formData.data_nascimento);
-        const hoje = new Date();
-        const diffTime = Math.abs(hoje.getTime() - nascimento.getTime());
-        const diffMonths = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 30.44));
-        idadeEstimada = diffMonths;
-      }
-
-      // Preparar dados para inserção
-      const dataToInsert = {
+      const animalData = {
         numero_processo: numeroProcessoGerado,
         nome: formData.nome.trim(),
         especie: formData.especie,
         raca: formData.raca.trim() || null,
         sexo: formData.sexo,
-        idade_estimada: idadeEstimada,
+        idade_estimada: formData.idade_estimada ? parseInt(formData.idade_estimada) : null,
+        data_nascimento: formData.data_nascimento || null,
         peso: formData.peso ? parseFloat(formData.peso) : null,
         cor: formData.cor.trim() || null,
         caracteristicas_fisicas: formData.caracteristicas_fisicas.trim() || null,
@@ -334,36 +323,33 @@ const NovoAnimal = () => {
         data_entrada: formData.data_entrada,
         local_encontrado: formData.local_encontrado.trim() || null,
         observacoes: formData.observacoes.trim() || null,
-        estado: 'Ativo',
-        arquivado: false,
         grupo_id: formData.grupo_id || null,
-        voluntario_responsavel_id: formData.voluntario_responsavel_id,
-        url_fotografia: formData.url_fotografia.trim() || null
+        url_fotografia: formData.url_fotografia.trim() || null,
+        estado: 'disponivel',
+        arquivado: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       };
-
-      console.log('Dados para inserção:', dataToInsert);
 
       const { data, error } = await supabase
         .from('animais')
-        .insert([dataToInsert])
+        .insert([animalData])
         .select()
         .single();
 
-      if (error) {
-        console.error('Erro ao inserir animal:', error);
-        throw error;
-      }
+      if (error) throw error;
 
-      console.log('Animal inserido com sucesso:', data);
+      console.log('Animal cadastrado com sucesso:', data);
 
-      // Criar registro de responsabilidade inicial
+      // Criar responsabilidade do voluntário
       const responsabilidadeData = {
         animal_id: data.id,
         voluntario_id: formData.voluntario_responsavel_id,
+        tipo_responsabilidade: 'Cuidador Principal',
         data_inicio: formData.data_entrada,
-        motivo_mudanca: 'Responsabilidade inicial no cadastro do animal',
-        observacoes: `Voluntário responsável atribuído no momento do cadastro de ${formData.nome}`,
-        ativo: true
+        ativo: true,
+        observacoes: `Responsabilidade atribuída automaticamente no cadastro do animal ${formData.nome}`,
+        created_at: new Date().toISOString()
       };
 
       const { error: responsabilidadeError } = await supabase
@@ -571,7 +557,6 @@ const NovoAnimal = () => {
                       {errors.data_nascimento}
                     </p>
                   )}
-                  <p className="text-xs text-gray-500 mt-1">Se informada, a idade será calculada automaticamente</p>
                 </div>
 
                 <div>
@@ -593,37 +578,14 @@ const NovoAnimal = () => {
                     </p>
                   )}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
 
-          {/* Características Físicas */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Características Físicas</CardTitle>
-              <CardDescription>
-                Descrição física e identificação do animal
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="cor">Cor</Label>
                   <Input
                     id="cor"
                     value={formData.cor}
                     onChange={(e) => handleInputChange("cor", e.target.value)}
-                    placeholder="Ex: Preto e branco"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="transponder">Transponder/Chip</Label>
-                  <Input
-                    id="transponder"
-                    value={formData.transponder}
-                    onChange={(e) => handleInputChange("transponder", e.target.value)}
-                    placeholder="Número do chip (se aplicável)"
+                    placeholder="Cor predominante"
                   />
                 </div>
               </div>
@@ -634,52 +596,28 @@ const NovoAnimal = () => {
                   id="caracteristicas_fisicas"
                   value={formData.caracteristicas_fisicas}
                   onChange={(e) => handleInputChange("caracteristicas_fisicas", e.target.value)}
-                  placeholder="Descreva características distintivas, cicatrizes, marcas especiais..."
+                  placeholder="Descreva características físicas distintivas..."
                   rows={3}
                 />
-              </div>
-
-              <div>
-                <Label htmlFor="url_fotografia">URL da Fotografia</Label>
-                <Input
-                  id="url_fotografia"
-                  type="url"
-                  value={formData.url_fotografia}
-                  onChange={(e) => handleInputChange("url_fotografia", e.target.value)}
-                  placeholder="https://exemplo.com/foto-do-animal.jpg"
-                />
-                <p className="text-sm text-gray-500 mt-1">
-                  Link para a fotografia do animal (opcional)
-                </p>
               </div>
             </CardContent>
           </Card>
 
-          {/* Informações de Entrada */}
+          {/* Informações Adicionais */}
           <Card>
             <CardHeader>
-              <CardTitle>Informações de Entrada</CardTitle>
-              <CardDescription>
-                Dados sobre como o animal chegou à associação
-              </CardDescription>
+              <CardTitle>Informações Adicionais</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="data_entrada">Data de Entrada *</Label>
+                  <Label htmlFor="transponder">Transponder/Chip</Label>
                   <Input
-                    id="data_entrada"
-                    type="date"
-                    value={formData.data_entrada}
-                    onChange={(e) => handleInputChange("data_entrada", e.target.value)}
-                    className={errors.data_entrada ? "border-red-500" : ""}
+                    id="transponder"
+                    value={formData.transponder}
+                    onChange={(e) => handleInputChange("transponder", e.target.value)}
+                    placeholder="Número do chip (se aplicável)"
                   />
-                  {errors.data_entrada && (
-                    <p className="text-sm text-red-500 mt-1 flex items-center">
-                      <AlertCircle className="h-4 w-4 mr-1" />
-                      {errors.data_entrada}
-                    </p>
-                  )}
                 </div>
 
                 <div>
@@ -725,7 +663,7 @@ const NovoAnimal = () => {
                 </p>
               </div>
 
-              {/* Seleção de Grupo */}
+              {/* Seleção de Grupo - CORRIGIDA */}
               <div>
                 <Label htmlFor="grupo_id">Grupo (Matilha/Colónia)</Label>
                 <Select 
@@ -739,24 +677,28 @@ const NovoAnimal = () => {
                     <SelectItem value="none">Nenhum grupo</SelectItem>
                     {grupos
                       .filter(grupo => {
-                        // Filtrar grupos compatíveis com a espécie
+                        // Filtrar grupos compatíveis com a espécie - LÓGICA CORRIGIDA
                         if (!formData.especie) return true;
                         
                         if (formData.especie === 'Cão') {
-                          // Cães podem ir para matilhas
-                          return grupo.tipo === 'matilha';
+                          // Cães podem ir para matilhas (tipo contém "Matilha")
+                          return grupo.tipo && grupo.tipo.toLowerCase().includes('matilha');
                         } else if (formData.especie === 'Gato') {
-                          // Gatos podem ir para colónias
-                          return grupo.tipo === 'colonia';
+                          // Gatos podem ir para colónias (tipo contém "colónia" ou "colonia")
+                          return grupo.tipo && (grupo.tipo.toLowerCase().includes('colónia') || grupo.tipo.toLowerCase().includes('colonia'));
                         } else {
                           // Outras espécies podem ir para grupos genéricos (não matilha nem colónia)
-                          return grupo.tipo !== 'matilha' && grupo.tipo !== 'colonia';
+                          return grupo.tipo && 
+                            !grupo.tipo.toLowerCase().includes('matilha') && 
+                            !grupo.tipo.toLowerCase().includes('colónia') && 
+                            !grupo.tipo.toLowerCase().includes('colonia');
                         }
                       })
                       .map((grupo) => (
                         <SelectItem key={grupo.id} value={grupo.id}>
                           <div className="flex items-center">
-                            {grupo.tipo === 'matilha' ? '🐕' : grupo.tipo === 'colonia' ? '🐱' : '🏠'} {grupo.nome}
+                            {grupo.tipo && grupo.tipo.toLowerCase().includes('matilha') ? '🐕' : 
+                             grupo.tipo && (grupo.tipo.toLowerCase().includes('colónia') || grupo.tipo.toLowerCase().includes('colonia')) ? '🐱' : '🏠'} {grupo.nome}
                             <span className="text-xs text-gray-500 ml-2">({grupo.tipo})</span>
                           </div>
                         </SelectItem>
@@ -782,9 +724,40 @@ const NovoAnimal = () => {
                   id="observacoes"
                   value={formData.observacoes}
                   onChange={(e) => handleInputChange("observacoes", e.target.value)}
-                  placeholder="Informações adicionais, comportamento, estado de saúde inicial..."
+                  placeholder="Observações gerais sobre o animal..."
                   rows={4}
                 />
+              </div>
+
+              <div>
+                <Label htmlFor="url_fotografia">URL da Fotografia</Label>
+                <Input
+                  id="url_fotografia"
+                  type="url"
+                  value={formData.url_fotografia}
+                  onChange={(e) => handleInputChange("url_fotografia", e.target.value)}
+                  placeholder="https://exemplo.com/foto.jpg"
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  📸 URL da fotografia do animal (opcional)
+                </p>
+              </div>
+
+              <div>
+                <Label htmlFor="data_entrada">Data de Entrada *</Label>
+                <Input
+                  id="data_entrada"
+                  type="date"
+                  value={formData.data_entrada}
+                  onChange={(e) => handleInputChange("data_entrada", e.target.value)}
+                  className={errors.data_entrada ? "border-red-500" : ""}
+                />
+                {errors.data_entrada && (
+                  <p className="text-sm text-red-500 mt-1 flex items-center">
+                    <AlertCircle className="h-4 w-4 mr-1" />
+                    {errors.data_entrada}
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -797,8 +770,8 @@ const NovoAnimal = () => {
             <Button type="submit" disabled={loading}>
               {loading ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  A cadastrar...
+                  <AlertCircle className="h-4 w-4 mr-2 animate-spin" />
+                  Cadastrando...
                 </>
               ) : (
                 <>
