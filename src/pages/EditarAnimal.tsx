@@ -6,10 +6,23 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Save, AlertCircle } from "lucide-react";
+import { ArrowLeft, Save, AlertCircle, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Animal } from "@/types/animal";
 import { useToast } from "@/hooks/use-toast";
+
+interface Especie {
+  id: string;
+  nome: string;
+  icone?: string;
+  ativo: boolean;
+}
+
+interface Sexo {
+  id: string;
+  nome: string;
+  ativo: boolean;
+}
 
 const EditarAnimal = () => {
   const { id } = useParams<{ id: string }>();
@@ -18,6 +31,10 @@ const EditarAnimal = () => {
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
   const [animal, setAnimal] = useState<Animal | null>(null);
+  
+  // Estados para dados dinâmicos
+  const [especies, setEspecies] = useState<Especie[]>([]);
+  const [sexos, setSexos] = useState<Sexo[]>([]);
 
   const [formData, setFormData] = useState({
     nome: "",
@@ -44,6 +61,8 @@ const EditarAnimal = () => {
   useEffect(() => {
     if (id) {
       fetchAnimal();
+      fetchEspecies();
+      fetchSexos();
     }
   }, [id]);
 
@@ -103,6 +122,62 @@ const EditarAnimal = () => {
     }
   };
 
+  const fetchEspecies = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('especies')
+        .select('*')
+        .eq('ativo', true)
+        .order('nome');
+
+      if (error) throw error;
+      setEspecies(data || []);
+    } catch (error: any) {
+      console.error('Erro ao carregar espécies:', error);
+    }
+  };
+
+  const fetchSexos = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('sexos')
+        .select('*')
+        .eq('ativo', true)
+        .order('nome');
+
+      if (error) throw error;
+      setSexos(data || []);
+    } catch (error: any) {
+      console.error('Erro ao carregar sexos:', error);
+    }
+  };
+
+  // Função para obter ícone da espécie
+  const getEspecieIcon = (especie: Especie) => {
+    if (especie.icone) {
+      return especie.icone;
+    }
+    // Ícones padrão baseados no nome
+    const nome = especie.nome.toLowerCase();
+    if (nome.includes('cão') || nome.includes('cao')) return '🐕';
+    if (nome.includes('gato')) return '🐱';
+    if (nome.includes('coelho')) return '🐰';
+    if (nome.includes('hamster')) return '🐹';
+    if (nome.includes('pássaro') || nome.includes('passaro') || nome.includes('ave')) return '🐦';
+    if (nome.includes('peixe')) return '🐠';
+    if (nome.includes('tartaruga')) return '🐢';
+    return '🐾'; // Ícone padrão
+  };
+
+  // Função para obter ícone do sexo
+  const getSexoIcon = (sexo: Sexo) => {
+    const nome = sexo.nome.toLowerCase();
+    if (nome.includes('macho')) return '♂️';
+    if (nome.includes('fêmea') || nome.includes('femea')) return '♀️';
+    if (nome.includes('indeterminado')) return '❓';
+    return '';
+  };
+
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
@@ -149,58 +224,45 @@ const EditarAnimal = () => {
     setLoading(true);
 
     try {
-      // Calcular idade estimada se temos data de nascimento
-      let idadeEstimada = formData.idade_estimada ? parseInt(formData.idade_estimada) : null;
-      if (formData.data_nascimento && !formData.idade_estimada) {
-        const nascimento = new Date(formData.data_nascimento);
-        const hoje = new Date();
-        const diffTime = Math.abs(hoje.getTime() - nascimento.getTime());
-        const diffMonths = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 30.44));
-        idadeEstimada = diffMonths;
-      }
-
-      const dataToUpdate = {
+      const updateData = {
         nome: formData.nome.trim(),
         especie: formData.especie,
         raca: formData.raca.trim() || null,
         sexo: formData.sexo,
-        idade_estimada: idadeEstimada,
+        idade_estimada: formData.idade_estimada ? parseInt(formData.idade_estimada) : null,
+        data_nascimento: formData.data_nascimento || null,
         peso: formData.peso ? parseFloat(formData.peso) : null,
         cor: formData.cor.trim() || null,
         caracteristicas_fisicas: formData.caracteristicas_fisicas.trim() || null,
         transponder: formData.transponder.trim() || null,
-        data_entrada: formData.data_entrada,
         local_encontrado: formData.local_encontrado.trim() || null,
         estado: formData.estado,
         data_adocao: formData.data_adocao || null,
         adotante_nome: formData.adotante_nome.trim() || null,
         adotante_contacto: formData.adotante_contacto.trim() || null,
         observacoes: formData.observacoes.trim() || null,
+        data_entrada: formData.data_entrada,
         updated_at: new Date().toISOString()
       };
 
       const { error } = await supabase
         .from('animais')
-        .update(dataToUpdate)
+        .update(updateData)
         .eq('id', id);
 
-      if (error) {
-        console.error('Erro ao atualizar animal:', error);
-        throw error;
-      }
+      if (error) throw error;
 
       toast({
-        title: "Animal atualizado com sucesso!",
-        description: `${formData.nome} foi atualizado com sucesso`,
+        title: "✅ Sucesso!",
+        description: "Animal atualizado com sucesso",
       });
 
       navigate(`/animal/${id}`);
-
     } catch (error: any) {
       console.error('Erro ao atualizar animal:', error);
       toast({
-        title: "Erro ao atualizar animal",
-        description: error.message || "Ocorreu um erro inesperado",
+        title: "Erro",
+        description: "Não foi possível atualizar o animal",
         variant: "destructive",
       });
     } finally {
@@ -210,6 +272,7 @@ const EditarAnimal = () => {
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    
     // Limpar erro do campo quando o usuário começar a digitar
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: "" }));
@@ -220,8 +283,8 @@ const EditarAnimal = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-lg text-gray-600">A carregar dados do animal...</p>
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-emerald-600" />
+          <p className="text-gray-600">Carregando dados do animal...</p>
         </div>
       </div>
     );
@@ -231,9 +294,8 @@ const EditarAnimal = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Animal não encontrado</h2>
-          <p className="text-gray-600 mb-4">O animal solicitado não existe ou foi removido.</p>
-          <Button asChild>
+          <p className="text-gray-600">Animal não encontrado</p>
+          <Button asChild className="mt-4">
             <Link to="/animais">Voltar à Lista</Link>
           </Button>
         </div>
@@ -306,9 +368,11 @@ const EditarAnimal = () => {
                       <SelectValue placeholder="Selecione a espécie" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Cão">Cão</SelectItem>
-                      <SelectItem value="Gato">Gato</SelectItem>
-                      <SelectItem value="Outro">Outro</SelectItem>
+                      {especies.map((especie) => (
+                        <SelectItem key={especie.id} value={especie.nome}>
+                          {getEspecieIcon(especie)} {especie.nome}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   {errors.especie && (
@@ -336,8 +400,11 @@ const EditarAnimal = () => {
                       <SelectValue placeholder="Selecione o sexo" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Macho">Macho</SelectItem>
-                      <SelectItem value="Fêmea">Fêmea</SelectItem>
+                      {sexos.map((sexo) => (
+                        <SelectItem key={sexo.id} value={sexo.nome}>
+                          {getSexoIcon(sexo)} {sexo.nome}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   {errors.sexo && (
@@ -346,16 +413,6 @@ const EditarAnimal = () => {
                       {errors.sexo}
                     </p>
                   )}
-                </div>
-
-                <div>
-                  <Label htmlFor="data_nascimento">Data de Nascimento</Label>
-                  <Input
-                    id="data_nascimento"
-                    type="date"
-                    value={formData.data_nascimento}
-                    onChange={(e) => handleInputChange("data_nascimento", e.target.value)}
-                  />
                 </div>
 
                 <div>
@@ -373,6 +430,23 @@ const EditarAnimal = () => {
                     <p className="text-sm text-red-500 mt-1 flex items-center">
                       <AlertCircle className="h-4 w-4 mr-1" />
                       {errors.idade_estimada}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="data_nascimento">Data de Nascimento</Label>
+                  <Input
+                    id="data_nascimento"
+                    type="date"
+                    value={formData.data_nascimento}
+                    onChange={(e) => handleInputChange("data_nascimento", e.target.value)}
+                    className={errors.data_nascimento ? "border-red-500" : ""}
+                  />
+                  {errors.data_nascimento && (
+                    <p className="text-sm text-red-500 mt-1 flex items-center">
+                      <AlertCircle className="h-4 w-4 mr-1" />
+                      {errors.data_nascimento}
                     </p>
                   )}
                 </div>
@@ -398,50 +472,12 @@ const EditarAnimal = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="estado">Estado</Label>
-                  <Select value={formData.estado} onValueChange={(value) => handleInputChange("estado", value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o estado" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Ativo">Ativo</SelectItem>
-                      <SelectItem value="Adotado">Adotado</SelectItem>
-                      <SelectItem value="Óbito">Óbito</SelectItem>
-                      <SelectItem value="Não Adotável">Não Adotável</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Características Físicas */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Características Físicas</CardTitle>
-              <CardDescription>
-                Descrição física e identificação do animal
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
                   <Label htmlFor="cor">Cor</Label>
                   <Input
                     id="cor"
                     value={formData.cor}
                     onChange={(e) => handleInputChange("cor", e.target.value)}
-                    placeholder="Ex: Preto e branco"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="transponder">Transponder/Chip</Label>
-                  <Input
-                    id="transponder"
-                    value={formData.transponder}
-                    onChange={(e) => handleInputChange("transponder", e.target.value)}
-                    placeholder="Número do chip (se aplicável)"
+                    placeholder="Cor predominante"
                   />
                 </div>
               </div>
@@ -452,23 +488,56 @@ const EditarAnimal = () => {
                   id="caracteristicas_fisicas"
                   value={formData.caracteristicas_fisicas}
                   onChange={(e) => handleInputChange("caracteristicas_fisicas", e.target.value)}
-                  placeholder="Descreva características distintivas, cicatrizes, marcas especiais..."
+                  placeholder="Descreva características físicas distintivas..."
                   rows={3}
                 />
               </div>
             </CardContent>
           </Card>
 
-          {/* Informações de Entrada */}
+          {/* Informações Adicionais */}
           <Card>
             <CardHeader>
-              <CardTitle>Informações de Entrada e Estado</CardTitle>
-              <CardDescription>
-                Dados sobre como o animal chegou à associação e estado atual
-              </CardDescription>
+              <CardTitle>Informações Adicionais</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="transponder">Transponder/Chip</Label>
+                  <Input
+                    id="transponder"
+                    value={formData.transponder}
+                    onChange={(e) => handleInputChange("transponder", e.target.value)}
+                    placeholder="Número do chip (se aplicável)"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="local_encontrado">Local Encontrado</Label>
+                  <Input
+                    id="local_encontrado"
+                    value={formData.local_encontrado}
+                    onChange={(e) => handleInputChange("local_encontrado", e.target.value)}
+                    placeholder="Onde foi encontrado"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="estado">Estado *</Label>
+                  <Select value={formData.estado} onValueChange={(value) => handleInputChange("estado", value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o estado" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="disponivel">Disponível</SelectItem>
+                      <SelectItem value="adotado">Adotado</SelectItem>
+                      <SelectItem value="tratamento">Em Tratamento</SelectItem>
+                      <SelectItem value="quarentena">Quarentena</SelectItem>
+                      <SelectItem value="critico">Crítico</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div>
                   <Label htmlFor="data_entrada">Data de Entrada *</Label>
                   <Input
@@ -485,39 +554,31 @@ const EditarAnimal = () => {
                     </p>
                   )}
                 </div>
-
-                <div>
-                  <Label htmlFor="local_encontrado">Local Encontrado</Label>
-                  <Input
-                    id="local_encontrado"
-                    value={formData.local_encontrado}
-                    onChange={(e) => handleInputChange("local_encontrado", e.target.value)}
-                    placeholder="Ex: Rua das Flores, Lisboa"
-                  />
-                </div>
               </div>
 
-              {/* Campos de adoção - só mostrar se estado for "Adotado" */}
-              {formData.estado === 'Adotado' && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-green-50 rounded-lg">
-                  <div>
-                    <Label htmlFor="data_adocao">Data de Adoção</Label>
-                    <Input
-                      id="data_adocao"
-                      type="date"
-                      value={formData.data_adocao}
-                      onChange={(e) => handleInputChange("data_adocao", e.target.value)}
-                    />
-                  </div>
+              {/* Campos de Adoção */}
+              {formData.estado === "adotado" && (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="data_adocao">Data de Adoção</Label>
+                      <Input
+                        id="data_adocao"
+                        type="date"
+                        value={formData.data_adocao}
+                        onChange={(e) => handleInputChange("data_adocao", e.target.value)}
+                      />
+                    </div>
 
-                  <div>
-                    <Label htmlFor="adotante_nome">Nome do Adotante</Label>
-                    <Input
-                      id="adotante_nome"
-                      value={formData.adotante_nome}
-                      onChange={(e) => handleInputChange("adotante_nome", e.target.value)}
-                      placeholder="Nome completo"
-                    />
+                    <div>
+                      <Label htmlFor="adotante_nome">Nome do Adotante</Label>
+                      <Input
+                        id="adotante_nome"
+                        value={formData.adotante_nome}
+                        onChange={(e) => handleInputChange("adotante_nome", e.target.value)}
+                        placeholder="Nome completo do adotante"
+                      />
+                    </div>
                   </div>
 
                   <div>
@@ -526,10 +587,10 @@ const EditarAnimal = () => {
                       id="adotante_contacto"
                       value={formData.adotante_contacto}
                       onChange={(e) => handleInputChange("adotante_contacto", e.target.value)}
-                      placeholder="Telefone ou email"
+                      placeholder="Telefone ou email do adotante"
                     />
                   </div>
-                </div>
+                </>
               )}
 
               <div>
@@ -538,7 +599,7 @@ const EditarAnimal = () => {
                   id="observacoes"
                   value={formData.observacoes}
                   onChange={(e) => handleInputChange("observacoes", e.target.value)}
-                  placeholder="Informações adicionais, comportamento, estado de saúde..."
+                  placeholder="Observações gerais sobre o animal..."
                   rows={4}
                 />
               </div>
@@ -553,8 +614,8 @@ const EditarAnimal = () => {
             <Button type="submit" disabled={loading}>
               {loading ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  A atualizar...
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Salvando...
                 </>
               ) : (
                 <>

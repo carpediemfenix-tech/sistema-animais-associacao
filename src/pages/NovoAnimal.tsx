@@ -41,6 +41,32 @@ const NovoAnimal = () => {
   const [sexos, setSexos] = useState<any[]>([]);
   const [voluntarios, setVoluntarios] = useState<any[]>([]);
 
+  // Função para obter ícone da espécie
+  const getEspecieIcon = (especie: any) => {
+    if (especie.icone) {
+      return especie.icone;
+    }
+    // Ícones padrão baseados no nome
+    const nome = especie.nome.toLowerCase();
+    if (nome.includes('cão') || nome.includes('cao')) return '🐕';
+    if (nome.includes('gato')) return '🐱';
+    if (nome.includes('coelho')) return '🐰';
+    if (nome.includes('hamster')) return '🐹';
+    if (nome.includes('pássaro') || nome.includes('passaro') || nome.includes('ave')) return '🐦';
+    if (nome.includes('peixe')) return '🐠';
+    if (nome.includes('tartaruga')) return '🐢';
+    return '🐾'; // Ícone padrão
+  };
+
+  // Função para obter ícone do sexo
+  const getSexoIcon = (sexo: any) => {
+    const nome = sexo.nome.toLowerCase();
+    if (nome.includes('macho')) return '♂️';
+    if (nome.includes('fêmea') || nome.includes('femea')) return '♀️';
+    if (nome.includes('indeterminado')) return '❓';
+    return '';
+  };
+
   const generateNextProcessNumber = async (): Promise<string> => {
     try {
       console.log('Gerando número de processo...');
@@ -425,7 +451,7 @@ const NovoAnimal = () => {
                     <SelectContent>
                       {especies.map((especie) => (
                         <SelectItem key={especie.id} value={especie.nome}>
-                          {especie.nome}
+                          {getEspecieIcon(especie)} {especie.nome}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -457,7 +483,7 @@ const NovoAnimal = () => {
                     <SelectContent>
                       {sexos.map((sexo) => (
                         <SelectItem key={sexo.id} value={sexo.nome}>
-                          {sexo.nome}
+                          {getSexoIcon(sexo)} {sexo.nome}
                         </SelectItem>
                       ))}
                     </SelectContent>
