@@ -327,7 +327,7 @@ const NovoAnimal = () => {
         observacoes: formData.observacoes.trim() || null,
         grupo_id: formData.grupo_id || null,
         url_fotografia: formData.url_fotografia.trim() || null,
-        estado: 'disponivel',
+        estado: 'Ativo',
         arquivado: false,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
