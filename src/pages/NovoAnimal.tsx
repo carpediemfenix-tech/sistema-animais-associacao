@@ -214,31 +214,33 @@ const NovoAnimal = () => {
     }
   };
 
+  // CORREÇÃO: Implementação simples que funcionava antes
   const fetchVoluntarios = async () => {
     try {
+      console.log('🔄 Carregando voluntários...');
+      
       const { data, error } = await supabase
         .from('voluntarios')
-        .select(`
-          id,
-          nome,
-          especialidades_voluntarios!inner(
-            especialidades(nome)
-          )
-        `)
+        .select('*')
         .eq('ativo', true)
         .order('nome');
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro ao carregar voluntários:', error);
+        throw error;
+      }
 
-      // Processar dados para incluir especialidade
-      const voluntariosProcessados = data?.map(voluntario => ({
-        ...voluntario,
-        especialidade: voluntario.especialidades_voluntarios?.[0]?.especialidades?.nome || 'Sem especialidade'
-      })) || [];
-
-      setVoluntarios(voluntariosProcessados);
+      console.log('✅ Voluntários carregados:', data?.length || 0);
+      console.log('📋 Dados dos voluntários:', data);
+      setVoluntarios(data || []);
+      
     } catch (error: any) {
-      console.error('Erro ao carregar voluntários:', error);
+      console.error('❌ Erro geral ao carregar voluntários:', error);
+      toast({
+        title: "Erro ao carregar voluntários",
+        description: error.message || "Não foi possível carregar a lista de voluntários",
+        variant: "destructive",
+      });
     }
   };
 
@@ -646,7 +648,9 @@ const NovoAnimal = () => {
                       <SelectItem key={voluntario.id} value={voluntario.id}>
                         <div className="flex items-center">
                           <span className="font-medium">{voluntario.nome}</span>
-                          <span className="text-sm text-gray-500 ml-2">({voluntario.especialidade})</span>
+                          {voluntario.email && (
+                            <span className="text-sm text-gray-500 ml-2">({voluntario.email})</span>
+                          )}
                         </div>
                       </SelectItem>
                     ))}
