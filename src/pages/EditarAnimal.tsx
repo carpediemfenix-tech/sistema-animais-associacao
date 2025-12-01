@@ -1,16 +1,16 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useNavigate, useParams, Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Save, AlertCircle, Loader2 } from "lucide-react";
+import { ArrowLeft, Save, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Animal } from "@/types/animal";
 import { useToast } from "@/hooks/use-toast";
 
+// Interfaces para tipos de dados
 interface Especie {
   id: string;
   nome: string;
@@ -25,16 +25,11 @@ interface Sexo {
 }
 
 const EditarAnimal = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
-  const [animal, setAnimal] = useState<Animal | null>(null);
-  
-  // Estados para dados dinâmicos
-  const [especies, setEspecies] = useState<Especie[]>([]);
-  const [sexos, setSexos] = useState<Sexo[]>([]);
 
   const [formData, setFormData] = useState({
     nome: "",
@@ -57,6 +52,8 @@ const EditarAnimal = () => {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [especies, setEspecies] = useState<Especie[]>([]);
+  const [sexos, setSexos] = useState<Sexo[]>([]);
 
   useEffect(() => {
     if (id) {
@@ -253,16 +250,17 @@ const EditarAnimal = () => {
       if (error) throw error;
 
       toast({
-        title: "✅ Sucesso!",
-        description: "Animal atualizado com sucesso",
+        title: "Animal atualizado com sucesso!",
+        description: `${formData.nome} foi atualizado`,
       });
 
       navigate(`/animal/${id}`);
+
     } catch (error: any) {
       console.error('Erro ao atualizar animal:', error);
       toast({
-        title: "Erro",
-        description: "Não foi possível atualizar o animal",
+        title: "Erro ao atualizar animal",
+        description: error.message || "Ocorreu um erro inesperado",
         variant: "destructive",
       });
     } finally {
@@ -283,21 +281,8 @@ const EditarAnimal = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-emerald-600" />
-          <p className="text-gray-600">Carregando dados do animal...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!animal) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-600">Animal não encontrado</p>
-          <Button asChild className="mt-4">
-            <Link to="/animais">Voltar à Lista</Link>
-          </Button>
+          <AlertCircle className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p>Carregando dados do animal...</p>
         </div>
       </div>
     );
@@ -324,7 +309,7 @@ const EditarAnimal = () => {
                 />
                 <div>
                   <h1 className="text-xl font-bold text-gray-900">Editar Animal</h1>
-                  <p className="text-sm text-gray-500">{animal.nome} - {animal.numero_processo}</p>
+                  <p className="text-sm text-gray-500">Altere as informações do animal</p>
                 </div>
               </div>
             </div>
@@ -529,11 +514,10 @@ const EditarAnimal = () => {
                       <SelectValue placeholder="Selecione o estado" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="disponivel">Disponível</SelectItem>
-                      <SelectItem value="adotado">Adotado</SelectItem>
-                      <SelectItem value="tratamento">Em Tratamento</SelectItem>
-                      <SelectItem value="quarentena">Quarentena</SelectItem>
-                      <SelectItem value="critico">Crítico</SelectItem>
+                      <SelectItem value="Ativo">Ativo</SelectItem>
+                      <SelectItem value="Adotado">Adotado</SelectItem>
+                      <SelectItem value="Óbito">Óbito</SelectItem>
+                      <SelectItem value="Não Adotável">Não Adotável</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -557,7 +541,7 @@ const EditarAnimal = () => {
               </div>
 
               {/* Campos de Adoção */}
-              {formData.estado === "adotado" && (
+              {formData.estado === "Adotado" && (
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -614,7 +598,7 @@ const EditarAnimal = () => {
             <Button type="submit" disabled={loading}>
               {loading ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <AlertCircle className="h-4 w-4 mr-2 animate-spin" />
                   Salvando...
                 </>
               ) : (
