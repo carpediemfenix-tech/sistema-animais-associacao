@@ -359,6 +359,28 @@ const AnimalIntervencoes = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         
+        {/* Campos em Destaque */}
+        <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100">
+          <CardContent className="p-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-blue-700 font-semibold flex items-center">
+                  <span className="mr-2">📋</span>
+                  Número do Processo
+                </label>
+                <p className="text-lg font-bold text-blue-900 mt-1">{animal.numero_processo || "N/A"}</p>
+              </div>
+              <div>
+                <label className="text-blue-700 font-semibold flex items-center">
+                  <span className="mr-2">🐶</span>
+                  Nome do Animal
+                </label>
+                <p className="text-lg font-bold text-blue-900 mt-1">{animal.nome}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Navegação */}
         <div className="flex items-center space-x-4">
           <Link to={`/animal/${id}`}>
