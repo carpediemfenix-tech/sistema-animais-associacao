@@ -43,7 +43,10 @@ const AnimalDetail = () => {
 
       const { data, error } = await supabase
         .from('animais')
-        .select('*')
+        .select(`
+          *,
+          grupos(nome, tipo)
+        `)
         .eq('id', id)
         .single();
 
@@ -167,6 +170,24 @@ const AnimalDetail = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
+            {/* Campos em Destaque */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 p-4 bg-blue-100 rounded-lg border border-blue-300">
+              <div>
+                <label className="text-blue-700 font-semibold flex items-center">
+                  <span className="mr-2">📋</span>
+                  Número do Processo
+                </label>
+                <p className="text-lg font-bold text-blue-900 mt-1">{animal.numero_processo || "N/A"}</p>
+              </div>
+              <div>
+                <label className="text-blue-700 font-semibold flex items-center">
+                  <span className="mr-2">🏠</span>
+                  Grupo
+                </label>
+                <p className="text-lg font-bold text-blue-900 mt-1">{animal.grupos?.nome || "Sem grupo"}</p>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <div>
                 <label className="text-orange-700 font-medium">Nome</label>
