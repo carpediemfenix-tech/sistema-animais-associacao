@@ -333,15 +333,39 @@ const NovoAnimal = () => {
         updated_at: new Date().toISOString()
       };
 
+      // LOGS DETALHADOS PARA DIAGNÓSTICO
+      console.log('🔍 === DIAGNÓSTICO DE CADASTRO ===');
+      console.log('📋 Dados do formulário:', formData);
+      console.log('📋 Dados para inserção:', animalData);
+      console.log('📅 Campo data_nascimento:', {
+        original: formData.data_nascimento,
+        processado: animalData.data_nascimento,
+        tipo: typeof animalData.data_nascimento,
+        vazio: !animalData.data_nascimento,
+        valor: animalData.data_nascimento
+      });
+      console.log('🔢 Número de campos:', Object.keys(animalData).length);
+      console.log('📋 Campos do objeto:', Object.keys(animalData));
+      console.log('🎯 Tentando inserir na tabela animais...');
+
       const { data, error } = await supabase
         .from('animais')
         .insert([animalData])
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ === ERRO DETALHADO ===');
+        console.error('📋 Erro completo:', error);
+        console.error('📋 Mensagem:', error.message);
+        console.error('📋 Código:', error.code);
+        console.error('📋 Detalhes:', error.details);
+        console.error('📋 Hint:', error.hint);
+        throw error;
+      }
 
-      console.log('Animal cadastrado com sucesso:', data);
+      console.log('✅ === SUCESSO ===');
+      console.log('📋 Animal criado:', data);
 
       // Criar responsabilidade do voluntário
       const responsabilidadeData = {
@@ -379,7 +403,11 @@ const NovoAnimal = () => {
       navigate(`/animal/${data.id}`);
 
     } catch (error: any) {
-      console.error('Erro ao cadastrar animal:', error);
+      console.error('❌ === ERRO GERAL DE CADASTRO ===');
+      console.error('📋 Erro capturado:', error);
+      console.error('📋 Mensagem do erro:', error.message);
+      console.error('📋 Stack trace:', error.stack);
+      
       toast({
         title: "Erro ao cadastrar animal",
         description: error.message || "Ocorreu um erro inesperado",
@@ -633,7 +661,7 @@ const NovoAnimal = () => {
                 </div>
               </div>
 
-              {/* Voluntário Responsável - OBRIGATÓRIO */}
+              {/* Voluntário Responsável - CORRIGIDO */}
               <div>
                 <Label htmlFor="voluntario_responsavel_id">Voluntário Responsável *</Label>
                 <Select 
