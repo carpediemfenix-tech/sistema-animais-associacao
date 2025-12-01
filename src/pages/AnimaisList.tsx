@@ -49,6 +49,29 @@ interface Animal {
   };
 }
 
+// Funções de coloração por sexo
+const getCardColorBySex = (sexo: string) => {
+  if (sexo === 'Macho') return 'border-blue-200 bg-blue-50';
+  if (sexo === 'Fêmea') return 'border-pink-200 bg-pink-50';
+  if (sexo === 'Indeterminado') return 'border-yellow-200 bg-yellow-50';
+  return 'border-gray-200 bg-gray-50';
+};
+
+const getSexBadge = (sexo: string) => {
+  if (sexo === 'Macho') return 'bg-blue-600 text-white';
+  if (sexo === 'Fêmea') return 'bg-pink-600 text-white';
+  if (sexo === 'Indeterminado') return 'bg-yellow-600 text-white';
+  return 'bg-gray-600 text-white';
+};
+
+const getEstadoBadge = (estado: string) => {
+  if (estado === 'Ativo') return 'bg-green-600 text-white';
+  if (estado === 'Adotado') return 'bg-blue-600 text-white';
+  if (estado === 'Óbito') return 'bg-red-600 text-white';
+  if (estado === 'Não Adotável') return 'bg-orange-600 text-white';
+  return 'bg-gray-600 text-white';
+};
+
 const AnimaisList: React.FC = () => {
   const [animais, setAnimais] = useState<Animal[]>([]);
   const [loading, setLoading] = useState(true);
@@ -316,7 +339,7 @@ const AnimaisList: React.FC = () => {
                           {animal.nome}
                         </CardTitle>
                         <Badge className={getSexBadge(animal.sexo)}>
-                          {animal.sexo === 'Macho' ? '♂️' : '♀️'} {animal.sexo}
+                          {animal.sexo === 'Macho' ? '♂️' : animal.sexo === 'Fêmea' ? '♀️' : '❓'} {animal.sexo}
                         </Badge>
                       </div>
                       <CardDescription className="text-sm text-gray-600">
