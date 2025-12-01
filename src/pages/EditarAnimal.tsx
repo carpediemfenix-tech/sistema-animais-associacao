@@ -75,8 +75,6 @@ const EditarAnimal = () => {
 
       if (error) throw error;
 
-      setAnimal(data);
-      
       // Calcular data de nascimento aproximada se só temos idade
       let dataNascimento = "";
       if (data.idade_estimada && !data.data_nascimento) {
