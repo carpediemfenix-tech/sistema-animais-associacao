@@ -709,18 +709,18 @@ const NovoAnimal = () => {
                     <SelectItem value="none">Nenhum grupo</SelectItem>
                     {grupos
                       .filter(grupo => {
-                        // NOVA LÓGICA: Mostrar todos os grupos para Cães e Gatos, excluir matilhas/colónias para outras espécies
+                        // LÓGICA CORRIGIDA: Exclusões específicas por espécie
                         if (!formData.especie) return true;
                         
-                        if (formData.especie === 'Cão' || formData.especie === 'Gato') {
-                          // Cães e Gatos podem escolher QUALQUER grupo (incluindo especiais, sócios, etc.)
-                          return true;
+                        if (formData.especie === 'Cão') {
+                          // Cães: todos os grupos EXCETO colónias
+                          return !(grupo.tipo && (grupo.tipo.toLowerCase().includes('colónia') || grupo.tipo.toLowerCase().includes('colonia')));
+                        } else if (formData.especie === 'Gato') {
+                          // Gatos: todos os grupos EXCETO matilhas
+                          return !(grupo.tipo && grupo.tipo.toLowerCase().includes('matilha'));
                         } else {
-                          // Outras espécies: mostrar todos EXCETO matilhas e colónias
-                          return grupo.tipo && 
-                            !grupo.tipo.toLowerCase().includes('matilha') && 
-                            !grupo.tipo.toLowerCase().includes('colónia') && 
-                            !grupo.tipo.toLowerCase().includes('colonia');
+                          // Outras espécies: TODOS os grupos (sem exclusões)
+                          return true;
                         }
                       })
                       .map((grupo) => (
@@ -738,10 +738,10 @@ const NovoAnimal = () => {
                 {formData.especie && grupos.length > 0 && (
                   <p className="text-xs text-gray-500 mt-1">
                     {formData.especie === 'Cão' 
-                      ? '🐕 Sugerimos matilha para cães, mas pode escolher qualquer grupo'
+                      ? '🐕 Cães podem escolher todos os grupos exceto colónias'
                       : formData.especie === 'Gato'
-                      ? '🐱 Sugerimos colónia para gatos, mas pode escolher qualquer grupo'
-                      : '🏠 Esta espécie pode ser associada a grupos especiais ou sócios'
+                      ? '🐱 Gatos podem escolher todos os grupos exceto matilhas'
+                      : '🏠 Esta espécie pode escolher qualquer grupo disponível'
                     }
                   </p>
                 )}
