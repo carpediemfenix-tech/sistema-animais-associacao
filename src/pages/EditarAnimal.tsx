@@ -54,6 +54,8 @@ const EditarAnimal = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [especies, setEspecies] = useState<Especie[]>([]);
   const [sexos, setSexos] = useState<Sexo[]>([]);
+  const [numeroProcesso, setNumeroProcesso] = useState<string>("");
+  const [grupoNome, setGrupoNome] = useState<string>("");
 
   useEffect(() => {
     if (id) {
@@ -69,11 +71,18 @@ const EditarAnimal = () => {
       
       const { data, error } = await supabase
         .from('animais')
-        .select('*')
+        .select(`
+          *,
+          grupos(nome, tipo)
+        `)
         .eq('id', id)
         .single();
 
       if (error) throw error;
+
+      // Definir número do processo e grupo
+      setNumeroProcesso(data.numero_processo || "N/A");
+      setGrupoNome(data.grupos?.nome || "Sem grupo");
 
       // Calcular data de nascimento aproximada se só temos idade
       let dataNascimento = "";
@@ -326,6 +335,24 @@ const EditarAnimal = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Campos em Destaque */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <div>
+                  <Label className="text-blue-700 font-semibold flex items-center">
+                    <span className="mr-2">📋</span>
+                    Número do Processo
+                  </Label>
+                  <div className="text-lg font-bold text-blue-900 mt-1">{numeroProcesso}</div>
+                </div>
+                <div>
+                  <Label className="text-blue-700 font-semibold flex items-center">
+                    <span className="mr-2">🏠</span>
+                    Grupo
+                  </Label>
+                  <div className="text-lg font-bold text-blue-900 mt-1">{grupoNome}</div>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="nome">Nome *</Label>
