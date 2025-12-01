@@ -709,17 +709,14 @@ const NovoAnimal = () => {
                     <SelectItem value="none">Nenhum grupo</SelectItem>
                     {grupos
                       .filter(grupo => {
-                        // Filtrar grupos compatíveis com a espécie - LÓGICA CORRIGIDA
+                        // NOVA LÓGICA: Mostrar todos os grupos para Cães e Gatos, excluir matilhas/colónias para outras espécies
                         if (!formData.especie) return true;
                         
-                        if (formData.especie === 'Cão') {
-                          // Cães podem ir para matilhas (tipo contém "Matilha")
-                          return grupo.tipo && grupo.tipo.toLowerCase().includes('matilha');
-                        } else if (formData.especie === 'Gato') {
-                          // Gatos podem ir para colónias (tipo contém "colónia" ou "colonia")
-                          return grupo.tipo && (grupo.tipo.toLowerCase().includes('colónia') || grupo.tipo.toLowerCase().includes('colonia'));
+                        if (formData.especie === 'Cão' || formData.especie === 'Gato') {
+                          // Cães e Gatos podem escolher QUALQUER grupo (incluindo especiais, sócios, etc.)
+                          return true;
                         } else {
-                          // Outras espécies podem ir para grupos genéricos (não matilha nem colónia)
+                          // Outras espécies: mostrar todos EXCETO matilhas e colónias
                           return grupo.tipo && 
                             !grupo.tipo.toLowerCase().includes('matilha') && 
                             !grupo.tipo.toLowerCase().includes('colónia') && 
@@ -741,10 +738,10 @@ const NovoAnimal = () => {
                 {formData.especie && grupos.length > 0 && (
                   <p className="text-xs text-gray-500 mt-1">
                     {formData.especie === 'Cão' 
-                      ? '🐕 Cães podem ser associados a matilhas'
+                      ? '🐕 Sugerimos matilha para cães, mas pode escolher qualquer grupo'
                       : formData.especie === 'Gato'
-                      ? '🐱 Gatos podem ser associados a colónias'
-                      : '🏠 Esta espécie pode ser associada a grupos genéricos'
+                      ? '🐱 Sugerimos colónia para gatos, mas pode escolher qualquer grupo'
+                      : '🏠 Esta espécie pode ser associada a grupos especiais ou sócios'
                     }
                   </p>
                 )}
