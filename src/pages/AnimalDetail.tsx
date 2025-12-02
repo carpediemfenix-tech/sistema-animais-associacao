@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,7 +14,9 @@ import {
   MapPin,
   Users,
   DollarSign,
-  ExternalLink
+  ExternalLink,
+  Edit,
+  Archive
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Animal } from "@/types/animal";
@@ -28,6 +30,7 @@ const AnimalDetail = () => {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const { hasPermission } = useAuth();
+  const navigate = useNavigate();
 
   // Função básica para carregar dados do animal
   const fetchAnimalData = async () => {
@@ -67,6 +70,53 @@ const AnimalDetail = () => {
       setError('Erro inesperado ao carregar animal');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Função para arquivar animal
+  const handleArquivar = async () => {
+    if (!animal) return;
+    
+    const confirmArchive = confirm(
+      `Tem certeza que deseja arquivar o animal "${animal.nome}"?\n\n` +
+      `O animal será removido da gestão ativa e movido para os arquivos.`
+    );
+    
+    if (!confirmArchive) return;
+
+    const motivo = prompt("Motivo do arquivamento (opcional):");
+
+    try {
+      console.log('📦 [ARQUIVO] Arquivando animal:', animal.nome);
+
+      const { error } = await supabase
+        .from('animais')
+        .update({
+          arquivado: true,
+          data_arquivamento: new Date().toISOString(),
+          motivo_arquivamento: motivo || null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id);
+
+      if (error) {
+        console.error('❌ [ARQUIVO] Erro ao arquivar:', error);
+        throw error;
+      }
+
+      toast({
+        title: "✅ Animal arquivado",
+        description: `${animal.nome} foi arquivado com sucesso`,
+      });
+
+      navigate('/animais');
+    } catch (error: any) {
+      console.error('💥 [ARQUIVO] Erro:', error);
+      toast({
+        title: "❌ Erro",
+        description: "Não foi possível arquivar o animal",
+        variant: "destructive",
+      });
     }
   };
 
@@ -154,6 +204,27 @@ const AnimalDetail = () => {
               }`}>
                 {animal.estado}
               </Badge>
+              
+              {/* Botões de Ação */}
+              {hasPermission('admin') && (
+                <>
+                  <Link to={`/animal/${id}/editar`}>
+                    <Button variant="outline" size="sm">
+                      <Edit className="h-4 w-4 mr-2" />
+                      Editar
+                    </Button>
+                  </Link>
+                  
+                  <Button 
+                    variant="destructive" 
+                    size="sm"
+                    onClick={handleArquivar}
+                  >
+                    <Archive className="h-4 w-4 mr-2" />
+                    Arquivar
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>
