@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Save, AlertCircle } from "lucide-react";
+import { ArrowLeft, Save, AlertCircle, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -56,12 +56,16 @@ const EditarAnimal = () => {
   const [sexos, setSexos] = useState<Sexo[]>([]);
   const [numeroProcesso, setNumeroProcesso] = useState<string>("");
   const [grupoNome, setGrupoNome] = useState<string>("");
+  const [grupos, setGrupos] = useState<any[]>([]);
+  const [grupoAtual, setGrupoAtual] = useState<any>(null);
+  const [incompatibilityAlert, setIncompatibilityAlert] = useState<{show: boolean, message: string}>({show: false, message: ""});
 
   useEffect(() => {
     if (id) {
       fetchAnimal();
       fetchEspecies();
       fetchSexos();
+      fetchGrupos();
     }
   }, [id]);
 
@@ -83,6 +87,7 @@ const EditarAnimal = () => {
       // Definir número do processo e grupo
       setNumeroProcesso(data.numero_processo || "N/A");
       setGrupoNome(data.grupos?.nome || "Sem grupo");
+      setGrupoAtual(data.grupos || null);
 
       // Calcular data de nascimento aproximada se só temos idade
       let dataNascimento = "";
@@ -156,6 +161,51 @@ const EditarAnimal = () => {
     }
   };
 
+  const fetchGrupos = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('grupos')
+        .select('*')
+        .eq('ativo', true)
+        .order('nome');
+
+      if (error) throw error;
+      setGrupos(data || []);
+    } catch (error: any) {
+      console.error('Erro ao carregar grupos:', error);
+    }
+  };
+
+  // Funções de validação de grupos
+  const isGrupoIncompativel = (especie: string, grupo: any) => {
+    if (!grupo || !grupo.tipo) return false;
+    
+    const tipoGrupo = grupo.tipo.toLowerCase();
+    
+    if (especie === 'Cão') {
+      return tipoGrupo.includes('colónia') || tipoGrupo.includes('colonia');
+    } else if (especie === 'Gato') {
+      return tipoGrupo.includes('matilha');
+    } else {
+      return tipoGrupo.includes('matilha') || 
+             tipoGrupo.includes('colónia') || 
+             tipoGrupo.includes('colonia');
+    }
+  };
+
+  const getIncompatibilityMessage = (especie: string, grupoAnterior: any) => {
+    const nomeGrupo = grupoAnterior?.nome || 'grupo atual';
+    const tipoGrupo = grupoAnterior?.tipo || '';
+    
+    if (especie === 'Cão') {
+      return `🐕 Cão não pode estar em "${nomeGrupo}" (${tipoGrupo}). Selecione Matilha ou outro grupo adequado.`;
+    } else if (especie === 'Gato') {
+      return `🐱 Gato não pode estar em "${nomeGrupo}" (${tipoGrupo}). Selecione Colónia ou outro grupo adequado.`;
+    } else {
+      return `🐾 ${especie} não pode estar em "${nomeGrupo}" (${tipoGrupo}). Selecione um grupo adequado.`;
+    }
+  };
+
   // Função para obter ícone da espécie
   const getEspecieIcon = (especie: Especie) => {
     if (especie.icone) {
@@ -207,6 +257,11 @@ const EditarAnimal = () => {
 
     if (formData.peso && (isNaN(Number(formData.peso)) || Number(formData.peso) <= 0)) {
       newErrors.peso = "Peso deve ser um número válido maior que zero";
+    }
+
+    // Validação específica de grupo após mudança de espécie
+    if (incompatibilityAlert.show && !formData.grupo_id) {
+      newErrors.grupo_id = "Selecione um grupo adequado para esta espécie";
     }
 
     setErrors(newErrors);
@@ -276,7 +331,30 @@ const EditarAnimal = () => {
   };
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    // Validação especial para mudança de espécie
+    if (field === 'especie') {
+      const especieAnterior = formData.especie;
+      
+      // Atualizar espécie
+      setFormData(prev => ({ ...prev, [field]: value }));
+      
+      // Verificar incompatibilidade apenas se mudou de espécie
+      if (especieAnterior !== value && grupoAtual) {
+        if (isGrupoIncompativel(value, grupoAtual)) {
+          // Limpar grupo
+          setFormData(prev => ({ ...prev, grupo_id: '' }));
+          setGrupoAtual(null);
+          
+          // Mostrar aviso
+          setIncompatibilityAlert({
+            show: true,
+            message: getIncompatibilityMessage(value, grupoAtual)
+          });
+        }
+      }
+    } else {
+      setFormData(prev => ({ ...prev, [field]: value }));
+    }
     
     // Limpar erro do campo quando o usuário começar a digitar
     if (errors[field]) {
@@ -325,6 +403,27 @@ const EditarAnimal = () => {
       </div>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Alerta de Incompatibilidade */}
+        {incompatibilityAlert.show && (
+          <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div className="flex items-start">
+              <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5 mr-3" />
+              <div className="flex-1">
+                <h4 className="text-yellow-800 font-semibold">Grupo Incompatível</h4>
+                <p className="text-yellow-700 text-sm mt-1">{incompatibilityAlert.message}</p>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="mt-2"
+                  onClick={() => setIncompatibilityAlert({show: false, message: ""})}
+                >
+                  Entendi
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+        
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Informações Básicas */}
           <Card>
@@ -545,6 +644,63 @@ const EditarAnimal = () => {
                       <SelectItem value="Não Adotável">Não Adotável</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="grupo_id">Grupo (Matilha/Colónia)</Label>
+                  <Select 
+                    value={formData.grupo_id || "none"} 
+                    onValueChange={(value) => handleInputChange("grupo_id", value === "none" ? "" : value)}
+                  >
+                    <SelectTrigger className={errors.grupo_id ? "border-red-500" : ""}>
+                      <SelectValue placeholder="Selecionar grupo (opcional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Nenhum grupo</SelectItem>
+                      {grupos
+                        .filter(grupo => {
+                          // LÓGICA: Exclusões específicas por espécie
+                          if (!formData.especie) return true;
+                          
+                          if (formData.especie === 'Cão') {
+                            // Cães: todos os grupos EXCETO colónias
+                            return !(grupo.tipo && (grupo.tipo.toLowerCase().includes('colónia') || grupo.tipo.toLowerCase().includes('colonia')));
+                          } else if (formData.especie === 'Gato') {
+                            // Gatos: todos os grupos EXCETO matilhas
+                            return !(grupo.tipo && grupo.tipo.toLowerCase().includes('matilha'));
+                          } else {
+                            // Outras espécies: TODOS os grupos (sem exclusões)
+                            return true;
+                          }
+                        })
+                        .map((grupo) => (
+                          <SelectItem key={grupo.id} value={grupo.id}>
+                            <div className="flex items-center">
+                              {grupo.tipo && grupo.tipo.toLowerCase().includes('matilha') ? '🐕' : 
+                               grupo.tipo && (grupo.tipo.toLowerCase().includes('colónia') || grupo.tipo.toLowerCase().includes('colonia')) ? '🐱' : '🏠'} {grupo.nome}
+                              <span className="text-xs text-gray-500 ml-2">({grupo.tipo})</span>
+                            </div>
+                          </SelectItem>
+                        ))
+                      }
+                    </SelectContent>
+                  </Select>
+                  {errors.grupo_id && (
+                    <p className="text-sm text-red-500 mt-1 flex items-center">
+                      <AlertCircle className="h-4 w-4 mr-1" />
+                      {errors.grupo_id}
+                    </p>
+                  )}
+                  {formData.especie && grupos.length > 0 && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      {formData.especie === 'Cão' 
+                        ? '🐕 Cães podem escolher todos os grupos exceto colónias'
+                        : formData.especie === 'Gato'
+                        ? '🐱 Gatos podem escolher todos os grupos exceto matilhas'
+                        : '🏠 Esta espécie pode escolher qualquer grupo disponível'
+                      }
+                    </p>
+                  )}
                 </div>
 
                 <div>
