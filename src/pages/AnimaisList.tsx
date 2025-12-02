@@ -80,6 +80,14 @@ const AnimaisList: React.FC = () => {
   const [filtroEspecie, setFiltroEspecie] = useState("todas");
   const [filtroEstado, setFiltroEstado] = useState("todos");
   const [filtroSexo, setFiltroSexo] = useState("todos");
+  const [filtroGrupo, setFiltroGrupo] = useState("todos");
+  const [filtroIdade, setFiltroIdade] = useState("todas");
+  
+  // Estados para dados dinâmicos
+  const [especies, setEspecies] = useState<any[]>([]);
+  const [sexos, setSexos] = useState<any[]>([]);
+  const [grupos, setGrupos] = useState<any[]>([]);
+  
   const { toast } = useToast();
 
   const fetchAnimais = async () => {
@@ -120,24 +128,56 @@ const AnimaisList: React.FC = () => {
     }
   };
 
+  // Carregar dados dinâmicos para filtros
+  const loadFilterData = async () => {
+    try {
+      const [especiesData, sexosData, gruposData] = await Promise.all([
+        supabase.from('especies').select('nome').eq('ativo', true).order('nome'),
+        supabase.from('sexos').select('nome').eq('ativo', true).order('nome'),
+        supabase.from('grupos').select('id, nome, tipo').eq('ativo', true).order('nome')
+      ]);
+      
+      setEspecies(especiesData.data || []);
+      setSexos(sexosData.data || []);
+      setGrupos(gruposData.data || []);
+    } catch (error) {
+      console.error('Erro ao carregar dados de filtros:', error);
+    }
+  };
+
   useEffect(() => {
     fetchAnimais();
+    loadFilterData();
   }, []);
 
   const filteredAnimais = animais.filter(animal => {
     const matchesSearch = animal.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          animal.especie.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (animal.raca && animal.raca.toLowerCase().includes(searchTerm.toLowerCase())) ||
-                         (animal.numero_processo && animal.numero_processo.toLowerCase().includes(searchTerm.toLowerCase()));
+                         (animal.numero_processo && animal.numero_processo.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                         (animal.grupos?.nome && animal.grupos.nome.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                         (animal.cor && animal.cor.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                         (animal.local_encontrado && animal.local_encontrado.toLowerCase().includes(searchTerm.toLowerCase()));
     
-    const matchesEspecie = filtroEspecie === "todas" || 
-                          (filtroEspecie === "outros" && animal.especie !== "Cão" && animal.especie !== "Gato") ||
-                          animal.especie === filtroEspecie;
-    
+    const matchesEspecie = filtroEspecie === "todas" || animal.especie === filtroEspecie;
     const matchesEstado = filtroEstado === "todos" || animal.estado === filtroEstado;
     const matchesSexo = filtroSexo === "todos" || animal.sexo === filtroSexo;
+    const matchesGrupo = filtroGrupo === "todos" || 
+                        (filtroGrupo === "sem_grupo" && !animal.grupos?.nome) ||
+                        animal.grupos?.nome === filtroGrupo;
+    
+    const matchesIdade = filtroIdade === "todas" || (() => {
+      const idade = animal.idade_estimada || 0;
+      switch (filtroIdade) {
+        case "filhote": return idade <= 12;
+        case "jovem": return idade > 12 && idade <= 36;
+        case "adulto": return idade > 36 && idade <= 84;
+        case "senior": return idade > 84;
+        default: return true;
+      }
+    })();
 
-    return matchesSearch && matchesEspecie && matchesEstado && matchesSexo;
+    return matchesSearch && matchesEspecie && matchesEstado && matchesSexo && matchesGrupo && matchesIdade;
   });
 
   const getEstadoBadge = (estado: string) => {
@@ -232,16 +272,18 @@ const AnimaisList: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-              <div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Pesquisa Expandida */}
+              <div className="lg:col-span-3">
                 <Input
-                  placeholder="Pesquisar por nome, espécie, raça ou nº processo..."
+                  placeholder="Pesquisar por nome, espécie, raça, processo, grupo, cor, local..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full"
                 />
               </div>
               
+              {/* Espécie Dinâmica */}
               <div>
                 <Select value={filtroEspecie} onValueChange={setFiltroEspecie}>
                   <SelectTrigger>
@@ -249,13 +291,16 @@ const AnimaisList: React.FC = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="todas">Todas as espécies</SelectItem>
-                    <SelectItem value="Cão">🐕 Cão</SelectItem>
-                    <SelectItem value="Gato">🐱 Gato</SelectItem>
-                    <SelectItem value="outros">🐾 Outros</SelectItem>
+                    {especies.map((especie) => (
+                      <SelectItem key={especie.nome} value={especie.nome}>
+                        {especie.nome}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
 
+              {/* Estado Corrigido */}
               <div>
                 <Select value={filtroEstado} onValueChange={setFiltroEstado}>
                   <SelectTrigger>
@@ -263,15 +308,15 @@ const AnimaisList: React.FC = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="todos">Todos os estados</SelectItem>
-                    <SelectItem value="disponivel">Disponível</SelectItem>
-                    <SelectItem value="adotado">Adotado</SelectItem>
-                    <SelectItem value="tratamento">Em Tratamento</SelectItem>
-                    <SelectItem value="quarentena">Quarentena</SelectItem>
-                    <SelectItem value="critico">Crítico</SelectItem>
+                    <SelectItem value="Ativo">🟢 Ativo</SelectItem>
+                    <SelectItem value="Adotado">🏠 Adotado</SelectItem>
+                    <SelectItem value="Óbito">💀 Óbito</SelectItem>
+                    <SelectItem value="Não Adotável">⚠️ Não Adotável</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
+              {/* Sexo Dinâmico */}
               <div>
                 <Select value={filtroSexo} onValueChange={setFiltroSexo}>
                   <SelectTrigger>
@@ -279,12 +324,53 @@ const AnimaisList: React.FC = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="todos">Todos</SelectItem>
-                    <SelectItem value="Macho">♂️ Macho</SelectItem>
-                    <SelectItem value="Fêmea">♀️ Fêmea</SelectItem>
+                    {sexos.map((sexo) => (
+                      <SelectItem key={sexo.nome} value={sexo.nome}>
+                        {sexo.nome === 'Macho' && '♂️'}
+                        {sexo.nome === 'Fêmea' && '♀️'}
+                        {sexo.nome === 'Indeterminado' && '❓'}
+                        {' '}{sexo.nome}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
 
+              {/* Grupo Dinâmico */}
+              <div>
+                <Select value={filtroGrupo} onValueChange={setFiltroGrupo}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Grupo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos os grupos</SelectItem>
+                    <SelectItem value="sem_grupo">Sem grupo</SelectItem>
+                    {grupos.map((grupo) => (
+                      <SelectItem key={grupo.id} value={grupo.nome}>
+                        {grupo.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Idade */}
+              <div>
+                <Select value={filtroIdade} onValueChange={setFiltroIdade}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Idade" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todas">Todas as idades</SelectItem>
+                    <SelectItem value="filhote">🐶 Filhote (0-1 ano)</SelectItem>
+                    <SelectItem value="jovem">🐕 Jovem (1-3 anos)</SelectItem>
+                    <SelectItem value="adulto">🐈 Adulto (3-7 anos)</SelectItem>
+                    <SelectItem value="senior">🐕‍🦳 Sénior (7+ anos)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Botão Limpar */}
               <div>
                 <Button 
                   variant="outline" 
@@ -293,10 +379,12 @@ const AnimaisList: React.FC = () => {
                     setFiltroEspecie("todas");
                     setFiltroEstado("todos");
                     setFiltroSexo("todos");
+                    setFiltroGrupo("todos");
+                    setFiltroIdade("todas");
                   }}
                   className="w-full"
                 >
-                  Limpar Filtros
+                  🗑️ Limpar Filtros
                 </Button>
               </div>
             </div>

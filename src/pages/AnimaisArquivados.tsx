@@ -33,7 +33,14 @@ const AnimaisArquivados = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterEspecie, setFilterEspecie] = useState("todos");
+  const [filterEstado, setFilterEstado] = useState("todos");
+  const [filterSexo, setFilterSexo] = useState("todos");
+  const [filterDataArquivo, setFilterDataArquivo] = useState("todos");
   const [selectedAnimal, setSelectedAnimal] = useState<Animal | null>(null);
+  
+  // Estados para dados dinâmicos
+  const [especies, setEspecies] = useState<any[]>([]);
+  const [sexos, setSexos] = useState<any[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingArchive, setEditingArchive] = useState<Animal | null>(null);
   const [archiveForm, setArchiveForm] = useState({
@@ -70,6 +77,7 @@ const AnimaisArquivados = () => {
 
   useEffect(() => {
     fetchAnimaisArquivados();
+    loadFilterData();
   }, []);
 
   const fetchAnimaisArquivados = async () => {
@@ -99,6 +107,21 @@ const AnimaisArquivados = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Carregar dados dinâmicos para filtros
+  const loadFilterData = async () => {
+    try {
+      const [especiesData, sexosData] = await Promise.all([
+        supabase.from('especies').select('nome').eq('ativo', true).order('nome'),
+        supabase.from('sexos').select('nome').eq('ativo', true).order('nome')
+      ]);
+      
+      setEspecies(especiesData.data || []);
+      setSexos(sexosData.data || []);
+    } catch (error) {
+      console.error('Erro ao carregar dados de filtros:', error);
     }
   };
 
@@ -309,27 +332,93 @@ const AnimaisArquivados = () => {
             <CardTitle>Filtros</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="relative">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Pesquisa Expandida */}
+              <div className="relative lg:col-span-3">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
-                  placeholder="Pesquisar por nome ou número de processo..."
+                  placeholder="Pesquisar por nome, processo, espécie, motivo de arquivo..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
                 />
               </div>
+              
+              {/* Espécie Dinâmica */}
               <Select value={filterEspecie} onValueChange={setFilterEspecie}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Filtrar por espécie" />
+                  <SelectValue placeholder="Espécie" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todas as espécies</SelectItem>
-                  <SelectItem value="Cão">Cão</SelectItem>
-                  <SelectItem value="Gato">Gato</SelectItem>
-                  <SelectItem value="Outro">Outro</SelectItem>
+                  {especies.map((especie) => (
+                    <SelectItem key={especie.nome} value={especie.nome}>
+                      {especie.nome}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
+              
+              {/* Estado Original */}
+              <Select value={filterEstado} onValueChange={setFilterEstado}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Estado" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os estados</SelectItem>
+                  <SelectItem value="Ativo">🟢 Ativo</SelectItem>
+                  <SelectItem value="Adotado">🏠 Adotado</SelectItem>
+                  <SelectItem value="Óbito">💀 Óbito</SelectItem>
+                  <SelectItem value="Não Adotável">⚠️ Não Adotável</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              {/* Sexo Dinâmico */}
+              <Select value={filterSexo} onValueChange={setFilterSexo}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sexo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos</SelectItem>
+                  {sexos.map((sexo) => (
+                    <SelectItem key={sexo.nome} value={sexo.nome}>
+                      {sexo.nome === 'Macho' && '♂️'}
+                      {sexo.nome === 'Fêmea' && '♀️'}
+                      {sexo.nome === 'Indeterminado' && '❓'}
+                      {' '}{sexo.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              {/* Data de Arquivo */}
+              <Select value={filterDataArquivo} onValueChange={setFilterDataArquivo}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Data Arquivo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todas as datas</SelectItem>
+                  <SelectItem value="30_dias">📅 Últimos 30 dias</SelectItem>
+                  <SelectItem value="3_meses">📅 Últimos 3 meses</SelectItem>
+                  <SelectItem value="6_meses">📅 Últimos 6 meses</SelectItem>
+                  <SelectItem value="1_ano">📅 Último ano</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              {/* Botão Limpar */}
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setSearchTerm("");
+                  setFilterEspecie("todos");
+                  setFilterEstado("todos");
+                  setFilterSexo("todos");
+                  setFilterDataArquivo("todos");
+                }}
+                className="w-full"
+              >
+                🗑️ Limpar Filtros
+              </Button>
             </div>
           </CardContent>
         </Card>
