@@ -664,16 +664,16 @@ const Index = () => {
                 </Button>
                 
                 <Button asChild variant="outline" className="h-20 flex-col">
-                  <Link to="/gestao-financeira">
-                    <DollarSign className="h-6 w-6 mb-2" />
-                    Finanças
+                  <Link to="/voluntarios">
+                    <Users className="h-6 w-6 mb-2" />
+                    Voluntários
                   </Link>
                 </Button>
                 
                 <Button asChild variant="outline" className="h-20 flex-col">
-                  <Link to="/relatorios">
-                    <BarChart3 className="h-6 w-6 mb-2" />
-                    Relatórios
+                  <Link to="/gestao-financeira">
+                    <DollarSign className="h-6 w-6 mb-2" />
+                    Finanças
                   </Link>
                 </Button>
               </div>
@@ -797,6 +797,35 @@ const Index = () => {
                       </Link>
                     </Button>
                   )}
+                </div>
+              </div>
+
+              {/* Sistema de Voluntários Valentão */}
+              <div className="text-center p-6 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 hover:shadow-lg transition-all duration-200">
+                <div className="bg-gradient-to-br from-blue-500 to-indigo-500 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Users className="h-8 w-8 text-white" />
+                </div>
+                <h3 className="font-semibold text-blue-800 mb-2">Sistema de Voluntários</h3>
+                <p className="text-sm text-blue-600 mb-4">Formação Valentão integrada</p>
+                <div className="space-y-2">
+                  <Button asChild variant="outline" size="sm" className="w-full border-blue-200 hover:bg-blue-50">
+                    <Link to="/voluntarios">
+                      <Users className="h-4 w-4 mr-2" />
+                      Dashboard
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" size="sm" className="w-full border-blue-200 hover:bg-blue-50">
+                    <Link to="/voluntarios/gestao">
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Gerir Voluntários
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" size="sm" className="w-full border-blue-200 hover:bg-blue-50">
+                    <Link to="/voluntarios/configuracoes">
+                      <Award className="h-4 w-4 mr-2" />
+                      Formação
+                    </Link>
+                  </Button>
                 </div>
               </div>
 

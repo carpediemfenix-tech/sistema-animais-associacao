@@ -33,6 +33,8 @@ import GrupoDetail from "./pages/GrupoDetail";
 import ManualUtilizador from "./pages/ManualUtilizador";
 import Administracao from "./pages/Administracao";
 import Dashboard from "./pages/Dashboard";
+import VoluntariosDashboard from "./pages/VoluntariosDashboard";
+import VoluntarioProfile from "./pages/VoluntarioProfile";
 
 const queryClient = new QueryClient();
 
@@ -61,7 +63,10 @@ const App = () => (
             <Route path="/novo-animal" element={<ProtectedRoute><NovoAnimal /></ProtectedRoute>} />
             <Route path="/intervencoes" element={<ProtectedRoute><IntervencoesPage /></ProtectedRoute>} />
             <Route path="/eventos" element={<ProtectedRoute><EventosPage /></ProtectedRoute>} />
-            <Route path="/voluntarios" element={<ProtectedRoute><GestaoVoluntarios /></ProtectedRoute>} />
+            {/* Rotas do Sistema de Voluntários Valentão */}
+            <Route path="/voluntarios" element={<ProtectedRoute><VoluntariosDashboard /></ProtectedRoute>} />
+            <Route path="/voluntarios/gestao" element={<ProtectedRoute><GestaoVoluntarios /></ProtectedRoute>} />
+            <Route path="/voluntarios/perfil/:id" element={<ProtectedRoute><VoluntarioProfile /></ProtectedRoute>} />
             <Route path="/voluntario/:id" element={<ProtectedRoute><VoluntarioDetail /></ProtectedRoute>} />
             <Route path="/gestao-financeira" element={<ProtectedRoute><GestaoFinanceira /></ProtectedRoute>} />
             <Route path="/financeiro" element={<ProtectedRoute><DashboardFinanceiro /></ProtectedRoute>} />
