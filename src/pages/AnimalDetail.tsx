@@ -93,7 +93,6 @@ const AnimalDetail = () => {
         .from('animais')
         .update({
           arquivado: true,
-          estado: 'Arquivado',
           data_arquivamento: new Date().toISOString(),
           motivo_arquivamento: motivo || null,
           updated_at: new Date().toISOString()

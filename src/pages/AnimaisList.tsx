@@ -95,7 +95,6 @@ const AnimaisList: React.FC = () => {
           )
         `)
         .eq('arquivado', false)
-        .neq('estado', 'Arquivado')
         .order('created_at', { ascending: false });
 
       if (error) {

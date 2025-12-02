@@ -81,7 +81,6 @@ const AnimaisArquivados = () => {
         .from('animais')
         .select('*')
         .eq('arquivado', true)
-        .eq('estado', 'Arquivado')
         .order('data_arquivamento', { ascending: false });
 
       if (error) {
@@ -118,7 +117,6 @@ const AnimaisArquivados = () => {
         .from('animais')
         .update({
           arquivado: false,
-          estado: 'Ativo',
           data_arquivamento: null,
           motivo_arquivamento: null,
           updated_at: new Date().toISOString()
