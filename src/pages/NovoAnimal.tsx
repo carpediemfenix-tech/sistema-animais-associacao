@@ -719,8 +719,12 @@ const NovoAnimal = () => {
                           // Gatos: todos os grupos EXCETO matilhas
                           return !(grupo.tipo && grupo.tipo.toLowerCase().includes('matilha'));
                         } else {
-                          // Outras espécies: TODOS os grupos (sem exclusões)
-                          return true;
+                          // Outras espécies: todos os grupos EXCETO matilhas e colónias
+                          return !(grupo.tipo && (
+                            grupo.tipo.toLowerCase().includes('matilha') || 
+                            grupo.tipo.toLowerCase().includes('colónia') || 
+                            grupo.tipo.toLowerCase().includes('colonia')
+                          ));
                         }
                       })
                       .map((grupo) => (
@@ -741,7 +745,7 @@ const NovoAnimal = () => {
                       ? '🐕 Cães podem escolher todos os grupos exceto colónias'
                       : formData.especie === 'Gato'
                       ? '🐱 Gatos podem escolher todos os grupos exceto matilhas'
-                      : '🏠 Esta espécie pode escolher qualquer grupo disponível'
+                      : '🏠 Esta espécie pode escolher grupos exceto matilhas e colónias'
                     }
                   </p>
                 )}
