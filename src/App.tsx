@@ -36,6 +36,9 @@ import Dashboard from "./pages/Dashboard";
 import VoluntariosDashboard from "./pages/VoluntariosDashboard";
 import VoluntarioProfile from "./pages/VoluntarioProfile";
 import VoluntariosConfiguracoes from "./pages/VoluntariosConfiguracoes";
+import NovoVoluntario from "./pages/NovoVoluntario";
+import GestaoFormacao from "./pages/GestaoFormacao";
+import RelatoriosVoluntarios from "./pages/RelatoriosVoluntarios";
 
 const queryClient = new QueryClient();
 
@@ -67,7 +70,10 @@ const App = () => (
             {/* Rotas do Sistema de Voluntários Valentão */}
             <Route path="/voluntarios" element={<ProtectedRoute><VoluntariosDashboard /></ProtectedRoute>} />
             <Route path="/voluntarios/gestao" element={<ProtectedRoute><GestaoVoluntarios /></ProtectedRoute>} />
+            <Route path="/voluntarios/novo" element={<ProtectedRoute><NovoVoluntario /></ProtectedRoute>} />
             <Route path="/voluntarios/perfil/:id" element={<ProtectedRoute><VoluntarioProfile /></ProtectedRoute>} />
+            <Route path="/voluntarios/formacao" element={<ProtectedRoute><GestaoFormacao /></ProtectedRoute>} />
+            <Route path="/voluntarios/relatorios" element={<ProtectedRoute><RelatoriosVoluntarios /></ProtectedRoute>} />
             <Route path="/voluntarios/configuracoes" element={<ProtectedRoute><VoluntariosConfiguracoes /></ProtectedRoute>} />
             <Route path="/voluntario/:id" element={<ProtectedRoute><VoluntarioDetail /></ProtectedRoute>} />
             <Route path="/gestao-financeira" element={<ProtectedRoute><GestaoFinanceira /></ProtectedRoute>} />
