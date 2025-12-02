@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -17,7 +19,8 @@ import {
   AlertCircle,
   Loader2,
   FileText,
-  PawPrint
+  PawPrint,
+  Edit
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Animal } from "@/types/animal";
@@ -32,6 +35,11 @@ const AnimaisArquivados = () => {
   const [filterEspecie, setFilterEspecie] = useState("todos");
   const [selectedAnimal, setSelectedAnimal] = useState<Animal | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingArchive, setEditingArchive] = useState<Animal | null>(null);
+  const [archiveForm, setArchiveForm] = useState({
+    motivo_arquivamento: '',
+    data_arquivamento: ''
+  });
   const { toast } = useToast();
   const { hasPermission } = useAuth();
 
@@ -109,6 +117,7 @@ const AnimaisArquivados = () => {
         .from('animais')
         .update({
           arquivado: false,
+          estado: 'Ativo',
           data_arquivamento: null,
           motivo_arquivamento: null,
           updated_at: new Date().toISOString()
@@ -136,6 +145,55 @@ const AnimaisArquivados = () => {
     }
   };
 
+  // Funções para edição de arquivo
+  const openEditArchive = (animal: Animal) => {
+    setEditingArchive(animal);
+    setArchiveForm({
+      motivo_arquivamento: animal.motivo_arquivamento || '',
+      data_arquivamento: animal.data_arquivamento ? 
+        new Date(animal.data_arquivamento).toISOString().slice(0, 16) : ''
+    });
+  };
+
+  const handleEditArchive = async () => {
+    if (!editingArchive) return;
+
+    try {
+      console.log('✏️ [ARQUIVO] Editando critérios:', editingArchive.nome);
+
+      const { error } = await supabase
+        .from('animais')
+        .update({
+          motivo_arquivamento: archiveForm.motivo_arquivamento || null,
+          data_arquivamento: archiveForm.data_arquivamento ? 
+            new Date(archiveForm.data_arquivamento).toISOString() : 
+            new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', editingArchive.id);
+
+      if (error) {
+        console.error('❌ [ARQUIVO] Erro ao editar:', error);
+        throw error;
+      }
+
+      toast({
+        title: "✅ Critérios atualizados",
+        description: `Arquivo de ${editingArchive.nome} foi atualizado`,
+      });
+
+      setEditingArchive(null);
+      await fetchAnimaisArquivados();
+    } catch (error: any) {
+      console.error('💥 [ARQUIVO] Erro:', error);
+      toast({
+        title: "❌ Erro",
+        description: "Não foi possível atualizar os critérios",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Filtrar animais
   const animaisFiltrados = animais.filter(animal => {
     const matchSearch = animal.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -150,6 +208,8 @@ const AnimaisArquivados = () => {
 
   const getEstadoBadge = (estado: string) => {
     switch (estado) {
+      case 'Arquivado':
+        return <Badge className="bg-gray-100 text-gray-800">📦 Arquivado</Badge>;
       case 'Óbito':
         return <Badge className="bg-black text-white">💀 Óbito</Badge>;
       case 'Adotado':
@@ -396,6 +456,16 @@ const AnimaisArquivados = () => {
                             <Button
                               variant="ghost"
                               size="sm"
+                              onClick={() => openEditArchive(animal)}
+                              className="text-orange-600 hover:text-orange-800"
+                              title="Editar critérios de arquivo"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            
+                            <Button
+                              variant="ghost"
+                              size="sm"
                               onClick={() => handleDesarquivar(animal)}
                               className="text-blue-600 hover:text-blue-800"
                               title="Desarquivar animal"
@@ -425,6 +495,56 @@ const AnimaisArquivados = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Modal de Edição de Arquivo */}
+      <Dialog open={!!editingArchive} onOpenChange={() => setEditingArchive(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar Critérios de Arquivo</DialogTitle>
+            <DialogDescription>
+              Alterar informações do arquivamento de {editingArchive?.nome}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="data_arquivamento">Data de Arquivamento</Label>
+              <Input 
+                id="data_arquivamento"
+                type="datetime-local"
+                value={archiveForm.data_arquivamento}
+                onChange={(e) => setArchiveForm(prev => ({
+                  ...prev, 
+                  data_arquivamento: e.target.value
+                }))}
+              />
+            </div>
+            <div>
+              <Label htmlFor="motivo_arquivamento">Motivo do Arquivamento</Label>
+              <Textarea 
+                id="motivo_arquivamento"
+                placeholder="Descreva o motivo do arquivamento..."
+                value={archiveForm.motivo_arquivamento}
+                onChange={(e) => setArchiveForm(prev => ({
+                  ...prev, 
+                  motivo_arquivamento: e.target.value
+                }))}
+                rows={3}
+              />
+            </div>
+          </div>
+          <div className="flex justify-end space-x-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setEditingArchive(null)}
+            >
+              Cancelar
+            </Button>
+            <Button onClick={handleEditArchive}>
+              Salvar Alterações
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

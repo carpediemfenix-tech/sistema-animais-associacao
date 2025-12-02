@@ -642,6 +642,7 @@ const EditarAnimal = () => {
                       <SelectItem value="Adotado">Adotado</SelectItem>
                       <SelectItem value="Óbito">Óbito</SelectItem>
                       <SelectItem value="Não Adotável">Não Adotável</SelectItem>
+                      <SelectItem value="Arquivado">Arquivado</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
