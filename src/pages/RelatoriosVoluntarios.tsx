@@ -3,69 +3,44 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   ArrowLeft, 
-  BarChart3, 
-  Users, 
-  TrendingUp,
-  Calendar,
-  Award,
-  Target,
-  PieChart,
-  Download,
-  Filter,
+  BarChart3,
   AlertCircle,
-  CheckCircle,
-  Clock,
+  Users,
+  UserCheck,
+  UserX,
+  TrendingUp,
+  Award,
+  Calendar,
+  Download,
   Loader2,
   Sprout,
   Shield,
   Sword,
   Crown,
-  Heart,
-  Zap,
   User,
-  Star,
-  FileText,
-  Activity
+  Heart,
+  Zap
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase";
 import UserHeader from "@/components/UserHeader";
-import { VoluntarioValentao, NivelFormacao, Especializacao, VoluntarioProgressao, VoluntarioConquista } from "@/types/voluntarios";
-
-interface RelatorioEstatisticas {
-  totalVoluntarios: number;
-  voluntariosAtivos: number;
-  voluntariosInativos: number;
-  distribuicaoPorNivel: Array<{
-    nivel: NivelFormacao;
-    quantidade: number;
-    percentual: number;
-  }>;
-  especializacoesObtidas: Array<{
-    especializacao: Especializacao;
-    quantidade: number;
-  }>;
-  conquistasRecentes: VoluntarioConquista[];
-  progressoesUltimoMes: number;
-  tempoMedioProgressao: number;
-  taxaRetencao: number;
-}
 
 const RelatoriosVoluntarios = () => {
-  const [estatisticas, setEstatisticas] = useState<RelatorioEstatisticas | null>(null);
-  const [voluntarios, setVoluntarios] = useState<VoluntarioValentao[]>([]);
-  const [niveisFormacao, setNiveisFormacao] = useState<NivelFormacao[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [periodoFiltro, setPeriodoFiltro] = useState("30"); // dias
-  const [tipoRelatorio, setTipoRelatorio] = useState("geral");
-
-  const { toast } = useToast();
   const { hasPermission } = useAuth();
+  const { toast } = useToast();
+  
+  // Estados
+  const [loading, setLoading] = useState(true);
+  const [voluntarios, setVoluntarios] = useState([]);
+  const [niveisFormacao, setNiveisFormacao] = useState([]);
+  const [estatisticas, setEstatisticas] = useState(null);
+  const [periodoFiltro, setPeriodoFiltro] = useState('30'); // 30 dias por padrão
 
   // Verificar permissões
   if (!hasPermission('admin')) {
@@ -93,10 +68,10 @@ const RelatoriosVoluntarios = () => {
   }
 
   useEffect(() => {
-    loadRelatorios();
+    loadData();
   }, [periodoFiltro]);
 
-  const loadRelatorios = async () => {
+  const loadData = async () => {
     try {
       setLoading(true);
 

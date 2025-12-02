@@ -2,57 +2,70 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { 
-  ArrowLeft, 
-  Plus, 
-  Users, 
-  User,
-  Mail,
-  Phone,
-  MapPin,
-  Hash,
-  Calendar,
-  Briefcase,
-  AlertCircle,
-  CheckCircle,
-  Loader2,
-  Save,
-  Sprout,
-  Shield,
-  Sword,
-  Crown
-} from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, Plus, Users, AlertCircle, User, Mail, Phone, Hash, Calendar, Briefcase, MapPin, CheckCircle, Save, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase";
 import UserHeader from "@/components/UserHeader";
-import { NivelFormacao, VoluntarioFormData } from "@/types/voluntarios";
+
+interface NivelFormacao {
+  id: string;
+  nome: string;
+  codigo: string;
+  cor: string;
+  ordem: number;
+  ativo: boolean;
+}
+
+interface FormData {
+  nome: string;
+  email: string;
+  telefone: string;
+  morada: string;
+  nif: string;
+  data_nascimento: string;
+  profissao: string;
+  observacoes: string;
+  nivel_formacao_atual: string;
+}
+
+const getNivelIcon = (codigo: string) => {
+  switch (codigo) {
+    case 'V1': return '🟢';
+    case 'V2': return '🔵';
+    case 'V3': return '🟡';
+    case 'V4': return '🟠';
+    case 'V5': return '🔴';
+    case 'V6': return '🟣';
+    default: return '⚪';
+  }
+};
 
 const NovoVoluntario = () => {
-  const navigate = useNavigate();
-  const [niveisFormacao, setNiveisFormacao] = useState<NivelFormacao[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  
-  const [formData, setFormData] = useState<VoluntarioFormData>({
-    nome: "",
-    email: "",
-    telefone: "",
-    morada: "",
-    nif: "",
-    data_nascimento: "",
-    profissao: "",
-    nivel_formacao_atual: "",
-    observacoes: ""
-  });
-
-  const { toast } = useToast();
   const { hasPermission } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  
+  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [niveisFormacao, setNiveisFormacao] = useState<NivelFormacao[]>([]);
+  
+  const [formData, setFormData] = useState<FormData>({
+    nome: '',
+    email: '',
+    telefone: '',
+    morada: '',
+    nif: '',
+    data_nascimento: '',
+    profissao: '',
+    observacoes: '',
+    nivel_formacao_atual: ''
+  });
 
   // Verificar permissões
   if (!hasPermission('admin')) {
@@ -132,7 +145,6 @@ const NovoVoluntario = () => {
         nif: formData.nif?.trim() || null,
         data_nascimento: formData.data_nascimento || null,
         profissao: formData.profissao?.trim() || null,
-        nivel_formacao_atual: formData.nivel_formacao_atual || null,
         observacoes: formData.observacoes?.trim() || null,
         ativo: true,
         data_ingresso: new Date().toISOString().split('T')[0]
@@ -151,8 +163,8 @@ const NovoVoluntario = () => {
         description: "Voluntário criado com sucesso",
       });
 
-      // Redirecionar para o perfil do voluntário criado
-      navigate(`/voluntarios/perfil/${data.id}`);
+      // Redirecionar para a gestão
+      navigate('/voluntarios/gestao');
 
     } catch (error: any) {
       console.error('Erro ao criar voluntário:', error);
@@ -165,27 +177,6 @@ const NovoVoluntario = () => {
       setSubmitting(false);
     }
   };
-
-  const getNivelIcon = (codigo: string) => {
-    switch (codigo) {
-      case 'FORMA_BASE': return <Sprout className="h-4 w-4" />;
-      case 'FORMA_N1': return <Shield className="h-4 w-4" />;
-      case 'FORMA_N2': return <Sword className="h-4 w-4" />;
-      case 'FORMA_N3': return <Crown className="h-4 w-4" />;
-      default: return <User className="h-4 w-4" />;
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-16 w-16 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600">Carregando formulário...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">

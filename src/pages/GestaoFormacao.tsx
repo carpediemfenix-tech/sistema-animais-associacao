@@ -2,61 +2,59 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { 
   ArrowLeft, 
-  Plus, 
-  Award, 
-  Users, 
+  GraduationCap,
+  AlertCircle,
+  Plus,
+  Users,
   TrendingUp,
+  Award,
+  Loader2,
+  Save,
+  Eye,
   Calendar,
   CheckCircle,
   Clock,
-  AlertCircle,
-  Loader2,
-  Save,
-  Edit,
-  Eye,
+  BookOpen,
   Sprout,
   Shield,
   Sword,
   Crown,
-  Heart,
-  Zap,
   User,
-  Star,
-  Target,
-  BookOpen,
-  GraduationCap
+  Heart,
+  Zap
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase";
 import UserHeader from "@/components/UserHeader";
-import { VoluntarioValentao, NivelFormacao, Especializacao, VoluntarioProgressao, VoluntarioEspecializacao } from "@/types/voluntarios";
 
 const GestaoFormacao = () => {
-  const [voluntarios, setVoluntarios] = useState<VoluntarioValentao[]>([]);
-  const [niveisFormacao, setNiveisFormacao] = useState<NivelFormacao[]>([]);
-  const [especializacoes, setEspecializacoes] = useState<Especializacao[]>([]);
-  const [progressoes, setProgressoes] = useState<VoluntarioProgressao[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedVoluntario, setSelectedVoluntario] = useState<string>("");
-  const [selectedNivel, setSelectedNivel] = useState<string>("");
-  const [selectedEspecializacao, setSelectedEspecializacao] = useState<string>("");
-  const [observacoes, setObservacoes] = useState("");
-
-  const { toast } = useToast();
   const { hasPermission } = useAuth();
+  const { toast } = useToast();
+  
+  // Estados
+  const [loading, setLoading] = useState(true);
+  const [voluntarios, setVoluntarios] = useState([]);
+  const [niveisFormacao, setNiveisFormacao] = useState([]);
+  const [especializacoes, setEspecializacoes] = useState([]);
+  const [progressoes, setProgressoes] = useState([]);
+  
+  // Estados do diálogo
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedVoluntario, setSelectedVoluntario] = useState("");
+  const [selectedNivel, setSelectedNivel] = useState("");
+  const [observacoes, setObservacoes] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   // Verificar permissões
   if (!hasPermission('admin')) {
