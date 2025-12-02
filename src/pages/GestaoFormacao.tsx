@@ -4,15 +4,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
 import { 
   ArrowLeft, 
-  GraduationCap,
+  GraduationCap, 
   AlertCircle,
   Plus,
   Users,
@@ -34,9 +35,8 @@ import {
   Zap
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/lib/supabase";
 import UserHeader from "@/components/UserHeader";
+import { supabase } from "@/lib/supabase";
 
 const GestaoFormacao = () => {
   const { hasPermission } = useAuth();
@@ -420,216 +420,34 @@ const GestaoFormacao = () => {
           </Card>
         </div>
 
-        <Tabs defaultValue="distribuicao" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="distribuicao">Distribuição por Nível</TabsTrigger>
-            <TabsTrigger value="progressoes">Progressões Recentes</TabsTrigger>
-            <TabsTrigger value="voluntarios">Voluntários por Nível</TabsTrigger>
-          </TabsList>
-
-          {/* Tab: Distribuição por Nível */}
-          <TabsContent value="distribuicao">
-            <Card>
-              <CardHeader>
-                <CardTitle>Distribuição por Nível de Formação</CardTitle>
-                <CardDescription>
-                  Visualização da distribuição dos voluntários pelos níveis Valentão
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {estatisticas.distribuicaoPorNivel.map((item) => (
-                  <div key={item.nivel.id} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div 
-                          className="p-2 rounded-full"
-                          style={{ backgroundColor: `${item.nivel.cor}20` }}
-                        >
-                          <span style={{ color: item.nivel.cor }}>
-                            {getNivelIcon(item.nivel.codigo)}
-                          </span>
-                        </div>
-                        <div>
-                          <p className="font-medium">{item.nivel.nome}</p>
-                          <p className="text-sm text-gray-500">{item.nivel.codigo}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-bold text-lg">{item.quantidade}</p>
-                        <p className="text-sm text-gray-500">
-                          {estatisticas.totalVoluntarios > 0 
-                            ? `${Math.round((item.quantidade / estatisticas.totalVoluntarios) * 100)}%`
-                            : '0%'
-                          }
-                        </p>
-                      </div>
-                    </div>
-                    <Progress 
-                      value={estatisticas.totalVoluntarios > 0 
-                        ? (item.quantidade / estatisticas.totalVoluntarios) * 100 
-                        : 0
-                      } 
-                      className="h-2"
-                    />
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Tab: Progressões Recentes */}
-          <TabsContent value="progressoes">
-            <Card>
-              <CardHeader>
-                <CardTitle>Progressões Recentes</CardTitle>
-                <CardDescription>
-                  Últimas progressões de formação registadas no sistema
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {progressoes.length === 0 ? (
-                  <div className="text-center py-12">
-                    <BookOpen className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">
-                      Nenhuma progressão registada
-                    </h3>
-                    <p className="text-gray-500">
-                      As progressões de formação aparecerão aqui quando forem registadas
-                    </p>
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Voluntário</TableHead>
-                          <TableHead>Nível</TableHead>
-                          <TableHead>Data Início</TableHead>
-                          <TableHead>Data Conclusão</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead className="text-right">Ações</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {progressoes.map((progressao) => (
-                          <TableRow key={progressao.id}>
-                            <TableCell className="font-medium">
-                              {progressao.voluntario?.nome}
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center space-x-2">
-                                <span style={{ color: progressao.nivel?.cor }}>
-                                  {getNivelIcon(progressao.nivel?.codigo || '')}
-                                </span>
-                                <span>{progressao.nivel?.nome}</span>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center space-x-2">
-                                <Calendar className="h-4 w-4 text-gray-400" />
-                                <span>
-                                  {new Date(progressao.data_inicio).toLocaleDateString('pt-PT')}
-                                </span>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              {progressao.data_conclusao ? (
-                                <div className="flex items-center space-x-2">
-                                  <CheckCircle className="h-4 w-4 text-green-500" />
-                                  <span>
-                                    {new Date(progressao.data_conclusao).toLocaleDateString('pt-PT')}
-                                  </span>
-                                </div>
-                              ) : (
-                                <div className="flex items-center space-x-2">
-                                  <Clock className="h-4 w-4 text-yellow-500" />
-                                  <span>Em curso</span>
-                                </div>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              {progressao.certificado_emitido ? (
-                                <Badge className="bg-green-100 text-green-800">
-                                  <CheckCircle className="h-3 w-3 mr-1" />
-                                  Certificado
-                                </Badge>
-                              ) : (
-                                <Badge className="bg-yellow-100 text-yellow-800">
-                                  <Clock className="h-3 w-3 mr-1" />
-                                  Pendente
-                                </Badge>
-                              )}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <Link to={`/voluntarios/perfil/${progressao.voluntario_id}`}>
-                                <Button variant="outline" size="sm">
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                              </Link>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Tab: Voluntários por Nível */}
-          <TabsContent value="voluntarios">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {niveisFormacao.map((nivel) => {
-                const voluntariosDoNivel = voluntarios.filter(v => v.nivel_formacao_atual === nivel.id);
-                
-                return (
-                  <Card key={nivel.id}>
-                    <CardHeader>
-                      <CardTitle className="flex items-center space-x-2">
-                        <span style={{ color: nivel.cor }}>
-                          {getNivelIcon(nivel.codigo)}
-                        </span>
-                        <span>{nivel.nome}</span>
-                        <Badge 
-                          style={{ backgroundColor: nivel.cor, color: 'white' }}
-                        >
-                          {voluntariosDoNivel.length}
-                        </Badge>
-                      </CardTitle>
-                      <CardDescription>
-                        {nivel.descricao}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      {voluntariosDoNivel.length === 0 ? (
-                        <p className="text-gray-500 text-center py-4">
-                          Nenhum voluntário neste nível
-                        </p>
-                      ) : (
-                        <div className="space-y-2">
-                          {voluntariosDoNivel.map((voluntario) => (
-                            <div key={voluntario.id} className="flex items-center justify-between p-2 rounded-lg bg-gray-50">
-                              <div>
-                                <p className="font-medium">{voluntario.nome}</p>
-                                <p className="text-sm text-gray-500">{voluntario.email}</p>
-                              </div>
-                              <Link to={`/voluntarios/perfil/${voluntario.id}`}>
-                                <Button variant="outline" size="sm">
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                              </Link>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                );
-              })}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <GraduationCap className="h-5 w-5 mr-2" />
+              Página em Desenvolvimento
+            </CardTitle>
+            <CardDescription>
+              Esta página está a ser implementada. Funcionalidade completa em breve.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-12">
+              <GraduationCap className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                Gestão de Formação Valentão
+              </h3>
+              <p className="text-gray-500 mb-6">
+                Funcionalidades de atribuição de níveis, progressão e relatórios formativos
+              </p>
+              <Link to="/voluntarios">
+                <Button>
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Voltar ao Dashboard
+                </Button>
+              </Link>
             </div>
-          </TabsContent>
-        </Tabs>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
