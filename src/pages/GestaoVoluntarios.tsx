@@ -24,31 +24,52 @@ import {
   Calendar,
   AlertCircle,
   CheckCircle,
-  Loader2
+  Loader2,
+  Search,
+  Filter,
+  Award,
+  Sprout,
+  Shield,
+  Sword,
+  Crown,
+  Heart,
+  Zap,
+  User
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Voluntario } from "@/types/animal";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import UserHeader from "@/components/UserHeader";
+import { VoluntarioValentao, NivelFormacao, Especializacao, VoluntarioFormData } from "@/types/voluntarios";
 
 const GestaoVoluntarios = () => {
-  const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
-  const [especialidades, setEspecialidades] = useState<any[]>([]);
+  const [voluntarios, setVoluntarios] = useState<VoluntarioValentao[]>([]);
+  const [niveisFormacao, setNiveisFormacao] = useState<NivelFormacao[]>([]);
+  const [especializacoes, setEspecializacoes] = useState<Especializacao[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingVoluntario, setEditingVoluntario] = useState<Voluntario | null>(null);
-  const [formData, setFormData] = useState({
+  const [editingVoluntario, setEditingVoluntario] = useState<VoluntarioValentao | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"todos" | "ativo" | "inativo">("todos");
+  const [nivelFilter, setNivelFilter] = useState<string>("todos");
+  
+  const [formData, setFormData] = useState<VoluntarioFormData>({
     nome: "",
     email: "",
     telefone: "",
-    especialidade: "",
+    morada: "",
+    nif: "",
+    data_nascimento: "",
+    profissao: "",
+    nivel_formacao_atual: "",
     observacoes: ""
   });
+
   const { toast } = useToast();
   const { hasPermission } = useAuth();
 
-  // Verificar se o utilizador tem permissão de administrador
+  // Verificar permissões
   if (!hasPermission('admin')) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -57,11 +78,11 @@ const GestaoVoluntarios = () => {
             <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
             <CardTitle className="text-red-600">Acesso Negado</CardTitle>
             <CardDescription>
-              Apenas administradores podem aceder à gestão de voluntários
+              Apenas administradores podem gerir voluntários
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center">
-            <Link to="/">
+            <Link to="/voluntarios">
               <Button variant="outline" className="w-full">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Voltar ao Dashboard
@@ -73,49 +94,51 @@ const GestaoVoluntarios = () => {
     );
   }
 
-  const fetchEspecialidades = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('especialidades_voluntarios')
-        .select('*')
-        .eq('ativo', true)
-        .order('nome');
-
-      if (error) throw error;
-      setEspecialidades(data || []);
-    } catch (error: any) {
-      console.error('Erro ao carregar especialidades:', error);
-    }
-  };
-
   useEffect(() => {
-    fetchVoluntarios();
-    fetchEspecialidades();
+    loadData();
   }, []);
 
-  const fetchVoluntarios = async () => {
+  const loadData = async () => {
     try {
       setLoading(true);
-      console.log('🔄 Carregando voluntários...');
 
-      // CORREÇÃO: Usar nome correto da tabela 'voluntarios'
-      const { data, error } = await supabase
+      // Carregar voluntários com nível de formação
+      const { data: voluntariosData, error: voluntariosError } = await supabase
         .from('voluntarios')
-        .select('*')
+        .select(`
+          *,
+          nivel_formacao:nivel_formacao_atual(*)
+        `)
         .order('nome');
 
-      if (error) {
-        console.error('❌ Erro ao carregar voluntários:', error);
-        throw error;
-      }
+      if (voluntariosError) throw voluntariosError;
 
-      console.log('✅ Voluntários carregados:', data?.length || 0);
-      setVoluntarios(data || []);
+      // Carregar níveis de formação
+      const { data: niveisData, error: niveisError } = await supabase
+        .from('niveis_formacao')
+        .select('*')
+        .eq('ativo', true)
+        .order('ordem');
+
+      if (niveisError) throw niveisError;
+
+      // Carregar especializações
+      const { data: especializacoesData, error: especializacoesError } = await supabase
+        .from('especializacoes')
+        .select('*')
+        .eq('ativo', true);
+
+      if (especializacoesError) throw especializacoesError;
+
+      setVoluntarios(voluntariosData || []);
+      setNiveisFormacao(niveisData || []);
+      setEspecializacoes(especializacoesData || []);
+
     } catch (error: any) {
-      console.error('❌ Erro geral ao carregar voluntários:', error);
+      console.error('Erro ao carregar dados:', error);
       toast({
-        title: "Erro ao carregar voluntários",
-        description: error.message || "Não foi possível carregar a lista de voluntários",
+        title: "Erro",
+        description: "Erro ao carregar dados dos voluntários",
         variant: "destructive",
       });
     } finally {
@@ -123,13 +146,48 @@ const GestaoVoluntarios = () => {
     }
   };
 
+  const resetForm = () => {
+    setFormData({
+      nome: "",
+      email: "",
+      telefone: "",
+      morada: "",
+      nif: "",
+      data_nascimento: "",
+      profissao: "",
+      nivel_formacao_atual: "",
+      observacoes: ""
+    });
+    setEditingVoluntario(null);
+  };
+
+  const openDialog = (voluntario?: VoluntarioValentao) => {
+    if (voluntario) {
+      setEditingVoluntario(voluntario);
+      setFormData({
+        nome: voluntario.nome,
+        email: voluntario.email,
+        telefone: voluntario.telefone || "",
+        morada: voluntario.morada || "",
+        nif: voluntario.nif || "",
+        data_nascimento: voluntario.data_nascimento || "",
+        profissao: voluntario.profissao || "",
+        nivel_formacao_atual: voluntario.nivel_formacao_atual || "",
+        observacoes: voluntario.observacoes || ""
+      });
+    } else {
+      resetForm();
+    }
+    setDialogOpen(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.nome || !formData.especialidade) {
+    if (!formData.nome.trim() || !formData.email.trim()) {
       toast({
-        title: "Campos obrigatórios",
-        description: "Nome e especialidade são obrigatórios.",
+        title: "Erro",
+        description: "Nome e email são obrigatórios",
         variant: "destructive",
       });
       return;
@@ -137,76 +195,56 @@ const GestaoVoluntarios = () => {
 
     try {
       setSubmitting(true);
-      console.log('👤 Processando voluntário:', formData);
+
+      const voluntarioData = {
+        nome: formData.nome.trim(),
+        email: formData.email.trim(),
+        telefone: formData.telefone?.trim() || null,
+        morada: formData.morada?.trim() || null,
+        nif: formData.nif?.trim() || null,
+        data_nascimento: formData.data_nascimento || null,
+        profissao: formData.profissao?.trim() || null,
+        nivel_formacao_atual: formData.nivel_formacao_atual || null,
+        observacoes: formData.observacoes?.trim() || null,
+        ativo: true
+      };
 
       if (editingVoluntario) {
-        // CORREÇÃO: Usar nome correto da tabela 'voluntarios'
-        console.log('✏️ Atualizando voluntário:', editingVoluntario.id);
+        // Atualizar voluntário existente
         const { error } = await supabase
           .from('voluntarios')
-          .update({
-            nome: formData.nome,
-            email: formData.email || null,
-            telefone: formData.telefone || null,
-            especialidade: formData.especialidade,
-            observacoes: formData.observacoes || null,
-            updated_at: new Date().toISOString()
-          })
+          .update(voluntarioData)
           .eq('id', editingVoluntario.id);
 
-        if (error) {
-          console.error('❌ Erro ao atualizar voluntário:', error);
-          throw error;
-        }
+        if (error) throw error;
 
-        console.log('✅ Voluntário atualizado com sucesso');
         toast({
-          title: "✅ Voluntário atualizado",
-          description: `${formData.nome} foi atualizado com sucesso.`,
+          title: "Sucesso",
+          description: "Voluntário atualizado com sucesso",
         });
       } else {
         // Criar novo voluntário
-        console.log('➕ Criando novo voluntário');
         const { error } = await supabase
           .from('voluntarios')
-          .insert({
-            nome: formData.nome,
-            email: formData.email || null,
-            telefone: formData.telefone || null,
-            especialidade: formData.especialidade,
-            observacoes: formData.observacoes || null
-          });
+          .insert([voluntarioData]);
 
-        if (error) {
-          console.error('❌ Erro ao criar voluntário:', error);
-          throw error;
-        }
+        if (error) throw error;
 
-        console.log('✅ Voluntário criado com sucesso');
         toast({
-          title: "✅ Voluntário registado",
-          description: `${formData.nome} foi registado com sucesso.`,
+          title: "Sucesso",
+          description: "Voluntário criado com sucesso",
         });
       }
 
       setDialogOpen(false);
-      setEditingVoluntario(null);
-      setFormData({
-        nome: "",
-        email: "",
-        telefone: "",
-        especialidade: "",
-        observacoes: ""
-      });
-      
-      console.log('🔄 Recarregando lista de voluntários...');
-      await fetchVoluntarios();
+      resetForm();
+      loadData();
 
     } catch (error: any) {
-      console.error('❌ Erro ao processar voluntário:', error);
+      console.error('Erro ao salvar voluntário:', error);
       toast({
-        title: "Erro ao processar voluntário",
-        description: error.message || "Não foi possível processar o voluntário",
+        title: "Erro",
+        description: error.message || "Erro ao salvar voluntário",
         variant: "destructive",
       });
     } finally {
@@ -214,149 +252,121 @@ const GestaoVoluntarios = () => {
     }
   };
 
-  const handleEdit = (voluntario: Voluntario) => {
-    setEditingVoluntario(voluntario);
-    setFormData({
-      nome: voluntario.nome,
-      email: voluntario.email || "",
-      telefone: voluntario.telefone || "",
-      especialidade: voluntario.especialidade,
-      observacoes: voluntario.observacoes || ""
-    });
-    setDialogOpen(true);
-  };
-
-  const handleToggleStatus = async (voluntario: Voluntario) => {
+  const handleToggleStatus = async (voluntario: VoluntarioValentao) => {
     try {
-      console.log(`🔄 Alterando status do voluntário ${voluntario.nome}...`);
+      const novoStatus = !voluntario.ativo;
+      const updateData: any = { ativo: novoStatus };
       
-      // CORREÇÃO: Usar nome correto da tabela 'voluntarios'
-      const { error } = await supabase
-        .from('voluntarios')
-        .update({ 
-          ativo: !voluntario.ativo,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', voluntario.id);
-
-      if (error) {
-        console.error('❌ Erro ao alterar status:', error);
-        throw error;
+      if (!novoStatus) {
+        updateData.data_inativacao = new Date().toISOString().split('T')[0];
+        updateData.motivo_inativacao = "Inativado via sistema";
+      } else {
+        updateData.data_inativacao = null;
+        updateData.motivo_inativacao = null;
       }
 
-      console.log('✅ Status alterado com sucesso');
+      const { error } = await supabase
+        .from('voluntarios')
+        .update(updateData)
+        .eq('id', voluntario.id);
+
+      if (error) throw error;
+
       toast({
-        title: "Status alterado",
-        description: `${voluntario.nome} foi ${!voluntario.ativo ? 'ativado' : 'desativado'} com sucesso.`,
+        title: "Sucesso",
+        description: `Voluntário ${novoStatus ? 'ativado' : 'inativado'} com sucesso`,
       });
 
-      await fetchVoluntarios();
+      loadData();
     } catch (error: any) {
-      console.error('❌ Erro ao alterar status:', error);
+      console.error('Erro ao alterar status:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível alterar o status do voluntário",
+        description: "Erro ao alterar status do voluntário",
         variant: "destructive",
       });
     }
   };
 
-  const handleDelete = async (voluntario: Voluntario) => {
-    // Confirmação antes de eliminar
-    const confirmDelete = confirm(
-      `Tem certeza que deseja eliminar o voluntário "${voluntario.nome}"?\n\n` +
-      `Esta ação não pode ser desfeita.`
-    );
-    
-    if (!confirmDelete) {
-      return;
-    }
-
+  const handleDelete = async (voluntario: VoluntarioValentao) => {
     try {
-      console.log(`🗑️ Eliminando voluntário ${voluntario.nome}...`);
-      
-      // Verificar se há referências antes de eliminar
-      console.log('🔍 Verificando referências...');
-      
-      const { data: intervencoes, error: checkError } = await supabase
-        .from('intervencoes')
-        .select('id')
-        .eq('veterinario', voluntario.nome)
-        .limit(1);
-      
-      if (checkError) {
-        console.error('❌ Erro ao verificar referências:', checkError);
-      }
-      
-      if (intervencoes && intervencoes.length > 0) {
-        toast({
-          title: "Não é possível eliminar",
-          description: `O voluntário ${voluntario.nome} tem intervenções associadas. Desative-o em vez de eliminar.`,
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      // Eliminar o voluntário
       const { error } = await supabase
         .from('voluntarios')
         .delete()
         .eq('id', voluntario.id);
 
-      if (error) {
-        console.error('❌ Erro ao eliminar voluntário:', error);
-        
-        // Tratar erros específicos
-        if (error.code === '23503') {
-          toast({
-            title: "Não é possível eliminar",
-            description: `O voluntário ${voluntario.nome} tem registos associados. Desative-o em vez de eliminar.`,
-            variant: "destructive",
-          });
-          return;
-        }
-        
-        throw error;
-      }
+      if (error) throw error;
 
-      console.log('✅ Voluntário eliminado com sucesso');
       toast({
-        title: "Voluntário eliminado",
-        description: `${voluntario.nome} foi eliminado com sucesso.`,
+        title: "Sucesso",
+        description: "Voluntário removido com sucesso",
       });
 
-      await fetchVoluntarios();
+      loadData();
     } catch (error: any) {
-      console.error('❌ Erro ao eliminar voluntário:', error);
+      console.error('Erro ao remover voluntário:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível eliminar o voluntário",
+        description: "Erro ao remover voluntário",
         variant: "destructive",
       });
     }
   };
 
-  const getEspecialidadeColor = (especialidade: string) => {
-    switch (especialidade) {
-      case 'Veterinário': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'Cuidador': return 'bg-green-100 text-green-800 border-green-200';
-      case 'Transporte': return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'Administrativo': return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'Geral': return 'bg-gray-100 text-gray-800 border-gray-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+  const getNivelIcon = (codigo: string) => {
+    switch (codigo) {
+      case 'FORMA_BASE': return <Sprout className="h-4 w-4" />;
+      case 'FORMA_N1': return <Shield className="h-4 w-4" />;
+      case 'FORMA_N2': return <Sword className="h-4 w-4" />;
+      case 'FORMA_N3': return <Crown className="h-4 w-4" />;
+      default: return <User className="h-4 w-4" />;
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-PT');
+  const getNivelBadge = (nivel?: NivelFormacao) => {
+    if (!nivel) {
+      return (
+        <Badge variant="secondary" className="text-xs">
+          <User className="h-3 w-3 mr-1" />
+          Sem nível
+        </Badge>
+      );
+    }
+
+    return (
+      <Badge 
+        className="text-xs text-white"
+        style={{ backgroundColor: nivel.cor }}
+      >
+        <span style={{ color: 'white' }} className="mr-1">
+          {getNivelIcon(nivel.codigo)}
+        </span>
+        {nivel.nome}
+      </Badge>
+    );
   };
+
+  // Filtrar voluntários
+  const voluntariosFiltrados = voluntarios.filter(voluntario => {
+    const matchesSearch = voluntario.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         voluntario.email.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = statusFilter === "todos" || 
+                         (statusFilter === "ativo" && voluntario.ativo) ||
+                         (statusFilter === "inativo" && !voluntario.ativo);
+    
+    const matchesNivel = nivelFilter === "todos" || 
+                        voluntario.nivel_formacao_atual === nivelFilter;
+
+    return matchesSearch && matchesStatus && matchesNivel;
+  });
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="h-16 w-16 animate-spin mx-auto mb-4 text-blue-600" />
-          <p className="text-lg text-gray-600">A carregar gestão de voluntários...</p>
+          <Loader2 className="h-16 w-16 animate-spin text-blue-600 mx-auto mb-4" />
+          <p className="text-gray-600">Carregando voluntários...</p>
         </div>
       </div>
     );
@@ -364,244 +374,354 @@ const GestaoVoluntarios = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="sm" asChild>
-                <Link to="/">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Voltar ao Dashboard
-                </Link>
+      <UserHeader />
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+              <Users className="h-8 w-8 mr-3 text-blue-600" />
+              Gestão de Voluntários
+            </h1>
+            <p className="text-gray-600 mt-1">
+              Gerir voluntários do sistema Valentão
+            </p>
+          </div>
+          <div className="flex items-center space-x-3">
+            <Link to="/voluntarios">
+              <Button variant="outline">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Dashboard Voluntários
               </Button>
-              <div className="flex items-center space-x-3">
-                <Users className="h-6 w-6 text-blue-600" />
-                <div>
-                  <h1 className="text-xl font-bold text-gray-900">Gestão de Voluntários</h1>
-                  <p className="text-sm text-gray-500">
-                    {voluntarios.length} voluntários registados • {voluntarios.filter(v => v.ativo).length} ativos
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              <Button onClick={fetchVoluntarios} variant="outline" size="sm" disabled={loading}>
-                <Loader2 className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : 'hidden'}`} />
-                Atualizar
-              </Button>
-              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Novo Voluntário
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>
-                      {editingVoluntario ? 'Editar Voluntário' : 'Novo Voluntário'}
-                    </DialogTitle>
-                    <DialogDescription>
-                      {editingVoluntario 
-                        ? 'Atualize as informações do voluntário'
-                        : 'Adicione um novo voluntário ao sistema'
-                      }
-                    </DialogDescription>
-                  </DialogHeader>
-                  
-                  <form onSubmit={handleSubmit} className="space-y-4">
+            </Link>
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={() => openDialog()} className="bg-blue-600 hover:bg-blue-700">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Novo Voluntário
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>
+                    {editingVoluntario ? 'Editar Voluntário' : 'Novo Voluntário'}
+                  </DialogTitle>
+                  <DialogDescription>
+                    {editingVoluntario 
+                      ? 'Edite as informações do voluntário' 
+                      : 'Adicione um novo voluntário ao sistema Valentão'
+                    }
+                  </DialogDescription>
+                </DialogHeader>
+                
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    
+                    {/* Nome */}
                     <div>
                       <Label htmlFor="nome">Nome *</Label>
                       <Input
                         id="nome"
                         value={formData.nome}
-                        onChange={(e) => setFormData(prev => ({ ...prev, nome: e.target.value }))}
-                        placeholder="Nome completo do voluntário"
+                        onChange={(e) => setFormData({...formData, nome: e.target.value})}
+                        placeholder="Nome completo"
                         required
                       />
                     </div>
-                    
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="email">Email</Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          value={formData.email}
-                          onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                          placeholder="email@exemplo.com"
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="telefone">Telefone</Label>
-                        <Input
-                          id="telefone"
-                          value={formData.telefone}
-                          onChange={(e) => setFormData(prev => ({ ...prev, telefone: e.target.value }))}
-                          placeholder="912 345 678"
-                        />
-                      </div>
-                    </div>
-                    
+
+                    {/* Email */}
                     <div>
-                      <Label htmlFor="especialidade">Especialidade *</Label>
-                      <Select 
-                        value={formData.especialidade} 
-                        onValueChange={(value) => setFormData(prev => ({ ...prev, especialidade: value }))}
+                      <Label htmlFor="email">Email *</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData({...formData, email: e.target.value})}
+                        placeholder="email@exemplo.com"
                         required
+                      />
+                    </div>
+
+                    {/* Telefone */}
+                    <div>
+                      <Label htmlFor="telefone">Telefone</Label>
+                      <Input
+                        id="telefone"
+                        value={formData.telefone}
+                        onChange={(e) => setFormData({...formData, telefone: e.target.value})}
+                        placeholder="+351 912 345 678"
+                      />
+                    </div>
+
+                    {/* NIF */}
+                    <div>
+                      <Label htmlFor="nif">NIF</Label>
+                      <Input
+                        id="nif"
+                        value={formData.nif}
+                        onChange={(e) => setFormData({...formData, nif: e.target.value})}
+                        placeholder="123456789"
+                      />
+                    </div>
+
+                    {/* Data de Nascimento */}
+                    <div>
+                      <Label htmlFor="data_nascimento">Data de Nascimento</Label>
+                      <Input
+                        id="data_nascimento"
+                        type="date"
+                        value={formData.data_nascimento}
+                        onChange={(e) => setFormData({...formData, data_nascimento: e.target.value})}
+                      />
+                    </div>
+
+                    {/* Profissão */}
+                    <div>
+                      <Label htmlFor="profissao">Profissão</Label>
+                      <Input
+                        id="profissao"
+                        value={formData.profissao}
+                        onChange={(e) => setFormData({...formData, profissao: e.target.value})}
+                        placeholder="Engenheiro, Professor, etc."
+                      />
+                    </div>
+
+                    {/* Nível de Formação */}
+                    <div className="md:col-span-2">
+                      <Label htmlFor="nivel_formacao">Nível de Formação Valentão</Label>
+                      <Select 
+                        value={formData.nivel_formacao_atual} 
+                        onValueChange={(value) => setFormData({...formData, nivel_formacao_atual: value})}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecione a especialidade" />
+                          <SelectValue placeholder="Selecionar nível de formação" />
                         </SelectTrigger>
                         <SelectContent>
-                          {especialidades.map((especialidade) => (
-                            <SelectItem key={especialidade.id} value={especialidade.nome}>
-                              {especialidade.nome}
+                          <SelectItem value="">Sem nível atribuído</SelectItem>
+                          {niveisFormacao.map((nivel) => (
+                            <SelectItem key={nivel.id} value={nivel.id}>
+                              <div className="flex items-center space-x-2">
+                                <span style={{ color: nivel.cor }}>
+                                  {getNivelIcon(nivel.codigo)}
+                                </span>
+                                <span>{nivel.nome}</span>
+                              </div>
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
-                    
-                    <div>
+
+                    {/* Morada */}
+                    <div className="md:col-span-2">
+                      <Label htmlFor="morada">Morada</Label>
+                      <Input
+                        id="morada"
+                        value={formData.morada}
+                        onChange={(e) => setFormData({...formData, morada: e.target.value})}
+                        placeholder="Rua, número, código postal, cidade"
+                      />
+                    </div>
+
+                    {/* Observações */}
+                    <div className="md:col-span-2">
                       <Label htmlFor="observacoes">Observações</Label>
                       <Textarea
                         id="observacoes"
                         value={formData.observacoes}
-                        onChange={(e) => setFormData(prev => ({ ...prev, observacoes: e.target.value }))}
+                        onChange={(e) => setFormData({...formData, observacoes: e.target.value})}
                         placeholder="Observações adicionais sobre o voluntário"
                         rows={3}
                       />
                     </div>
-                    
-                    <div className="flex justify-end space-x-2 pt-4">
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        onClick={() => {
-                          setDialogOpen(false);
-                          setEditingVoluntario(null);
-                          setFormData({
-                            nome: "",
-                            email: "",
-                            telefone: "",
-                            especialidade: "",
-                            observacoes: ""
-                          });
-                        }}
-                        disabled={submitting}
-                      >
-                        Cancelar
-                      </Button>
-                      <Button 
-                        type="submit" 
-                        className="bg-blue-600 hover:bg-blue-700"
-                        disabled={submitting}
-                      >
-                        {submitting ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            {editingVoluntario ? 'A atualizar...' : 'A registar...'}
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle className="h-4 w-4 mr-2" />
-                            {editingVoluntario ? 'Atualizar' : 'Registar'}
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </form>
-                </DialogContent>
-              </Dialog>
-            </div>
+                  </div>
+
+                  <div className="flex justify-end space-x-3 pt-4">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => setDialogOpen(false)}
+                      disabled={submitting}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button type="submit" disabled={submitting}>
+                      {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                      {editingVoluntario ? 'Atualizar' : 'Criar'} Voluntário
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Estatísticas */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        {/* Filtros */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="text-lg">Filtros</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              
+              {/* Pesquisa */}
+              <div>
+                <Label htmlFor="search">Pesquisar</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="search"
+                    placeholder="Nome ou email..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+
+              {/* Status */}
+              <div>
+                <Label htmlFor="status">Status</Label>
+                <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos</SelectItem>
+                    <SelectItem value="ativo">Ativos</SelectItem>
+                    <SelectItem value="inativo">Inativos</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Nível de Formação */}
+              <div>
+                <Label htmlFor="nivel">Nível de Formação</Label>
+                <Select value={nivelFilter} onValueChange={setNivelFilter}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos os níveis</SelectItem>
+                    {niveisFormacao.map((nivel) => (
+                      <SelectItem key={nivel.id} value={nivel.id}>
+                        <div className="flex items-center space-x-2">
+                          <span style={{ color: nivel.cor }}>
+                            {getNivelIcon(nivel.codigo)}
+                          </span>
+                          <span>{nivel.nome}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Limpar Filtros */}
+              <div className="flex items-end">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setSearchTerm("");
+                    setStatusFilter("todos");
+                    setNivelFilter("todos");
+                  }}
+                  className="w-full"
+                >
+                  <Filter className="h-4 w-4 mr-2" />
+                  Limpar
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Estatísticas Rápidas */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total</p>
-                  <p className="text-2xl font-bold text-gray-900">{voluntarios.length}</p>
+                  <p className="text-sm text-gray-600">Total</p>
+                  <p className="text-2xl font-bold">{voluntarios.length}</p>
                 </div>
-                <Users className="h-8 w-8 text-blue-500" />
+                <Users className="h-8 w-8 text-blue-600" />
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Ativos</p>
+                  <p className="text-sm text-gray-600">Ativos</p>
                   <p className="text-2xl font-bold text-green-600">
                     {voluntarios.filter(v => v.ativo).length}
                   </p>
                 </div>
-                <UserCheck className="h-8 w-8 text-green-500" />
+                <UserCheck className="h-8 w-8 text-green-600" />
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Inativos</p>
+                  <p className="text-sm text-gray-600">Inativos</p>
                   <p className="text-2xl font-bold text-red-600">
                     {voluntarios.filter(v => !v.ativo).length}
                   </p>
                 </div>
-                <UserX className="h-8 w-8 text-red-500" />
+                <UserX className="h-8 w-8 text-red-600" />
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Veterinários</p>
+                  <p className="text-sm text-gray-600">Filtrados</p>
                   <p className="text-2xl font-bold text-blue-600">
-                    {voluntarios.filter(v => v.especialidade === 'Veterinário').length}
+                    {voluntariosFiltrados.length}
                   </p>
                 </div>
-                <Users className="h-8 w-8 text-blue-500" />
+                <Filter className="h-8 w-8 text-blue-600" />
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Lista de Voluntários */}
+        {/* Tabela de Voluntários */}
         <Card>
           <CardHeader>
-            <CardTitle>Lista de Voluntários</CardTitle>
+            <CardTitle>Voluntários ({voluntariosFiltrados.length})</CardTitle>
             <CardDescription>
-              Gestão completa dos voluntários da associação
+              Lista de todos os voluntários do sistema Valentão
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {voluntarios.length === 0 ? (
-              <div className="text-center py-8">
-                <Users className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+            {voluntariosFiltrados.length === 0 ? (
+              <div className="text-center py-12">
+                <Users className="h-16 w-16 text-gray-300 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  Nenhum voluntário registado
+                  Nenhum voluntário encontrado
                 </h3>
-                <p className="text-gray-600 mb-4">
-                  Comece adicionando o primeiro voluntário ao sistema
+                <p className="text-gray-500 mb-4">
+                  {voluntarios.length === 0 
+                    ? "Ainda não há voluntários registados no sistema."
+                    : "Nenhum voluntário corresponde aos filtros aplicados."
+                  }
                 </p>
-                <Button onClick={() => setDialogOpen(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Adicionar Primeiro Voluntário
-                </Button>
+                {voluntarios.length === 0 && (
+                  <Button onClick={() => openDialog()}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Adicionar Primeiro Voluntário
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -609,106 +729,101 @@ const GestaoVoluntarios = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Nome</TableHead>
-                      <TableHead>Contacto</TableHead>
-                      <TableHead>Especialidade</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Telefone</TableHead>
+                      <TableHead>Nível Formação</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Data Início</TableHead>
-                      <TableHead className="w-32">Ações</TableHead>
+                      <TableHead>Data Ingresso</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {voluntarios.map((voluntario) => (
+                    {voluntariosFiltrados.map((voluntario) => (
                       <TableRow key={voluntario.id}>
+                        <TableCell className="font-medium">
+                          {voluntario.nome}
+                        </TableCell>
                         <TableCell>
-                          <div>
-                            <div className="font-medium">{voluntario.nome}</div>
-                            {voluntario.observacoes && (
-                              <div className="text-sm text-gray-500 truncate max-w-xs">
-                                {voluntario.observacoes}
-                              </div>
-                            )}
+                          <div className="flex items-center space-x-2">
+                            <Mail className="h-4 w-4 text-gray-400" />
+                            <span>{voluntario.email}</span>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="space-y-1">
-                            {voluntario.email && (
-                              <div className="flex items-center text-sm text-gray-600">
-                                <Mail className="h-3 w-3 mr-1" />
-                                {voluntario.email}
-                              </div>
-                            )}
-                            {voluntario.telefone && (
-                              <div className="flex items-center text-sm text-gray-600">
-                                <Phone className="h-3 w-3 mr-1" />
-                                {voluntario.telefone}
-                              </div>
-                            )}
+                          {voluntario.telefone ? (
+                            <div className="flex items-center space-x-2">
+                              <Phone className="h-4 w-4 text-gray-400" />
+                              <span>{voluntario.telefone}</span>
+                            </div>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {getNivelBadge(voluntario.nivel_formacao)}
+                        </TableCell>
+                        <TableCell>
+                          {voluntario.ativo ? (
+                            <Badge className="bg-green-100 text-green-800">
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              Ativo
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-red-100 text-red-800">
+                              <UserX className="h-3 w-3 mr-1" />
+                              Inativo
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <Calendar className="h-4 w-4 text-gray-400" />
+                            <span>
+                              {new Date(voluntario.data_ingresso).toLocaleDateString('pt-PT')}
+                            </span>
                           </div>
                         </TableCell>
-                        <TableCell>
-                          <Badge className={getEspecialidadeColor(voluntario.especialidade)}>
-                            {voluntario.especialidade}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge 
-                            className={
-                              voluntario.ativo 
-                                ? 'bg-green-100 text-green-800 border-green-200' 
-                                : 'bg-red-100 text-red-800 border-red-200'
-                            }
-                          >
-                            {voluntario.ativo ? 'Ativo' : 'Inativo'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center text-sm text-gray-600">
-                            <Calendar className="h-3 w-3 mr-1" />
-                            {formatDate(voluntario.data_inicio)}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              asChild
-                            >
-                              <Link to={`/voluntario/${voluntario.id}`}>
-                                <Eye className="h-4 w-4 text-blue-500" />
-                              </Link>
-                            </Button>
-                            {hasPermission('update') && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleEdit(voluntario)}
-                              >
-                                <Edit className="h-4 w-4" />
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end space-x-2">
+                            
+                            {/* Ver Perfil */}
+                            <Link to={`/voluntarios/perfil/${voluntario.id}`}>
+                              <Button variant="outline" size="sm">
+                                <Eye className="h-4 w-4" />
                               </Button>
-                            )}
+                            </Link>
+
+                            {/* Editar */}
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => openDialog(voluntario)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+
+                            {/* Toggle Status */}
                             <Button
-                              variant="ghost"
+                              variant="outline"
                               size="sm"
                               onClick={() => handleToggleStatus(voluntario)}
+                              className={voluntario.ativo ? "text-red-600 hover:text-red-700" : "text-green-600 hover:text-green-700"}
                             >
-                              {voluntario.ativo ? (
-                                <UserX className="h-4 w-4 text-red-500" />
-                              ) : (
-                                <UserCheck className="h-4 w-4 text-green-500" />
-                              )}
+                              {voluntario.ativo ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
                             </Button>
+
+                            {/* Remover */}
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="sm">
-                                  <Trash2 className="h-4 w-4 text-red-500" />
+                                <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                                  <Trash2 className="h-4 w-4" />
                                 </Button>
                               </AlertDialogTrigger>
                               <AlertDialogContent>
                                 <AlertDialogHeader>
-                                  <AlertDialogTitle>Eliminar Voluntário</AlertDialogTitle>
+                                  <AlertDialogTitle>Remover Voluntário</AlertDialogTitle>
                                   <AlertDialogDescription>
-                                    Tem certeza que deseja eliminar {voluntario.nome}? 
+                                    Tem a certeza que deseja remover o voluntário <strong>{voluntario.nome}</strong>? 
                                     Esta ação não pode ser desfeita.
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
@@ -718,7 +833,7 @@ const GestaoVoluntarios = () => {
                                     onClick={() => handleDelete(voluntario)}
                                     className="bg-red-600 hover:bg-red-700"
                                   >
-                                    Eliminar
+                                    Remover
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
                               </AlertDialogContent>
