@@ -69,6 +69,7 @@ const getEstadoBadge = (estado: string) => {
   if (estado === 'Adotado') return 'bg-blue-600 text-white';
   if (estado === 'Óbito') return 'bg-red-600 text-white';
   if (estado === 'Não Adotável') return 'bg-orange-600 text-white';
+  if (estado === 'Arquivado') return 'bg-gray-600 text-white';
   return 'bg-gray-600 text-white';
 };
 
@@ -93,7 +94,8 @@ const AnimaisList: React.FC = () => {
             tipo
           )
         `)
-        .neq('estado', 'arquivado')
+        .eq('arquivado', false)
+        .neq('estado', 'Arquivado')
         .order('created_at', { ascending: false });
 
       if (error) {

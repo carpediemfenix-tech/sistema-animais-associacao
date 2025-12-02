@@ -81,6 +81,7 @@ const AnimaisArquivados = () => {
         .from('animais')
         .select('*')
         .eq('arquivado', true)
+        .eq('estado', 'Arquivado')
         .order('data_arquivamento', { ascending: false });
 
       if (error) {
