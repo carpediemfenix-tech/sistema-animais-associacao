@@ -30,6 +30,10 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import UserHeader from "@/components/UserHeader";
+import TrendChart from "@/components/charts/TrendChart";
+import PieChart from "@/components/charts/PieChart";
+import RecentActivities from "@/components/RecentActivities";
+import GoalsWidget from "@/components/GoalsWidget";
 // import SistemaLembretes from "@/components/SistemaLembretes"; // Temporariamente desativado
 
 interface DashboardStats {
@@ -101,6 +105,9 @@ const Index = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [alertasCriticos, setAlertasCriticos] = useState<AlertaCritico[]>([]);
   const [atividadeRecente, setAtividadeRecente] = useState<AtividadeRecente[]>([]);
+  const [tendenciasAdocoes, setTendenciasAdocoes] = useState<any[]>([]);
+  const [distribuicaoEspecies, setDistribuicaoEspecies] = useState<any[]>([]);
+  const [metasObjetivos, setMetasObjetivos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -332,6 +339,78 @@ const Index = () => {
 
       setStats(dashboardStats);
 
+      // 📊 GERAR DADOS PARA GRÁFICOS E WIDGETS
+      console.log('📊 [DASHBOARD] Gerando dados para visualizações...');
+      
+      // Tendências de adoções (últimos 6 meses)
+      const mesesAdocoes = [];
+      for (let i = 5; i >= 0; i--) {
+        const mes = new Date();
+        mes.setMonth(mes.getMonth() - i);
+        const inicioMesLoop = new Date(mes.getFullYear(), mes.getMonth(), 1);
+        const fimMesLoop = new Date(mes.getFullYear(), mes.getMonth() + 1, 0);
+        
+        const adocoesMesLoop = animaisAdotados.filter(a => 
+          a.data_adocao && 
+          new Date(a.data_adocao) >= inicioMesLoop &&
+          new Date(a.data_adocao) <= fimMesLoop
+        ).length;
+        
+        mesesAdocoes.push({
+          label: mes.toLocaleDateString('pt-PT', { month: 'short' }),
+          value: adocoesMesLoop,
+          change: i === 0 ? 0 : Math.random() * 20 - 10 // Simulado
+        });
+      }
+      setTendenciasAdocoes(mesesAdocoes);
+      
+      // Distribuição por espécies
+      const especiesData = [
+        { label: 'Cães', value: totalCaes, color: '#3b82f6' },
+        { label: 'Gatos', value: totalGatos, color: '#10b981' },
+        { label: 'Outros', value: totalOutros, color: '#f59e0b' }
+      ].filter(item => item.value > 0);
+      setDistribuicaoEspecies(especiesData);
+      
+      // Metas e objetivos (dados simulados)
+      const metas = [
+        {
+          id: '1',
+          title: 'Adoções do Ano',
+          description: 'Meta de adoções para 2025',
+          target: 100,
+          current: adocoesAno,
+          unit: 'adoções',
+          deadline: '2025-12-31',
+          category: 'adocoes' as const,
+          priority: 'alta' as const,
+          status: adocoesAno >= 100 ? 'concluida' as const : 'em_progresso' as const
+        },
+        {
+          id: '2',
+          title: 'Voluntários Ativos',
+          description: 'Manter equipa de voluntários',
+          target: 20,
+          current: voluntariosAtivos,
+          unit: 'voluntários',
+          category: 'voluntarios' as const,
+          priority: 'media' as const,
+          status: voluntariosAtivos >= 20 ? 'concluida' as const : 'em_progresso' as const
+        },
+        {
+          id: '3',
+          title: 'Saldo Positivo',
+          description: 'Manter finanças equilibradas',
+          target: 1000,
+          current: Math.max(0, saldoTotal),
+          unit: '€',
+          category: 'financeiro' as const,
+          priority: 'alta' as const,
+          status: saldoTotal >= 1000 ? 'concluida' as const : saldoTotal >= 0 ? 'em_progresso' as const : 'atrasada' as const
+        }
+      ];
+      setMetasObjetivos(metas);
+
       // 🚨 SISTEMA AVANÇADO DE ALERTAS INTELIGENTES
       console.log('🚨 [DASHBOARD] Gerando alertas inteligentes...');
       const alertas: AlertaCritico[] = [];
@@ -440,18 +519,76 @@ const Index = () => {
 
       setAlertasCriticos(alertas);
 
-      // Gerar atividade recente (simulada por agora)
-      const atividades: AtividadeRecente[] = [
-        {
-          id: '1',
-          tipo: 'animal',
-          titulo: 'Sistema Atualizado',
-          descricao: 'Dashboard carregado com sucesso',
-          data: new Date().toISOString()
-        }
-      ];
-
-      setAtividadeRecente(atividades);
+      // 📈 GERAR ATIVIDADES RECENTES AVANÇADAS
+      const atividades: any[] = [];
+      
+      // Adoções recentes
+      animaisAdotados
+        .filter(a => a.data_adocao && new Date(a.data_adocao) >= new Date(ultimos30Dias))
+        .slice(0, 3)
+        .forEach((animal, index) => {
+          atividades.push({
+            id: `adocao-${animal.id}`,
+            type: 'adocao',
+            title: 'Nova Adoção Realizada',
+            description: `Animal foi adotado com sucesso`,
+            timestamp: animal.data_adocao || new Date().toISOString(),
+            user: 'Sistema',
+            status: 'success'
+          });
+        });
+      
+      // Novos animais registados
+      animaisArray
+        .filter(a => a.data_entrada && new Date(a.data_entrada) >= new Date(ultimos30Dias))
+        .slice(0, 2)
+        .forEach((animal, index) => {
+          atividades.push({
+            id: `animal-${animal.id}`,
+            type: 'animal',
+            title: 'Novo Animal Registado',
+            description: `Animal ${animal.especie || 'desconhecido'} adicionado ao sistema`,
+            timestamp: animal.data_entrada || new Date().toISOString(),
+            user: 'Equipa',
+            status: 'info'
+          });
+        });
+      
+      // Intervenções recentes
+      intervencoesArray
+        .filter(i => new Date(i.data_intervencao) >= new Date(ultimos30Dias))
+        .slice(0, 2)
+        .forEach((intervencao, index) => {
+          atividades.push({
+            id: `intervencao-${intervencao.id}`,
+            type: 'intervencao',
+            title: intervencao.urgente ? 'Intervenção Urgente' : 'Nova Intervenção',
+            description: `Estado: ${intervencao.estado}`,
+            timestamp: intervencao.data_intervencao,
+            user: 'Veterinário',
+            status: intervencao.urgente ? 'warning' : 'info'
+          });
+        });
+      
+      // Movimentos financeiros significativos
+      movimentosArray
+        .filter(m => Math.abs(parseFloat(m.valor) || 0) > 100)
+        .slice(0, 2)
+        .forEach((movimento, index) => {
+          atividades.push({
+            id: `financeiro-${movimento.id}`,
+            type: 'financeiro',
+            title: movimento.tipo === 'receita' ? 'Receita Registada' : 'Despesa Registada',
+            description: `€${parseFloat(movimento.valor || '0').toFixed(2)}`,
+            timestamp: movimento.data_movimento,
+            user: 'Tesouraria',
+            status: movimento.tipo === 'receita' ? 'success' : 'info'
+          });
+        });
+      
+      // Ordenar por data mais recente e limitar
+      atividades.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      setAtividadeRecente(atividades.slice(0, 8));
 
       console.log('✅ [DASHBOARD] Dashboard carregado com sucesso');
 
@@ -944,6 +1081,53 @@ const Index = () => {
               </CardContent>
             </Card>
           )}
+        </div>
+
+        {/* 📊 SEÇÃO DE GRÁFICOS E VISUALIZAÇÕES AVANÇADAS */}
+        <div className="space-y-6">
+          <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+            <BarChart3 className="h-6 w-6 text-blue-600" />
+            Análises e Tendências
+          </h2>
+          
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Gráfico de Tendências de Adoções */}
+            <TrendChart
+              title="Tendências de Adoções"
+              data={tendenciasAdocoes}
+              color="#10b981"
+              icon={<Heart className="h-5 w-5 text-green-600" />}
+            />
+            
+            {/* Gráfico de Distribuição por Espécies */}
+            <PieChart
+              title="Distribuição por Espécies"
+              data={distribuicaoEspecies}
+              icon={<PawPrint className="h-5 w-5 text-blue-600" />}
+            />
+          </div>
+        </div>
+
+        {/* 🎯 SEÇÃO DE METAS E ATIVIDADES */}
+        <div className="space-y-6">
+          <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+            <Target className="h-6 w-6 text-purple-600" />
+            Metas e Atividades
+          </h2>
+          
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Widget de Metas e Objetivos */}
+            <GoalsWidget
+              goals={metasObjetivos}
+              title="Metas 2025"
+            />
+            
+            {/* Atividades Recentes */}
+            <RecentActivities
+              activities={atividadeRecente}
+              maxItems={6}
+            />
+          </div>
         </div>
 
         {/* Sistema de Lembretes - Temporariamente Desativado */}
