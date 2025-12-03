@@ -52,52 +52,38 @@ const VoluntarioProfile = () => {
     try {
       setLoading(true);
 
-      // Carregar dados do voluntário
+      // Carregar dados do voluntário (sem join problemático)
       const { data: voluntarioData, error: voluntarioError } = await supabase
         .from('voluntarios')
-        .select(`
-          *,
-          nivel_formacao:nivel_formacao_atual(*)
-        `)
+        .select('*')
         .eq('id', id)
         .single();
 
       if (voluntarioError) throw voluntarioError;
 
-      // Carregar progressão do voluntário
+      // Carregar progressão do voluntário (simplificado)
       const { data: progressaoData, error: progressaoError } = await supabase
         .from('voluntario_progressao')
-        .select(`
-          *,
-          nivel:nivel_id(*),
-          formador:formador_id(nome)
-        `)
+        .select('*')
         .eq('voluntario_id', id)
-        .order('data_inicio', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (progressaoError) throw progressaoError;
 
-      // Carregar especializações do voluntário
+      // Carregar especializações do voluntário (simplificado)
       const { data: especializacoesData, error: especializacoesError } = await supabase
         .from('voluntario_especializacoes')
-        .select(`
-          *,
-          especializacao:especializacao_id(*),
-          formador:formador_id(nome)
-        `)
+        .select('*')
         .eq('voluntario_id', id);
 
       if (especializacoesError) throw especializacoesError;
 
-      // Carregar conquistas do voluntário
+      // Carregar conquistas do voluntário (simplificado)
       const { data: conquistasData, error: conquistasError } = await supabase
         .from('voluntario_conquistas')
-        .select(`
-          *,
-          conquista:conquista_id(*)
-        `)
+        .select('*')
         .eq('voluntario_id', id)
-        .order('data_obtencao', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (conquistasError) throw conquistasError;
 
