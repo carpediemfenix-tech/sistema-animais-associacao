@@ -33,35 +33,59 @@ import UserHeader from "@/components/UserHeader";
 // import SistemaLembretes from "@/components/SistemaLembretes"; // Temporariamente desativado
 
 interface DashboardStats {
+  // 🐾 ANIMAIS - Estatísticas Avançadas
   totalAnimais: number;
   animaisAtivos: number;
   animaisAdotados: number;
   animaisArquivados: number;
   animaisSemResponsavel: number;
+  animaisUrgentes: number;
   totalCaes: number;
   totalGatos: number;
   totalOutros: number;
   adocoesAno: number;
   adocoesMes: number;
+  adocoesUltimos30Dias: number;
+  mediaIdadeAnimais: number;
+  
+  // 👥 VOLUNTÁRIOS - Estatísticas Avançadas
   totalVoluntarios: number;
   voluntariosAtivos: number;
-  totalMovimentosFinanceiros: number;
+  voluntariosComFormacao: number;
+  novasInscricoesMes: number;
+  
+  // 💰 FINANCEIRO - Estatísticas Avançadas
   saldoTotal: number;
   receitasMes: number;
   despesasMes: number;
+  receitasAno: number;
+  despesasAno: number;
+  tendenciaFinanceira: 'positiva' | 'negativa' | 'estavel';
+  
+  // 🏥 INTERVENÇÕES - Estatísticas Avançadas
   intervencoesPendentes: number;
+  intervencoesUrgentes: number;
   intervencoesMes: number;
+  custoMedioIntervencao: number;
+  
+  // 📋 SISTEMA - Estatísticas Gerais
   gruposAtivos: number;
   responsabilidadesAtivas: number;
+  totalMovimentosFinanceiros: number;
+  ultimaAtualizacao: string;
 }
 
 interface AlertaCritico {
   id: string;
-  tipo: 'animal' | 'financeiro' | 'intervencao' | 'sistema';
+  tipo: 'animal' | 'financeiro' | 'intervencao' | 'sistema' | 'voluntario';
   titulo: string;
   descricao: string;
-  prioridade: 'alta' | 'media' | 'baixa';
+  prioridade: 'critica' | 'alta' | 'media' | 'baixa';
+  icone: string;
+  cor: string;
   link?: string;
+  acao?: string;
+  contador?: number;
 }
 
 interface AtividadeRecente {
@@ -83,9 +107,10 @@ const Index = () => {
   const { hasPermission } = useAuth();
 
   // Função otimizada para buscar estatísticas com melhor tratamento de erros
+  // 🚀 FUNÇÃO AVANÇADA DE CARREGAMENTO
   const fetchDashboardStats = async () => {
     try {
-      console.log('🔄 [DASHBOARD] Iniciando carregamento de dados...');
+      console.log('🚀 [DASHBOARD] Iniciando carregamento avançado...');
       setLoading(true);
       setError(null);
       
@@ -94,39 +119,133 @@ const Index = () => {
       const mesAtual = hoje.getMonth() + 1;
       const inicioMes = new Date(anoAtual, mesAtual - 1, 1).toISOString();
       const fimMes = new Date(anoAtual, mesAtual, 0).toISOString();
+      const inicioAno = new Date(anoAtual, 0, 1).toISOString();
+      const ultimos30Dias = new Date(hoje.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
-      // Buscar dados básicos primeiro (mais seguros)
-      console.log('📊 [DASHBOARD] Carregando dados básicos...');
-      
-      const { data: animais, error: animaisError } = await supabase
+      // 🐾 ANIMAIS - Carregamento Avançado
+      console.log('🐾 [DASHBOARD] Carregando dados avançados de animais...');
+      const { data: animais } = await supabase
         .from('animais')
-        .select('id, estado, especie, arquivado, data_entrada, data_adocao, voluntario_responsavel_id');
+        .select(`
+          id, estado, arquivado, data_entrada, data_nascimento, data_adocao,
+          especies(nome), sexos(nome), grupos(nome, tipo)
+        `);
 
-      if (animaisError) {
-        console.error('❌ [DASHBOARD] Erro ao carregar animais:', animaisError);
-        throw new Error('Erro ao carregar dados dos animais');
-      }
-
-      const { data: voluntarios, error: voluntariosError } = await supabase
+      // 👥 VOLUNTÁRIOS - Carregamento Avançado
+      console.log('👥 [DASHBOARD] Carregando dados de voluntários...');
+      const { data: voluntarios } = await supabase
         .from('voluntarios')
-        .select('id, ativo');
+        .select('id, ativo, tem_formacao, especialidade, data_entrada');
 
-      if (voluntariosError) {
-        console.error('❌ [DASHBOARD] Erro ao carregar voluntários:', voluntariosError);
-        // Não bloquear por erro de voluntários
-      }
+      // 📋 RESPONSABILIDADES - Carregamento
+      const { data: responsabilidades } = await supabase
+        .from('responsabilidades_voluntarios')
+        .select('id, animal_id, ativo')
+        .eq('ativo', true);
 
-      // Dados opcionais (não bloqueiam o dashboard se falharem)
-      let movimentos: any[] = [];
-      let intervencoes: any[] = [];
-      let grupos: any[] = [];
-      let responsabilidades: any[] = [];
+      // 💰 MOVIMENTOS FINANCEIROS - Carregamento
+      const { data: movimentos } = await supabase
+        .from('movimentos_financeiros')
+        .select('id, tipo, valor, data_movimento')
+        .gte('data_movimento', inicioAno);
+
+      // 🏥 INTERVENÇÕES - Carregamento
+      const { data: intervencoes } = await supabase
+        .from('intervencoes')
+        .select('id, estado, urgente, custo_estimado, data_intervencao')
+        .gte('data_intervencao', inicioAno);
+
+      console.log('📊 [DASHBOARD] Processando estatísticas avançadas...');
+
+      // 🧮 CÁLCULOS AVANÇADOS DE ANIMAIS
+      const animaisArray = animais || [];
+      const animaisAtivos = animaisArray.filter(a => a.estado === 'Ativo' && !a.arquivado);
+      const animaisAdotados = animaisArray.filter(a => a.estado === 'Adotado');
+      const animaisArquivados = animaisArray.filter(a => a.arquivado);
+      
+      // Animais sem responsável
+      const animaisComResponsavel = new Set(responsabilidades?.map(r => r.animal_id) || []);
+      const animaisSemResponsavel = animaisAtivos.filter(a => !animaisComResponsavel.has(a.id)).length;
+      
+      // Distribuição por espécie
+      const totalCaes = animaisArray.filter(a => a.especies?.nome === 'Cão' && !a.arquivado).length;
+      const totalGatos = animaisArray.filter(a => a.especies?.nome === 'Gato' && !a.arquivado).length;
+      const totalOutros = animaisArray.filter(a => a.especies?.nome !== 'Cão' && a.especies?.nome !== 'Gato' && !a.arquivado).length;
+      
+      // Adoções recentes
+      const adocoesUltimos30Dias = animaisAdotados.filter(a => 
+        a.data_adocao && new Date(a.data_adocao) >= new Date(ultimos30Dias)
+      ).length;
+      
+      const adocoesMes = animaisAdotados.filter(a => 
+        a.data_adocao && 
+        new Date(a.data_adocao) >= new Date(inicioMes) &&
+        new Date(a.data_adocao) <= new Date(fimMes)
+      ).length;
+      
+      const adocoesAno = animaisAdotados.filter(a => 
+        a.data_adocao && new Date(a.data_adocao).getFullYear() === anoAtual
+      ).length;
+      
+      // 🧮 CÁLCULOS AVANÇADOS DE VOLUNTÁRIOS
+      const voluntariosArray = voluntarios || [];
+      const voluntariosAtivos = voluntariosArray.filter(v => v.ativo).length;
+      const voluntariosComFormacao = voluntariosArray.filter(v => v.tem_formacao).length;
+      
+      const novasInscricoesMes = voluntariosArray.filter(v => 
+        v.data_entrada && 
+        new Date(v.data_entrada) >= new Date(inicioMes) &&
+        new Date(v.data_entrada) <= new Date(fimMes)
+      ).length;
+      
+      // 🧮 CÁLCULOS AVANÇADOS FINANCEIROS
+      const movimentosArray = movimentos || [];
+      const receitasAno = movimentosArray
+        .filter(m => m.tipo === 'receita')
+        .reduce((sum, m) => sum + (parseFloat(m.valor) || 0), 0);
+      
+      const despesasAno = movimentosArray
+        .filter(m => m.tipo === 'despesa')
+        .reduce((sum, m) => sum + (parseFloat(m.valor) || 0), 0);
+      
+      const receitasMes = movimentosArray
+        .filter(m => m.tipo === 'receita' && 
+          new Date(m.data_movimento) >= new Date(inicioMes) &&
+          new Date(m.data_movimento) <= new Date(fimMes))
+        .reduce((sum, m) => sum + (parseFloat(m.valor) || 0), 0);
+      
+      const despesasMes = movimentosArray
+        .filter(m => m.tipo === 'despesa' && 
+          new Date(m.data_movimento) >= new Date(inicioMes) &&
+          new Date(m.data_movimento) <= new Date(fimMes))
+        .reduce((sum, m) => sum + (parseFloat(m.valor) || 0), 0);
+      
+      const saldoTotal = receitasAno - despesasAno;
+      const saldoMes = receitasMes - despesasMes;
+      
+      // Tendência financeira
+      let tendenciaFinanceira: 'positiva' | 'negativa' | 'estavel' = 'estavel';
+      if (saldoMes > 0) tendenciaFinanceira = 'positiva';
+      else if (saldoMes < 0) tendenciaFinanceira = 'negativa';
+      
+      // 🧮 CÁLCULOS AVANÇADOS DE INTERVENÇÕES
+      const intervencoesArray = intervencoes || [];
+      const intervencoesPendentes = intervencoesArray.filter(i => i.estado === 'Agendada').length;
+      const intervencoesUrgentes = intervencoesArray.filter(i => i.urgente && i.estado !== 'Concluída').length;
+      
+      const intervencoesMes = intervencoesArray.filter(i => 
+        new Date(i.data_intervencao) >= new Date(inicioMes) &&
+        new Date(i.data_intervencao) <= new Date(fimMes)
+      ).length;
+      
+      const custoMedioIntervencao = intervencoesArray.length > 0 ? 
+        intervencoesArray.reduce((sum, i) => sum + (parseFloat(i.custo_estimado) || 0), 0) / intervencoesArray.length : 0;
 
       try {
         const { data: movimentosData } = await supabase
           .from('movimentos_financeiros')
           .select('id, valor, tipo, data_movimento');
-        movimentos = movimentosData || [];
+        // movimentos = movimentosData || []; // Removido pois já foi declarado anteriormente
       } catch (e) {
         console.warn('⚠️ [DASHBOARD] Erro ao carregar movimentos financeiros:', e);
       }
@@ -135,7 +254,7 @@ const Index = () => {
         const { data: intervencoesData } = await supabase
           .from('intervencoes')
           .select('id, estado, data_intervencao');
-        intervencoes = intervencoesData || [];
+        // intervencoes = intervencoesData || []; // Removido pois já foi declarado anteriormente
       } catch (e) {
         console.warn('⚠️ [DASHBOARD] Erro ao carregar intervenções:', e);
       }
@@ -144,7 +263,7 @@ const Index = () => {
         const { data: gruposData } = await supabase
           .from('grupos')
           .select('id, ativo');
-        grupos = gruposData || [];
+        const grupos = gruposData || [];
       } catch (e) {
         console.warn('⚠️ [DASHBOARD] Erro ao carregar grupos:', e);
       }
@@ -153,115 +272,156 @@ const Index = () => {
         const { data: responsabilidadesData } = await supabase
           .from('responsabilidades_voluntarios')
           .select('id, ativo');
-        responsabilidades = responsabilidadesData || [];
+        // responsabilidades = responsabilidadesData || []; // Removido pois já foi declarado anteriormente
       } catch (e) {
         console.warn('⚠️ [DASHBOARD] Erro ao carregar responsabilidades:', e);
       }
 
       console.log('✅ [DASHBOARD] Dados carregados com sucesso');
 
-      // Calcular estatísticas de animais (dados essenciais)
-      const animaisArray = animais || [];
-      const totalAnimais = animaisArray.length;
-      const animaisAtivos = animaisArray.filter(a => a.estado === 'Ativo' && !a.arquivado).length;
-      const animaisAdotados = animaisArray.filter(a => a.estado === 'Adotado').length;
-      const animaisArquivados = animaisArray.filter(a => a.arquivado).length;
-      const animaisSemResponsavel = animaisArray.filter(a => !a.voluntario_responsavel_id && a.estado === 'Ativo' && !a.arquivado).length;
-      
-      const totalCaes = animaisArray.filter(a => a.especie === 'Cão' && !a.arquivado).length;
-      const totalGatos = animaisArray.filter(a => a.especie === 'Gato' && !a.arquivado).length;
-      const totalOutros = animaisArray.filter(a => a.especie !== 'Cão' && a.especie !== 'Gato' && !a.arquivado).length;
-
-      // Adoções do ano e mês
-      const adocoesAno = animaisArray.filter(a => {
-        if (!a.data_adocao) return false;
-        return new Date(a.data_adocao).getFullYear() === anoAtual;
-      }).length;
-
-      const adocoesMes = animaisArray.filter(a => {
-        if (!a.data_adocao) return false;
-        const dataAdocao = new Date(a.data_adocao);
-        return dataAdocao >= new Date(inicioMes) && dataAdocao <= new Date(fimMes);
-      }).length;
-
-      // Estatísticas de voluntários
-      const voluntariosArray = voluntarios || [];
-      const totalVoluntarios = voluntariosArray.length;
-      const voluntariosAtivos = voluntariosArray.filter(v => v.ativo).length;
-
-      // Estatísticas financeiras
-      const totalMovimentosFinanceiros = movimentos.length;
-      const receitas = movimentos.filter(m => m.tipo === 'receita').reduce((sum, m) => sum + (m.valor || 0), 0);
-      const despesas = movimentos.filter(m => m.tipo === 'despesa').reduce((sum, m) => sum + (m.valor || 0), 0);
-      const saldoTotal = receitas - despesas;
-
-      const movimentosMes = movimentos.filter(m => {
-        if (!m.data_movimento) return false;
-        const dataMovimento = new Date(m.data_movimento);
-        return dataMovimento >= new Date(inicioMes) && dataMovimento <= new Date(fimMes);
-      });
-
-      const receitasMes = movimentosMes.filter(m => m.tipo === 'receita').reduce((sum, m) => sum + (m.valor || 0), 0);
-      const despesasMes = movimentosMes.filter(m => m.tipo === 'despesa').reduce((sum, m) => sum + (m.valor || 0), 0);
-
-      // Estatísticas de intervenções
-      const intervencoesPendentes = intervencoes.filter(i => i.estado === 'Agendada' || i.estado === 'Em Curso').length;
-      const intervencoesMes = intervencoes.filter(i => {
-        if (!i.data_intervencao) return false;
-        const dataIntervencao = new Date(i.data_intervencao);
-        return dataIntervencao >= new Date(inicioMes) && dataIntervencao <= new Date(fimMes);
-      }).length;
+      // Usar os dados já calculados anteriormente
 
       // Outras estatísticas
       const gruposAtivos = grupos.filter(g => g.ativo).length;
-      const responsabilidadesAtivas = responsabilidades.filter(r => r.ativo).length;
+      const responsabilidadesAtivasCount = responsabilidades.filter(r => r.ativo).length;
 
       const dashboardStats: DashboardStats = {
-        totalAnimais,
-        animaisAtivos,
-        animaisAdotados,
-        animaisArquivados,
+        // 🐾 ANIMAIS - Estatísticas Avançadas
+        totalAnimais: animaisArray.length,
+        animaisAtivos: animaisAtivos.length,
+        animaisAdotados: animaisAdotados.length,
+        animaisArquivados: animaisArquivados.length,
         animaisSemResponsavel,
+        animaisUrgentes: intervencoesUrgentes,
         totalCaes,
         totalGatos,
         totalOutros,
         adocoesAno,
         adocoesMes,
-        totalVoluntarios,
+        adocoesUltimos30Dias,
+        mediaIdadeAnimais: 0, // Implementar depois se necessário
+        
+        // 👥 VOLUNTÁRIOS - Estatísticas Avançadas
+        totalVoluntarios: voluntariosArray.length,
         voluntariosAtivos,
-        totalMovimentosFinanceiros,
+        voluntariosComFormacao,
+        novasInscricoesMes,
+        
+        // 💰 FINANCEIRO - Estatísticas Avançadas
         saldoTotal,
         receitasMes,
         despesasMes,
+        receitasAno,
+        despesasAno,
+        tendenciaFinanceira,
+        
+        // 🏥 INTERVENÇÕES - Estatísticas Avançadas
         intervencoesPendentes,
+        intervencoesUrgentes,
         intervencoesMes,
-        gruposAtivos,
-        responsabilidadesAtivas
+        custoMedioIntervencao,
+        
+        // 📋 SISTEMA - Estatísticas Gerais
+        gruposAtivos: (grupos || []).filter(g => g.ativo).length,
+        responsabilidadesAtivas: (responsabilidades || []).filter(r => r.ativo).length,
+        totalMovimentosFinanceiros: movimentosArray.length,
+        ultimaAtualizacao: new Date().toISOString()
       };
 
       setStats(dashboardStats);
 
-      // Gerar alertas críticos baseados nos dados
+      // 🚨 SISTEMA AVANÇADO DE ALERTAS INTELIGENTES
+      console.log('🚨 [DASHBOARD] Gerando alertas inteligentes...');
       const alertas: AlertaCritico[] = [];
 
+      // 🐾 ALERTAS DE ANIMAIS
       if (animaisSemResponsavel > 0) {
         alertas.push({
           id: 'sem-responsavel',
           tipo: 'animal',
           titulo: 'Animais sem Responsável',
-          descricao: `${animaisSemResponsavel} animais ativos sem voluntário responsável`,
-          prioridade: 'alta',
-          link: '/animais'
+          descricao: `${animaisSemResponsavel} animais ativos precisam de voluntário responsável`,
+          prioridade: animaisSemResponsavel > 10 ? 'critica' : 'alta',
+          icone: '🐾',
+          cor: animaisSemResponsavel > 10 ? '#dc2626' : '#ea580c',
+          link: '/animais',
+          acao: 'Atribuir Responsáveis',
+          contador: animaisSemResponsavel
         });
       }
 
+      if (intervencoesUrgentes > 0) {
+        alertas.push({
+          id: 'intervencoes-urgentes',
+          tipo: 'intervencao',
+          titulo: 'Intervenções Urgentes',
+          descricao: `${intervencoesUrgentes} intervenções marcadas como urgentes`,
+          prioridade: 'critica',
+          icone: '🚨',
+          cor: '#dc2626',
+          link: '/intervencoes',
+          acao: 'Ver Urgentes',
+          contador: intervencoesUrgentes
+        });
+      }
+
+      // 💰 ALERTAS FINANCEIROS
+      if (saldoTotal < 0) {
+        alertas.push({
+          id: 'saldo-negativo',
+          tipo: 'financeiro',
+          titulo: 'Saldo Negativo',
+          descricao: `Saldo atual: €${saldoTotal.toFixed(2)}`,
+          prioridade: 'critica',
+          icone: '💸',
+          cor: '#dc2626',
+          link: '/dashboard-financeiro',
+          acao: 'Ver Finanças'
+        });
+      }
+
+      if (despesasMes > receitasMes * 1.5) {
+        alertas.push({
+          id: 'despesas-altas',
+          tipo: 'financeiro',
+          titulo: 'Despesas Elevadas',
+          descricao: `Despesas do mês 50% acima das receitas`,
+          prioridade: 'alta',
+          icone: '📊',
+          cor: '#ea580c',
+          link: '/gestao-financeira',
+          acao: 'Analisar Gastos'
+        });
+      }
+
+      // 🏥 ALERTAS DE INTERVENÇÕES
       if (intervencoesPendentes > 5) {
         alertas.push({
           id: 'intervencoes-pendentes',
           tipo: 'intervencao',
           titulo: 'Muitas Intervenções Pendentes',
           descricao: `${intervencoesPendentes} intervenções aguardando atendimento`,
-          prioridade: 'alta'
+          prioridade: 'alta',
+          icone: '⏰',
+          cor: '#ea580c',
+          link: '/intervencoes',
+          acao: 'Agendar',
+          contador: intervencoesPendentes
+        });
+      }
+
+      // 👥 ALERTAS DE VOLUNTÁRIOS
+      if (voluntariosAtivos < 5) {
+        alertas.push({
+          id: 'poucos-voluntarios',
+          tipo: 'voluntario',
+          titulo: 'Poucos Voluntários Ativos',
+          descricao: `Apenas ${voluntariosAtivos} voluntários ativos`,
+          prioridade: 'media',
+          icone: '👥',
+          cor: '#d97706',
+          link: '/voluntarios/gestao',
+          acao: 'Recrutar Mais'
         });
       }
 
@@ -331,8 +491,17 @@ const Index = () => {
           <UserHeader />
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
-              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
-              <p className="text-gray-600">Carregando dashboard...</p>
+              <div className="relative">
+                <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-blue-600" />
+                <div className="absolute inset-0 h-12 w-12 mx-auto border-4 border-blue-200 rounded-full animate-pulse"></div>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">Carregando Dashboard Avançado</h3>
+              <p className="text-gray-600">Processando estatísticas, alertas e atividades...</p>
+              <div className="mt-4 flex justify-center space-x-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+              </div>
             </div>
           </div>
         </div>
@@ -366,109 +535,215 @@ const Index = () => {
       <div className="max-w-7xl mx-auto space-y-6">
         <UserHeader />
         
-        {/* Alertas Críticos */}
+        {/* 🚨 ALERTAS INTELIGENTES AVANÇADOS */}
         {alertasCriticos.length > 0 && (
-          <div className="grid gap-4">
-            <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-red-500" />
-              Alertas Críticos
-            </h2>
-            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-              {alertasCriticos.map((alerta) => (
-                <Card key={alerta.id} className="border-l-4 border-l-red-500">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h3 className="font-medium text-gray-900">{alerta.titulo}</h3>
-                        <p className="text-sm text-gray-600 mt-1">{alerta.descricao}</p>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                <AlertTriangle className="h-6 w-6 text-red-500" />
+                Alertas Críticos
+                <Badge variant="destructive" className="ml-2">{alertasCriticos.length}</Badge>
+              </h2>
+              <p className="text-sm text-gray-600">Requer atenção imediata</p>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {alertasCriticos.map((alerta) => {
+                const borderColor = alerta.prioridade === 'critica' ? 'border-l-red-500' : 
+                                   alerta.prioridade === 'alta' ? 'border-l-orange-500' : 'border-l-yellow-500';
+                const bgColor = alerta.prioridade === 'critica' ? 'bg-red-50' : 
+                               alerta.prioridade === 'alta' ? 'bg-orange-50' : 'bg-yellow-50';
+                
+                return (
+                  <Card key={alerta.id} className={`border-l-4 ${borderColor} ${bgColor} hover:shadow-lg transition-shadow`}>
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-2xl">{alerta.icone}</span>
+                          <div>
+                            <h3 className="font-semibold text-gray-900">{alerta.titulo}</h3>
+                            <Badge 
+                              variant={alerta.prioridade === 'critica' ? 'destructive' : 'secondary'}
+                              className="text-xs mt-1"
+                            >
+                              {alerta.prioridade.toUpperCase()}
+                            </Badge>
+                          </div>
+                        </div>
+                        {alerta.contador && (
+                          <div className="text-right">
+                            <div className="text-2xl font-bold" style={{color: alerta.cor}}>
+                              {alerta.contador}
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      <Badge variant={alerta.prioridade === 'alta' ? 'destructive' : 'secondary'}>
-                        {alerta.prioridade}
-                      </Badge>
-                    </div>
-                    {alerta.link && (
-                      <Link to={alerta.link}>
-                        <Button size="sm" className="mt-3 w-full">
-                          Ver Detalhes
-                          <ArrowRight className="h-4 w-4 ml-2" />
-                        </Button>
-                      </Link>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
+                      <p className="text-sm text-gray-700 mb-3">{alerta.descricao}</p>
+                      {alerta.link && (
+                        <Link to={alerta.link}>
+                          <Button size="sm" className="w-full" style={{backgroundColor: alerta.cor}}>
+                            {alerta.acao || 'Ver Detalhes'}
+                            <ArrowRight className="h-3 w-3 ml-1" />
+                          </Button>
+                        </Link>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           </div>
         )}
 
-        {/* Estatísticas Principais */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-blue-100">Total de Animais</p>
-                  <p className="text-3xl font-bold">{stats?.totalAnimais || 0}</p>
-                  <p className="text-sm text-blue-100 mt-1">
-                    {stats?.animaisAtivos || 0} ativos
-                  </p>
-                </div>
-                <PawPrint className="h-12 w-12 text-blue-200" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-green-100">Adoções (Ano)</p>
-                  <p className="text-3xl font-bold">{stats?.adocoesAno || 0}</p>
-                  <p className="text-sm text-green-100 mt-1">
-                    {stats?.adocoesMes || 0} este mês
-                  </p>
-                </div>
-                <Heart className="h-12 w-12 text-green-200" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-purple-100">Voluntários</p>
-                  <p className="text-3xl font-bold">{stats?.totalVoluntarios || 0}</p>
-                  <p className="text-sm text-purple-100 mt-1">
-                    {stats?.voluntariosAtivos || 0} ativos
-                  </p>
-                </div>
-                <Users className="h-12 w-12 text-purple-200" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className={`bg-gradient-to-r ${(stats?.saldoTotal || 0) >= 0 ? 'from-emerald-500 to-emerald-600' : 'from-red-500 to-red-600'} text-white`}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-white/80">Saldo Total</p>
-                  <p className="text-3xl font-bold">€{(stats?.saldoTotal || 0).toFixed(2)}</p>
-                  <div className="flex items-center mt-1">
-                    {(stats?.receitasMes || 0) > (stats?.despesasMes || 0) ? (
-                      <TrendingUp className="h-4 w-4 mr-1" />
-                    ) : (
-                      <TrendingDown className="h-4 w-4 mr-1" />
-                    )}
-                    <p className="text-sm text-white/80">
-                      €{((stats?.receitasMes || 0) - (stats?.despesasMes || 0)).toFixed(2)} este mês
-                    </p>
+        {/* 📊 ESTATÍSTICAS PRINCIPAIS AVANÇADAS */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+              <BarChart3 className="h-6 w-6 text-blue-600" />
+              Estatísticas em Tempo Real
+            </h2>
+            <Badge variant="outline" className="ml-2">
+              Atualizado: {stats ? new Date(stats.ultimaAtualizacao).toLocaleTimeString('pt-PT', {hour: '2-digit', minute: '2-digit'}) : '--'}
+            </Badge>
+          </div>
+          
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            {/* 🐾 ANIMAIS - Card Avançado */}
+            <Card className="bg-gradient-to-br from-blue-500 to-blue-700 text-white hover:shadow-xl transition-all duration-300">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-white/20 rounded-lg">
+                      <PawPrint className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <p className="text-blue-100 text-sm font-medium">ANIMAIS</p>
+                      <p className="text-3xl font-bold">{stats?.totalAnimais || 0}</p>
+                    </div>
                   </div>
                 </div>
-                <DollarSign className="h-12 w-12 text-white/60" />
-              </div>
-            </CardContent>
-          </Card>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-blue-200">Ativos:</span>
+                    <span className="font-semibold">{stats?.animaisAtivos || 0}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-blue-200">Sem Responsável:</span>
+                    <span className={`font-semibold ${(stats?.animaisSemResponsavel || 0) > 0 ? 'text-yellow-300' : ''}`}>
+                      {stats?.animaisSemResponsavel || 0}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-blue-200">Cães/Gatos:</span>
+                    <span className="font-semibold">{(stats?.totalCaes || 0) + (stats?.totalGatos || 0)}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* ❤️ ADOÇÕES - Card Avançado */}
+            <Card className="bg-gradient-to-br from-green-500 to-green-700 text-white hover:shadow-xl transition-all duration-300">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-white/20 rounded-lg">
+                      <Heart className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <p className="text-green-100 text-sm font-medium">ADOÇÕES</p>
+                      <p className="text-3xl font-bold">{stats?.adocoesAno || 0}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-green-200">Este Mês:</span>
+                    <span className="font-semibold">{stats?.adocoesMes || 0}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-green-200">Últimos 30 dias:</span>
+                    <span className="font-semibold">{stats?.adocoesUltimos30Dias || 0}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-green-200">Taxa Mensal:</span>
+                    <span className="font-semibold">{stats?.adocoesAno ? Math.round((stats.adocoesAno / 12) * 10) / 10 : 0}/mês</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* 👥 VOLUNTÁRIOS - Card Avançado */}
+            <Card className="bg-gradient-to-br from-purple-500 to-purple-700 text-white hover:shadow-xl transition-all duration-300">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-white/20 rounded-lg">
+                      <Users className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <p className="text-purple-100 text-sm font-medium">VOLUNTÁRIOS</p>
+                      <p className="text-3xl font-bold">{stats?.totalVoluntarios || 0}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-purple-200">Ativos:</span>
+                    <span className="font-semibold">{stats?.voluntariosAtivos || 0}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-purple-200">Com Formação:</span>
+                    <span className="font-semibold">{stats?.voluntariosComFormacao || 0}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-purple-200">Novos (mês):</span>
+                    <span className="font-semibold">{stats?.novasInscricoesMes || 0}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* 💰 FINANCEIRO - Card Avançado */}
+            <Card className={`bg-gradient-to-br ${(stats?.saldoTotal || 0) >= 0 ? 'from-emerald-500 to-emerald-700' : 'from-red-500 to-red-700'} text-white hover:shadow-xl transition-all duration-300`}>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-white/20 rounded-lg">
+                      <DollarSign className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <p className="text-white/80 text-sm font-medium">SALDO TOTAL</p>
+                      <p className="text-3xl font-bold">€{(stats?.saldoTotal || 0).toFixed(2)}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    {stats?.tendenciaFinanceira === 'positiva' ? (
+                      <TrendingUp className="h-8 w-8 text-white/60" />
+                    ) : stats?.tendenciaFinanceira === 'negativa' ? (
+                      <TrendingDown className="h-8 w-8 text-white/60" />
+                    ) : (
+                      <Target className="h-8 w-8 text-white/60" />
+                    )}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-white/70">Receitas (mês):</span>
+                    <span className="font-semibold text-green-200">€{(stats?.receitasMes || 0).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-white/70">Despesas (mês):</span>
+                    <span className="font-semibold text-red-200">€{(stats?.despesasMes || 0).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm border-t border-white/20 pt-2">
+                    <span className="text-white/70">Saldo Mensal:</span>
+                    <span className={`font-semibold ${((stats?.receitasMes || 0) - (stats?.despesasMes || 0)) >= 0 ? 'text-green-200' : 'text-red-200'}`}>
+                      €{((stats?.receitasMes || 0) - (stats?.despesasMes || 0)).toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         {/* Distribuição por Espécie */}
