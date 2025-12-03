@@ -73,10 +73,7 @@ const VoluntariosDashboard = () => {
       // Carregar métricas básicas
       const { data: voluntarios, error: voluntariosError } = await supabase
         .from('voluntarios')
-        .select(`
-          *,
-          nivel_formacao:nivel_formacao_atual(*)
-        `);
+        .select('*');
 
       if (voluntariosError) throw voluntariosError;
 
@@ -115,9 +112,9 @@ const VoluntariosDashboard = () => {
       const voluntariosAtivos = voluntarios?.filter(v => v.ativo).length || 0;
       const voluntariosInativos = totalVoluntarios - voluntariosAtivos;
 
-      // Distribuição por nível
+      // Distribuição por nível (simplificada - sem nível atual)
       const distribuicaoPorNivel = niveis?.map(nivel => {
-        const quantidade = voluntarios?.filter(v => v.nivel_formacao_atual === nivel.id).length || 0;
+        const quantidade = 0; // Temporário - será implementado com progressão
         return {
           nivel,
           quantidade,
