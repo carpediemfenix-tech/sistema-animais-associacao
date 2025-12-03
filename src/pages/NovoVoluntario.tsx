@@ -180,8 +180,8 @@ const NovoVoluntario = () => {
         .from('voluntario_progressao')
         .insert({
           voluntario_id: voluntario.id,
-          nivel_anterior: null,
-          nivel_atual: formData.nivel_formacao_atual,
+          nivel_anterior_id: null,
+          nivel_atual_id: formData.nivel_formacao_atual,
           data_progressao: new Date().toISOString(),
           observacoes: "Nível inicial atribuído no cadastro",
           aprovado_por: (await supabase.auth.getUser()).data.user?.id

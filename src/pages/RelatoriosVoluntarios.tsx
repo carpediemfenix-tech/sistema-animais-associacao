@@ -132,9 +132,9 @@ const RelatoriosVoluntarios = () => {
           id,
           data_progressao,
           observacoes,
-          voluntario:voluntario_id(nome),
-          nivel_anterior_info:nivel_anterior(nome, codigo),
-          nivel_atual_info:nivel_atual(nome, codigo)
+          voluntario:voluntarios!voluntario_id(nome),
+          nivel_anterior_info:niveis_formacao!nivel_anterior_id(nome, codigo),
+          nivel_atual_info:niveis_formacao!nivel_atual_id(nome, codigo)
         `)
         .gte('data_progressao', dataInicio.toISOString())
         .order('data_progressao', { ascending: false })

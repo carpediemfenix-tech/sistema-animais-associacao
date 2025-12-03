@@ -109,7 +109,7 @@ const GestaoFormacao = () => {
         .from('voluntarios')
         .select(`
           *,
-          nivel_formacao:nivel_formacao_atual(*)
+          nivel_formacao:niveis_formacao!nivel_formacao_atual(*)
         `)
         .eq('ativo', true)
         .order('nome');
@@ -121,9 +121,9 @@ const GestaoFormacao = () => {
         .from('voluntario_progressao')
         .select(`
           *,
-          voluntario:voluntario_id(nome),
-          nivel_anterior_info:nivel_anterior(nome, codigo),
-          nivel_atual_info:nivel_atual(nome, codigo)
+          voluntario:voluntarios!voluntario_id(nome),
+          nivel_anterior_info:niveis_formacao!nivel_anterior_id(nome, codigo),
+          nivel_atual_info:niveis_formacao!nivel_atual_id(nome, codigo)
         `)
         .order('data_progressao', { ascending: false })
         .limit(20);
@@ -157,8 +157,8 @@ const GestaoFormacao = () => {
         .from('voluntario_progressao')
         .insert({
           voluntario_id: selectedVoluntario.id,
-          nivel_anterior: selectedVoluntario.nivel_formacao_atual,
-          nivel_atual: novoNivel,
+          nivel_anterior_id: selectedVoluntario.nivel_formacao_atual,
+          nivel_atual_id: novoNivel,
           data_progressao: new Date().toISOString(),
           observacoes: observacoes.trim() || null,
           aprovado_por: (await supabase.auth.getUser()).data.user?.id
