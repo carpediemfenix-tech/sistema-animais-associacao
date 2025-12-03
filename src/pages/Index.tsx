@@ -24,7 +24,8 @@ import {
   Eye,
   Stethoscope,
   Settings,
-  FileText
+  FileText,
+  Loader2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -77,13 +78,16 @@ const Index = () => {
   const [alertasCriticos, setAlertasCriticos] = useState<AlertaCritico[]>([]);
   const [atividadeRecente, setAtividadeRecente] = useState<AtividadeRecente[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const { hasPermission } = useAuth();
 
-  // Função otimizada para buscar estatísticas
+  // Função otimizada para buscar estatísticas com melhor tratamento de erros
   const fetchDashboardStats = async () => {
     try {
+      console.log('🔄 [DASHBOARD] Iniciando carregamento de dados...');
       setLoading(true);
+      setError(null);
       
       const hoje = new Date();
       const anoAtual = hoje.getFullYear();
@@ -91,56 +95,99 @@ const Index = () => {
       const inicioMes = new Date(anoAtual, mesAtual - 1, 1).toISOString();
       const fimMes = new Date(anoAtual, mesAtual, 0).toISOString();
 
-      // Buscar dados em paralelo para melhor performance
-      const [
-        animaisResult,
-        voluntariosResult,
-        movimentosResult,
-        intervencoesResult,
-        gruposResult,
-        responsabilidadesResult
-      ] = await Promise.all([
-        supabase.from('animais').select('id, estado, especie, arquivado, data_entrada, data_adocao, voluntario_responsavel_id'),
-        supabase.from('voluntarios').select('id, ativo'),
-        supabase.from('movimentos_financeiros').select('id, valor, tipo, data_movimento'),
-        supabase.from('intervencoes').select('id, estado, data_intervencao'),
-        supabase.from('grupos').select('id, ativo'),
-        supabase.from('responsabilidades_voluntarios').select('id, ativo')
-      ]);
-
-      const animais = animaisResult.data || [];
-      const voluntarios = voluntariosResult.data || [];
-      const movimentos = movimentosResult.data || [];
-      const intervencoes = intervencoesResult.data || [];
-      const grupos = gruposResult.data || [];
-      const responsabilidades = responsabilidadesResult.data || [];
-
-      // Calcular estatísticas de animais
-      const totalAnimais = animais.length;
-      const animaisAtivos = animais.filter(a => a.estado === 'Ativo' && !a.arquivado).length;
-      const animaisAdotados = animais.filter(a => a.estado === 'Adotado').length;
-      const animaisArquivados = animais.filter(a => a.arquivado).length;
-      const animaisSemResponsavel = animais.filter(a => !a.voluntario_responsavel_id && a.estado === 'Ativo' && !a.arquivado).length;
+      // Buscar dados básicos primeiro (mais seguros)
+      console.log('📊 [DASHBOARD] Carregando dados básicos...');
       
-      const totalCaes = animais.filter(a => a.especie === 'Cão' && !a.arquivado).length;
-      const totalGatos = animais.filter(a => a.especie === 'Gato' && !a.arquivado).length;
-      const totalOutros = animais.filter(a => a.especie !== 'Cão' && a.especie !== 'Gato' && !a.arquivado).length;
+      const { data: animais, error: animaisError } = await supabase
+        .from('animais')
+        .select('id, estado, especie, arquivado, data_entrada, data_adocao, voluntario_responsavel_id');
+
+      if (animaisError) {
+        console.error('❌ [DASHBOARD] Erro ao carregar animais:', animaisError);
+        throw new Error('Erro ao carregar dados dos animais');
+      }
+
+      const { data: voluntarios, error: voluntariosError } = await supabase
+        .from('voluntarios')
+        .select('id, ativo');
+
+      if (voluntariosError) {
+        console.error('❌ [DASHBOARD] Erro ao carregar voluntários:', voluntariosError);
+        // Não bloquear por erro de voluntários
+      }
+
+      // Dados opcionais (não bloqueiam o dashboard se falharem)
+      let movimentos: any[] = [];
+      let intervencoes: any[] = [];
+      let grupos: any[] = [];
+      let responsabilidades: any[] = [];
+
+      try {
+        const { data: movimentosData } = await supabase
+          .from('movimentos_financeiros')
+          .select('id, valor, tipo, data_movimento');
+        movimentos = movimentosData || [];
+      } catch (e) {
+        console.warn('⚠️ [DASHBOARD] Erro ao carregar movimentos financeiros:', e);
+      }
+
+      try {
+        const { data: intervencoesData } = await supabase
+          .from('intervencoes')
+          .select('id, estado, data_intervencao');
+        intervencoes = intervencoesData || [];
+      } catch (e) {
+        console.warn('⚠️ [DASHBOARD] Erro ao carregar intervenções:', e);
+      }
+
+      try {
+        const { data: gruposData } = await supabase
+          .from('grupos')
+          .select('id, ativo');
+        grupos = gruposData || [];
+      } catch (e) {
+        console.warn('⚠️ [DASHBOARD] Erro ao carregar grupos:', e);
+      }
+
+      try {
+        const { data: responsabilidadesData } = await supabase
+          .from('responsabilidades_voluntarios')
+          .select('id, ativo');
+        responsabilidades = responsabilidadesData || [];
+      } catch (e) {
+        console.warn('⚠️ [DASHBOARD] Erro ao carregar responsabilidades:', e);
+      }
+
+      console.log('✅ [DASHBOARD] Dados carregados com sucesso');
+
+      // Calcular estatísticas de animais (dados essenciais)
+      const animaisArray = animais || [];
+      const totalAnimais = animaisArray.length;
+      const animaisAtivos = animaisArray.filter(a => a.estado === 'Ativo' && !a.arquivado).length;
+      const animaisAdotados = animaisArray.filter(a => a.estado === 'Adotado').length;
+      const animaisArquivados = animaisArray.filter(a => a.arquivado).length;
+      const animaisSemResponsavel = animaisArray.filter(a => !a.voluntario_responsavel_id && a.estado === 'Ativo' && !a.arquivado).length;
+      
+      const totalCaes = animaisArray.filter(a => a.especie === 'Cão' && !a.arquivado).length;
+      const totalGatos = animaisArray.filter(a => a.especie === 'Gato' && !a.arquivado).length;
+      const totalOutros = animaisArray.filter(a => a.especie !== 'Cão' && a.especie !== 'Gato' && !a.arquivado).length;
 
       // Adoções do ano e mês
-      const adocoesAno = animais.filter(a => {
+      const adocoesAno = animaisArray.filter(a => {
         if (!a.data_adocao) return false;
         return new Date(a.data_adocao).getFullYear() === anoAtual;
       }).length;
 
-      const adocoesMes = animais.filter(a => {
+      const adocoesMes = animaisArray.filter(a => {
         if (!a.data_adocao) return false;
         const dataAdocao = new Date(a.data_adocao);
         return dataAdocao >= new Date(inicioMes) && dataAdocao <= new Date(fimMes);
       }).length;
 
       // Estatísticas de voluntários
-      const totalVoluntarios = voluntarios.length;
-      const voluntariosAtivos = voluntarios.filter(v => v.ativo).length;
+      const voluntariosArray = voluntarios || [];
+      const totalVoluntarios = voluntariosArray.length;
+      const voluntariosAtivos = voluntariosArray.filter(v => v.ativo).length;
 
       // Estatísticas financeiras
       const totalMovimentosFinanceiros = movimentos.length;
@@ -236,19 +283,22 @@ const Index = () => {
         {
           id: '1',
           tipo: 'animal',
-          titulo: 'Novo Animal Registado',
-          descricao: 'Animal adicionado ao sistema',
+          titulo: 'Sistema Atualizado',
+          descricao: 'Dashboard carregado com sucesso',
           data: new Date().toISOString()
         }
       ];
 
       setAtividadeRecente(atividades);
 
+      console.log('✅ [DASHBOARD] Dashboard carregado com sucesso');
+
     } catch (error: any) {
-      console.error('Erro ao carregar dashboard:', error);
+      console.error('💥 [DASHBOARD] Erro ao carregar dashboard:', error);
+      setError(error.message || 'Erro ao carregar dados do dashboard');
       toast({
         title: "Erro",
-        description: "Erro ao carregar dados do dashboard",
+        description: "Erro ao carregar dados do dashboard. Tentando novamente...",
         variant: "destructive",
       });
     } finally {
@@ -257,12 +307,23 @@ const Index = () => {
   };
 
   useEffect(() => {
+    console.log('🚀 [DASHBOARD] Componente montado, iniciando carregamento...');
     fetchDashboardStats();
-    // Atualizar dados a cada 5 minutos
-    const interval = setInterval(fetchDashboardStats, 5 * 60 * 1000);
-    return () => clearInterval(interval);
+    
+    // Atualizar dados a cada 5 minutos (apenas se não houver erro)
+    const interval = setInterval(() => {
+      if (!error) {
+        fetchDashboardStats();
+      }
+    }, 5 * 60 * 1000);
+    
+    return () => {
+      console.log('🔄 [DASHBOARD] Limpando interval...');
+      clearInterval(interval);
+    };
   }, []);
 
+  // Estado de carregamento
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
@@ -270,8 +331,29 @@ const Index = () => {
           <UserHeader />
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
-              <Activity className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
               <p className="text-gray-600">Carregando dashboard...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Estado de erro
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+        <div className="max-w-7xl mx-auto">
+          <UserHeader />
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <AlertTriangle className="h-8 w-8 mx-auto mb-4 text-red-600" />
+              <p className="text-gray-600 mb-4">{error}</p>
+              <Button onClick={fetchDashboardStats} variant="outline">
+                <Activity className="h-4 w-4 mr-2" />
+                Tentar Novamente
+              </Button>
             </div>
           </div>
         </div>
