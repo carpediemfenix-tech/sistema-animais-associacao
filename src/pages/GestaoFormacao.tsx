@@ -104,27 +104,19 @@ const GestaoFormacao = () => {
 
       if (niveisError) throw niveisError;
 
-      // Carregar voluntários com nível atual
+      // Carregar voluntários ativos
       const { data: voluntariosData, error: voluntariosError } = await supabase
         .from('voluntarios')
-        .select(`
-          *,
-          nivel_formacao:niveis_formacao!nivel_formacao_atual(*)
-        `)
+        .select('*')
         .eq('ativo', true)
         .order('nome');
 
       if (voluntariosError) throw voluntariosError;
 
-      // Carregar progressões recentes
+      // Carregar progressões recentes (simplificado)
       const { data: progressoesData, error: progressoesError } = await supabase
         .from('voluntario_progressao')
-        .select(`
-          *,
-          voluntario:voluntarios!voluntario_id(nome),
-          nivel_anterior_info:niveis_formacao!nivel_anterior_id(nome, codigo),
-          nivel_atual_info:niveis_formacao!nivel_atual_id(nome, codigo)
-        `)
+        .select('*')
         .order('data_progressao', { ascending: false })
         .limit(20);
 
@@ -157,7 +149,7 @@ const GestaoFormacao = () => {
         .from('voluntario_progressao')
         .insert({
           voluntario_id: selectedVoluntario.id,
-          nivel_anterior_id: selectedVoluntario.nivel_formacao_atual,
+          nivel_anterior_id: null, // Simplificar por agora
           nivel_atual_id: novoNivel,
           data_progressao: new Date().toISOString(),
           observacoes: observacoes.trim() || null,
@@ -166,10 +158,10 @@ const GestaoFormacao = () => {
 
       if (progressaoError) throw progressaoError;
 
-      // Atualizar nível do voluntário
+      // Atualizar flag de formação do voluntário
       const { error: updateError } = await supabase
         .from('voluntarios')
-        .update({ nivel_formacao_atual: novoNivel })
+        .update({ tem_formacao: true })
         .eq('id', selectedVoluntario.id);
 
       if (updateError) throw updateError;

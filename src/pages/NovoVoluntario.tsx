@@ -31,7 +31,6 @@ interface FormData {
   data_nascimento: string;
   profissao: string;
   observacoes: string;
-  nivel_formacao_atual: string;
 }
 
 const getNivelIcon = (codigo: string) => {
@@ -53,7 +52,6 @@ const NovoVoluntario = () => {
   
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [niveisFormacao, setNiveisFormacao] = useState<NivelFormacao[]>([]);
   
   const [formData, setFormData] = useState<FormData>({
     nome: "",
@@ -63,38 +61,12 @@ const NovoVoluntario = () => {
     nif: "",
     data_nascimento: "",
     profissao: "",
-    observacoes: "",
-    nivel_formacao_atual: ""
+    observacoes: ""
   });
 
-  useEffect(() => {
-    if (hasPermission('admin')) {
-      loadNiveis();
-    }
-  }, [hasPermission]);
+  // Remover useEffect para carregar níveis - não é necessário
 
-  const loadNiveis = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('niveis_formacao')
-        .select('*')
-        .eq('ativo', true)
-        .order('ordem');
-
-      if (error) throw error;
-      setNiveisFormacao(data || []);
-    } catch (error: any) {
-      console.error('Erro ao carregar níveis:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao carregar níveis de formação",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Função loadNiveis removida - não é necessária
 
   const handleInputChange = (field: keyof FormData, value: string) => {
     setFormData(prev => ({
@@ -131,14 +103,7 @@ const NovoVoluntario = () => {
       return false;
     }
 
-    if (!formData.nivel_formacao_atual) {
-      toast({
-        title: "Erro",
-        description: "Nível de formação inicial é obrigatório",
-        variant: "destructive",
-      });
-      return false;
-    }
+    // Remover validação de nível de formação - não é necessário
 
     return true;
   };
@@ -161,7 +126,7 @@ const NovoVoluntario = () => {
         data_nascimento: formData.data_nascimento || null,
         profissao: formData.profissao.trim() || null,
         observacoes: formData.observacoes.trim() || null,
-        nivel_formacao_atual: formData.nivel_formacao_atual,
+        tem_formacao: false,
         ativo: true,
         data_entrada: new Date().toISOString()
       };
@@ -175,19 +140,7 @@ const NovoVoluntario = () => {
 
       if (voluntarioError) throw voluntarioError;
 
-      // Registar progressão inicial
-      const { error: progressaoError } = await supabase
-        .from('voluntario_progressao')
-        .insert({
-          voluntario_id: voluntario.id,
-          nivel_anterior_id: null,
-          nivel_atual_id: formData.nivel_formacao_atual,
-          data_progressao: new Date().toISOString(),
-          observacoes: "Nível inicial atribuído no cadastro",
-          aprovado_por: (await supabase.auth.getUser()).data.user?.id
-        });
-
-      if (progressaoError) throw progressaoError;
+      // Não criar progressão inicial - voluntário começa sem formação
 
       toast({
         title: "Sucesso",
@@ -218,8 +171,7 @@ const NovoVoluntario = () => {
       nif: "",
       data_nascimento: "",
       profissao: "",
-      observacoes: "",
-      nivel_formacao_atual: ""
+      observacoes: ""
     });
   };
 
@@ -359,44 +311,7 @@ const NovoVoluntario = () => {
             </CardContent>
           </Card>
 
-          {/* Formação */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <CheckCircle className="h-5 w-5 mr-2" />
-                Formação Inicial
-              </CardTitle>
-              <CardDescription>
-                Nível de formação inicial no sistema Valentão
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="nivel_formacao">Nível de Formação Inicial *</Label>
-                <Select 
-                  value={formData.nivel_formacao_atual} 
-                  onValueChange={(value) => handleInputChange('nivel_formacao_atual', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecionar nível inicial" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {niveisFormacao.map((nivel) => (
-                      <SelectItem key={nivel.id} value={nivel.id}>
-                        <div className="flex items-center">
-                          <span className="mr-2">{getNivelIcon(nivel.codigo)}</span>
-                          {nivel.nome}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-sm text-gray-500 mt-1">
-                  Normalmente novos voluntários começam com "FORMA BASE"
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Formação será gerida em separado */}
 
           {/* Observações */}
           <Card>
