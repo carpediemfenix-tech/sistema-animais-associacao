@@ -52,97 +52,40 @@ const VoluntarioProfile = () => {
     try {
       setLoading(true);
 
-      // Carregar dados do voluntário (sem join problemático)
+      // Carregar APENAS dados básicos do voluntário
       const { data: voluntarioData, error: voluntarioError } = await supabase
         .from('voluntarios')
         .select('*')
         .eq('id', id)
         .single();
 
-      if (voluntarioError) throw voluntarioError;
+      if (voluntarioError) {
+        console.error('Erro ao carregar voluntário:', voluntarioError);
+        throw new Error('Voluntário não encontrado');
+      }
 
-      // Carregar progressão do voluntário (simplificado)
-      const { data: progressaoData, error: progressaoError } = await supabase
-        .from('voluntario_progressao')
-        .select('*')
-        .eq('voluntario_id', id)
-        .order('created_at', { ascending: false });
+      console.log('✅ Voluntário carregado:', voluntarioData);
 
-      if (progressaoError) throw progressaoError;
-
-      // Carregar especializações do voluntário (simplificado)
-      const { data: especializacoesData, error: especializacoesError } = await supabase
-        .from('voluntario_especializacoes')
-        .select('*')
-        .eq('voluntario_id', id);
-
-      if (especializacoesError) throw especializacoesError;
-
-      // Carregar conquistas do voluntário (simplificado)
-      const { data: conquistasData, error: conquistasError } = await supabase
-        .from('voluntario_conquistas')
-        .select('*')
-        .eq('voluntario_id', id)
-        .order('created_at', { ascending: false });
-
-      if (conquistasError) throw conquistasError;
-
-      // Carregar todos os níveis para calcular progressão
-      const { data: niveisData, error: niveisError } = await supabase
-        .from('niveis_formacao')
-        .select('*')
-        .eq('ativo', true)
-        .order('ordem');
-
-      if (niveisError) throw niveisError;
-
-      // Carregar especializações disponíveis
-      const { data: especializacoesDisponiveis, error: especDispError } = await supabase
-        .from('especializacoes')
-        .select('*')
-        .eq('ativo', true);
-
-      if (especDispError) throw especDispError;
-
-      // Processar dados
-      const voluntarioCompleto: VoluntarioValentao = {
-        ...voluntarioData,
-        progressao: progressaoData,
-        especializacoes: especializacoesData,
-        conquistas: conquistasData
-      };
-
-      // Calcular progressão individual
-      const nivelAtual = voluntarioData.nivel_formacao;
-      const proximoNivel = nivelAtual ? 
-        niveisData?.find(n => n.ordem === nivelAtual.ordem + 1) : 
-        niveisData?.[0];
-
-      // Simular cálculo de progresso (implementar lógica real depois)
-      const tempoServico = voluntarioData.data_ingresso ? 
-        Math.floor((new Date().getTime() - new Date(voluntarioData.data_ingresso).getTime()) / (1000 * 60 * 60 * 24 * 30)) : 0;
+      // Definir dados básicos (sem consultas adicionais por agora)
+      setVoluntario(voluntarioData);
       
-      const progressaoIndividual: ProgressaoIndividual = {
-        voluntario: voluntarioCompleto,
-        nivel_atual: nivelAtual || niveisData?.[0],
-        proximo_nivel: proximoNivel,
-        progresso_percentual: proximoNivel ? Math.min((tempoServico / proximoNivel.tempo_minimo_meses) * 100, 100) : 100,
-        criterios_cumpridos: {
-          tempo_minimo: proximoNivel ? tempoServico >= proximoNivel.tempo_minimo_meses : true,
-          missoes_minimas: true, // Implementar depois
-          outros_requisitos: true
-        },
-        tempo_restante_estimado: proximoNivel ? Math.max(proximoNivel.tempo_minimo_meses - tempoServico, 0) : 0,
-        missoes_restantes: proximoNivel ? Math.max(proximoNivel.missoes_minimas - 0, 0) : 0, // Implementar depois
-        especializacoes_disponiveis: especializacoesDisponiveis?.filter(esp => 
-          nivelAtual && esp.nivel_pre_requisito === nivelAtual.id &&
-          !especializacoesData?.some(ve => ve.especializacao_id === esp.id)
-        ) || [],
-        conquistas_proximas: [] // Implementar depois
-      };
+      // Progressão simplificada
+      setProgressao({
+        nivelAtual: 'FORMA BASE',
+        proximoNivel: 'N1',
+        progresso: 0,
+        criteriosCumpridos: [],
+        historicoFormacao: [],
+        especializacoesObtidas: [],
+        especializacoesDisponiveis: [],
+        conquistas: []
+      });
 
-      setVoluntario(voluntarioCompleto);
-      setProgressao(progressaoIndividual);
+      // Dados processados de forma simples
+      console.log('✅ Definindo voluntário:', voluntarioData);
+
+      // Finalizar carregamento
+      console.log('✅ Carregamento concluído');
 
     } catch (error: any) {
       console.error('Erro ao carregar voluntário:', error);
