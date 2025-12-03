@@ -126,10 +126,7 @@ const Index = () => {
       console.log('🐾 [DASHBOARD] Carregando dados avançados de animais...');
       const { data: animais } = await supabase
         .from('animais')
-        .select(`
-          id, estado, arquivado, data_entrada, data_nascimento, data_adocao,
-          especies(nome), sexos(nome), grupos(nome, tipo)
-        `);
+        .select('id, estado, arquivado, data_entrada, data_nascimento, data_adocao, especie, sexo, grupo_id');
 
       // 👥 VOLUNTÁRIOS - Carregamento Avançado
       console.log('👥 [DASHBOARD] Carregando dados de voluntários...');
@@ -149,11 +146,10 @@ const Index = () => {
         .select('id, tipo, valor, data_movimento')
         .gte('data_movimento', inicioAno);
 
-      // 🏥 INTERVENÇÕES - Carregamento
+      // 🏥 INTERVENÇÕES - Carregamento Simplificado
       const { data: intervencoes } = await supabase
         .from('intervencoes')
-        .select('id, estado, urgente, custo_estimado, data_intervencao')
-        .gte('data_intervencao', inicioAno);
+        .select('id, estado, urgente, custo_estimado, data_intervencao');
 
       console.log('📊 [DASHBOARD] Processando estatísticas avançadas...');
 
@@ -168,9 +164,9 @@ const Index = () => {
       const animaisSemResponsavel = animaisAtivos.filter(a => !animaisComResponsavel.has(a.id)).length;
       
       // Distribuição por espécie
-      const totalCaes = animaisArray.filter(a => a.especies?.nome === 'Cão' && !a.arquivado).length;
-      const totalGatos = animaisArray.filter(a => a.especies?.nome === 'Gato' && !a.arquivado).length;
-      const totalOutros = animaisArray.filter(a => a.especies?.nome !== 'Cão' && a.especies?.nome !== 'Gato' && !a.arquivado).length;
+      const totalCaes = animaisArray.filter(a => a.especie === 'Cão' && !a.arquivado).length;
+      const totalGatos = animaisArray.filter(a => a.especie === 'Gato' && !a.arquivado).length;
+      const totalOutros = animaisArray.filter(a => a.especie !== 'Cão' && a.especie !== 'Gato' && !a.arquivado).length;
       
       // Adoções recentes
       const adocoesUltimos30Dias = animaisAdotados.filter(a => 
@@ -281,9 +277,15 @@ const Index = () => {
 
       // Usar os dados já calculados anteriormente
 
+      // 🏠 GRUPOS - Carregamento Simplificado
+      const { data: grupos } = await supabase
+        .from('grupos')
+        .select('id, ativo')
+        .eq('ativo', true);
+
       // Outras estatísticas
-      const gruposAtivos = grupos.filter(g => g.ativo).length;
-      const responsabilidadesAtivasCount = responsabilidades.filter(r => r.ativo).length;
+      const gruposAtivos = (grupos || []).length;
+      const responsabilidadesAtivasCount = (responsabilidades || []).filter(r => r.ativo).length;
 
       const dashboardStats: DashboardStats = {
         // 🐾 ANIMAIS - Estatísticas Avançadas
@@ -322,8 +324,8 @@ const Index = () => {
         custoMedioIntervencao,
         
         // 📋 SISTEMA - Estatísticas Gerais
-        gruposAtivos: (grupos || []).filter(g => g.ativo).length,
-        responsabilidadesAtivas: (responsabilidades || []).filter(r => r.ativo).length,
+        gruposAtivos,
+        responsabilidadesAtivas: responsabilidadesAtivasCount,
         totalMovimentosFinanceiros: movimentosArray.length,
         ultimaAtualizacao: new Date().toISOString()
       };
