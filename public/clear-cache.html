@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Limpar Cache - Sistema Valentão</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .danger {
+            background: #f44336;
+        }
+        .danger:hover {
+            background: #da190b;
+        }
+        .success {
+            color: #4CAF50;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        .info {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Correção do Sistema</h1>
+        <p>Se o sistema está indo direto para o Dashboard sem mostrar a tela de login, clique no botão abaixo para limpar o cache:</p>
+        
+        <div class="info">
+            <strong>Problema:</strong> Login automático está ativo<br>
+            <strong>Solução:</strong> Limpar dados salvos no navegador
+        </div>
+        
+        <button onclick="clearCache()" class="danger">
+            🗑️ Limpar Cache e Forçar Login
+        </button>
+        
+        <button onclick="goToSystem()">
+            🏠 Ir para o Sistema
+        </button>
+        
+        <div id="result"></div>
+        
+        <div class="info">
+            <h3>📋 Instruções:</h3>
+            <ol style="text-align: left;">
+                <li>Clique em "Limpar Cache e Forçar Login"</li>
+                <li>Aguarde a confirmação</li>
+                <li>Clique em "Ir para o Sistema"</li>
+                <li>Agora deve aparecer a tela de login normal</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        function clearCache() {
+            try {
+                // Limpar localStorage
+                localStorage.removeItem('valentao_user');
+                localStorage.removeItem('supabase.auth.token');
+                localStorage.clear();
+                
+                // Limpar sessionStorage
+                sessionStorage.clear();
+                
+                // Limpar cookies relacionados
+                document.cookie.split(";").forEach(function(c) { 
+                    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+                });
+                
+                document.getElementById('result').innerHTML = 
+                    '<div class="success">✅ Cache limpo com sucesso!<br>Agora pode ir para o sistema.</div>';
+                    
+                console.log('🧹 Cache limpo com sucesso');
+                
+            } catch (error) {
+                document.getElementById('result').innerHTML = 
+                    '<div style="color: #f44336;">❌ Erro ao limpar cache: ' + error.message + '</div>';
+                console.error('Erro ao limpar cache:', error);
+            }
+        }
+        
+        function goToSystem() {
+            window.location.href = '/';
+        }
+        
+        // Auto-detectar se há dados salvos
+        window.onload = function() {
+            const userData = localStorage.getItem('valentao_user');
+            if (userData) {
+                document.getElementById('result').innerHTML = 
+                    '<div style="color: #ff9800;">⚠️ Dados de login encontrados no cache.<br>Recomenda-se limpar para testar o login.</div>';
+            } else {
+                document.getElementById('result').innerHTML = 
+                    '<div class="success">✅ Cache já está limpo.</div>';
+            }
+        }
+    </script>
+</body>
+</html>

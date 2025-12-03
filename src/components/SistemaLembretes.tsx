@@ -9,7 +9,8 @@ import {
   Calendar,
   Stethoscope,
   CheckCircle,
-  X
+  X,
+  Zap
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
