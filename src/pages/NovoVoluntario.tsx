@@ -8,48 +8,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
-import { 
-  ArrowLeft, 
-  Plus, 
-  Users, 
-  AlertCircle, 
-  User, 
-  Mail, 
-  Phone, 
-  Hash, 
-  Calendar, 
-  Briefcase, 
-  MapPin, 
-  CheckCircle, 
-  Save, 
-  Loader2 
-} from "lucide-react";
+import { ArrowLeft, Plus, Users, AlertCircle, User, Mail, Phone, Hash, Calendar, Briefcase, MapPin, CheckCircle, Save, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import UserHeader from "@/components/UserHeader";
 import { supabase } from "@/lib/supabase";
 
-// Tipos
-interface NivelFormacao {
-  id: string;
-  nome: string;
-  codigo: string;
-  cor: string;
-  ordem: number;
-  ativo: boolean;
-}
-
-interface FormData {
-  nome: string;
-  email: string;
-  telefone: string;
-  morada: string;
-  nif: string;
-  data_nascimento: string;
-  profissao: string;
-  observacoes: string;
-  nivel_formacao_atual: string;
-}
-
+// Função auxiliar para ícones dos níveis
 const getNivelIcon = (codigo: string) => {
   switch (codigo) {
     case 'V1': return '🟢';
@@ -67,11 +31,11 @@ const NovoVoluntario = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
+  // Estados
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [niveisFormacao, setNiveisFormacao] = useState<NivelFormacao[]>([]);
-  
-  const [formData, setFormData] = useState<FormData>({
+  const [niveisFormacao, setNiveisFormacao] = useState<any[]>([]);
+  const [formData, setFormData] = useState({
     nome: '',
     email: '',
     telefone: '',
