@@ -102,13 +102,10 @@ const GestaoVoluntarios = () => {
     try {
       setLoading(true);
 
-      // Carregar voluntários com nível de formação
+      // Carregar voluntários (sem join problemático)
       const { data: voluntariosData, error: voluntariosError } = await supabase
         .from('voluntarios')
-        .select(`
-          *,
-          nivel_formacao:nivel_formacao_atual(*)
-        `)
+        .select('*')
         .order('nome');
 
       if (voluntariosError) throw voluntariosError;
