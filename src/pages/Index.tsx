@@ -30,7 +30,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import UserHeader from "@/components/UserHeader";
-import SistemaLembretes from "@/components/SistemaLembretes";
+// import SistemaLembretes from "@/components/SistemaLembretes"; // Temporariamente desativado
 
 interface DashboardStats {
   totalAnimais: number;
@@ -669,8 +669,8 @@ const Index = () => {
           )}
         </div>
 
-        {/* Sistema de Lembretes */}
-        <SistemaLembretes />
+        {/* Sistema de Lembretes - Temporariamente Desativado */}
+        {/* <SistemaLembretes /> */}
       </div>
     </div>
   );
