@@ -15,17 +15,8 @@ import {
   Calendar,
   AlertTriangle,
   Target,
-  Users,
-  PawPrint,
-  Building,
   Plus,
   RefreshCw,
-  Download,
-  Filter,
-  Search,
-  Eye,
-  Edit,
-  Trash2,
   ArrowUpRight,
   ArrowDownRight
 } from "lucide-react";

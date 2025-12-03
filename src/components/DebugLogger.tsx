@@ -1,17 +1,18 @@
 import React from 'react';
 
-// Simple debug logger for development
+// Debug logger simples para desenvolvimento
 export const debugLogger = {
   log: (level: 'info' | 'error' | 'success' | 'debug', message: string, data?: any) => {
     if (process.env.NODE_ENV === 'development') {
       const timestamp = new Date().toISOString();
-      const prefix = `[${timestamp}] [${level.toUpperCase()}]`;
+      const prefix = {
+        info: '🔵',
+        error: '🔴',
+        success: '🟢',
+        debug: '🟡'
+      }[level];
       
-      if (data) {
-        console.log(`${prefix} ${message}`, data);
-      } else {
-        console.log(`${prefix} ${message}`);
-      }
+      console.log(`${prefix} [${timestamp}] ${message}`, data || '');
     }
   }
 };
@@ -21,25 +22,14 @@ interface DebugLoggerComponentProps {
 }
 
 const DebugLoggerComponent: React.FC<DebugLoggerComponentProps> = ({ title = "Debug Logger" }) => {
-  // In production, don't render anything
+  // Em produção, não renderiza nada
   if (process.env.NODE_ENV !== 'development') {
     return null;
   }
 
   return (
-    <div style={{ 
-      position: 'fixed', 
-      bottom: '10px', 
-      right: '10px', 
-      background: '#f0f0f0', 
-      padding: '10px', 
-      borderRadius: '5px',
-      fontSize: '12px',
-      zIndex: 9999,
-      maxWidth: '300px'
-    }}>
-      <strong>{title}</strong>
-      <div>Check console for debug logs</div>
+    <div className="fixed bottom-4 right-4 bg-gray-800 text-white p-2 rounded text-xs opacity-50 hover:opacity-100 transition-opacity">
+      {title}
     </div>
   );
 };

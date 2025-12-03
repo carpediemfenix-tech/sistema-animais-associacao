@@ -8,12 +8,8 @@ import {
   Clock, 
   Calendar,
   Stethoscope,
-  Pill,
-  Heart,
-  MapPin,
   CheckCircle,
-  X,
-  Zap
+  X
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";

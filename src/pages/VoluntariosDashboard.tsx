@@ -94,15 +94,11 @@ const VoluntariosDashboard = () => {
 
       if (especializacoesError) throw especializacoesError;
 
-      // Carregar conquistas recentes (últimas 10)
+      // Carregar conquistas recentes (simplificado)
       const { data: conquistasRecentesData, error: conquistasError } = await supabase
         .from('voluntario_conquistas')
-        .select(`
-          *,
-          conquista:conquista_id(*),
-          voluntario:voluntario_id(nome)
-        `)
-        .order('data_obtencao', { ascending: false })
+        .select('*')
+        .order('created_at', { ascending: false })
         .limit(10);
 
       if (conquistasError) throw conquistasError;
