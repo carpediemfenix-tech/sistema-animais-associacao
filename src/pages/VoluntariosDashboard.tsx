@@ -107,10 +107,11 @@ const VoluntariosDashboard = () => {
       const totalVoluntarios = voluntarios?.length || 0;
       const voluntariosAtivos = voluntarios?.filter(v => v.ativo).length || 0;
       const voluntariosInativos = totalVoluntarios - voluntariosAtivos;
+      const voluntariosComFormacao = voluntarios?.filter(v => v.tem_formacao).length || 0;
 
-      // Distribuição por nível (simplificada - sem nível atual)
+      // Distribuição por nível (baseada nos dados reais)
       const distribuicaoPorNivel = niveis?.map(nivel => {
-        const quantidade = 0; // Temporário - será implementado com progressão
+        const quantidade = voluntarios?.filter(v => v.nivel_formacao_atual === nivel.id).length || 0;
         return {
           nivel,
           quantidade,
@@ -128,6 +129,8 @@ const VoluntariosDashboard = () => {
         total_voluntarios: totalVoluntarios,
         voluntarios_ativos: voluntariosAtivos,
         voluntarios_inativos: voluntariosInativos,
+        voluntarios_com_formacao: voluntariosComFormacao,
+        voluntarios_sem_formacao: totalVoluntarios - voluntariosComFormacao,
         distribuicao_por_nivel: distribuicaoPorNivel,
         especializacoes_ativas: especializacoesAtivas,
         conquistas_recentes: conquistasRecentesData || [],
@@ -218,7 +221,7 @@ const VoluntariosDashboard = () => {
         </div>
 
         {/* Cards de Métricas Principais */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
           
           {/* Total de Voluntários */}
           <Card>
@@ -264,16 +267,33 @@ const VoluntariosDashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Conquistas Este Mês */}
+          {/* Voluntários Com Formação */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Conquistas Recentes</CardTitle>
-              <Award className="h-4 w-4 text-yellow-600" />
+              <CardTitle className="text-sm font-medium">Com Formação</CardTitle>
+              <Sprout className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-yellow-600">{conquistasRecentes.length}</div>
+              <div className="text-2xl font-bold text-green-600">{metricas?.voluntarios_com_formacao || 0}</div>
               <p className="text-xs text-muted-foreground">
-                Últimas conquistas obtidas
+                {metricas?.total_voluntarios ? 
+                  `${Math.round((metricas.voluntarios_com_formacao / metricas.total_voluntarios) * 100)}% do total` 
+                  : '0% do total'
+                }
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Voluntários Sem Formação */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Sem Formação</CardTitle>
+              <Clock className="h-4 w-4 text-orange-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-orange-600">{metricas?.voluntarios_sem_formacao || 0}</div>
+              <p className="text-xs text-muted-foreground">
+                Aguardam formação inicial
               </p>
             </CardContent>
           </Card>

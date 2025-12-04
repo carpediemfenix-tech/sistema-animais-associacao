@@ -42,7 +42,9 @@ export interface VoluntarioValentao {
   data_nascimento?: string;
   profissao?: string;
   nivel_formacao_atual?: string; // ID do nível atual
-  data_ingresso: string;
+  data_ingresso: string; // Renomeado de data_entrada para consistência
+  data_entrada?: string; // Mantido para compatibilidade
+  tem_formacao: boolean; // Flag se tem alguma formação
   ativo: boolean;
   data_inativacao?: string;
   motivo_inativacao?: string;
@@ -127,6 +129,8 @@ export interface MetricasVoluntarios {
   total_voluntarios: number;
   voluntarios_ativos: number;
   voluntarios_inativos: number;
+  voluntarios_com_formacao: number;
+  voluntarios_sem_formacao: number;
   distribuicao_por_nivel: {
     nivel: NivelFormacao;
     quantidade: number;
@@ -217,3 +221,48 @@ export interface OrdenacaoVoluntarios {
   campo: 'nome' | 'data_ingresso' | 'nivel_formacao' | 'email';
   direcao: 'asc' | 'desc';
 }
+
+// Interfaces auxiliares para compatibilidade
+export interface VoluntarioSimples {
+  id: string;
+  nome: string;
+  email: string;
+  telefone?: string;
+  ativo: boolean;
+  nivel_formacao_atual?: string;
+  data_entrada?: string;
+  tem_formacao?: boolean;
+  nivel_formacao?: NivelFormacao;
+}
+
+// Interface para progressão simplificada
+export interface ProgressaoSimples {
+  id: string;
+  voluntario_id: string;
+  nivel_anterior_id?: string;
+  nivel_novo_id: string;
+  data_progressao: string;
+  observacoes?: string;
+  aprovado_por?: string;
+}
+
+// Utilitários para ícones de níveis
+export const getNivelIcon = (codigo: string): string => {
+  switch (codigo) {
+    case 'FORMA_BASE': return 'Sprout';
+    case 'FORMA_N1': return 'Shield';
+    case 'FORMA_N2': return 'Sword';
+    case 'FORMA_N3': return 'Crown';
+    default: return 'User';
+  }
+};
+
+export const getNivelCor = (codigo: string): string => {
+  switch (codigo) {
+    case 'FORMA_BASE': return '#10B981';
+    case 'FORMA_N1': return '#3B82F6';
+    case 'FORMA_N2': return '#F59E0B';
+    case 'FORMA_N3': return '#8B5CF6';
+    default: return '#6B7280';
+  }
+};

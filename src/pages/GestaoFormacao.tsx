@@ -10,193 +10,62 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, GraduationCap, AlertCircle, Plus, Users, TrendingUp, Award, CheckCircle, Clock, Edit, Eye, Loader2 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { 
+  ArrowLeft, 
+  GraduationCap, 
+  AlertCircle, 
+  Plus, 
+  Users, 
+  TrendingUp, 
+  Award, 
+  CheckCircle, 
+  Clock, 
+  Edit, 
+  Eye, 
+  Loader2,
+  Sprout,
+  Shield,
+  Sword,
+  Crown,
+  User,
+  Calendar,
+  FileText,
+  Star
+} from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import UserHeader from "@/components/UserHeader";
-
-interface NivelFormacao {
-  id: string;
-  nome: string;
-  codigo: string;
-  cor: string;
-  ordem: number;
-  ativo: boolean;
-  descricao?: string;
-}
-
-interface Voluntario {
-  id: string;
-  nome: string;
-  email: string;
-  telefone?: string;
-  ativo: boolean;
-  nivel_formacao_atual?: string;
-  data_entrada?: string;
-  nivel_formacao?: NivelFormacao;
-}
-
-interface VoluntarioProgressao {
-  id: string;
-  voluntario_id: string;
-  nivel_anterior?: string;
-  nivel_atual: string;
-  data_progressao: string;
-  observacoes?: string;
-  aprovado_por?: string;
-}
-
-const getNivelIcon = (codigo: string) => {
-  switch (codigo) {
-    case 'FORMA_BASE': return '🌱';
-    case 'N1': return '🟢';
-    case 'N2': return '🔵';
-    case 'N3': return '🟡';
-    case 'FORMA_VET': return '🏥';
-    case 'FORMA_RESCUE': return '🚑';
-    default: return '⚪';
-  }
-};
-
-const getNivelColor = (codigo: string) => {
-  switch (codigo) {
-    case 'FORMA_BASE': return 'bg-green-100 text-green-800 border-green-200';
-    case 'N1': return 'bg-blue-100 text-blue-800 border-blue-200';
-    case 'N2': return 'bg-purple-100 text-purple-800 border-purple-200';
-    case 'N3': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-    case 'FORMA_VET': return 'bg-red-100 text-red-800 border-red-200';
-    case 'FORMA_RESCUE': return 'bg-orange-100 text-orange-800 border-orange-200';
-    default: return 'bg-gray-100 text-gray-800 border-gray-200';
-  }
-};
+import { 
+  NivelFormacao, 
+  VoluntarioValentao, 
+  VoluntarioProgressao,
+  VoluntarioSimples,
+  ProgressaoSimples,
+  getNivelIcon,
+  getNivelCor
+} from "@/types/voluntarios";
 
 const GestaoFormacao = () => {
-  const { hasPermission } = useAuth();
-  const { toast } = useToast();
-  
-  const [loading, setLoading] = useState(true);
-  const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
+  const [voluntarios, setVoluntarios] = useState<VoluntarioSimples[]>([]);
   const [niveisFormacao, setNiveisFormacao] = useState<NivelFormacao[]>([]);
-  const [progressoes, setProgressoes] = useState<VoluntarioProgressao[]>([]);
-  const [selectedVoluntario, setSelectedVoluntario] = useState<Voluntario | null>(null);
-  const [novoNivel, setNovoNivel] = useState('');
-  const [observacoes, setObservacoes] = useState('');
+  const [progressoes, setProgressoes] = useState<ProgressaoSimples[]>([]);
+  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  
+  // Estados para nova progressão
+  const [novaProgressao, setNovaProgressao] = useState({
+    voluntario_id: '',
+    nivel_novo_id: '',
+    observacoes: ''
+  });
   const [dialogOpen, setDialogOpen] = useState(false);
+  
+  const { toast } = useToast();
+  const { hasPermission } = useAuth();
 
-  useEffect(() => {
-    if (hasPermission('admin')) {
-      loadData();
-    }
-  }, [hasPermission]);
-
-  const loadData = async () => {
-    try {
-      setLoading(true);
-
-      // Carregar níveis de formação
-      const { data: niveisData, error: niveisError } = await supabase
-        .from('niveis_formacao')
-        .select('*')
-        .eq('ativo', true)
-        .order('ordem');
-
-      if (niveisError) throw niveisError;
-
-      // Carregar voluntários ativos
-      const { data: voluntariosData, error: voluntariosError } = await supabase
-        .from('voluntarios')
-        .select('*')
-        .eq('ativo', true)
-        .order('nome');
-
-      if (voluntariosError) throw voluntariosError;
-
-      // Carregar progressões recentes (simplificado)
-      const { data: progressoesData, error: progressoesError } = await supabase
-        .from('voluntario_progressao')
-        .select('*')
-        .order('data_progressao', { ascending: false })
-        .limit(20);
-
-      if (progressoesError) throw progressoesError;
-
-      setNiveisFormacao(niveisData || []);
-      setVoluntarios(voluntariosData || []);
-      setProgressoes(progressoesData || []);
-
-    } catch (error: any) {
-      console.error('Erro ao carregar dados:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao carregar dados de formação",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleProgressao = async () => {
-    if (!selectedVoluntario || !novoNivel) return;
-
-    try {
-      setSubmitting(true);
-
-      // Registar progressão
-      const { error: progressaoError } = await supabase
-        .from('voluntario_progressao')
-        .insert({
-          voluntario_id: selectedVoluntario.id,
-          nivel_anterior_id: null, // Simplificar por agora
-          nivel_atual_id: novoNivel,
-          data_progressao: new Date().toISOString(),
-          observacoes: observacoes.trim() || null,
-          aprovado_por: (await supabase.auth.getUser()).data.user?.id
-        });
-
-      if (progressaoError) throw progressaoError;
-
-      // Atualizar flag de formação do voluntário
-      const { error: updateError } = await supabase
-        .from('voluntarios')
-        .update({ tem_formacao: true })
-        .eq('id', selectedVoluntario.id);
-
-      if (updateError) throw updateError;
-
-      toast({
-        title: "Sucesso",
-        description: "Progressão de formação registada com sucesso",
-      });
-
-      // Resetar formulário e recarregar dados
-      setSelectedVoluntario(null);
-      setNovoNivel('');
-      setObservacoes('');
-      setDialogOpen(false);
-      loadData();
-
-    } catch (error: any) {
-      console.error('Erro ao registar progressão:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao registar progressão de formação",
-        variant: "destructive",
-      });
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const openProgressaoDialog = (voluntario: Voluntario) => {
-    setSelectedVoluntario(voluntario);
-    setNovoNivel('');
-    setObservacoes('');
-    setDialogOpen(true);
-  };
-
+  // Verificar permissões
   if (!hasPermission('admin')) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -205,10 +74,10 @@ const GestaoFormacao = () => {
             <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
             <CardTitle className="text-red-600">Acesso Negado</CardTitle>
             <CardDescription>
-              Apenas administradores podem gerir formação
+              Apenas administradores podem gerir a formação
             </CardDescription>
           </CardHeader>
-          <CardContent className="text-center">
+          <CardContent>
             <Link to="/voluntarios">
               <Button variant="outline" className="w-full">
                 <ArrowLeft className="h-4 w-4 mr-2" />
@@ -221,153 +90,360 @@ const GestaoFormacao = () => {
     );
   }
 
+  // Carregar dados
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      
+      // Carregar voluntários ativos
+      const { data: voluntariosData, error: voluntariosError } = await supabase
+        .from('voluntarios')
+        .select('*')
+        .eq('ativo', true)
+        .order('nome');
+
+      if (voluntariosError) throw voluntariosError;
+
+      // Carregar níveis de formação
+      const { data: niveisData, error: niveisError } = await supabase
+        .from('niveis_formacao')
+        .select('*')
+        .eq('ativo', true)
+        .order('ordem');
+
+      if (niveisError) throw niveisError;
+
+      // Carregar progressões recentes
+      const { data: progressoesData, error: progressoesError } = await supabase
+        .from('voluntario_progressao')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (progressoesError) throw progressoesError;
+
+      setVoluntarios(voluntariosData || []);
+      setNiveisFormacao(niveisData || []);
+      setProgressoes(progressoesData || []);
+
+    } catch (error: any) {
+      console.error('Erro ao carregar dados:', error);
+      toast({
+        title: "Erro ao Carregar",
+        description: error.message || "Erro ao carregar dados de formação",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleProgressao = async () => {
+    if (!novaProgressao.voluntario_id || !novaProgressao.nivel_novo_id) {
+      toast({
+        title: "Dados Incompletos",
+        description: "Selecione o voluntário e o nível de formação",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+
+      // Buscar o voluntário atual
+      const voluntario = voluntarios.find(v => v.id === novaProgressao.voluntario_id);
+      if (!voluntario) throw new Error('Voluntário não encontrado');
+
+      // Inserir nova progressão
+      const progressaoData = {
+        voluntario_id: novaProgressao.voluntario_id,
+        nivel_id: novaProgressao.nivel_novo_id,
+        nivel_anterior_id: voluntario.nivel_formacao_atual || null,
+        nivel_novo_id: novaProgressao.nivel_novo_id,
+        data_progressao: new Date().toISOString().split('T')[0],
+        observacoes: novaProgressao.observacoes.trim() || null,
+        data_inicio: new Date().toISOString().split('T')[0]
+      };
+
+      const { error: progressaoError } = await supabase
+        .from('voluntario_progressao')
+        .insert([progressaoData]);
+
+      if (progressaoError) throw progressaoError;
+
+      // Atualizar o voluntário
+      const { error: voluntarioError } = await supabase
+        .from('voluntarios')
+        .update({
+          nivel_formacao_atual: novaProgressao.nivel_novo_id,
+          tem_formacao: true
+        })
+        .eq('id', novaProgressao.voluntario_id);
+
+      if (voluntarioError) throw voluntarioError;
+
+      toast({
+        title: "Progressão Registada",
+        description: `Progressão de ${voluntario.nome} registada com sucesso!`,
+      });
+
+      // Resetar formulário e recarregar dados
+      setNovaProgressao({
+        voluntario_id: '',
+        nivel_novo_id: '',
+        observacoes: ''
+      });
+      setDialogOpen(false);
+      loadData();
+
+    } catch (error: any) {
+      console.error('Erro ao registar progressão:', error);
+      toast({
+        title: "Erro ao Registar",
+        description: error.message || "Erro ao registar progressão",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const getNivelNome = (nivelId: string): string => {
+    const nivel = niveisFormacao.find(n => n.id === nivelId);
+    return nivel?.nome || 'Desconhecido';
+  };
+
+  const getVoluntarioNome = (voluntarioId: string): string => {
+    const voluntario = voluntarios.find(v => v.id === voluntarioId);
+    return voluntario?.nome || 'Desconhecido';
+  };
+
+  const getNivelIconComponent = (codigo: string) => {
+    switch (codigo) {
+      case 'FORMA_BASE': return Sprout;
+      case 'FORMA_N1': return Shield;
+      case 'FORMA_N2': return Sword;
+      case 'FORMA_N3': return Crown;
+      default: return User;
+    }
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p>Carregando dados de formação...</p>
+      <div className="min-h-screen bg-gray-50 p-4">
+        <div className="max-w-7xl mx-auto">
+          <UserHeader />
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+              <p className="text-gray-600">Carregando dados de formação...</p>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <UserHeader />
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="min-h-screen bg-gray-50 p-4">
+      <div className="max-w-7xl mx-auto space-y-6">
+        <UserHeader />
         
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-              <GraduationCap className="h-8 w-8 mr-3 text-blue-600" />
-              Gestão de Formação Valentão
-            </h1>
-            <p className="text-gray-600 mt-1">
-              Gerir progressão formativa dos voluntários no sistema Valentão ao Resgate
-            </p>
-          </div>
-          <div className="flex items-center space-x-3">
+        {/* Cabeçalho */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
             <Link to="/voluntarios">
-              <Button variant="outline">
+              <Button variant="outline" size="sm">
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Dashboard Voluntários
+                Voltar
               </Button>
             </Link>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                <GraduationCap className="h-6 w-6 text-purple-600" />
+                Gestão de Formação Valentão
+              </h1>
+              <p className="text-gray-600">
+                Gerir progressão formativa dos voluntários
+              </p>
+            </div>
           </div>
+          
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Nova Progressão
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Registar Nova Progressão</DialogTitle>
+                <DialogDescription>
+                  Atribuir um novo nível de formação a um voluntário
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Voluntário</Label>
+                  <Select
+                    value={novaProgressao.voluntario_id}
+                    onValueChange={(value) => setNovaProgressao(prev => ({ ...prev, voluntario_id: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecionar voluntário" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {voluntarios.map((voluntario) => (
+                        <SelectItem key={voluntario.id} value={voluntario.id}>
+                          <div className="flex items-center gap-2">
+                            <User className="h-4 w-4" />
+                            {voluntario.nome}
+                            {voluntario.nivel_formacao_atual && (
+                              <Badge variant="outline" className="ml-2">
+                                {getNivelNome(voluntario.nivel_formacao_atual)}
+                              </Badge>
+                            )}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Novo Nível de Formação</Label>
+                  <Select
+                    value={novaProgressao.nivel_novo_id}
+                    onValueChange={(value) => setNovaProgressao(prev => ({ ...prev, nivel_novo_id: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecionar nível" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {niveisFormacao.map((nivel) => {
+                        const IconComponent = getNivelIconComponent(nivel.codigo);
+                        return (
+                          <SelectItem key={nivel.id} value={nivel.id}>
+                            <div className="flex items-center gap-2">
+                              <IconComponent className="h-4 w-4" style={{ color: nivel.cor }} />
+                              {nivel.nome}
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Observações</Label>
+                  <Textarea
+                    value={novaProgressao.observacoes}
+                    onChange={(e) => setNovaProgressao(prev => ({ ...prev, observacoes: e.target.value }))}
+                    placeholder="Observações sobre a progressão..."
+                    rows={3}
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                    Cancelar
+                  </Button>
+                  <Button onClick={handleProgressao} disabled={submitting}>
+                    {submitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Registando...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Registar
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
 
-        <Tabs defaultValue="voluntarios" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+        {/* Estatísticas Rápidas */}
+        <div className="grid gap-4 md:grid-cols-4">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-blue-600" />
+                <div>
+                  <p className="text-sm text-gray-600">Total Voluntários</p>
+                  <p className="text-2xl font-bold">{voluntarios.length}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2">
+                <Sprout className="h-5 w-5 text-green-600" />
+                <div>
+                  <p className="text-sm text-gray-600">Com Formação</p>
+                  <p className="text-2xl font-bold">
+                    {voluntarios.filter(v => v.tem_formacao).length}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2">
+                <Clock className="h-5 w-5 text-orange-600" />
+                <div>
+                  <p className="text-sm text-gray-600">Sem Formação</p>
+                  <p className="text-2xl font-bold">
+                    {voluntarios.filter(v => !v.tem_formacao).length}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-purple-600" />
+                <div>
+                  <p className="text-sm text-gray-600">Progressões</p>
+                  <p className="text-2xl font-bold">{progressoes.length}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Tabs de Conteúdo */}
+        <Tabs defaultValue="voluntarios" className="space-y-4">
+          <TabsList>
             <TabsTrigger value="voluntarios">Voluntários</TabsTrigger>
+            <TabsTrigger value="progressoes">Progressões Recentes</TabsTrigger>
             <TabsTrigger value="niveis">Níveis de Formação</TabsTrigger>
-            <TabsTrigger value="historico">Histórico</TabsTrigger>
           </TabsList>
 
           {/* Tab Voluntários */}
-          <TabsContent value="voluntarios" className="space-y-6">
+          <TabsContent value="voluntarios">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Users className="h-5 w-5 mr-2" />
-                  Voluntários e Formação
-                </CardTitle>
+                <CardTitle>Voluntários e Formação Atual</CardTitle>
                 <CardDescription>
-                  Gerir níveis de formação dos voluntários ativos
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {voluntarios.map((voluntario) => (
-                    <div key={voluntario.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center space-x-4">
-                        <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                          <Users className="h-6 w-6 text-blue-600" />
-                        </div>
-                        <div>
-                          <h3 className="font-medium">{voluntario.nome}</h3>
-                          <p className="text-sm text-gray-500">{voluntario.email}</p>
-                          <div className="flex items-center mt-1">
-                            <span className="text-sm text-gray-600 mr-2">Nível atual:</span>
-                            {voluntario.nivel_formacao ? (
-                              <Badge className={getNivelColor(voluntario.nivel_formacao.codigo)}>
-                                {getNivelIcon(voluntario.nivel_formacao.codigo)} {voluntario.nivel_formacao.nome}
-                              </Badge>
-                            ) : (
-                              <Badge variant="outline">Sem nível atribuído</Badge>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openProgressaoDialog(voluntario)}
-                        >
-                          <TrendingUp className="h-4 w-4 mr-2" />
-                          Progressão
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Tab Níveis */}
-          <TabsContent value="niveis" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Award className="h-5 w-5 mr-2" />
-                  Níveis de Formação Valentão
-                </CardTitle>
-                <CardDescription>
-                  Sistema de formação baseado no plano Valentão ao Resgate
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {niveisFormacao.map((nivel) => (
-                    <Card key={nivel.id} className="border-2">
-                      <CardHeader className="pb-3">
-                        <div className="flex items-center justify-between">
-                          <Badge className={getNivelColor(nivel.codigo)}>
-                            {getNivelIcon(nivel.codigo)} {nivel.codigo}
-                          </Badge>
-                          <span className="text-sm text-gray-500">Ordem: {nivel.ordem}</span>
-                        </div>
-                        <CardTitle className="text-lg">{nivel.nome}</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        {nivel.descricao && (
-                          <p className="text-sm text-gray-600">{nivel.descricao}</p>
-                        )}
-                        <div className="mt-3 text-xs text-gray-500">
-                          Voluntários neste nível: {voluntarios.filter(v => v.nivel_formacao_atual === nivel.id).length}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Tab Histórico */}
-          <TabsContent value="historico" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Clock className="h-5 w-5 mr-2" />
-                  Histórico de Progressões
-                </CardTitle>
-                <CardDescription>
-                  Últimas progressões de formação registadas
+                  Estado atual da formação de cada voluntário
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -375,36 +451,113 @@ const GestaoFormacao = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Voluntário</TableHead>
-                      <TableHead>Nível Anterior</TableHead>
+                      <TableHead>Email</TableHead>
                       <TableHead>Nível Atual</TableHead>
+                      <TableHead>Estado</TableHead>
+                      <TableHead>Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {voluntarios.map((voluntario) => {
+                      const nivelAtual = voluntario.nivel_formacao_atual 
+                        ? niveisFormacao.find(n => n.id === voluntario.nivel_formacao_atual)
+                        : null;
+                      
+                      return (
+                        <TableRow key={voluntario.id}>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <User className="h-4 w-4 text-gray-500" />
+                              <span className="font-medium">{voluntario.nome}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-gray-600">
+                            {voluntario.email}
+                          </TableCell>
+                          <TableCell>
+                            {nivelAtual ? (
+                              <Badge 
+                                variant="outline" 
+                                className="flex items-center gap-1 w-fit"
+                                style={{ borderColor: nivelAtual.cor, color: nivelAtual.cor }}
+                              >
+                                {React.createElement(getNivelIconComponent(nivelAtual.codigo), { 
+                                  className: "h-3 w-3" 
+                                })}
+                                {nivelAtual.nome}
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary">Sem Formação</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={voluntario.ativo ? "default" : "secondary"}>
+                              {voluntario.ativo ? "Ativo" : "Inativo"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Link to={`/voluntarios/perfil/${voluntario.id}`}>
+                              <Button variant="ghost" size="sm">
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </Link>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Tab Progressões */}
+          <TabsContent value="progressoes">
+            <Card>
+              <CardHeader>
+                <CardTitle>Progressões Recentes</CardTitle>
+                <CardDescription>
+                  Histórico das últimas progressões formativas
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
                       <TableHead>Data</TableHead>
+                      <TableHead>Voluntário</TableHead>
+                      <TableHead>Nível Anterior</TableHead>
+                      <TableHead>Novo Nível</TableHead>
                       <TableHead>Observações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {progressoes.map((progressao) => (
                       <TableRow key={progressao.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-gray-500" />
+                            {new Date(progressao.data_progressao).toLocaleDateString('pt-PT')}
+                          </div>
+                        </TableCell>
                         <TableCell className="font-medium">
-                          {(progressao as any).voluntario?.nome || 'N/A'}
+                          {getVoluntarioNome(progressao.voluntario_id)}
                         </TableCell>
                         <TableCell>
-                          {(progressao as any).nivel_anterior_info ? (
-                            <Badge variant="outline" className="text-xs">
-                              {getNivelIcon((progressao as any).nivel_anterior_info.codigo)} {(progressao as any).nivel_anterior_info.nome}
+                          {progressao.nivel_anterior_id ? (
+                            <Badge variant="outline">
+                              {getNivelNome(progressao.nivel_anterior_id)}
                             </Badge>
                           ) : (
-                            <span className="text-gray-400">Inicial</span>
+                            <span className="text-gray-500">Sem formação</span>
                           )}
                         </TableCell>
                         <TableCell>
-                          <Badge className={getNivelColor((progressao as any).nivel_atual_info?.codigo || '')}>
-                            {getNivelIcon((progressao as any).nivel_atual_info?.codigo || '')} {(progressao as any).nivel_atual_info?.nome || 'N/A'}
+                          <Badge variant="default">
+                            {getNivelNome(progressao.nivel_novo_id)}
                           </Badge>
                         </TableCell>
-                        <TableCell>
-                          {new Date(progressao.data_progressao).toLocaleDateString('pt-PT')}
-                        </TableCell>
-                        <TableCell className="max-w-xs truncate">
+                        <TableCell className="text-gray-600">
                           {progressao.observacoes || '-'}
                         </TableCell>
                       </TableRow>
@@ -414,84 +567,50 @@ const GestaoFormacao = () => {
               </CardContent>
             </Card>
           </TabsContent>
-        </Tabs>
 
-        {/* Dialog de Progressão */}
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Progressão de Formação</DialogTitle>
-              <DialogDescription>
-                Atribuir novo nível de formação para {selectedVoluntario?.nome}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label>Nível atual</Label>
-                <div className="mt-1">
-                  {selectedVoluntario?.nivel_formacao ? (
-                    <Badge className={getNivelColor(selectedVoluntario.nivel_formacao.codigo)}>
-                      {getNivelIcon(selectedVoluntario.nivel_formacao.codigo)} {selectedVoluntario.nivel_formacao.nome}
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline">Sem nível atribuído</Badge>
-                  )}
+          {/* Tab Níveis */}
+          <TabsContent value="niveis">
+            <Card>
+              <CardHeader>
+                <CardTitle>Níveis de Formação Valentão</CardTitle>
+                <CardDescription>
+                  Estrutura do sistema de formação
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 md:grid-cols-2">
+                  {niveisFormacao.map((nivel) => {
+                    const IconComponent = getNivelIconComponent(nivel.codigo);
+                    const voluntariosNivel = voluntarios.filter(v => v.nivel_formacao_atual === nivel.id).length;
+                    
+                    return (
+                      <Card key={nivel.id} className="border-2" style={{ borderColor: nivel.cor + '20' }}>
+                        <CardContent className="p-4">
+                          <div className="flex items-start gap-3">
+                            <div 
+                              className="p-2 rounded-lg"
+                              style={{ backgroundColor: nivel.cor + '20' }}
+                            >
+                              <IconComponent className="h-5 w-5" style={{ color: nivel.cor }} />
+                            </div>
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-gray-900">{nivel.nome}</h3>
+                              <p className="text-sm text-gray-600 mt-1">{nivel.descricao}</p>
+                              <div className="flex items-center gap-4 mt-3 text-sm text-gray-500">
+                                <span>Ordem: {nivel.ordem}</span>
+                                <span>Voluntários: {voluntariosNivel}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                 </div>
-              </div>
-              
-              <div>
-                <Label htmlFor="novo-nivel">Novo nível</Label>
-                <Select value={novoNivel} onValueChange={setNovoNivel}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecionar novo nível" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {niveisFormacao.map((nivel) => (
-                      <SelectItem key={nivel.id} value={nivel.id}>
-                        <div className="flex items-center">
-                          <span className="mr-2">{getNivelIcon(nivel.codigo)}</span>
-                          {nivel.nome}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="observacoes">Observações (opcional)</Label>
-                <Input
-                  id="observacoes"
-                  value={observacoes}
-                  onChange={(e) => setObservacoes(e.target.value)}
-                  placeholder="Motivo da progressão, competências adquiridas..."
-                />
-              </div>
-
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => setDialogOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button 
-                  onClick={handleProgressao} 
-                  disabled={!novoNivel || submitting}
-                >
-                  {submitting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Registando...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Confirmar Progressão
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

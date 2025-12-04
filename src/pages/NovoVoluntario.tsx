@@ -7,174 +7,62 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, Users, AlertCircle, User, Mail, Phone, Hash, Calendar, Briefcase, MapPin, CheckCircle, Save, Loader2 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { 
+  ArrowLeft, 
+  Plus, 
+  Users, 
+  AlertCircle, 
+  User, 
+  Mail, 
+  Phone, 
+  Hash, 
+  Calendar, 
+  Briefcase, 
+  MapPin, 
+  CheckCircle, 
+  Save, 
+  Loader2,
+  Sprout,
+  Shield,
+  Sword,
+  Crown,
+  Award
+} from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import UserHeader from "@/components/UserHeader";
-
-interface NivelFormacao {
-  id: string;
-  nome: string;
-  codigo: string;
-  cor: string;
-  ordem: number;
-  ativo: boolean;
-}
-
-interface FormData {
-  nome: string;
-  email: string;
-  telefone: string;
-  morada: string;
-  nif: string;
-  data_nascimento: string;
-  profissao: string;
-  observacoes: string;
-}
-
-const getNivelIcon = (codigo: string) => {
-  switch (codigo) {
-    case 'FORMA_BASE': return '🌱';
-    case 'N1': return '🟢';
-    case 'N2': return '🔵';
-    case 'N3': return '🟡';
-    case 'FORMA_VET': return '🏥';
-    case 'FORMA_RESCUE': return '🚑';
-    default: return '⚪';
-  }
-};
+import { 
+  NivelFormacao, 
+  VoluntarioValentao, 
+  VoluntarioFormData,
+  getNivelIcon,
+  getNivelCor
+} from "@/types/voluntarios";
 
 const NovoVoluntario = () => {
+  const [formData, setFormData] = useState<VoluntarioFormData>({
+    nome: '',
+    email: '',
+    telefone: '',
+    morada: '',
+    nif: '',
+    data_nascimento: '',
+    profissao: '',
+    observacoes: ''
+  });
+  
+  const [niveisFormacao, setNiveisFormacao] = useState<NivelFormacao[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  
+  const { toast } = useToast();
   const { hasPermission } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
-  
-  const [loading, setLoading] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  
-  const [formData, setFormData] = useState<FormData>({
-    nome: "",
-    email: "",
-    telefone: "",
-    morada: "",
-    nif: "",
-    data_nascimento: "",
-    profissao: "",
-    observacoes: ""
-  });
 
-  // Remover useEffect para carregar níveis - não é necessário
-
-  // Função loadNiveis removida - não é necessária
-
-  const handleInputChange = (field: keyof FormData, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  const validateForm = () => {
-    if (!formData.nome.trim()) {
-      toast({
-        title: "Erro",
-        description: "Nome é obrigatório",
-        variant: "destructive",
-      });
-      return false;
-    }
-
-    if (!formData.email.trim()) {
-      toast({
-        title: "Erro",
-        description: "Email é obrigatório",
-        variant: "destructive",
-      });
-      return false;
-    }
-
-    if (!formData.email.includes('@')) {
-      toast({
-        title: "Erro",
-        description: "Email inválido",
-        variant: "destructive",
-      });
-      return false;
-    }
-
-    // Remover validação de nível de formação - não é necessário
-
-    return true;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) return;
-
-    try {
-      setSubmitting(true);
-
-      // Preparar dados para inserção
-      const voluntarioData = {
-        nome: formData.nome.trim(),
-        email: formData.email.trim().toLowerCase(),
-        telefone: formData.telefone.trim() || null,
-        morada: formData.morada.trim() || null,
-        nif: formData.nif.trim() || null,
-        data_nascimento: formData.data_nascimento || null,
-        profissao: formData.profissao.trim() || null,
-        observacoes: formData.observacoes.trim() || null,
-        tem_formacao: false,
-        ativo: true,
-        data_entrada: new Date().toISOString()
-      };
-
-      // Inserir voluntário
-      const { data: voluntario, error: voluntarioError } = await supabase
-        .from('voluntarios')
-        .insert(voluntarioData)
-        .select()
-        .single();
-
-      if (voluntarioError) throw voluntarioError;
-
-      // Não criar progressão inicial - voluntário começa sem formação
-
-      toast({
-        title: "Sucesso",
-        description: "Voluntário criado com sucesso",
-      });
-
-      // Redirecionar para gestão de voluntários
-      navigate('/voluntarios/gestao');
-
-    } catch (error: any) {
-      console.error('Erro ao criar voluntário:', error);
-      toast({
-        title: "Erro",
-        description: error.message || "Erro ao criar voluntário",
-        variant: "destructive",
-      });
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const resetForm = () => {
-    setFormData({
-      nome: "",
-      email: "",
-      telefone: "",
-      morada: "",
-      nif: "",
-      data_nascimento: "",
-      profissao: "",
-      observacoes: ""
-    });
-  };
-
+  // Verificar permissões
   if (!hasPermission('admin')) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -183,10 +71,10 @@ const NovoVoluntario = () => {
             <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
             <CardTitle className="text-red-600">Acesso Negado</CardTitle>
             <CardDescription>
-              Apenas administradores podem criar voluntários
+              Apenas administradores podem registar novos voluntários
             </CardDescription>
           </CardHeader>
-          <CardContent className="text-center">
+          <CardContent>
             <Link to="/voluntarios">
               <Button variant="outline" className="w-full">
                 <ArrowLeft className="h-4 w-4 mr-2" />
@@ -199,40 +87,190 @@ const NovoVoluntario = () => {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <UserHeader />
+  // Carregar dados iniciais
+  useEffect(() => {
+    loadInitialData();
+  }, []);
+
+  const loadInitialData = async () => {
+    try {
+      setLoading(true);
       
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-              <Plus className="h-8 w-8 mr-3 text-blue-600" />
-              Novo Voluntário
-            </h1>
-            <p className="text-gray-600 mt-1">
-              Adicionar novo voluntário ao sistema Valentão
-            </p>
+      // Carregar níveis de formação
+      const { data: niveis, error: niveisError } = await supabase
+        .from('niveis_formacao')
+        .select('*')
+        .eq('ativo', true)
+        .order('ordem');
+
+      if (niveisError) throw niveisError;
+      
+      setNiveisFormacao(niveis || []);
+      
+    } catch (error: any) {
+      console.error('Erro ao carregar dados:', error);
+      toast({
+        title: "Erro ao Carregar",
+        description: error.message || "Erro ao carregar dados iniciais",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInputChange = (field: keyof VoluntarioFormData, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // Limpar erro do campo quando o usuário começar a digitar
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    // Validações obrigatórias
+    if (!formData.nome.trim()) {
+      newErrors.nome = 'Nome é obrigatório';
+    }
+
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email é obrigatório';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Email inválido';
+    }
+
+    if (!formData.telefone.trim()) {
+      newErrors.telefone = 'Telefone é obrigatório';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
+      toast({
+        title: "Erro de Validação",
+        description: "Por favor, corrija os erros no formulário",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+
+      // Preparar dados do voluntário
+      const voluntarioData = {
+        nome: formData.nome.trim(),
+        email: formData.email.trim().toLowerCase(),
+        telefone: formData.telefone.trim(),
+        morada: formData.morada.trim() || null,
+        nif: formData.nif.trim() || null,
+        data_nascimento: formData.data_nascimento || null,
+        profissao: formData.profissao.trim() || null,
+        observacoes: formData.observacoes.trim() || null,
+        data_ingresso: new Date().toISOString().split('T')[0],
+        tem_formacao: false, // Novo voluntário sem formação inicial
+        ativo: true
+      };
+
+      // Inserir voluntário
+      const { data: novoVoluntario, error: voluntarioError } = await supabase
+        .from('voluntarios')
+        .insert([voluntarioData])
+        .select()
+        .single();
+
+      if (voluntarioError) throw voluntarioError;
+
+      toast({
+        title: "Voluntário Registado",
+        description: `${formData.nome} foi registado com sucesso!`,
+      });
+
+      // Redirecionar para o perfil do voluntário
+      navigate(`/voluntarios/perfil/${novoVoluntario.id}`);
+
+    } catch (error: any) {
+      console.error('Erro ao registar voluntário:', error);
+      toast({
+        title: "Erro ao Registar",
+        description: error.message || "Erro ao registar voluntário",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      nome: '',
+      email: '',
+      telefone: '',
+      morada: '',
+      nif: '',
+      data_nascimento: '',
+      profissao: '',
+      observacoes: ''
+    });
+    setErrors({});
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-4">
+        <div className="max-w-4xl mx-auto">
+          <UserHeader />
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+              <p className="text-gray-600">Carregando formulário...</p>
+            </div>
           </div>
-          <div className="flex items-center space-x-3">
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-4">
+      <div className="max-w-4xl mx-auto space-y-6">
+        <UserHeader />
+        
+        {/* Cabeçalho */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
             <Link to="/voluntarios/gestao">
-              <Button variant="outline">
+              <Button variant="outline" size="sm">
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Voltar à Gestão
+                Voltar
               </Button>
             </Link>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                <Plus className="h-6 w-6 text-blue-600" />
+                Registar Novo Voluntário
+              </h1>
+              <p className="text-gray-600">
+                Adicionar um novo voluntário ao sistema Valentão
+              </p>
+            </div>
           </div>
         </div>
 
+        {/* Formulário */}
         <form onSubmit={handleSubmit} className="space-y-6">
-          
-          {/* Informações Pessoais */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center">
-                <User className="h-5 w-5 mr-2" />
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5 text-blue-600" />
                 Informações Pessoais
               </CardTitle>
               <CardDescription>
@@ -240,18 +278,24 @@ const NovoVoluntario = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
+              <div className="grid gap-4 md:grid-cols-2">
+                {/* Nome */}
+                <div className="space-y-2">
                   <Label htmlFor="nome">Nome Completo *</Label>
                   <Input
                     id="nome"
                     value={formData.nome}
                     onChange={(e) => handleInputChange('nome', e.target.value)}
                     placeholder="Nome completo do voluntário"
-                    required
+                    className={errors.nome ? 'border-red-500' : ''}
                   />
+                  {errors.nome && (
+                    <p className="text-sm text-red-600">{errors.nome}</p>
+                  )}
                 </div>
-                <div>
+
+                {/* Email */}
+                <div className="space-y-2">
                   <Label htmlFor="email">Email *</Label>
                   <Input
                     id="email"
@@ -259,19 +303,30 @@ const NovoVoluntario = () => {
                     value={formData.email}
                     onChange={(e) => handleInputChange('email', e.target.value)}
                     placeholder="email@exemplo.com"
-                    required
+                    className={errors.email ? 'border-red-500' : ''}
                   />
+                  {errors.email && (
+                    <p className="text-sm text-red-600">{errors.email}</p>
+                  )}
                 </div>
-                <div>
-                  <Label htmlFor="telefone">Telefone</Label>
+
+                {/* Telefone */}
+                <div className="space-y-2">
+                  <Label htmlFor="telefone">Telefone *</Label>
                   <Input
                     id="telefone"
                     value={formData.telefone}
                     onChange={(e) => handleInputChange('telefone', e.target.value)}
                     placeholder="+351 912 345 678"
+                    className={errors.telefone ? 'border-red-500' : ''}
                   />
+                  {errors.telefone && (
+                    <p className="text-sm text-red-600">{errors.telefone}</p>
+                  )}
                 </div>
-                <div>
+
+                {/* NIF */}
+                <div className="space-y-2">
                   <Label htmlFor="nif">NIF</Label>
                   <Input
                     id="nif"
@@ -280,7 +335,9 @@ const NovoVoluntario = () => {
                     placeholder="123456789"
                   />
                 </div>
-                <div>
+
+                {/* Data de Nascimento */}
+                <div className="space-y-2">
                   <Label htmlFor="data_nascimento">Data de Nascimento</Label>
                   <Input
                     id="data_nascimento"
@@ -289,40 +346,32 @@ const NovoVoluntario = () => {
                     onChange={(e) => handleInputChange('data_nascimento', e.target.value)}
                   />
                 </div>
-                <div>
+
+                {/* Profissão */}
+                <div className="space-y-2">
                   <Label htmlFor="profissao">Profissão</Label>
                   <Input
                     id="profissao"
                     value={formData.profissao}
                     onChange={(e) => handleInputChange('profissao', e.target.value)}
-                    placeholder="Profissão do voluntário"
+                    placeholder="Profissão ou área de trabalho"
                   />
                 </div>
               </div>
-              <div>
+
+              {/* Morada */}
+              <div className="space-y-2">
                 <Label htmlFor="morada">Morada</Label>
                 <Input
                   id="morada"
                   value={formData.morada}
                   onChange={(e) => handleInputChange('morada', e.target.value)}
-                  placeholder="Morada completa"
+                  placeholder="Rua, número, código postal, cidade"
                 />
               </div>
-            </CardContent>
-          </Card>
 
-          {/* Formação será gerida em separado */}
-
-          {/* Observações */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <MapPin className="h-5 w-5 mr-2" />
-                Informações Adicionais
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div>
+              {/* Observações */}
+              <div className="space-y-2">
                 <Label htmlFor="observacoes">Observações</Label>
                 <Textarea
                   id="observacoes"
@@ -335,24 +384,87 @@ const NovoVoluntario = () => {
             </CardContent>
           </Card>
 
-          {/* Ações */}
-          <div className="flex justify-end space-x-4">
-            <Button type="button" variant="outline" onClick={resetForm}>
+          {/* Informações sobre Formação */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Award className="h-5 w-5 text-purple-600" />
+                Sistema de Formação Valentão
+              </CardTitle>
+              <CardDescription>
+                O voluntário será registado sem formação inicial. A progressão formativa será gerida na secção de Formação.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <Sprout className="h-5 w-5 text-blue-600 mt-0.5" />
+                  <div>
+                    <h4 className="font-medium text-blue-900">Próximos Passos</h4>
+                    <p className="text-sm text-blue-700 mt-1">
+                      Após o registo, o voluntário poderá iniciar a formação FORMA BASE na secção de Gestão de Formação.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Níveis de Formação Disponíveis */}
+              <div className="mt-4">
+                <h4 className="font-medium text-gray-900 mb-3">Níveis de Formação Disponíveis:</h4>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {niveisFormacao.map((nivel) => {
+                    const IconComponent = nivel.icone === 'Sprout' ? Sprout :
+                                        nivel.icone === 'Shield' ? Shield :
+                                        nivel.icone === 'Sword' ? Sword :
+                                        nivel.icone === 'Crown' ? Crown : User;
+                    
+                    return (
+                      <div key={nivel.id} className="flex items-center gap-2 p-2 bg-gray-50 rounded">
+                        <IconComponent className="h-4 w-4" style={{ color: nivel.cor }} />
+                        <span className="text-sm font-medium">{nivel.nome}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Botões de Ação */}
+          <div className="flex items-center justify-between">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={resetForm}
+              disabled={submitting}
+            >
               Limpar Formulário
             </Button>
-            <Button type="submit" disabled={submitting || loading}>
-              {submitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Criando...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  Criar Voluntário
-                </>
-              )}
-            </Button>
+            
+            <div className="flex items-center gap-3">
+              <Link to="/voluntarios/gestao">
+                <Button variant="ghost" disabled={submitting}>
+                  Cancelar
+                </Button>
+              </Link>
+              <Button
+                type="submit"
+                disabled={submitting}
+                className="min-w-[120px]"
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Registando...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Registar Voluntário
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </form>
       </div>
