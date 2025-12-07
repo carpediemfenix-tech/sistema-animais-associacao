@@ -127,19 +127,51 @@ const SistemaFormacao = () => {
     try {
       setLoading(true);
 
-      // Carregar tipos de formação
-      console.log('Carregando tipos de formação...');
-      const { data: tiposData, error: tiposError } = await supabase
-        .from('tipos_formacao')
-        .select('*')
-        .eq('ativo', true)
-        .order('nivel_ordem');
-
-      console.log('Resposta da consulta tipos:', { tiposData, tiposError });
+      // Carregar tipos de formação - CONSULTA SIMPLIFICADA
+      console.log('🔍 Iniciando carregamento de tipos de formação...');
       
-      if (tiposError) {
-        console.error('Erro ao carregar tipos:', tiposError);
-        throw tiposError;
+      try {
+        const { data: tiposData, error: tiposError } = await supabase
+          .from('tipos_formacao')
+          .select(`
+            id,
+            codigo,
+            nome,
+            descricao,
+            nivel_ordem,
+            carga_horaria_minima,
+            competencias,
+            pre_requisitos,
+            cor,
+            icone,
+            ativo
+          `)
+          .order('nivel_ordem');
+
+        console.log('📊 Resposta da consulta tipos:', {
+          data: tiposData,
+          error: tiposError,
+          count: tiposData?.length || 0
+        });
+        
+        if (tiposError) {
+          console.error('❌ Erro ao carregar tipos:', tiposError);
+          throw tiposError;
+        }
+
+        if (!tiposData || tiposData.length === 0) {
+          console.warn('⚠️ Nenhum tipo de formação encontrado!');
+          toast({
+            title: "Aviso",
+            description: "Nenhum tipo de formação encontrado na base de dados",
+            variant: "destructive",
+          });
+        } else {
+          console.log(`✅ ${tiposData.length} tipos de formação carregados com sucesso!`);
+        }
+      } catch (error) {
+        console.error('🚫 Erro crítico ao carregar tipos:', error);
+        throw error;
       }
 
       // Carregar ações de formação com tipos
@@ -185,10 +217,44 @@ const SistemaFormacao = () => {
       calcularEstatisticas(tiposProcessados, acoesData || [], participacoesData || []);
 
     } catch (error: any) {
-      console.error('Erro ao carregar dados de formação:', error);
+      console.error('🚫 Erro ao carregar dados de formação:', error);
+      
+      // Fallback: usar dados hardcoded se não conseguir carregar
+      const tiposFallback = [
+        {
+          id: '1',
+          codigo: 'FORMA_BASE',
+          nome: 'FORMA BASE',
+          descricao: 'Formação básica obrigatória',
+          nivel_ordem: 1,
+          carga_horaria_minima: 40,
+          competencias: ['Cuidados básicos', 'Primeiros socorros'],
+          pre_requisitos: [],
+          cor: '#10B981',
+          icone: '🌱',
+          ativo: true
+        },
+        {
+          id: '2',
+          codigo: 'FORMA_N1',
+          nome: 'Formação Nível 1',
+          descricao: 'Primeiro nível de especialização',
+          nivel_ordem: 2,
+          carga_horaria_minima: 60,
+          competencias: ['Técnicas de resgate', 'Trabalho em equipa'],
+          pre_requisitos: [],
+          cor: '#3B82F6',
+          icone: '🛡️',
+          ativo: true
+        }
+      ];
+      
+      console.log('🔄 Usando dados fallback:', tiposFallback);
+      setTiposFormacao(tiposFallback);
+      
       toast({
-        title: "Erro",
-        description: "Erro ao carregar dados do sistema de formação",
+        title: "Aviso",
+        description: "Usando dados de exemplo. Verifique a conexão com a base de dados.",
         variant: "destructive",
       });
     } finally {
