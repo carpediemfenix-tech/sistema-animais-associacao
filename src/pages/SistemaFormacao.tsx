@@ -225,7 +225,7 @@ const SistemaFormacao = () => {
       // Fallback: usar dados hardcoded se não conseguir carregar
       const tiposFallback = [
         {
-          id: '1',
+          id: '550e8400-e29b-41d4-a716-446655440001',
           codigo: 'FORMA_BASE',
           nome: 'FORMA BASE',
           descricao: 'Formação básica obrigatória',
@@ -238,7 +238,7 @@ const SistemaFormacao = () => {
           ativo: true
         },
         {
-          id: '2',
+          id: '550e8400-e29b-41d4-a716-446655440002',
           codigo: 'FORMA_N1',
           nome: 'Formação Nível 1',
           descricao: 'Primeiro nível de especialização',
@@ -357,9 +357,20 @@ const SistemaFormacao = () => {
       }
 
       // Inserir nova ação
+      // Validar UUID do tipo de formação
+      if (!novaAcaoForm.tipo_formacao_id || novaAcaoForm.tipo_formacao_id.length < 30) {
+        throw new Error('Tipo de formação inválido. Selecione um tipo válido.');
+      }
+
+      console.log('📊 Dados para inserção:', {
+        codigo_acao: novaAcaoForm.codigo_acao,
+        tipo_formacao_id: novaAcaoForm.tipo_formacao_id,
+        nome_acao: novaAcaoForm.nome_acao
+      });
+
       const { data, error } = await supabase
         .from('acoes_formacao')
-        .insert([{
+        .insert({
           codigo_acao: novaAcaoForm.codigo_acao,
           tipo_formacao_id: novaAcaoForm.tipo_formacao_id,
           nome_acao: novaAcaoForm.nome_acao,
@@ -368,13 +379,14 @@ const SistemaFormacao = () => {
           local_formacao: novaAcaoForm.local_formacao || null,
           data_inicio: novaAcaoForm.data_inicio || null,
           data_fim: novaAcaoForm.data_fim || null,
-          carga_horaria_real: novaAcaoForm.carga_horaria_real,
-          vagas_maximas: novaAcaoForm.vagas_maximas,
-          preco: novaAcaoForm.preco,
-          status: novaAcaoForm.status,
+          carga_horaria_real: parseInt(novaAcaoForm.carga_horaria_real) || 0,
+          vagas_maximas: parseInt(novaAcaoForm.vagas_maximas) || 0,
+          preco: parseFloat(novaAcaoForm.preco) || 0,
+          status: novaAcaoForm.status || 'planeada',
           observacoes: novaAcaoForm.observacoes || null
-        }])
-        .select();
+        })
+        .select()
+        .single();
 
       if (error) throw error;
 
@@ -1307,7 +1319,6 @@ const SistemaFormacao = () => {
                 <p className="text-sm text-gray-600">Selecione os tipos de formação necessários antes deste:</p>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {/* Pré-requisitos disponíveis baseados no nível */}
                   {tiposFormacao
                     .filter(tipo => tipo.nivel_ordem < novoTipoForm.nivel_ordem)
                     .map(tipo => (
