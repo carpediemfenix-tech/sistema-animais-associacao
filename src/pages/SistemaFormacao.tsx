@@ -1307,6 +1307,13 @@ const SistemaFormacao = () => {
                 <p className="text-sm text-gray-600">Selecione os tipos de formação necessários antes deste:</p>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {/* DEBUG: Verificar tipos disponíveis */}
+                  {console.log('🔍 [DEBUG] Tipos disponíveis para pré-requisitos:', {
+                    totalTipos: tiposFormacao.length,
+                    tipos: tiposFormacao.map(t => ({ id: t.id, nome: t.nome, nivel: t.nivel_ordem })),
+                    nivelAtual: novoTipoForm.nivel_ordem,
+                    tiposFiltrados: tiposFormacao.filter(tipo => tipo.nivel_ordem < novoTipoForm.nivel_ordem)
+                  })}
                   {tiposFormacao
                     .filter(tipo => tipo.nivel_ordem < novoTipoForm.nivel_ordem)
                     .map(tipo => (
@@ -1322,6 +1329,16 @@ const SistemaFormacao = () => {
                       </span>
                     </label>
                   ))}
+                  
+                  {/* Fallback se não houver tipos disponíveis */}
+                  {tiposFormacao.filter(tipo => tipo.nivel_ordem < novoTipoForm.nivel_ordem).length === 0 && (
+                    <div className="text-sm text-gray-500 italic">
+                      {tiposFormacao.length === 0 
+                        ? 'Nenhum tipo de formação carregado ainda...'
+                        : `Nenhum tipo disponível para nível ${novoTipoForm.nivel_ordem} (total: ${tiposFormacao.length} tipos)`
+                      }
+                    </div>
+                  )}
                 </div>
               </div>
 
