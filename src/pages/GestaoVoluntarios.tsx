@@ -152,7 +152,7 @@ const GestaoVoluntarios = () => {
       nif: "",
       data_nascimento: "",
       profissao: "",
-      nivel_formacao_atual: "",
+      nivel_formacao_atual: "sem_nivel",
       observacoes: ""
     });
     setEditingVoluntario(null);
@@ -169,7 +169,7 @@ const GestaoVoluntarios = () => {
         nif: voluntario.nif || "",
         data_nascimento: voluntario.data_nascimento || "",
         profissao: voluntario.profissao || "",
-        nivel_formacao_atual: voluntario.nivel_formacao_atual || "",
+        nivel_formacao_atual: voluntario.nivel_formacao_atual || "sem_nivel",
         observacoes: voluntario.observacoes || ""
       });
     } else {
@@ -201,7 +201,7 @@ const GestaoVoluntarios = () => {
         nif: formData.nif?.trim() || null,
         data_nascimento: formData.data_nascimento || null,
         profissao: formData.profissao?.trim() || null,
-        nivel_formacao_atual: formData.nivel_formacao_atual || null,
+        nivel_formacao_atual: formData.nivel_formacao_atual === "sem_nivel" ? null : formData.nivel_formacao_atual || null,
         observacoes: formData.observacoes?.trim() || null,
         ativo: true
       };
@@ -496,7 +496,7 @@ const GestaoVoluntarios = () => {
                           <SelectValue placeholder="Selecionar nível de formação" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Sem nível atribuído</SelectItem>
+                          <SelectItem value="sem_nivel">Sem nível atribuído</SelectItem>
                           {niveisFormacao.map((nivel) => (
                             <SelectItem key={nivel.id} value={nivel.id}>
                               <div className="flex items-center space-x-2">
