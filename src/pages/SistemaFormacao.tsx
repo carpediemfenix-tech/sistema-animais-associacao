@@ -74,6 +74,22 @@ const SistemaFormacao = () => {
     observacoes: ''
   });
   const [submittingNovaAcao, setSubmittingNovaAcao] = useState(false);
+  
+  // Estados para modal de novo tipo de formação
+  const [novoTipoDialogOpen, setNovoTipoDialogOpen] = useState(false);
+  const [novoTipoForm, setNovoTipoForm] = useState({
+    codigo: '',
+    nome: '',
+    descricao: '',
+    nivel_ordem: 1,
+    carga_horaria_minima: 0,
+    competencias: [] as string[],
+    pre_requisitos: [] as string[],
+    cor: '#3B82F6',
+    icone: '🎓'
+  });
+  const [submittingNovoTipo, setSubmittingNovoTipo] = useState(false);
+  const [novaCompetencia, setNovaCompetencia] = useState('');
 
   const { toast } = useToast();
   const { hasPermission } = useAuth();
@@ -301,6 +317,126 @@ const SistemaFormacao = () => {
     setNovaAcaoForm(prev => ({
       ...prev,
       [field]: value
+    }));
+  };
+
+  // Funções para modal de novo tipo de formação
+  const resetNovoTipoForm = () => {
+    setNovoTipoForm({
+      codigo: '',
+      nome: '',
+      descricao: '',
+      nivel_ordem: 1,
+      carga_horaria_minima: 0,
+      competencias: [],
+      pre_requisitos: [],
+      cor: '#3B82F6',
+      icone: '🎓'
+    });
+    setNovaCompetencia('');
+  };
+
+  const handleNovoTipoSubmit = async () => {
+    try {
+      setSubmittingNovoTipo(true);
+
+      // Validação básica
+      if (!novoTipoForm.codigo || !novoTipoForm.nome) {
+        toast({
+          title: "Erro",
+          description: "Por favor, preencha o código e nome do tipo",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Verificar se o código já existe
+      const { data: existingTipo } = await supabase
+        .from('tipos_formacao')
+        .select('id')
+        .eq('codigo', novoTipoForm.codigo)
+        .single();
+
+      if (existingTipo) {
+        toast({
+          title: "Erro",
+          description: "Já existe um tipo de formação com este código",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Inserir novo tipo
+      const { data, error } = await supabase
+        .from('tipos_formacao')
+        .insert([{
+          codigo: novoTipoForm.codigo,
+          nome: novoTipoForm.nome,
+          descricao: novoTipoForm.descricao || null,
+          nivel_ordem: novoTipoForm.nivel_ordem,
+          carga_horaria_minima: novoTipoForm.carga_horaria_minima,
+          competencias: JSON.stringify(novoTipoForm.competencias),
+          pre_requisitos: JSON.stringify(novoTipoForm.pre_requisitos),
+          cor: novoTipoForm.cor,
+          icone: novoTipoForm.icone,
+          ativo: true
+        }])
+        .select();
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Novo tipo de formação criado com sucesso",
+      });
+
+      // Fechar modal e recarregar dados
+      setNovoTipoDialogOpen(false);
+      resetNovoTipoForm();
+      loadData();
+
+    } catch (error: any) {
+      console.error('Erro ao criar novo tipo:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao criar novo tipo de formação",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmittingNovoTipo(false);
+    }
+  };
+
+  const handleNovoTipoInputChange = (field: string, value: any) => {
+    setNovoTipoForm(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const adicionarCompetencia = () => {
+    if (novaCompetencia.trim()) {
+      setNovoTipoForm(prev => ({
+        ...prev,
+        competencias: [...prev.competencias, novaCompetencia.trim()]
+      }));
+      setNovaCompetencia('');
+    }
+  };
+
+  const removerCompetencia = (index: number) => {
+    setNovoTipoForm(prev => ({
+      ...prev,
+      competencias: prev.competencias.filter((_, i) => i !== index)
+    }));
+  };
+
+  const togglePreRequisito = (tipoId: string) => {
+    setNovoTipoForm(prev => ({
+      ...prev,
+      pre_requisitos: prev.pre_requisitos.includes(tipoId)
+        ? prev.pre_requisitos.filter(id => id !== tipoId)
+        : [...prev.pre_requisitos, tipoId]
     }));
   };
 
@@ -567,6 +703,25 @@ const SistemaFormacao = () => {
 
           {/* Tipos de Formação */}
           <TabsContent value="tipos" className="space-y-6">
+            {/* Cabeçalho da aba Tipos */}
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Tipos de Formação</h2>
+                <p className="text-gray-600">Templates base para criar ações de formação</p>
+              </div>
+              <Dialog open={novoTipoDialogOpen} onOpenChange={setNovoTipoDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button onClick={() => {
+                    resetNovoTipoForm();
+                    setNovoTipoDialogOpen(true);
+                  }}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Novo Tipo
+                  </Button>
+                </DialogTrigger>
+              </Dialog>
+            </div>
+            
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {tiposFormacao.map((tipo) => (
                 <Card key={tipo.id} className="border-l-4" style={{ borderLeftColor: getTipoFormacaoCor(tipo.codigo) }}>
@@ -920,6 +1075,210 @@ const SistemaFormacao = () => {
               </Button>
               <Button onClick={handleNovaAcaoSubmit} disabled={submittingNovaAcao}>
                 {submittingNovaAcao ? 'Criando...' : 'Criar Ação'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal de Novo Tipo de Formação */}
+        <Dialog open={novoTipoDialogOpen} onOpenChange={setNovoTipoDialogOpen}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Novo Tipo de Formação</DialogTitle>
+              <DialogDescription>
+                Criar um novo template de formação (ex: FORMA_N4, FORMA_ADMIN, etc.)
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-6">
+              {/* Informações Básicas */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Informações Básicas</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="codigo">Código *</Label>
+                    <Input
+                      id="codigo"
+                      placeholder="Ex: FORMA_N4"
+                      value={novoTipoForm.codigo}
+                      onChange={(e) => handleNovoTipoInputChange('codigo', e.target.value.toUpperCase())}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="nome">Nome *</Label>
+                    <Input
+                      id="nome"
+                      placeholder="Ex: Formação Nível 4"
+                      value={novoTipoForm.nome}
+                      onChange={(e) => handleNovoTipoInputChange('nome', e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="descricao">Descrição</Label>
+                  <Textarea
+                    id="descricao"
+                    placeholder="Descrição detalhada do tipo de formação"
+                    value={novoTipoForm.descricao}
+                    onChange={(e) => handleNovoTipoInputChange('descricao', e.target.value)}
+                    rows={3}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="nivel_ordem">Nível/Ordem</Label>
+                    <Input
+                      id="nivel_ordem"
+                      type="number"
+                      min="1"
+                      value={novoTipoForm.nivel_ordem}
+                      onChange={(e) => handleNovoTipoInputChange('nivel_ordem', parseInt(e.target.value) || 1)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="carga_horaria">Carga Horária Mínima (h)</Label>
+                    <Input
+                      id="carga_horaria"
+                      type="number"
+                      min="0"
+                      value={novoTipoForm.carga_horaria_minima}
+                      onChange={(e) => handleNovoTipoInputChange('carga_horaria_minima', parseInt(e.target.value) || 0)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="icone">Ícone</Label>
+                    <Input
+                      id="icone"
+                      placeholder="Ex: 🎓"
+                      value={novoTipoForm.icone}
+                      onChange={(e) => handleNovoTipoInputChange('icone', e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="cor">Cor</Label>
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      id="cor"
+                      type="color"
+                      value={novoTipoForm.cor}
+                      onChange={(e) => handleNovoTipoInputChange('cor', e.target.value)}
+                      className="w-16 h-10"
+                    />
+                    <Input
+                      value={novoTipoForm.cor}
+                      onChange={(e) => handleNovoTipoInputChange('cor', e.target.value)}
+                      placeholder="#3B82F6"
+                      className="flex-1"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Competências */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Competências</h3>
+                
+                <div className="flex space-x-2">
+                  <Input
+                    placeholder="Nova competência"
+                    value={novaCompetencia}
+                    onChange={(e) => setNovaCompetencia(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && adicionarCompetencia()}
+                  />
+                  <Button type="button" onClick={adicionarCompetencia}>
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+                
+                {novoTipoForm.competencias.length > 0 && (
+                  <div className="space-y-2">
+                    {novoTipoForm.competencias.map((competencia, index) => (
+                      <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                        <span className="text-sm">{competencia}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removerCompetencia(index)}
+                        >
+                          ×
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Pré-requisitos */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Pré-requisitos</h3>
+                <p className="text-sm text-gray-600">Selecione os tipos de formação necessários antes deste:</p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {tiposFormacao
+                    .filter(tipo => tipo.nivel_ordem < novoTipoForm.nivel_ordem)
+                    .map(tipo => (
+                    <label key={tipo.id} className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={novoTipoForm.pre_requisitos.includes(tipo.id)}
+                        onChange={() => togglePreRequisito(tipo.id)}
+                        className="rounded"
+                      />
+                      <span className="text-sm">
+                        {getTipoFormacaoIcon(tipo.codigo)} {tipo.nome}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Preview */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Preview</h3>
+                <Card className="border-l-4" style={{ borderLeftColor: novoTipoForm.cor }}>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="text-2xl">{novoTipoForm.icone}</div>
+                        <div>
+                          <h3 className="font-semibold">{novoTipoForm.nome || 'Nome do Tipo'}</h3>
+                          <p className="text-sm text-gray-500">{novoTipoForm.codigo || 'CODIGO'}</p>
+                        </div>
+                      </div>
+                      <Badge variant="outline">Nível {novoTipoForm.nivel_ordem}</Badge>
+                    </div>
+                    
+                    <p className="text-sm text-gray-600 mb-4">
+                      {novoTipoForm.descricao || 'Descrição do tipo de formação'}
+                    </p>
+                    
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center space-x-2">
+                        <Clock className="h-4 w-4 text-gray-400" />
+                        <span>{novoTipoForm.carga_horaria_minima}h mínimas</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <CheckCircle className="h-4 w-4 text-gray-400" />
+                        <span>{novoTipoForm.competencias.length} competências</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button variant="outline" onClick={() => setNovoTipoDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleNovoTipoSubmit} disabled={submittingNovoTipo}>
+                {submittingNovoTipo ? 'Criando...' : 'Criar Tipo'}
               </Button>
             </div>
           </DialogContent>
