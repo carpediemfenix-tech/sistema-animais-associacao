@@ -1,0 +1,643 @@
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { 
+  ArrowLeft, 
+  GraduationCap,
+  Plus, 
+  Calendar,
+  Users,
+  Award,
+  TrendingUp,
+  BookOpen,
+  Clock,
+  MapPin,
+  User,
+  CheckCircle,
+  AlertCircle,
+  Eye,
+  Edit,
+  UserPlus
+} from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import UserHeader from "@/components/UserHeader";
+import { 
+  TipoFormacao, 
+  AcaoFormacao, 
+  ParticipacaoFormacao,
+  EstatisticasFormacao,
+  StatusAcaoFormacao,
+  getTipoFormacaoIcon,
+  getTipoFormacaoCor,
+  STATUS_ACAO_LABELS,
+  getStatusColor
+} from "@/types/formacao";
+
+const SistemaFormacao = () => {
+  const [tiposFormacao, setTiposFormacao] = useState<TipoFormacao[]>([]);
+  const [acoesFormacao, setAcoesFormacao] = useState<AcaoFormacao[]>([]);
+  const [participacoes, setParticipacoes] = useState<ParticipacaoFormacao[]>([]);
+  const [estatisticas, setEstatisticas] = useState<EstatisticasFormacao | null>(null);
+  const [loading, setLoading] = useState(true);
+  
+  // Filtros
+  const [filtroTipo, setFiltroTipo] = useState<string>('todos');
+  const [filtroStatus, setFiltroStatus] = useState<StatusAcaoFormacao | 'todos'>('todos');
+  const [termoPesquisa, setTermoPesquisa] = useState('');
+
+  const { toast } = useToast();
+  const { hasPermission } = useAuth();
+
+  // Verificar permissões
+  if (!hasPermission('admin')) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+            <CardTitle className="text-red-600">Acesso Negado</CardTitle>
+            <CardDescription>
+              Apenas administradores podem aceder ao sistema de formação
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="text-center">
+            <Link to="/voluntarios">
+              <Button variant="outline" className="w-full">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Voltar ao Dashboard
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+
+      // Carregar tipos de formação
+      const { data: tiposData, error: tiposError } = await supabase
+        .from('tipos_formacao')
+        .select('*')
+        .order('nivel_ordem');
+
+      if (tiposError) throw tiposError;
+
+      // Carregar ações de formação com tipos
+      const { data: acoesData, error: acoesError } = await supabase
+        .from('acoes_formacao')
+        .select(`
+          *,
+          tipo_formacao:tipos_formacao(*)
+        `)
+        .order('data_inicio', { ascending: false });
+
+      if (acoesError) throw acoesError;
+
+      // Carregar participações recentes
+      const { data: participacoesData, error: participacoesError } = await supabase
+        .from('participacoes_formacao')
+        .select(`
+          *,
+          voluntario:voluntarios(nome, email),
+          acao_formacao:acoes_formacao(codigo_acao, nome_acao)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (participacoesError) throw participacoesError;
+
+      setTiposFormacao(tiposData || []);
+      setAcoesFormacao(acoesData || []);
+      setParticipacoes(participacoesData || []);
+
+      // Calcular estatísticas
+      calcularEstatisticas(tiposData || [], acoesData || [], participacoesData || []);
+
+    } catch (error: any) {
+      console.error('Erro ao carregar dados de formação:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar dados do sistema de formação",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const calcularEstatisticas = (tipos: TipoFormacao[], acoes: AcaoFormacao[], participacoes: ParticipacaoFormacao[]) => {
+    const stats: EstatisticasFormacao = {
+      total_tipos_formacao: tipos.length,
+      total_acoes_formacao: acoes.length,
+      total_participacoes: participacoes.length,
+      total_certificados_emitidos: participacoes.filter(p => p.certificado_emitido).length,
+      
+      acoes_por_status: {
+        planeada: acoes.filter(a => a.status === 'planeada').length,
+        inscricoes_abertas: acoes.filter(a => a.status === 'inscricoes_abertas').length,
+        em_curso: acoes.filter(a => a.status === 'em_curso').length,
+        concluida: acoes.filter(a => a.status === 'concluida').length,
+        cancelada: acoes.filter(a => a.status === 'cancelada').length,
+      },
+      
+      participacoes_por_status: {
+        inscrito: participacoes.filter(p => p.status_participacao === 'inscrito').length,
+        confirmado: participacoes.filter(p => p.status_participacao === 'confirmado').length,
+        presente: participacoes.filter(p => p.status_participacao === 'presente').length,
+        ausente: participacoes.filter(p => p.status_participacao === 'ausente').length,
+        aprovado: participacoes.filter(p => p.status_participacao === 'aprovado').length,
+        reprovado: participacoes.filter(p => p.status_participacao === 'reprovado').length,
+        desistiu: participacoes.filter(p => p.status_participacao === 'desistiu').length,
+      },
+      
+      participacoes_por_tipo: tipos.map(tipo => {
+        const participacoesTipo = participacoes.filter(p => 
+          acoes.find(a => a.id === p.acao_formacao_id)?.tipo_formacao_id === tipo.id
+        );
+        const aprovados = participacoesTipo.filter(p => p.status_participacao === 'aprovado').length;
+        
+        return {
+          tipo_codigo: tipo.codigo,
+          tipo_nome: tipo.nome,
+          total_participacoes: participacoesTipo.length,
+          total_aprovados: aprovados,
+          taxa_aprovacao: participacoesTipo.length > 0 ? Math.round((aprovados / participacoesTipo.length) * 100) : 0
+        };
+      }),
+      
+      participacoes_por_mes: [] // Implementar se necessário
+    };
+
+    setEstatisticas(stats);
+  };
+
+  // Filtrar ações
+  const acoesFiltradas = acoesFormacao.filter(acao => {
+    const matchTipo = filtroTipo === 'todos' || acao.tipo_formacao_id === filtroTipo;
+    const matchStatus = filtroStatus === 'todos' || acao.status === filtroStatus;
+    const matchPesquisa = !termoPesquisa || 
+      acao.nome_acao.toLowerCase().includes(termoPesquisa.toLowerCase()) ||
+      acao.codigo_acao.toLowerCase().includes(termoPesquisa.toLowerCase()) ||
+      acao.formador?.toLowerCase().includes(termoPesquisa.toLowerCase());
+    
+    return matchTipo && matchStatus && matchPesquisa;
+  });
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <GraduationCap className="h-16 w-16 animate-pulse text-blue-600 mx-auto mb-4" />
+          <p className="text-gray-600">Carregando sistema de formação...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <UserHeader />
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+              <GraduationCap className="h-8 w-8 mr-3 text-blue-600" />
+              Sistema de Formação Valentão
+            </h1>
+            <p className="text-gray-600 mt-1">
+              Gestão completa de tipos, ações e participações em formação
+            </p>
+          </div>
+          <div className="flex items-center space-x-3">
+            <Link to="/voluntarios">
+              <Button variant="outline">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Dashboard Voluntários
+              </Button>
+            </Link>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Nova Ação
+            </Button>
+          </div>
+        </div>
+
+        {/* Estatísticas Rápidas */}
+        {estatisticas && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Tipos de Formação</p>
+                    <p className="text-2xl font-bold text-blue-600">{estatisticas.total_tipos_formacao}</p>
+                  </div>
+                  <BookOpen className="h-8 w-8 text-blue-600" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Ações de Formação</p>
+                    <p className="text-2xl font-bold text-green-600">{estatisticas.total_acoes_formacao}</p>
+                  </div>
+                  <Calendar className="h-8 w-8 text-green-600" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Participações</p>
+                    <p className="text-2xl font-bold text-purple-600">{estatisticas.total_participacoes}</p>
+                  </div>
+                  <Users className="h-8 w-8 text-purple-600" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Certificados</p>
+                    <p className="text-2xl font-bold text-orange-600">{estatisticas.total_certificados_emitidos}</p>
+                  </div>
+                  <Award className="h-8 w-8 text-orange-600" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Tabs */}
+        <Tabs defaultValue="acoes" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-1 lg:grid-cols-4">
+            <TabsTrigger value="acoes">Ações de Formação</TabsTrigger>
+            <TabsTrigger value="tipos">Tipos de Formação</TabsTrigger>
+            <TabsTrigger value="participacoes">Participações</TabsTrigger>
+            <TabsTrigger value="estatisticas">Estatísticas</TabsTrigger>
+          </TabsList>
+
+          {/* Ações de Formação */}
+          <TabsContent value="acoes" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div>
+                    <CardTitle>Ações de Formação</CardTitle>
+                    <CardDescription>
+                      Instâncias específicas de formação (ACC2502, ACC2506, etc.)
+                    </CardDescription>
+                  </div>
+                  
+                  {/* Filtros */}
+                  <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                    <Input
+                      placeholder="Pesquisar ações..."
+                      value={termoPesquisa}
+                      onChange={(e) => setTermoPesquisa(e.target.value)}
+                      className="w-full sm:w-64"
+                    />
+                    <Select value={filtroTipo} onValueChange={setFiltroTipo}>
+                      <SelectTrigger className="w-full sm:w-48">
+                        <SelectValue placeholder="Tipo de formação" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="todos">Todos os tipos</SelectItem>
+                        {tiposFormacao.map(tipo => (
+                          <SelectItem key={tipo.id} value={tipo.id}>
+                            {getTipoFormacaoIcon(tipo.codigo)} {tipo.nome}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select value={filtroStatus} onValueChange={(value) => setFiltroStatus(value as StatusAcaoFormacao | 'todos')}>
+                      <SelectTrigger className="w-full sm:w-48">
+                        <SelectValue placeholder="Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="todos">Todos os status</SelectItem>
+                        <SelectItem value="planeada">Planeada</SelectItem>
+                        <SelectItem value="inscricoes_abertas">Inscrições Abertas</SelectItem>
+                        <SelectItem value="em_curso">Em Curso</SelectItem>
+                        <SelectItem value="concluida">Concluída</SelectItem>
+                        <SelectItem value="cancelada">Cancelada</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Ação</TableHead>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead>Formador</TableHead>
+                      <TableHead>Datas</TableHead>
+                      <TableHead>Vagas</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {acoesFiltradas.map((acao) => (
+                      <TableRow key={acao.id}>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">{acao.nome_acao}</div>
+                            <div className="text-sm text-gray-500">{acao.codigo_acao}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {acao.tipo_formacao && (
+                            <div className="flex items-center space-x-2">
+                              <span style={{ color: getTipoFormacaoCor(acao.tipo_formacao.codigo) }}>
+                                {getTipoFormacaoIcon(acao.tipo_formacao.codigo)}
+                              </span>
+                              <span className="text-sm">{acao.tipo_formacao.nome}</span>
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <User className="h-4 w-4 text-gray-400" />
+                            <span className="text-sm">{acao.formador || 'Não definido'}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm">
+                            {acao.data_inicio && acao.data_fim ? (
+                              <>
+                                <div className="flex items-center space-x-1">
+                                  <Calendar className="h-3 w-3 text-gray-400" />
+                                  <span>{new Date(acao.data_inicio).toLocaleDateString('pt-PT')}</span>
+                                </div>
+                                <div className="text-gray-500">
+                                  até {new Date(acao.data_fim).toLocaleDateString('pt-PT')}
+                                </div>
+                              </>
+                            ) : (
+                              <span className="text-gray-400">Datas não definidas</span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm">
+                            <div className="flex items-center space-x-1">
+                              <Users className="h-3 w-3 text-gray-400" />
+                              <span>{acao.vagas_ocupadas}/{acao.vagas_maximas}</span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                              <div 
+                                className="bg-blue-600 h-1.5 rounded-full" 
+                                style={{ width: `${(acao.vagas_ocupadas / acao.vagas_maximas) * 100}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant="outline" 
+                            style={{ 
+                              borderColor: getStatusColor(acao.status),
+                              color: getStatusColor(acao.status)
+                            }}
+                          >
+                            {STATUS_ACAO_LABELS[acao.status]}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <Button variant="outline" size="sm">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button variant="outline" size="sm">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button variant="outline" size="sm">
+                              <UserPlus className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Tipos de Formação */}
+          <TabsContent value="tipos" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {tiposFormacao.map((tipo) => (
+                <Card key={tipo.id} className="border-l-4" style={{ borderLeftColor: getTipoFormacaoCor(tipo.codigo) }}>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="text-2xl">{getTipoFormacaoIcon(tipo.codigo)}</div>
+                        <div>
+                          <h3 className="font-semibold">{tipo.nome}</h3>
+                          <p className="text-sm text-gray-500">{tipo.codigo}</p>
+                        </div>
+                      </div>
+                      <Badge variant="outline">Nível {tipo.nivel_ordem}</Badge>
+                    </div>
+                    
+                    <p className="text-sm text-gray-600 mb-4">{tipo.descricao}</p>
+                    
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center space-x-2">
+                        <Clock className="h-4 w-4 text-gray-400" />
+                        <span>{tipo.carga_horaria_minima}h mínimas</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <CheckCircle className="h-4 w-4 text-gray-400" />
+                        <span>{tipo.competencias.length} competências</span>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-4 pt-4 border-t">
+                      <div className="flex justify-between items-center">
+                        <Badge variant={tipo.ativo ? "default" : "secondary"}>
+                          {tipo.ativo ? "Ativo" : "Inativo"}
+                        </Badge>
+                        <Button variant="outline" size="sm">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+
+          {/* Participações */}
+          <TabsContent value="participacoes" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Participações Recentes</CardTitle>
+                <CardDescription>
+                  Últimas 50 participações em ações de formação
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Voluntário</TableHead>
+                      <TableHead>Ação</TableHead>
+                      <TableHead>Data Inscrição</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Certificado</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {participacoes.slice(0, 20).map((participacao) => (
+                      <TableRow key={participacao.id}>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">{participacao.voluntario?.nome}</div>
+                            <div className="text-sm text-gray-500">{participacao.voluntario?.email}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">{participacao.acao_formacao?.nome_acao}</div>
+                            <div className="text-sm text-gray-500">{participacao.acao_formacao?.codigo_acao}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {new Date(participacao.data_inscricao).toLocaleDateString('pt-PT')}
+                        </TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant="outline"
+                            style={{ 
+                              borderColor: getStatusColor(participacao.status_participacao),
+                              color: getStatusColor(participacao.status_participacao)
+                            }}
+                          >
+                            {participacao.status_participacao}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {participacao.certificado_emitido ? (
+                            <Badge variant="default" className="bg-green-600">
+                              <Award className="h-3 w-3 mr-1" />
+                              Emitido
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary">Pendente</Badge>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Estatísticas */}
+          <TabsContent value="estatisticas" className="space-y-6">
+            {estatisticas && (
+              <>
+                {/* Estatísticas por Tipo */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Participações por Tipo de Formação</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {estatisticas.participacoes_por_tipo.map((item) => (
+                        <div key={item.tipo_codigo} className="flex items-center justify-between p-4 border rounded-lg">
+                          <div className="flex items-center space-x-3">
+                            <span className="text-xl">{getTipoFormacaoIcon(item.tipo_codigo)}</span>
+                            <div>
+                              <h4 className="font-medium">{item.tipo_nome}</h4>
+                              <p className="text-sm text-gray-500">{item.tipo_codigo}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-lg font-semibold">{item.total_participacoes}</div>
+                            <div className="text-sm text-gray-500">
+                              {item.total_aprovados} aprovados ({item.taxa_aprovacao}%)
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Status das Ações */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Status das Ações</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {Object.entries(estatisticas.acoes_por_status).map(([status, count]) => (
+                          <div key={status} className="flex items-center justify-between">
+                            <span className="text-sm">{STATUS_ACAO_LABELS[status as StatusAcaoFormacao]}</span>
+                            <Badge variant="outline">{count}</Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Status das Participações</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {Object.entries(estatisticas.participacoes_por_status).map(([status, count]) => (
+                          <div key={status} className="flex items-center justify-between">
+                            <span className="text-sm capitalize">{status.replace('_', ' ')}</span>
+                            <Badge variant="outline">{count}</Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </>
+            )}
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
+  );
+};
+
+export default SistemaFormacao;

@@ -1,268 +1,200 @@
-// Interfaces para o Sistema de Voluntários Valentão
-// Criado em: 2025-12-02 02:00 UTC
+// INTERFACES DO SISTEMA DE VOLUNTÁRIOS - VERSÃO ATUALIZADA
+// Removidas dependências do sistema antigo de formação
+// Criado em: 2025-12-07 04:00 UTC
 
-export interface NivelFormacao {
-  id: string;
-  codigo: string; // 'FORMA_BASE', 'FORMA_N1', etc.
-  nome: string;
-  descricao?: string;
-  ordem: number; // 0=BASE, 1=N1, 2=N2, 3=N3
-  pre_requisitos: string[]; // IDs dos níveis pré-requisito
-  tempo_minimo_meses: number;
-  missoes_minimas: number;
-  competencias: string[]; // Lista de competências
-  cor: string; // Cor para UI
-  icone: string; // Ícone Lucide
-  ativo: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface Especializacao {
-  id: string;
-  codigo: string; // 'FORMA_VET', 'FORMA_RESCUE'
-  nome: string;
-  descricao?: string;
-  nivel_pre_requisito: string; // ID do nível pré-requisito
-  competencias: string[];
-  cor: string;
-  icone: string;
-  ativo: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
+// ============================================================================
+// VOLUNTÁRIO PRINCIPAL
+// ============================================================================
 export interface VoluntarioValentao {
   id: string;
   nome: string;
   email: string;
   telefone?: string;
-  morada?: string;
   nif?: string;
   data_nascimento?: string;
   profissao?: string;
-  nivel_formacao_atual?: string; // ID do nível atual
-  data_ingresso: string; // Renomeado de data_entrada para consistência
-  data_entrada?: string; // Mantido para compatibilidade
-  tem_formacao: boolean; // Flag se tem alguma formação
+  morada?: string;
+  data_ingresso: string; // Data de entrada na associação
+  especialidade?: string;
+  observacoes?: string;
   ativo: boolean;
-  data_inativacao?: string;
-  motivo_inativacao?: string;
-  observacoes?: string;
   created_at: string;
   updated_at: string;
   
-  // Dados relacionados (joins)
-  nivel_formacao?: NivelFormacao;
-  progressao?: VoluntarioProgressao[];
-  especializacoes?: VoluntarioEspecializacao[];
-  conquistas?: VoluntarioConquista[];
+  // Campos calculados (não estão na BD)
+  nivel_formacao_atual?: string; // Calculado a partir das participações
+  certificados_obtidos?: number; // Calculado
+  ultima_formacao?: string; // Calculada
 }
 
-export interface VoluntarioProgressao {
-  id: string;
-  voluntario_id: string;
-  nivel_id: string;
-  data_inicio: string;
-  data_conclusao?: string;
-  certificado_emitido: boolean;
-  formador_id?: string;
-  avaliacao_final?: number; // 0.00 a 10.00
-  observacoes?: string;
-  created_at: string;
-  updated_at: string;
-  
-  // Dados relacionados
-  nivel?: NivelFormacao;
-  formador?: VoluntarioValentao;
-}
+// Alias para compatibilidade
+export type Voluntario = VoluntarioValentao;
 
-export interface VoluntarioEspecializacao {
-  id: string;
-  voluntario_id: string;
-  especializacao_id: string;
-  data_obtencao: string;
-  certificado_emitido: boolean;
-  formador_id?: string;
-  avaliacao_final?: number;
-  observacoes?: string;
-  created_at: string;
-  updated_at: string;
-  
-  // Dados relacionados
-  especializacao?: Especializacao;
-  formador?: VoluntarioValentao;
-}
-
-export interface Conquista {
-  id: string;
+// ============================================================================
+// INTERFACES PARA FORMULÁRIOS
+// ============================================================================
+export interface VoluntarioFormData {
   nome: string;
-  descricao?: string;
-  icone: string; // Ícone Lucide
-  cor: string; // Cor hex
-  criterios: Record<string, any>; // Critérios para obter
-  pontos_requeridos: number;
-  nivel_minimo?: string; // ID do nível mínimo
-  categoria: 'geral' | 'formacao' | 'missoes' | 'tempo' | 'especializacao';
-  ativo: boolean;
-  created_at: string;
-  updated_at: string;
-  
-  // Dados relacionados
-  nivel_minimo_info?: NivelFormacao;
+  email: string;
+  telefone: string;
+  nif: string;
+  data_nascimento: string;
+  profissao: string;
+  morada: string;
+  especialidade: string;
+  observacoes: string;
 }
 
-export interface VoluntarioConquista {
-  id: string;
-  voluntario_id: string;
-  conquista_id: string;
-  data_obtencao: string;
-  detalhes: Record<string, any>; // Detalhes específicos
-  created_at: string;
-  
-  // Dados relacionados
-  conquista?: Conquista;
-}
-
-// Interfaces para métricas e relatórios
+// ============================================================================
+// INTERFACES PARA ESTATÍSTICAS
+// ============================================================================
 export interface MetricasVoluntarios {
   total_voluntarios: number;
   voluntarios_ativos: number;
   voluntarios_inativos: number;
   voluntarios_com_formacao: number;
   voluntarios_sem_formacao: number;
-  distribuicao_por_nivel: {
-    nivel: NivelFormacao;
+  novas_inscricoes_mes: number;
+  
+  // Distribuição por nível (calculada a partir das participações)
+  distribuicao_por_nivel: Array<{
+    nivel: string;
     quantidade: number;
-    percentual: number;
-  }[];
-  especializacoes_ativas: {
-    especializacao: Especializacao;
-    quantidade: number;
-  }[];
-  conquistas_recentes: VoluntarioConquista[];
-  progressao_mensal: {
-    mes: string;
-    novos_voluntarios: number;
-    progressoes: number;
-    conquistas: number;
-  }[];
+    percentagem: number;
+  }>;
+  
+  // Estatísticas de formação
+  total_certificados_emitidos: number;
+  media_certificados_por_voluntario: number;
 }
 
-// Interface para progressão de voluntário individual
-export interface ProgressaoIndividual {
-  voluntario: VoluntarioValentao;
-  nivel_atual: NivelFormacao;
-  proximo_nivel?: NivelFormacao;
-  progresso_percentual: number;
-  criterios_cumpridos: {
-    tempo_minimo: boolean;
-    missoes_minimas: boolean;
-    outros_requisitos: boolean;
-  };
-  tempo_restante_estimado?: number; // em meses
-  missoes_restantes?: number;
-  especializacoes_disponiveis: Especializacao[];
-  conquistas_proximas: Conquista[];
-}
-
-// Interface para formulários
-export interface VoluntarioFormData {
-  nome: string;
-  email: string;
-  telefone?: string;
-  morada?: string;
-  nif?: string;
-  data_nascimento?: string;
-  profissao?: string;
-  nivel_formacao_atual?: string;
-  observacoes?: string;
-}
-
-export interface ProgressaoFormData {
+// ============================================================================
+// INTERFACES PARA PROGRESSÃO (CALCULADAS)
+// ============================================================================
+export interface ProgressaoVoluntario {
   voluntario_id: string;
-  nivel_id: string;
-  data_inicio: string;
-  data_conclusao?: string;
-  certificado_emitido: boolean;
-  formador_id?: string;
-  avaliacao_final?: number;
-  observacoes?: string;
+  nivel_atual?: string;
+  proximo_nivel?: string;
+  certificados_obtidos: string[]; // Códigos das formações concluídas
+  data_ultima_formacao?: string;
+  progresso_percentual: number; // Para o próximo nível
+  pode_progredir: boolean;
+  criterios_em_falta: string[];
 }
 
-export interface EspecializacaoFormData {
-  voluntario_id: string;
-  especializacao_id: string;
-  data_obtencao: string;
-  certificado_emitido: boolean;
-  formador_id?: string;
-  avaliacao_final?: number;
-  observacoes?: string;
-}
-
-// Tipos auxiliares
-export type StatusVoluntario = 'ativo' | 'inativo';
-export type CategoriaConquista = 'geral' | 'formacao' | 'missoes' | 'tempo' | 'especializacao';
-export type CodigoNivel = 'FORMA_BASE' | 'FORMA_N1' | 'FORMA_N2' | 'FORMA_N3';
-export type CodigoEspecializacao = 'FORMA_VET' | 'FORMA_RESCUE';
-
-// Interface para filtros
+// ============================================================================
+// INTERFACES PARA FILTROS E PESQUISA
+// ============================================================================
 export interface FiltrosVoluntarios {
-  status?: StatusVoluntario;
+  termo_pesquisa?: string;
+  status?: 'todos' | 'ativo' | 'inativo';
   nivel_formacao?: string;
-  especializacao?: string;
+  especialidade?: string;
   data_ingresso_inicio?: string;
   data_ingresso_fim?: string;
-  busca?: string;
 }
 
-// Interface para ordenação
 export interface OrdenacaoVoluntarios {
-  campo: 'nome' | 'data_ingresso' | 'nivel_formacao' | 'email';
+  campo: 'nome' | 'email' | 'data_ingresso' | 'especialidade' | 'created_at';
   direcao: 'asc' | 'desc';
 }
 
-// Interfaces auxiliares para compatibilidade
-export interface VoluntarioSimples {
-  id: string;
-  nome: string;
-  email: string;
-  telefone?: string;
-  ativo: boolean;
-  nivel_formacao_atual?: string;
-  data_entrada?: string;
-  tem_formacao?: boolean;
-  nivel_formacao?: NivelFormacao;
+// ============================================================================
+// INTERFACES PARA RELATÓRIOS
+// ============================================================================
+export interface RelatorioVoluntarios {
+  periodo_inicio: string;
+  periodo_fim: string;
+  metricas: MetricasVoluntarios;
+  voluntarios_detalhes: VoluntarioValentao[];
+  progressoes: ProgressaoVoluntario[];
 }
 
-// Interface para progressão simplificada
-export interface ProgressaoSimples {
-  id: string;
-  voluntario_id: string;
-  nivel_anterior_id?: string;
-  nivel_novo_id: string;
-  data_progressao: string;
-  observacoes?: string;
-  aprovado_por?: string;
-}
+// ============================================================================
+// CONSTANTES E UTILITÁRIOS
+// ============================================================================
+export const STATUS_VOLUNTARIO_LABELS = {
+  ativo: 'Ativo',
+  inativo: 'Inativo'
+};
 
-// Utilitários para ícones de níveis
-export const getNivelIcon = (codigo: string): string => {
-  switch (codigo) {
-    case 'FORMA_BASE': return 'Sprout';
-    case 'FORMA_N1': return 'Shield';
-    case 'FORMA_N2': return 'Sword';
-    case 'FORMA_N3': return 'Crown';
-    default: return 'User';
+export const ESPECIALIDADES_DISPONIVEIS = [
+  'Resgate',
+  'Cuidados Veterinários',
+  'Transporte',
+  'Administração',
+  'Comunicação',
+  'Formação',
+  'Manutenção',
+  'Eventos',
+  'Angariação de Fundos',
+  'Apoio Jurídico'
+];
+
+// ============================================================================
+// FUNÇÕES UTILITÁRIAS
+// ============================================================================
+export const calcularIdade = (dataNascimento: string): number => {
+  const hoje = new Date();
+  const nascimento = new Date(dataNascimento);
+  let idade = hoje.getFullYear() - nascimento.getFullYear();
+  const mesAtual = hoje.getMonth();
+  const mesNascimento = nascimento.getMonth();
+  
+  if (mesAtual < mesNascimento || (mesAtual === mesNascimento && hoje.getDate() < nascimento.getDate())) {
+    idade--;
+  }
+  
+  return idade;
+};
+
+export const calcularTempoNaAssociacao = (dataIngresso: string): string => {
+  const hoje = new Date();
+  const ingresso = new Date(dataIngresso);
+  const diffTime = Math.abs(hoje.getTime() - ingresso.getTime());
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  const anos = Math.floor(diffDays / 365);
+  const meses = Math.floor((diffDays % 365) / 30);
+  
+  if (anos > 0) {
+    return `${anos} ano${anos !== 1 ? 's' : ''} e ${meses} mês${meses !== 1 ? 'es' : ''}`;
+  } else {
+    return `${meses} mês${meses !== 1 ? 'es' : ''}`;
   }
 };
 
-export const getNivelCor = (codigo: string): string => {
-  switch (codigo) {
-    case 'FORMA_BASE': return '#10B981';
-    case 'FORMA_N1': return '#3B82F6';
-    case 'FORMA_N2': return '#F59E0B';
-    case 'FORMA_N3': return '#8B5CF6';
-    default: return '#6B7280';
+export const formatarTelefone = (telefone: string): string => {
+  // Remove todos os caracteres não numéricos
+  const numeros = telefone.replace(/\D/g, '');
+  
+  // Formata para o padrão português
+  if (numeros.length === 9) {
+    return `${numeros.slice(0, 3)} ${numeros.slice(3, 6)} ${numeros.slice(6)}`;
   }
+  
+  return telefone;
 };
+
+export const validarEmail = (email: string): boolean => {
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return regex.test(email);
+};
+
+export const validarNIF = (nif: string): boolean => {
+  // Validação básica do NIF português
+  const numeros = nif.replace(/\D/g, '');
+  return numeros.length === 9;
+};
+
+// ============================================================================
+// INTERFACES REMOVIDAS (SISTEMA ANTIGO)
+// ============================================================================
+// As seguintes interfaces foram removidas do sistema antigo:
+// - NivelFormacao
+// - Especializacao  
+// - Conquista
+// - VoluntarioProgressao
+// - VoluntarioEspecializacao
+// - VoluntarioConquista
+//
+// O novo sistema de formação usa as interfaces em @/types/formacao

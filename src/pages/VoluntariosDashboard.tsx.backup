@@ -261,7 +261,7 @@ const VoluntariosDashboard = () => {
                 Gerir Voluntários
               </Button>
             </Link>
-            <Link to="/sistema-formacao">
+            <Link to="/voluntarios/configuracoes">
               <Button variant="outline">
                 <Settings className="h-4 w-4 mr-2" />
                 Configurações
@@ -465,7 +465,7 @@ const VoluntariosDashboard = () => {
                 </Button>
               </Link>
 
-              <Link to="/sistema-formacao">
+              <Link to="/voluntarios/formacao">
                 <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center space-y-2">
                   <Award className="h-6 w-6" />
                   <span>Gestão Formação</span>
