@@ -97,15 +97,15 @@ const NovoVoluntario = () => {
       setLoading(true);
       
       // Carregar níveis de formação
-      const { data: niveis, error: niveisError } = await supabase
-        .from('niveis_formacao')
-        .select('*')
-        .eq('ativo', true)
-        .order('ordem');
-
-      if (niveisError) throw niveisError;
+      // MODO DEV: Usar dados fixos para níveis de formação
+      const niveisFixos = [
+        { id: '1', nome: 'FORMA BASE', codigo: 'FORMA_BASE', ativo: true },
+        { id: '2', nome: 'Formação N1', codigo: 'FORMA_N1', ativo: true },
+        { id: '3', nome: 'Formação N2', codigo: 'FORMA_N2', ativo: true }
+      ];
       
-      setNiveisFormacao(niveis || []);
+      setNiveisFormacao(niveisFixos);
+      console.log('📊 Usando níveis de formação fixos:', niveisFixos);
       
     } catch (error: any) {
       console.error('Erro ao carregar dados:', error);

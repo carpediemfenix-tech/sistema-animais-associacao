@@ -81,23 +81,14 @@ const VoluntariosDashboard = () => {
         // Continuar mesmo com erro, usando dados vazios
       }
 
-      // Carregar níveis de formação - com tratamento de erro
-      let niveis: any[] = [];
-      try {
-        const { data: niveisData, error: niveisError } = await supabase
-          .from('niveis_formacao')
-          .select('*')
-          .eq('ativo', true)
-          .order('ordem');
-        
-        if (niveisError) {
-          console.error('Erro ao carregar níveis:', niveisError);
-        } else {
-          niveis = niveisData || [];
-        }
-      } catch (error) {
-        console.error('Tabela niveis_formacao não existe:', error);
-      }
+      // MODO DEV: Usar dados fixos para níveis de formação
+      const niveis = [
+        { id: '1', nome: 'FORMA BASE', codigo: 'FORMA_BASE', ativo: true },
+        { id: '2', nome: 'Formação N1', codigo: 'FORMA_N1', ativo: true },
+        { id: '3', nome: 'Formação N2', codigo: 'FORMA_N2', ativo: true }
+      ];
+      
+      console.log('📊 Usando níveis fixos no dashboard:', niveis);
 
       // Usar dados fixos para especializações (sistema antigo removido)
       const especializacoes = [

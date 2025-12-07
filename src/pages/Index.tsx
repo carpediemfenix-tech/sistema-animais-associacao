@@ -153,10 +153,9 @@ const Index = () => {
         .select('id, tipo, valor, data_movimento')
         .gte('data_movimento', inicioAno);
 
-      // 🏥 INTERVENÇÕES - Carregamento Simplificado
-      const { data: intervencoes } = await supabase
-        .from('intervencoes')
-        .select('id, estado, urgente, custo_estimado, data_intervencao');
+      // 🏥 INTERVENÇÕES - MODO DEV: Usar dados vazios para evitar erro 400
+      const intervencoes: any[] = [];
+      console.log('📊 [DASHBOARD] Intervenções desativadas no modo desenvolvimento');
 
       console.log('📊 [DASHBOARD] Processando estatísticas avançadas...');
 
