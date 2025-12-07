@@ -7,6 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { 
   ArrowLeft, 
   GraduationCap,
@@ -52,6 +55,25 @@ const SistemaFormacao = () => {
   const [filtroTipo, setFiltroTipo] = useState<string>('todos');
   const [filtroStatus, setFiltroStatus] = useState<StatusAcaoFormacao | 'todos'>('todos');
   const [termoPesquisa, setTermoPesquisa] = useState('');
+  
+  // Estados para modal de nova ação
+  const [novaAcaoDialogOpen, setNovaAcaoDialogOpen] = useState(false);
+  const [novaAcaoForm, setNovaAcaoForm] = useState({
+    codigo_acao: '',
+    tipo_formacao_id: '',
+    nome_acao: '',
+    descricao: '',
+    formador: '',
+    local_formacao: '',
+    data_inicio: '',
+    data_fim: '',
+    carga_horaria_real: 0,
+    vagas_maximas: 20,
+    preco: 0,
+    status: 'planeada' as StatusAcaoFormacao,
+    observacoes: ''
+  });
+  const [submittingNovaAcao, setSubmittingNovaAcao] = useState(false);
 
   const { toast } = useToast();
   const { hasPermission } = useAuth();
@@ -198,6 +220,90 @@ const SistemaFormacao = () => {
     return matchTipo && matchStatus && matchPesquisa;
   });
 
+  // Funções para modal de nova ação
+  const resetNovaAcaoForm = () => {
+    setNovaAcaoForm({
+      codigo_acao: '',
+      tipo_formacao_id: '',
+      nome_acao: '',
+      descricao: '',
+      formador: '',
+      local_formacao: '',
+      data_inicio: '',
+      data_fim: '',
+      carga_horaria_real: 0,
+      vagas_maximas: 20,
+      preco: 0,
+      status: 'planeada',
+      observacoes: ''
+    });
+  };
+
+  const handleNovaAcaoSubmit = async () => {
+    try {
+      setSubmittingNovaAcao(true);
+
+      // Validação básica
+      if (!novaAcaoForm.codigo_acao || !novaAcaoForm.tipo_formacao_id || !novaAcaoForm.nome_acao) {
+        toast({
+          title: "Erro",
+          description: "Por favor, preencha os campos obrigatórios",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Inserir nova ação
+      const { data, error } = await supabase
+        .from('acoes_formacao')
+        .insert([{
+          codigo_acao: novaAcaoForm.codigo_acao,
+          tipo_formacao_id: novaAcaoForm.tipo_formacao_id,
+          nome_acao: novaAcaoForm.nome_acao,
+          descricao: novaAcaoForm.descricao || null,
+          formador: novaAcaoForm.formador || null,
+          local_formacao: novaAcaoForm.local_formacao || null,
+          data_inicio: novaAcaoForm.data_inicio || null,
+          data_fim: novaAcaoForm.data_fim || null,
+          carga_horaria_real: novaAcaoForm.carga_horaria_real,
+          vagas_maximas: novaAcaoForm.vagas_maximas,
+          preco: novaAcaoForm.preco,
+          status: novaAcaoForm.status,
+          observacoes: novaAcaoForm.observacoes || null
+        }])
+        .select();
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Nova ação de formação criada com sucesso",
+      });
+
+      // Fechar modal e recarregar dados
+      setNovaAcaoDialogOpen(false);
+      resetNovaAcaoForm();
+      loadData();
+
+    } catch (error: any) {
+      console.error('Erro ao criar nova ação:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao criar nova ação de formação",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmittingNovaAcao(false);
+    }
+  };
+
+  const handleNovaAcaoInputChange = (field: string, value: any) => {
+    setNovaAcaoForm(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -233,10 +339,17 @@ const SistemaFormacao = () => {
                 Dashboard Voluntários
               </Button>
             </Link>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Nova Ação
-            </Button>
+            <Dialog open={novaAcaoDialogOpen} onOpenChange={setNovaAcaoDialogOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={() => {
+                  resetNovaAcaoForm();
+                  setNovaAcaoDialogOpen(true);
+                }}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nova Ação
+                </Button>
+              </DialogTrigger>
+            </Dialog>
           </div>
         </div>
 
@@ -635,6 +748,182 @@ const SistemaFormacao = () => {
             )}
           </TabsContent>
         </Tabs>
+
+        {/* Modal de Nova Ação */}
+        <Dialog open={novaAcaoDialogOpen} onOpenChange={setNovaAcaoDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Nova Ação de Formação</DialogTitle>
+              <DialogDescription>
+                Criar uma nova instância de formação (ex: ACC2604, ACC2605, etc.)
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              {/* Informações Básicas */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="codigo_acao">Código da Ação *</Label>
+                  <Input
+                    id="codigo_acao"
+                    placeholder="Ex: ACC2604"
+                    value={novaAcaoForm.codigo_acao}
+                    onChange={(e) => handleNovaAcaoInputChange('codigo_acao', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="tipo_formacao">Tipo de Formação *</Label>
+                  <Select value={novaAcaoForm.tipo_formacao_id} onValueChange={(value) => handleNovaAcaoInputChange('tipo_formacao_id', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecionar tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tiposFormacao.map(tipo => (
+                        <SelectItem key={tipo.id} value={tipo.id}>
+                          {getTipoFormacaoIcon(tipo.codigo)} {tipo.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="nome_acao">Nome da Ação *</Label>
+                <Input
+                  id="nome_acao"
+                  placeholder="Ex: FORMA BASE - Janeiro 2026"
+                  value={novaAcaoForm.nome_acao}
+                  onChange={(e) => handleNovaAcaoInputChange('nome_acao', e.target.value)}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="descricao">Descrição</Label>
+                <Textarea
+                  id="descricao"
+                  placeholder="Descrição da ação de formação"
+                  value={novaAcaoForm.descricao}
+                  onChange={(e) => handleNovaAcaoInputChange('descricao', e.target.value)}
+                />
+              </div>
+
+              {/* Detalhes da Ação */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="formador">Formador</Label>
+                  <Input
+                    id="formador"
+                    placeholder="Nome do formador"
+                    value={novaAcaoForm.formador}
+                    onChange={(e) => handleNovaAcaoInputChange('formador', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="local_formacao">Local</Label>
+                  <Input
+                    id="local_formacao"
+                    placeholder="Local da formação"
+                    value={novaAcaoForm.local_formacao}
+                    onChange={(e) => handleNovaAcaoInputChange('local_formacao', e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Datas */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="data_inicio">Data de Início</Label>
+                  <Input
+                    id="data_inicio"
+                    type="date"
+                    value={novaAcaoForm.data_inicio}
+                    onChange={(e) => handleNovaAcaoInputChange('data_inicio', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="data_fim">Data de Fim</Label>
+                  <Input
+                    id="data_fim"
+                    type="date"
+                    value={novaAcaoForm.data_fim}
+                    onChange={(e) => handleNovaAcaoInputChange('data_fim', e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Configurações */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="carga_horaria">Carga Horária (h)</Label>
+                  <Input
+                    id="carga_horaria"
+                    type="number"
+                    min="0"
+                    value={novaAcaoForm.carga_horaria_real}
+                    onChange={(e) => handleNovaAcaoInputChange('carga_horaria_real', parseInt(e.target.value) || 0)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="vagas_maximas">Vagas Máximas</Label>
+                  <Input
+                    id="vagas_maximas"
+                    type="number"
+                    min="1"
+                    value={novaAcaoForm.vagas_maximas}
+                    onChange={(e) => handleNovaAcaoInputChange('vagas_maximas', parseInt(e.target.value) || 20)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="preco">Preço (€)</Label>
+                  <Input
+                    id="preco"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={novaAcaoForm.preco}
+                    onChange={(e) => handleNovaAcaoInputChange('preco', parseFloat(e.target.value) || 0)}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="status">Status</Label>
+                <Select value={novaAcaoForm.status} onValueChange={(value) => handleNovaAcaoInputChange('status', value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="planeada">Planeada</SelectItem>
+                    <SelectItem value="inscricoes_abertas">Inscrições Abertas</SelectItem>
+                    <SelectItem value="em_curso">Em Curso</SelectItem>
+                    <SelectItem value="concluida">Concluída</SelectItem>
+                    <SelectItem value="cancelada">Cancelada</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="observacoes">Observações</Label>
+                <Textarea
+                  id="observacoes"
+                  placeholder="Observações adicionais"
+                  value={novaAcaoForm.observacoes}
+                  onChange={(e) => handleNovaAcaoInputChange('observacoes', e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button variant="outline" onClick={() => setNovaAcaoDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleNovaAcaoSubmit} disabled={submittingNovaAcao}>
+                {submittingNovaAcao ? 'Criando...' : 'Criar Ação'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
