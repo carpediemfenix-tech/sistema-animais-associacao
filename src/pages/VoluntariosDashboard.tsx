@@ -22,7 +22,8 @@ import {
   Settings,
   BarChart3,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
+  Clock
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -31,22 +32,14 @@ import UserHeader from "@/components/UserHeader";
 import { MetricasVoluntarios, VoluntarioConquista, NivelFormacao } from "@/types/voluntarios";
 
 const VoluntariosDashboard = () => {
-  console.log('VoluntariosDashboard component iniciado');
-  
   const [metricas, setMetricas] = useState<MetricasVoluntarios | null>(null);
   const [loading, setLoading] = useState(true);
   const [conquistasRecentes, setConquistasRecentes] = useState<VoluntarioConquista[]>([]);
   const { toast } = useToast();
   const { hasPermission } = useAuth();
 
-  // Debug de permissões
-  console.log('Verificando permissões para dashboard de voluntários...');
-  console.log('hasPermission function:', typeof hasPermission);
-  console.log('hasPermission("admin"):', hasPermission('admin'));
-  
   // Verificar permissões
   if (!hasPermission('admin')) {
-    console.log('Acesso negado - usuário não é admin');
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
@@ -77,7 +70,6 @@ const VoluntariosDashboard = () => {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      console.log('Carregando dados do dashboard de voluntários...');
       
       // Carregar métricas básicas - com tratamento de erro
       const { data: voluntarios, error: voluntariosError } = await supabase
@@ -143,7 +135,6 @@ const VoluntariosDashboard = () => {
       }
 
       // Processar métricas com dados seguros
-      console.log('Processando métricas...', { voluntarios: voluntarios?.length, niveis: niveis?.length });
       
       const totalVoluntarios = voluntarios?.length || 0;
       const voluntariosAtivos = voluntarios?.filter(v => v.ativo === true).length || 0;
@@ -178,7 +169,6 @@ const VoluntariosDashboard = () => {
         progressao_mensal: [] // Implementar depois
       };
 
-      console.log('Métricas calculadas:', metricasCalculadas);
       
       setMetricas(metricasCalculadas);
       setConquistasRecentes(conquistasRecentesData);
