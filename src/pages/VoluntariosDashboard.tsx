@@ -31,14 +31,22 @@ import UserHeader from "@/components/UserHeader";
 import { MetricasVoluntarios, VoluntarioConquista, NivelFormacao } from "@/types/voluntarios";
 
 const VoluntariosDashboard = () => {
+  console.log('VoluntariosDashboard component iniciado');
+  
   const [metricas, setMetricas] = useState<MetricasVoluntarios | null>(null);
   const [loading, setLoading] = useState(true);
   const [conquistasRecentes, setConquistasRecentes] = useState<VoluntarioConquista[]>([]);
   const { toast } = useToast();
   const { hasPermission } = useAuth();
 
+  // Debug de permissões
+  console.log('Verificando permissões para dashboard de voluntários...');
+  console.log('hasPermission function:', typeof hasPermission);
+  console.log('hasPermission("admin"):', hasPermission('admin'));
+  
   // Verificar permissões
   if (!hasPermission('admin')) {
+    console.log('Acesso negado - usuário não é admin');
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
@@ -69,48 +77,81 @@ const VoluntariosDashboard = () => {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
+      console.log('Carregando dados do dashboard de voluntários...');
       
-      // Carregar métricas básicas
+      // Carregar métricas básicas - com tratamento de erro
       const { data: voluntarios, error: voluntariosError } = await supabase
         .from('voluntarios')
         .select('*');
 
-      if (voluntariosError) throw voluntariosError;
+      if (voluntariosError) {
+        console.error('Erro ao carregar voluntários:', voluntariosError);
+        // Continuar mesmo com erro, usando dados vazios
+      }
 
-      // Carregar níveis de formação
-      const { data: niveis, error: niveisError } = await supabase
-        .from('niveis_formacao')
-        .select('*')
-        .eq('ativo', true)
-        .order('ordem');
+      // Carregar níveis de formação - com tratamento de erro
+      let niveis: any[] = [];
+      try {
+        const { data: niveisData, error: niveisError } = await supabase
+          .from('niveis_formacao')
+          .select('*')
+          .eq('ativo', true)
+          .order('ordem');
+        
+        if (niveisError) {
+          console.error('Erro ao carregar níveis:', niveisError);
+        } else {
+          niveis = niveisData || [];
+        }
+      } catch (error) {
+        console.error('Tabela niveis_formacao não existe:', error);
+      }
 
-      if (niveisError) throw niveisError;
+      // Carregar especializações - com tratamento de erro
+      let especializacoes: any[] = [];
+      try {
+        const { data: especializacoesData, error: especializacoesError } = await supabase
+          .from('especializacoes')
+          .select('*')
+          .eq('ativo', true);
+        
+        if (especializacoesError) {
+          console.error('Erro ao carregar especializações:', especializacoesError);
+        } else {
+          especializacoes = especializacoesData || [];
+        }
+      } catch (error) {
+        console.error('Tabela especializacoes não existe:', error);
+      }
 
-      // Carregar especializações
-      const { data: especializacoes, error: especializacoesError } = await supabase
-        .from('especializacoes')
-        .select('*')
-        .eq('ativo', true);
+      // Carregar conquistas recentes - com tratamento de erro
+      let conquistasRecentesData: any[] = [];
+      try {
+        const { data: conquistasData, error: conquistasError } = await supabase
+          .from('voluntario_conquistas')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(10);
+        
+        if (conquistasError) {
+          console.error('Erro ao carregar conquistas:', conquistasError);
+        } else {
+          conquistasRecentesData = conquistasData || [];
+        }
+      } catch (error) {
+        console.error('Tabela voluntario_conquistas não existe:', error);
+      }
 
-      if (especializacoesError) throw especializacoesError;
-
-      // Carregar conquistas recentes (simplificado)
-      const { data: conquistasRecentesData, error: conquistasError } = await supabase
-        .from('voluntario_conquistas')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(10);
-
-      if (conquistasError) throw conquistasError;
-
-      // Processar métricas
+      // Processar métricas com dados seguros
+      console.log('Processando métricas...', { voluntarios: voluntarios?.length, niveis: niveis?.length });
+      
       const totalVoluntarios = voluntarios?.length || 0;
-      const voluntariosAtivos = voluntarios?.filter(v => v.ativo).length || 0;
+      const voluntariosAtivos = voluntarios?.filter(v => v.ativo === true).length || 0;
       const voluntariosInativos = totalVoluntarios - voluntariosAtivos;
-      const voluntariosComFormacao = voluntarios?.filter(v => v.tem_formacao).length || 0;
+      const voluntariosComFormacao = voluntarios?.filter(v => v.tem_formacao === true).length || 0;
 
       // Distribuição por nível (baseada nos dados reais)
-      const distribuicaoPorNivel = niveis?.map(nivel => {
+      const distribuicaoPorNivel = niveis.map(nivel => {
         const quantidade = voluntarios?.filter(v => v.nivel_formacao_atual === nivel.id).length || 0;
         return {
           nivel,
@@ -120,10 +161,10 @@ const VoluntariosDashboard = () => {
       }) || [];
 
       // Especializações ativas (simulado por agora)
-      const especializacoesAtivas = especializacoes?.map(esp => ({
+      const especializacoesAtivas = especializacoes.map(esp => ({
         especializacao: esp,
         quantidade: Math.floor(Math.random() * 10) // Temporário
-      })) || [];
+      }));
 
       const metricasCalculadas: MetricasVoluntarios = {
         total_voluntarios: totalVoluntarios,
@@ -137,14 +178,33 @@ const VoluntariosDashboard = () => {
         progressao_mensal: [] // Implementar depois
       };
 
+      console.log('Métricas calculadas:', metricasCalculadas);
+      
       setMetricas(metricasCalculadas);
-      setConquistasRecentes(conquistasRecentesData || []);
+      setConquistasRecentes(conquistasRecentesData);
 
     } catch (error: any) {
-      console.error('Erro ao carregar dashboard:', error);
+      console.error('Erro crítico ao carregar dashboard:', error);
+      
+      // Definir métricas padrão em caso de erro
+      const metricasPadrao: MetricasVoluntarios = {
+        total_voluntarios: 0,
+        voluntarios_ativos: 0,
+        voluntarios_inativos: 0,
+        voluntarios_com_formacao: 0,
+        voluntarios_sem_formacao: 0,
+        distribuicao_por_nivel: [],
+        especializacoes_ativas: [],
+        conquistas_recentes: [],
+        progressao_mensal: []
+      };
+      
+      setMetricas(metricasPadrao);
+      setConquistasRecentes([]);
+      
       toast({
-        title: "Erro",
-        description: "Erro ao carregar dados do dashboard",
+        title: "Aviso",
+        description: "Alguns dados podem não estar disponíveis. Sistema funcionando com dados básicos.",
         variant: "destructive",
       });
     } finally {
