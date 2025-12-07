@@ -8,7 +8,7 @@ interface User {
   username: string;
   email: string;
   nome: string;
-  perfil: 'administrador' | 'tecnico' | 'consulta';
+  perfil: 'administrador'; // MODO DEV: Sempre administrador
   ativo: boolean;
   last_login?: string;
 }
@@ -150,23 +150,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }, 4300); // Aumentado de 2300ms para 4300ms para sincronizar com a mensagem de 4 segundos
   };
 
-  // Verificar permissões baseadas no perfil
+  // MODO DESENVOLVIMENTO: Permissões totais para todos os usuários autenticados
   const hasPermission = (action: 'create' | 'update' | 'delete' | 'admin'): boolean => {
-    if (!user || !user.ativo) return false;
-
-    switch (user.perfil_acesso) {
-      case 'administrador':
-        return true; // Administrador tem todas as permissões
-      
-      case 'tecnico':
-        return action !== 'delete' && action !== 'admin'; // Técnico pode criar e editar
-      
-      case 'consulta':
-        return false; // Consulta só pode visualizar
-      
-      default:
-        return false;
-    }
+    // Se o usuário está logado, tem todas as permissões
+    return !!user && user.ativo;
   };
 
   const isAuthenticated = !!user && user.ativo;
