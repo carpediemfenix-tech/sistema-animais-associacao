@@ -130,8 +130,10 @@ const SistemaFormacao = () => {
       // Carregar tipos de formação - CONSULTA SIMPLIFICADA
       console.log('🔍 Iniciando carregamento de tipos de formação...');
       
+      let tiposData: any[] = [];
+      
       try {
-        const { data: tiposData, error: tiposError } = await supabase
+        const { data: tiposDataResponse, error: tiposError } = await supabase
           .from('tipos_formacao')
           .select(`
             id,
@@ -149,9 +151,9 @@ const SistemaFormacao = () => {
           .order('nivel_ordem');
 
         console.log('📊 Resposta da consulta tipos:', {
-          data: tiposData,
+          data: tiposDataResponse,
           error: tiposError,
-          count: tiposData?.length || 0
+          count: tiposDataResponse?.length || 0
         });
         
         if (tiposError) {
@@ -159,7 +161,7 @@ const SistemaFormacao = () => {
           throw tiposError;
         }
 
-        if (!tiposData || tiposData.length === 0) {
+        if (!tiposDataResponse || tiposDataResponse.length === 0) {
           console.warn('⚠️ Nenhum tipo de formação encontrado!');
           toast({
             title: "Aviso",
@@ -167,7 +169,8 @@ const SistemaFormacao = () => {
             variant: "destructive",
           });
         } else {
-          console.log(`✅ ${tiposData.length} tipos de formação carregados com sucesso!`);
+          console.log(`✅ ${tiposDataResponse.length} tipos de formação carregados com sucesso!`);
+          tiposData = tiposDataResponse; // Atribuir à variável externa
         }
       } catch (error) {
         console.error('🚫 Erro crítico ao carregar tipos:', error);
