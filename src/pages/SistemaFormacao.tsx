@@ -81,7 +81,7 @@ const SistemaFormacao = () => {
     codigo: '',
     nome: '',
     descricao: '',
-    nivel_ordem: 1,
+    nivel_ordem: 6,
     carga_horaria_minima: 0,
     competencias: [] as string[],
     pre_requisitos: [] as string[],
@@ -413,7 +413,7 @@ const SistemaFormacao = () => {
       codigo: '',
       nome: '',
       descricao: '',
-      nivel_ordem: 1,
+      nivel_ordem: 6,
       carga_horaria_minima: 0,
       competencias: [],
       pre_requisitos: [],
@@ -1307,13 +1307,7 @@ const SistemaFormacao = () => {
                 <p className="text-sm text-gray-600">Selecione os tipos de formação necessários antes deste:</p>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {/* DEBUG: Verificar tipos disponíveis */}
-                  {console.log('🔍 [DEBUG] Tipos disponíveis para pré-requisitos:', {
-                    totalTipos: tiposFormacao.length,
-                    tipos: tiposFormacao.map(t => ({ id: t.id, nome: t.nome, nivel: t.nivel_ordem })),
-                    nivelAtual: novoTipoForm.nivel_ordem,
-                    tiposFiltrados: tiposFormacao.filter(tipo => tipo.nivel_ordem < novoTipoForm.nivel_ordem)
-                  })}
+                  {/* Pré-requisitos disponíveis baseados no nível */}
                   {tiposFormacao
                     .filter(tipo => tipo.nivel_ordem < novoTipoForm.nivel_ordem)
                     .map(tipo => (
