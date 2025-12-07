@@ -128,12 +128,19 @@ const SistemaFormacao = () => {
       setLoading(true);
 
       // Carregar tipos de formação
+      console.log('Carregando tipos de formação...');
       const { data: tiposData, error: tiposError } = await supabase
         .from('tipos_formacao')
         .select('*')
+        .eq('ativo', true)
         .order('nivel_ordem');
 
-      if (tiposError) throw tiposError;
+      console.log('Resposta da consulta tipos:', { tiposData, tiposError });
+      
+      if (tiposError) {
+        console.error('Erro ao carregar tipos:', tiposError);
+        throw tiposError;
+      }
 
       // Carregar ações de formação com tipos
       const { data: acoesData, error: acoesError } = await supabase
@@ -159,12 +166,23 @@ const SistemaFormacao = () => {
 
       if (participacoesError) throw participacoesError;
 
-      setTiposFormacao(tiposData || []);
+      // Processar tipos de formação (converter JSONB para arrays)
+      const tiposProcessados = (tiposData || []).map(tipo => ({
+        ...tipo,
+        competencias: Array.isArray(tipo.competencias) ? tipo.competencias : 
+                     (typeof tipo.competencias === 'string' ? JSON.parse(tipo.competencias) : []),
+        pre_requisitos: Array.isArray(tipo.pre_requisitos) ? tipo.pre_requisitos : 
+                       (typeof tipo.pre_requisitos === 'string' ? JSON.parse(tipo.pre_requisitos) : [])
+      }));
+
+      console.log('Tipos de formação carregados:', tiposProcessados);
+      
+      setTiposFormacao(tiposProcessados);
       setAcoesFormacao(acoesData || []);
       setParticipacoes(participacoesData || []);
 
       // Calcular estatísticas
-      calcularEstatisticas(tiposData || [], acoesData || [], participacoesData || []);
+      calcularEstatisticas(tiposProcessados, acoesData || [], participacoesData || []);
 
     } catch (error: any) {
       console.error('Erro ao carregar dados de formação:', error);
