@@ -223,7 +223,7 @@ const VoluntariosConfiguracoes = () => {
         ordem: nivel.ordem,
         tempo_minimo_meses: nivel.tempo_minimo_meses,
         missoes_minimas: nivel.missoes_minimas,
-        competencias: nivel.competencias,
+        competencias: Array.isArray(nivel.competencias) ? nivel.competencias : (typeof nivel.competencias === 'string' ? JSON.parse(nivel.competencias) : []),
         cor: nivel.cor,
         icone: nivel.icone
       });
@@ -292,7 +292,7 @@ const VoluntariosConfiguracoes = () => {
         ordem: nivelForm.ordem,
         tempo_minimo_meses: nivelForm.tempo_minimo_meses,
         missoes_minimas: nivelForm.missoes_minimas,
-        competencias: nivelForm.competencias,
+        competencias: JSON.stringify(nivelForm.competencias),
         cor: nivelForm.cor,
         icone: nivelForm.icone,
         ativo: true
