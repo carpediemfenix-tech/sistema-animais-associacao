@@ -110,26 +110,25 @@ const GestaoVoluntarios = () => {
 
       if (voluntariosError) throw voluntariosError;
 
-      // Carregar níveis de formação
-      const { data: niveisData, error: niveisError } = await supabase
-        .from('niveis_formacao')
-        .select('*')
-        .eq('ativo', true)
-        .order('ordem');
+      // NOTA: Níveis e especializações agora são geridos pelo novo sistema de formação
+      // Usar dados fixos para compatibilidade
+      const niveisFixos = [
+        { id: '1', nome: 'FORMA BASE', codigo: 'FORMA_BASE', ativo: true },
+        { id: '2', nome: 'Formação N1', codigo: 'FORMA_N1', ativo: true },
+        { id: '3', nome: 'Formação N2', codigo: 'FORMA_N2', ativo: true }
+      ];
+      
+      const especializacoesFixas = [
+        { id: '1', nome: 'Geral', ativo: true },
+        { id: '2', nome: 'Veterinária', ativo: true },
+        { id: '3', nome: 'Resgate', ativo: true }
+      ];
 
-      if (niveisError) throw niveisError;
-
-      // Carregar especializações
-      const { data: especializacoesData, error: especializacoesError } = await supabase
-        .from('especializacoes')
-        .select('*')
-        .eq('ativo', true);
-
-      if (especializacoesError) throw especializacoesError;
+      console.log('📊 Usando dados fixos para níveis e especializações');
 
       setVoluntarios(voluntariosData || []);
-      setNiveisFormacao(niveisData || []);
-      setEspecializacoes(especializacoesData || []);
+      setNiveisFormacao(niveisFixos);
+      setEspecializacoes(especializacoesFixas);
 
     } catch (error: any) {
       console.error('Erro ao carregar dados:', error);

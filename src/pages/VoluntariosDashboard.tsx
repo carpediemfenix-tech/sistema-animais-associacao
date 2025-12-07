@@ -99,40 +99,19 @@ const VoluntariosDashboard = () => {
         console.error('Tabela niveis_formacao não existe:', error);
       }
 
-      // Carregar especializações - com tratamento de erro
-      let especializacoes: any[] = [];
-      try {
-        const { data: especializacoesData, error: especializacoesError } = await supabase
-          .from('especializacoes')
-          .select('*')
-          .eq('ativo', true);
-        
-        if (especializacoesError) {
-          console.error('Erro ao carregar especializações:', especializacoesError);
-        } else {
-          especializacoes = especializacoesData || [];
-        }
-      } catch (error) {
-        console.error('Tabela especializacoes não existe:', error);
-      }
+      // Usar dados fixos para especializações (sistema antigo removido)
+      const especializacoes = [
+        { id: '1', nome: 'Geral', ativo: true },
+        { id: '2', nome: 'Veterinária', ativo: true },
+        { id: '3', nome: 'Resgate', ativo: true }
+      ];
+      
+      console.log('📊 Usando especializações fixas:', especializacoes);
 
-      // Carregar conquistas recentes - com tratamento de erro
-      let conquistasRecentesData: any[] = [];
-      try {
-        const { data: conquistasData, error: conquistasError } = await supabase
-          .from('voluntario_conquistas')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(10);
-        
-        if (conquistasError) {
-          console.error('Erro ao carregar conquistas:', conquistasError);
-        } else {
-          conquistasRecentesData = conquistasData || [];
-        }
-      } catch (error) {
-        console.error('Tabela voluntario_conquistas não existe:', error);
-      }
+      // Usar dados fixos para conquistas (sistema antigo removido)
+      const conquistasRecentesData: any[] = [];
+      
+      console.log('📊 Sistema de conquistas desativado (usará novo sistema de formação)');
 
       // Processar métricas com dados seguros
       
