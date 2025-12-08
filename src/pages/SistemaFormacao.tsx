@@ -92,6 +92,12 @@ const SistemaFormacao = () => {
   const [submittingParticipante, setSubmittingParticipante] = useState(false);
   const [searchVoluntario, setSearchVoluntario] = useState('');
   
+  // Estados para edição de tipos de formação
+  const [editarTipoOpen, setEditarTipoOpen] = useState(false);
+  const [tipoSelecionado, setTipoSelecionado] = useState<TipoFormacao | null>(null);
+  const [editarTipoForm, setEditarTipoForm] = useState<any>({});
+  const [submittingEdicaoTipo, setSubmittingEdicaoTipo] = useState(false);
+  
   // Estados para modal de novo tipo de formação
   const [novoTipoDialogOpen, setNovoTipoDialogOpen] = useState(false);
   const [novoTipoForm, setNovoTipoForm] = useState({
@@ -670,6 +676,157 @@ const SistemaFormacao = () => {
     }
   };
 
+  // Funções para gestão de tipos de formação
+  const handleEditarTipo = (tipo: TipoFormacao) => {
+    console.log('✏️ [TIPO] Editar tipo:', tipo.nome);
+    setTipoSelecionado(tipo);
+    setEditarTipoForm({
+      codigo: tipo.codigo,
+      nome: tipo.nome,
+      descricao: tipo.descricao || '',
+      nivel_ordem: tipo.nivel_ordem || 1,
+      carga_horaria_minima: tipo.carga_horaria_minima || 0,
+      competencias: tipo.competencias || [],
+      pre_requisitos: tipo.pre_requisitos || [],
+      cor: tipo.cor || '#3B82F6',
+      icone: tipo.icone || '🎓',
+      ativo: tipo.ativo !== false
+    });
+    setEditarTipoOpen(true);
+  };
+
+  const handleSalvarEdicaoTipo = async () => {
+    if (!tipoSelecionado) return;
+
+    try {
+      setSubmittingEdicaoTipo(true);
+
+      const { error } = await supabase
+        .from('tipos_formacao')
+        .update({
+          codigo: editarTipoForm.codigo,
+          nome: editarTipoForm.nome,
+          descricao: editarTipoForm.descricao || null,
+          nivel_ordem: parseInt(editarTipoForm.nivel_ordem) || 1,
+          carga_horaria_minima: parseInt(editarTipoForm.carga_horaria_minima) || 0,
+          competencias: JSON.stringify(editarTipoForm.competencias || []),
+          pre_requisitos: JSON.stringify(editarTipoForm.pre_requisitos || []),
+          cor: editarTipoForm.cor || '#3B82F6',
+          icone: editarTipoForm.icone || '🎓',
+          ativo: editarTipoForm.ativo
+        })
+        .eq('id', tipoSelecionado.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "✅ Sucesso",
+        description: "Tipo de formação atualizado com sucesso",
+      });
+
+      setEditarTipoOpen(false);
+      loadData();
+
+    } catch (error: any) {
+      console.error('Erro ao atualizar tipo:', error);
+      toast({
+        title: "🚨 Erro",
+        description: "Erro ao atualizar tipo de formação",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmittingEdicaoTipo(false);
+    }
+  };
+
+  const handleToggleAtivoTipo = async (tipo: TipoFormacao) => {
+    try {
+      const novoStatus = !tipo.ativo;
+      console.log(`🔄 [TIPO] ${novoStatus ? 'Ativar' : 'Desativar'} tipo:`, tipo.nome);
+
+      const { error } = await supabase
+        .from('tipos_formacao')
+        .update({ ativo: novoStatus })
+        .eq('id', tipo.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "✅ Sucesso",
+        description: `Tipo "${tipo.nome}" ${novoStatus ? 'ativado' : 'desativado'} com sucesso`,
+      });
+
+      loadData();
+
+    } catch (error: any) {
+      console.error('Erro ao alterar status do tipo:', error);
+      toast({
+        title: "🚨 Erro",
+        description: "Erro ao alterar status do tipo",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEliminarTipo = async (tipo: TipoFormacao) => {
+    try {
+      console.log('🗑️ [TIPO] Eliminar tipo:', tipo.nome);
+      
+      // Verificar se o tipo tem ações associadas
+      const { data: acoes, error: checkError } = await supabase
+        .from('acoes_formacao')
+        .select('id')
+        .eq('tipo_formacao_id', tipo.id)
+        .limit(1);
+
+      if (checkError) {
+        console.error('Erro ao verificar ações:', checkError);
+      }
+
+      // Se tem ações, bloquear eliminação
+      if (acoes && acoes.length > 0) {
+        toast({
+          title: "❌ Não é possível eliminar",
+          description: `O tipo "${tipo.nome}" tem ações de formação associadas. Elimine todas as ações primeiro ou use 'Desativar'.`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Se não tem ações, pode eliminar
+      const { error } = await supabase
+        .from('tipos_formacao')
+        .delete()
+        .eq('id', tipo.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "✅ Sucesso",
+        description: `Tipo "${tipo.nome}" eliminado com sucesso`,
+      });
+
+      loadData();
+
+    } catch (error: any) {
+      console.error('🚨 [ERRO] Erro ao eliminar tipo:', error);
+      
+      if (error.code === '23503') {
+        toast({
+          title: "❌ Não é possível eliminar",
+          description: `O tipo "${tipo.nome}" tem registros associados. Use 'Desativar' para manter o histórico.`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "🚨 Erro",
+          description: error.message || "Erro inesperado ao eliminar tipo",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
   // Função para salvar edição
   const handleSalvarEdicao = async () => {
     if (!acaoSelecionada) return;
@@ -1239,9 +1396,78 @@ const SistemaFormacao = () => {
                         <Badge variant={tipo.ativo ? "default" : "secondary"}>
                           {tipo.ativo ? "Ativo" : "Inativo"}
                         </Badge>
-                        <Button variant="outline" size="sm">
-                          <Edit className="h-4 w-4" />
-                        </Button>
+                        
+                        {/* Botões de Ação */}
+                        <div className="flex space-x-1">
+                          {/* Botão Editar */}
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleEditarTipo(tipo)}
+                            title="Editar tipo de formação"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          
+                          {/* Botão Ativar/Desativar */}
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleToggleAtivoTipo(tipo)}
+                            className={tipo.ativo ? "text-orange-600 hover:text-orange-700" : "text-green-600 hover:text-green-700"}
+                            title={tipo.ativo ? "Desativar tipo" : "Ativar tipo"}
+                          >
+                            {tipo.ativo ? (
+                              <AlertCircle className="h-4 w-4" />
+                            ) : (
+                              <CheckCircle className="h-4 w-4" />
+                            )}
+                          </Button>
+                          
+                          {/* Botão Eliminar com Confirmação */}
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="text-red-600 hover:text-red-700"
+                                title="Eliminar tipo de formação"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle className="text-red-600">
+                                  ⚠️ Eliminar Tipo de Formação
+                                </AlertDialogTitle>
+                                <AlertDialogDescription className="space-y-2">
+                                  <p>
+                                    Tem a certeza que deseja <strong>eliminar permanentemente</strong> o tipo <strong>"{tipo.nome}"</strong>?
+                                  </p>
+                                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mt-3">
+                                    <p className="text-sm text-yellow-800">
+                                      💡 <strong>Nota:</strong> Se o tipo tiver ações de formação associadas, 
+                                      terá de eliminá-las primeiro ou usar 'Desativar'.
+                                    </p>
+                                  </div>
+                                  <p className="text-red-600 font-medium">
+                                    ⚠️ Esta ação não pode ser desfeita!
+                                  </p>
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleEliminarTipo(tipo)}
+                                  className="bg-red-600 hover:bg-red-700"
+                                >
+                                  Eliminar Tipo
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
                       </div>
                     </div>
                   </CardContent>
@@ -2296,6 +2522,152 @@ const SistemaFormacao = () => {
             <div className="flex justify-end space-x-2 pt-4">
               <Button variant="outline" onClick={() => setParticipantesAcaoOpen(false)}>
                 Fechar
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal de Edição de Tipo de Formação */}
+        <Dialog open={editarTipoOpen} onOpenChange={setEditarTipoOpen}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center space-x-2">
+                <Edit className="h-5 w-5 text-blue-600" />
+                <span>Editar Tipo de Formação</span>
+              </DialogTitle>
+              <DialogDescription>
+                {tipoSelecionado && (
+                  <span>Editando: <strong>{tipoSelecionado.nome}</strong></span>
+                )}
+              </DialogDescription>
+            </DialogHeader>
+
+            {tipoSelecionado && (
+              <div className="space-y-6">
+                {/* Informações Básicas */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-codigo">Código *</Label>
+                    <Input
+                      id="edit-codigo"
+                      value={editarTipoForm.codigo || ''}
+                      onChange={(e) => setEditarTipoForm({...editarTipoForm, codigo: e.target.value})}
+                      placeholder="Ex: FORMA_BASE"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-nome">Nome *</Label>
+                    <Input
+                      id="edit-nome"
+                      value={editarTipoForm.nome || ''}
+                      onChange={(e) => setEditarTipoForm({...editarTipoForm, nome: e.target.value})}
+                      placeholder="Ex: Formação Base"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-descricao">Descrição</Label>
+                  <Textarea
+                    id="edit-descricao"
+                    value={editarTipoForm.descricao || ''}
+                    onChange={(e) => setEditarTipoForm({...editarTipoForm, descricao: e.target.value})}
+                    placeholder="Descrição do tipo de formação..."
+                    rows={3}
+                  />
+                </div>
+
+                {/* Configurações */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-nivel">Nível/Ordem</Label>
+                    <Input
+                      id="edit-nivel"
+                      type="number"
+                      min="1"
+                      max="10"
+                      value={editarTipoForm.nivel_ordem || 1}
+                      onChange={(e) => setEditarTipoForm({...editarTipoForm, nivel_ordem: parseInt(e.target.value) || 1})}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-carga">Carga Horária Mínima</Label>
+                    <Input
+                      id="edit-carga"
+                      type="number"
+                      min="0"
+                      value={editarTipoForm.carga_horaria_minima || 0}
+                      onChange={(e) => setEditarTipoForm({...editarTipoForm, carga_horaria_minima: parseInt(e.target.value) || 0})}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-ativo">Status</Label>
+                    <Select 
+                      value={editarTipoForm.ativo ? "true" : "false"} 
+                      onValueChange={(value) => setEditarTipoForm({...editarTipoForm, ativo: value === "true"})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="true">Ativo</SelectItem>
+                        <SelectItem value="false">Inativo</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Personalização Visual */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-cor">Cor</Label>
+                    <Input
+                      id="edit-cor"
+                      type="color"
+                      value={editarTipoForm.cor || '#3B82F6'}
+                      onChange={(e) => setEditarTipoForm({...editarTipoForm, cor: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-icone">Ícone</Label>
+                    <Input
+                      id="edit-icone"
+                      value={editarTipoForm.icone || ''}
+                      onChange={(e) => setEditarTipoForm({...editarTipoForm, icone: e.target.value})}
+                      placeholder="Ex: 🎓"
+                    />
+                  </div>
+                </div>
+
+                {/* Preview */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h4 className="font-medium mb-2">Preview:</h4>
+                  <div className="flex items-center space-x-3">
+                    <div className="text-2xl">{editarTipoForm.icone || '🎓'}</div>
+                    <div>
+                      <h3 className="font-semibold">{editarTipoForm.nome || 'Nome do Tipo'}</h3>
+                      <p className="text-sm text-gray-500">{editarTipoForm.codigo || 'CODIGO'}</p>
+                    </div>
+                    <Badge 
+                      variant={editarTipoForm.ativo ? "default" : "secondary"}
+                      style={{ backgroundColor: editarTipoForm.ativo ? editarTipoForm.cor : undefined }}
+                    >
+                      Nível {editarTipoForm.nivel_ordem || 1}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button variant="outline" onClick={() => setEditarTipoOpen(false)}>
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleSalvarEdicaoTipo}
+                disabled={submittingEdicaoTipo || !editarTipoForm.codigo || !editarTipoForm.nome}
+              >
+                {submittingEdicaoTipo ? "Salvando..." : "Salvar Alterações"}
               </Button>
             </div>
           </DialogContent>
