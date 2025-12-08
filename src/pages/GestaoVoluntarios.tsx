@@ -86,7 +86,7 @@ const GestaoVoluntarios = () => {
     try {
       setLoading(true);
 
-      // Carregar voluntários (sem join problemático)
+      // Carregar voluntários com última formação aprovada
       const { data: voluntariosData, error: voluntariosError } = await supabase
         .from('voluntarios')
         .select('*')
@@ -94,19 +94,35 @@ const GestaoVoluntarios = () => {
 
       if (voluntariosError) throw voluntariosError;
 
-      // NOTA: Níveis e especializações agora são geridos pelo novo sistema de formação
-      // Usar dados fixos para compatibilidade
-      const niveisFixos = [
-        { id: '1', nome: 'FORMA BASE', codigo: 'FORMA_BASE', ativo: true },
-        { id: '2', nome: 'Formação N1', codigo: 'FORMA_N1', ativo: true },
-        { id: '3', nome: 'Formação N2', codigo: 'FORMA_N2', ativo: true }
-      ];
-      
-      const especializacoesFixas = [
-        { id: '1', nome: 'Geral', ativo: true },
-        { id: '2', nome: 'Veterinária', ativo: true },
-        { id: '3', nome: 'Resgate', ativo: true }
-      ];
+      // Para cada voluntário, buscar a última formação aprovada
+      const voluntariosComFormacao = await Promise.all(
+        (voluntariosData || []).map(async (voluntario) => {
+          const { data: ultimaFormacao } = await supabase
+            .from('participacoes_formacao')
+            .select(`
+              data_avaliacao,
+              acao_formacao:acoes_formacao(
+                tipo_formacao:tipos_formacao(
+                  nome,
+                  codigo
+                )
+              )
+            `)
+            .eq('voluntario_id', voluntario.id)
+            .eq('status', 'concluido')
+            .eq('resultado', 'aprovado')
+            .order('data_avaliacao', { ascending: false })
+            .limit(1)
+            .single();
+
+          return {
+            ...voluntario,
+            ultima_formacao: ultimaFormacao?.acao_formacao?.tipo_formacao?.nome || 'Sem formação'
+          };
+        })
+      );
+
+      setVoluntarios(voluntariosComFormacao);
 
       console.log('📊 Usando dados fixos para níveis e especializações');
 
@@ -521,7 +537,9 @@ const GestaoVoluntarios = () => {
                           )}
                         </TableCell>
                         <TableCell>
-                          {getNivelBadge(voluntario.nivel_formacao)}
+                          <Badge variant="outline">
+                            {voluntario.ultima_formacao}
+                          </Badge>
                         </TableCell>
                         <TableCell>
                           {voluntario.ativo ? (

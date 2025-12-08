@@ -32,7 +32,9 @@ import {
   Star,
   Award,
   FileText,
-  GraduationCap as GradIcon
+  GraduationCap as GradIcon,
+  History,
+  Edit
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -92,6 +94,7 @@ const SistemaFormacao = () => {
   // Estados para gestão de participantes
   const [voluntariosDisponiveis, setVoluntariosDisponiveis] = useState<any[]>([]);
   const [participantesAtuais, setParticipantesAtuais] = useState<any[]>([]);
+  const [historicoParticipantes, setHistoricoParticipantes] = useState<any[]>([]);
   const [loadingParticipantes, setLoadingParticipantes] = useState(false);
   const [submittingParticipante, setSubmittingParticipante] = useState(false);
   const [searchVoluntario, setSearchVoluntario] = useState('');
@@ -107,7 +110,7 @@ const SistemaFormacao = () => {
   const [participanteAvaliacao, setParticipanteAvaliacao] = useState<any>(null);
   const [avaliacaoForm, setAvaliacaoForm] = useState({
     nota_final: '',
-    resultado: 'em_avaliacao',
+    resultado: 'aprovado',
     relatorio_desempenho: ''
   });
   const [submittingAvaliacao, setSubmittingAvaliacao] = useState(false);
@@ -847,7 +850,7 @@ const SistemaFormacao = () => {
     setParticipanteAvaliacao(participacao);
     setAvaliacaoForm({
       nota_final: participacao.nota_final || '',
-      resultado: participacao.resultado || 'em_avaliacao',
+      resultado: participacao.resultado || 'aprovado',
       relatorio_desempenho: participacao.relatorio_desempenho || ''
     });
     setAvaliacaoOpen(true);
@@ -871,9 +874,10 @@ const SistemaFormacao = () => {
         return;
       }
 
-      // Determinar resultado automaticamente se não foi definido
+      // Determinar resultado automaticamente baseado na nota
       let resultado = avaliacaoForm.resultado;
-      if (resultado === 'em_avaliacao') {
+      // Se o usuário não alterou manualmente, determinar pela nota
+      if (avaliacaoForm.nota_final && !avaliacaoForm.resultado) {
         resultado = notaFinal >= 10 ? 'aprovado' : 'reprovado';
       }
 
@@ -996,7 +1000,7 @@ const SistemaFormacao = () => {
     try {
       setLoadingParticipantes(true);
 
-      // Carregar participantes atuais da ação
+      // Carregar participantes atuais da ação (apenas inscritos e em avaliação)
       const { data: participantesData, error: participantesError } = await supabase
         .from('participacoes_formacao')
         .select(`
@@ -1010,13 +1014,35 @@ const SistemaFormacao = () => {
           )
         `)
         .eq('acao_formacao_id', acaoId)
-        .eq('status', 'inscrito');
+        .in('status', ['inscrito', 'em_avaliacao']);
+
+      // Carregar histórico de participantes (concluídos)
+      const { data: historicoData, error: historicoError } = await supabase
+        .from('participacoes_formacao')
+        .select(`
+          *,
+          voluntario:voluntarios(
+            id,
+            nome,
+            email,
+            telefone,
+            ativo
+          )
+        `)
+        .eq('acao_formacao_id', acaoId)
+        .eq('status', 'concluido')
+        .order('data_avaliacao', { ascending: false });
 
       if (participantesError) {
         console.error('Erro ao carregar participantes:', participantesError);
       }
+      
+      if (historicoError) {
+        console.error('Erro ao carregar histórico:', historicoError);
+      }
 
       setParticipantesAtuais(participantesData || []);
+      setHistoricoParticipantes(historicoData || []);
 
       // Carregar todos os voluntários ativos
       const { data: voluntariosData, error: voluntariosError } = await supabase
@@ -2476,7 +2502,7 @@ const SistemaFormacao = () => {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                       <div className="text-center p-4 bg-blue-50 rounded-lg">
                         <p className="text-3xl font-bold text-blue-600">{participantesAtuais.length}</p>
                         <p className="text-sm text-gray-600">Inscritos</p>
@@ -2487,13 +2513,17 @@ const SistemaFormacao = () => {
                       </div>
                       <div className="text-center p-4 bg-green-50 rounded-lg">
                         <p className="text-3xl font-bold text-green-600">
-                          {(acaoSelecionada.vagas_maximas || 0) - participantesAtuais.length}
+                          {Math.max(0, (acaoSelecionada.vagas_maximas || 0) - (participantesAtuais.length + historicoParticipantes.length))}
                         </p>
                         <p className="text-sm text-gray-600">Disponíveis</p>
                       </div>
+                      <div className="text-center p-4 bg-orange-50 rounded-lg">
+                        <p className="text-3xl font-bold text-orange-600">{historicoParticipantes.length}</p>
+                        <p className="text-sm text-gray-600">Avaliados</p>
+                      </div>
                       <div className="text-center p-4 bg-purple-50 rounded-lg">
                         <p className="text-3xl font-bold text-purple-600">
-                          {Math.round((participantesAtuais.length / (acaoSelecionada.vagas_maximas || 1)) * 100)}%
+                          {Math.round(((participantesAtuais.length + historicoParticipantes.length) / (acaoSelecionada.vagas_maximas || 1)) * 100)}%
                         </p>
                         <p className="text-sm text-gray-600">Ocupado</p>
                       </div>
@@ -2647,6 +2677,71 @@ const SistemaFormacao = () => {
                                 >
                                   <Trash2 className="h-4 w-4 mr-1" />
                                   Remover
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Histórico de Participantes */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center space-x-2">
+                        <History className="h-5 w-5 text-orange-600" />
+                        <span>Histórico de Participantes ({historicoParticipantes.length})</span>
+                      </CardTitle>
+                      <CardDescription>
+                        Voluntários que já foram avaliados nesta ação de formação
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {historicoParticipantes.length === 0 ? (
+                        <div className="text-center py-6 text-gray-500">
+                          <History className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                          <p>Nenhum participante avaliado ainda</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {historicoParticipantes.map((participacao) => (
+                            <div key={participacao.id} className="flex items-center justify-between p-3 border rounded-lg bg-gray-50">
+                              <div className="flex items-center space-x-3">
+                                <div className="flex-shrink-0">
+                                  <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                                    <User className="h-4 w-4 text-orange-600" />
+                                  </div>
+                                </div>
+                                <div>
+                                  <p className="font-medium">{participacao.voluntario?.nome}</p>
+                                  <p className="text-sm text-gray-600">{participacao.voluntario?.email}</p>
+                                  {participacao.data_avaliacao && (
+                                    <p className="text-xs text-gray-500">
+                                      Avaliado em: {new Date(participacao.data_avaliacao).toLocaleDateString('pt-PT')}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                {participacao.nota_final && (
+                                  <Badge variant="outline" className="font-bold">
+                                    {participacao.nota_final}/20
+                                  </Badge>
+                                )}
+                                <Badge 
+                                  variant={participacao.resultado === 'aprovado' ? 'default' : 'destructive'}
+                                  className={participacao.resultado === 'aprovado' ? 'bg-green-600' : ''}
+                                >
+                                  {participacao.resultado === 'aprovado' ? '✅ Aprovado' : '❌ Reprovado'}
+                                </Badge>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleAvaliarParticipante(participacao)}
+                                  title="Editar Avaliação"
+                                >
+                                  <Edit className="h-4 w-4" />
                                 </Button>
                               </div>
                             </div>
@@ -2949,13 +3044,12 @@ const SistemaFormacao = () => {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="em_avaliacao">Em Avaliação</SelectItem>
                           <SelectItem value="aprovado">Aprovado</SelectItem>
                           <SelectItem value="reprovado">Reprovado</SelectItem>
                         </SelectContent>
                       </Select>
                       <p className="text-xs text-gray-500">
-                        Será determinado automaticamente pela nota se deixar "Em Avaliação"
+                        Será determinado automaticamente pela nota (≥10 = Aprovado, &lt;10 = Reprovado)
                       </p>
                     </div>
                   </div>

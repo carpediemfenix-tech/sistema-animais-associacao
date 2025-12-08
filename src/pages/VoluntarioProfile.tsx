@@ -27,7 +27,8 @@ import {
   Package,
   Award,
   History,
-  Loader2
+  Loader2,
+  FileText
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -206,39 +207,72 @@ const VoluntarioProfile = () => {
         setHistoricoResponsabilidades([]);
       }
 
-      // Carregar formações frequentadas (dados fictícios por enquanto)
-      setFormacoesFrequentadas([
-        {
-          id: '1',
-          data_participacao: '2024-01-15',
-          status: 'concluida',
-          certificado_obtido: true,
-          acao_formacao: {
-            nome: 'Primeiros Socorros Veterinários',
-            data_inicio: '2024-01-10',
-            data_fim: '2024-01-15',
-            tipo_formacao: {
-              nome: 'FORMA BASE',
-              codigo: 'FORMA_BASE'
+      // Carregar formações frequentadas reais
+      try {
+        const { data: formacoesData, error: formacoesError } = await supabase
+          .from('participacoes_formacao')
+          .select(`
+            id,
+            status,
+            data_inscricao,
+            data_avaliacao,
+            nota_final,
+            resultado,
+            relatorio_desempenho,
+            acao_formacao:acoes_formacao(
+              id,
+              codigo_acao,
+              nome_acao,
+              data_inicio,
+              data_fim,
+              carga_horaria_real,
+              tipo_formacao:tipos_formacao(
+                codigo,
+                nome,
+                icone,
+                cor
+              )
+            )
+          `)
+          .eq('voluntario_id', id)
+          .order('data_inscricao', { ascending: false });
+
+        if (formacoesError) {
+          console.error('Erro ao carregar formações:', formacoesError);
+          setFormacoesFrequentadas([]);
+        } else {
+          // Transformar dados para o formato esperado
+          const formacoesFormatadas = (formacoesData || []).map(formacao => ({
+            id: formacao.id,
+            data_participacao: formacao.data_inscricao,
+            status: formacao.status === 'concluido' ? 'concluida' : 
+                   formacao.status === 'inscrito' ? 'em_curso' : formacao.status,
+            certificado_obtido: formacao.resultado === 'aprovado',
+            nota_final: formacao.nota_final,
+            resultado: formacao.resultado,
+            relatorio_desempenho: formacao.relatorio_desempenho,
+            data_avaliacao: formacao.data_avaliacao,
+            acao_formacao: {
+              nome: formacao.acao_formacao?.nome_acao || 'N/A',
+              codigo: formacao.acao_formacao?.codigo_acao || 'N/A',
+              data_inicio: formacao.acao_formacao?.data_inicio || '',
+              data_fim: formacao.acao_formacao?.data_fim || '',
+              carga_horaria: formacao.acao_formacao?.carga_horaria_real || 0,
+              tipo_formacao: {
+                nome: formacao.acao_formacao?.tipo_formacao?.nome || 'N/A',
+                codigo: formacao.acao_formacao?.tipo_formacao?.codigo || 'N/A',
+                icone: formacao.acao_formacao?.tipo_formacao?.icone || '🎓',
+                cor: formacao.acao_formacao?.tipo_formacao?.cor || '#3B82F6'
+              }
             }
-          }
-        },
-        {
-          id: '2',
-          data_participacao: '2024-03-20',
-          status: 'em_curso',
-          certificado_obtido: false,
-          acao_formacao: {
-            nome: 'Técnicas de Resgate',
-            data_inicio: '2024-03-15',
-            data_fim: '2024-03-25',
-            tipo_formacao: {
-              nome: 'Formação N1',
-              codigo: 'FORMA_N1'
-            }
-          }
+          }));
+          
+          setFormacoesFrequentadas(formacoesFormatadas);
         }
-      ]);
+      } catch (error) {
+        console.error('Erro ao carregar formações:', error);
+        setFormacoesFrequentadas([]);
+      }
 
       // Carregar missões participadas (dados fictícios)
       setMissoesParticipadas([
@@ -589,37 +623,81 @@ const VoluntarioProfile = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {formacoesFrequentadas.map((formacao) => (
-                    <div key={formacao.id} className="border rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-semibold">{formacao.acao_formacao.nome}</h4>
-                        <div className="flex items-center space-x-2">
-                          <Badge variant={formacao.status === 'concluida' ? 'default' : 'secondary'}>
-                            {formacao.status === 'concluida' ? 'Concluída' : 'Em Curso'}
-                          </Badge>
-                          {formacao.certificado_obtido && (
-                            <Badge variant="outline" className="bg-green-50 text-green-700">
-                              <Award className="h-3 w-3 mr-1" />
-                              Certificado
+                {formacoesFrequentadas.length === 0 ? (
+                  <div className="text-center py-8">
+                    <GraduationCap className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+                    <p className="text-gray-600">Nenhuma formação frequentada ainda</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {formacoesFrequentadas.map((formacao) => (
+                      <div key={formacao.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-start space-x-3">
+                            <div 
+                              className="text-2xl p-2 rounded-lg"
+                              style={{ backgroundColor: `${formacao.acao_formacao.tipo_formacao.cor}20` }}
+                            >
+                              {formacao.acao_formacao.tipo_formacao.icone}
+                            </div>
+                            <div>
+                              <h4 className="font-semibold text-lg">{formacao.acao_formacao.nome}</h4>
+                              <p className="text-sm text-gray-600">
+                                {formacao.acao_formacao.tipo_formacao.nome} • {formacao.acao_formacao.codigo}
+                              </p>
+                              <div className="flex items-center space-x-4 text-sm text-gray-500 mt-1">
+                                <span>
+                                  {new Date(formacao.acao_formacao.data_inicio).toLocaleDateString('pt-PT')} - {' '}
+                                  {new Date(formacao.acao_formacao.data_fim).toLocaleDateString('pt-PT')}
+                                </span>
+                                <span>{formacao.acao_formacao.carga_horaria}h</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex flex-col items-end space-y-2">
+                            <Badge 
+                              variant={formacao.status === 'concluida' ? 
+                                (formacao.resultado === 'aprovado' ? 'default' : 'destructive') : 
+                                'secondary'
+                              }
+                              className={formacao.status === 'concluida' && formacao.resultado === 'aprovado' ? 'bg-green-600' : ''}
+                            >
+                              {formacao.status === 'concluida' ? 
+                                (formacao.resultado === 'aprovado' ? '✅ Aprovado' : '❌ Reprovado') :
+                                formacao.status === 'em_avaliacao' ? '📝 Em Avaliação' : '📝 Em Curso'
+                              }
                             </Badge>
-                          )}
+                            {formacao.nota_final && (
+                              <Badge variant="outline" className="font-bold">
+                                {formacao.nota_final}/20
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {/* Informações de Avaliação */}
+                        {formacao.status === 'concluida' && formacao.relatorio_desempenho && (
+                          <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                            <h5 className="font-medium text-sm mb-2 flex items-center">
+                              <FileText className="h-4 w-4 mr-1" />
+                              Relatório de Desempenho:
+                            </h5>
+                            <p className="text-sm text-gray-700">{formacao.relatorio_desempenho}</p>
+                            {formacao.data_avaliacao && (
+                              <p className="text-xs text-gray-500 mt-2">
+                                Avaliado em: {new Date(formacao.data_avaliacao).toLocaleDateString('pt-PT')}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                        
+                        <div className="mt-3 pt-3 border-t text-xs text-gray-500">
+                          Inscrito em: {new Date(formacao.data_participacao).toLocaleDateString('pt-PT')}
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm text-gray-600">
-                        <div>
-                          <span className="font-medium">Tipo:</span> {formacao.acao_formacao.tipo_formacao.nome}
-                        </div>
-                        <div>
-                          <span className="font-medium">Início:</span> {new Date(formacao.acao_formacao.data_inicio).toLocaleDateString('pt-PT')}
-                        </div>
-                        <div>
-                          <span className="font-medium">Fim:</span> {new Date(formacao.acao_formacao.data_fim).toLocaleDateString('pt-PT')}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
