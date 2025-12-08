@@ -25,7 +25,8 @@ import {
   Stethoscope,
   Settings,
   FileText,
-  Loader2
+  Loader2,
+  GraduationCap
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -1022,6 +1023,12 @@ const Index = () => {
                 <Button variant="outline" className="w-full justify-start">
                   <Users className="h-4 w-4 mr-2" />
                   Gestão de Voluntários
+                </Button>
+              </Link>
+              <Link to="/sistema-formacao">
+                <Button variant="outline" className="w-full justify-start">
+                  <GraduationCap className="h-4 w-4 mr-2" />
+                  Sistema de Formação
                 </Button>
               </Link>
             </CardContent>

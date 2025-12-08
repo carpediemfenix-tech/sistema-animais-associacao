@@ -34,7 +34,8 @@ import {
   Crown,
   Heart,
   Zap,
-  User
+  User,
+  Settings
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -782,21 +783,29 @@ const GestaoVoluntarios = () => {
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end space-x-2">
                             
-                            {/* Ver Perfil */}
+                            {/* Ver Perfil Completo */}
                             <Link to={`/voluntarios/perfil/${voluntario.id}`}>
-                              <Button variant="outline" size="sm">
+                              <Button variant="outline" size="sm" title="Ver perfil completo">
                                 <Eye className="h-4 w-4" />
                               </Button>
                             </Link>
 
-                            {/* Editar */}
+                            {/* Edição Rápida (Modal) */}
                             <Button 
                               variant="outline" 
                               size="sm"
                               onClick={() => openDialog(voluntario)}
+                              title="Edição rápida"
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
+                            
+                            {/* Edição Completa (Página) */}
+                            <Link to={`/voluntarios/editar/${voluntario.id}`}>
+                              <Button variant="outline" size="sm" title="Edição completa">
+                                <Settings className="h-4 w-4" />
+                              </Button>
+                            </Link>
 
                             {/* Toggle Status */}
                             <Button

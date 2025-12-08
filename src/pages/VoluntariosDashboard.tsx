@@ -428,6 +428,13 @@ const VoluntariosDashboard = () => {
                 </Button>
               </Link>
 
+              <Link to="/voluntarios/gestao">
+                <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center space-y-2">
+                  <Users className="h-6 w-6" />
+                  <span>Gerir Voluntários</span>
+                </Button>
+              </Link>
+              
               <Link to="/voluntarios/novo">
                 <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center space-y-2">
                   <Plus className="h-6 w-6" />
