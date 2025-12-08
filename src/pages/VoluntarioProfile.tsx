@@ -369,6 +369,16 @@ const VoluntarioProfile = () => {
               </div>
             </div>
           </div>
+          
+          {/* Botões de Ação */}
+          <div className="flex space-x-2">
+            <Link to={`/voluntarios/${voluntario.id}/formacoes`}>
+              <Button variant="outline" className="bg-blue-50 text-blue-700 hover:bg-blue-100">
+                <GraduationCap className="h-4 w-4 mr-2" />
+                Formações Frequentadas
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Tabs com informações completas */}

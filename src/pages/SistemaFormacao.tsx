@@ -28,7 +28,11 @@ import {
   Eye,
   Edit,
   UserPlus,
-  Trash2
+  Trash2,
+  Star,
+  Award,
+  FileText,
+  GraduationCap as GradIcon
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -97,6 +101,16 @@ const SistemaFormacao = () => {
   const [tipoSelecionado, setTipoSelecionado] = useState<TipoFormacao | null>(null);
   const [editarTipoForm, setEditarTipoForm] = useState<any>({});
   const [submittingEdicaoTipo, setSubmittingEdicaoTipo] = useState(false);
+  
+  // Estados para avaliação de participantes
+  const [avaliacaoOpen, setAvaliacaoOpen] = useState(false);
+  const [participanteAvaliacao, setParticipanteAvaliacao] = useState<any>(null);
+  const [avaliacaoForm, setAvaliacaoForm] = useState({
+    nota_final: '',
+    resultado: 'em_avaliacao',
+    relatorio_desempenho: ''
+  });
+  const [submittingAvaliacao, setSubmittingAvaliacao] = useState(false);
   
   // Estados para modal de novo tipo de formação
   const [novoTipoDialogOpen, setNovoTipoDialogOpen] = useState(false);
@@ -824,6 +838,109 @@ const SistemaFormacao = () => {
           variant: "destructive",
         });
       }
+    }
+  };
+
+  // Funções para avaliação de participantes
+  const handleAvaliarParticipante = (participacao: any) => {
+    console.log('⭐ [AVALIAÇÃO] Avaliar participante:', participacao.voluntario?.nome);
+    setParticipanteAvaliacao(participacao);
+    setAvaliacaoForm({
+      nota_final: participacao.nota_final || '',
+      resultado: participacao.resultado || 'em_avaliacao',
+      relatorio_desempenho: participacao.relatorio_desempenho || ''
+    });
+    setAvaliacaoOpen(true);
+  };
+
+  const handleSalvarAvaliacao = async () => {
+    if (!participanteAvaliacao) return;
+
+    try {
+      setSubmittingAvaliacao(true);
+
+      const notaFinal = parseFloat(avaliacaoForm.nota_final);
+      
+      // Validar nota (0-20)
+      if (isNaN(notaFinal) || notaFinal < 0 || notaFinal > 20) {
+        toast({
+          title: "⚠️ Nota Inválida",
+          description: "A nota deve estar entre 0 e 20",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Determinar resultado automaticamente se não foi definido
+      let resultado = avaliacaoForm.resultado;
+      if (resultado === 'em_avaliacao') {
+        resultado = notaFinal >= 10 ? 'aprovado' : 'reprovado';
+      }
+
+      const { error } = await supabase
+        .from('participacoes_formacao')
+        .update({
+          nota_final: notaFinal,
+          resultado: resultado,
+          relatorio_desempenho: avaliacaoForm.relatorio_desempenho || null,
+          data_avaliacao: new Date().toISOString(),
+          status: 'concluido'
+        })
+        .eq('id', participanteAvaliacao.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "✅ Avaliação Salva",
+        description: `Participante ${resultado === 'aprovado' ? 'aprovado' : 'reprovado'} com nota ${notaFinal}`,
+      });
+
+      setAvaliacaoOpen(false);
+      
+      // Recarregar dados
+      if (acaoSelecionada) {
+        await loadParticipantesData(acaoSelecionada.id);
+      }
+      await loadData();
+
+    } catch (error: any) {
+      console.error('Erro ao salvar avaliação:', error);
+      toast({
+        title: "🚨 Erro",
+        description: "Erro ao salvar avaliação",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmittingAvaliacao(false);
+    }
+  };
+
+  const handleMarcarEmAvaliacao = async (participacao: any) => {
+    try {
+      const { error } = await supabase
+        .from('participacoes_formacao')
+        .update({ status: 'em_avaliacao' })
+        .eq('id', participacao.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "✅ Status Atualizado",
+        description: "Participante marcado como 'Em Avaliação'",
+      });
+
+      // Recarregar dados
+      if (acaoSelecionada) {
+        await loadParticipantesData(acaoSelecionada.id);
+      }
+
+    } catch (error: any) {
+      console.error('Erro ao atualizar status:', error);
+      toast({
+        title: "🚨 Erro",
+        description: "Erro ao atualizar status",
+        variant: "destructive",
+      });
     }
   };
 
@@ -2419,26 +2536,119 @@ const SistemaFormacao = () => {
                       ) : (
                         <div className="space-y-3 max-h-96 overflow-y-auto">
                           {participantesAtuais.map((participacao) => (
-                            <div key={participacao.id} className="flex items-center justify-between p-3 border rounded-lg">
-                              <div className="flex-1">
-                                <p className="font-medium">{participacao.voluntario?.nome || 'Nome não disponível'}</p>
-                                <p className="text-sm text-gray-600">{participacao.voluntario?.email || 'Email não disponível'}</p>
-                                {participacao.voluntario?.telefone && (
-                                  <p className="text-sm text-gray-600">{participacao.voluntario.telefone}</p>
-                                )}
-                                <p className="text-xs text-gray-500">
-                                  Inscrito em: {new Date(participacao.data_inscricao || participacao.created_at).toLocaleDateString('pt-PT')}
-                                </p>
+                            <div key={participacao.id} className="p-4 border rounded-lg space-y-3">
+                              {/* Informações do Participante */}
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center space-x-2 mb-1">
+                                    <p className="font-medium">{participacao.voluntario?.nome || 'Nome não disponível'}</p>
+                                    <Badge 
+                                      variant={participacao.status === 'concluido' ? 
+                                        (participacao.resultado === 'aprovado' ? 'default' : 'destructive') : 
+                                        participacao.status === 'em_avaliacao' ? 'secondary' : 'outline'
+                                      }
+                                      className={participacao.status === 'concluido' && participacao.resultado === 'aprovado' ? 'bg-green-600' : ''}
+                                    >
+                                      {participacao.status === 'concluido' ? 
+                                        (participacao.resultado === 'aprovado' ? '✅ Aprovado' : '❌ Reprovado') :
+                                        participacao.status === 'em_avaliacao' ? '📝 Em Avaliação' : '📝 Inscrito'
+                                      }
+                                    </Badge>
+                                  </div>
+                                  <p className="text-sm text-gray-600">{participacao.voluntario?.email || 'Email não disponível'}</p>
+                                  {participacao.voluntario?.telefone && (
+                                    <p className="text-sm text-gray-600">{participacao.voluntario.telefone}</p>
+                                  )}
+                                  <p className="text-xs text-gray-500">
+                                    Inscrito em: {new Date(participacao.data_inscricao || participacao.created_at).toLocaleDateString('pt-PT')}
+                                  </p>
+                                  
+                                  {/* Informações de Avaliação */}
+                                  {participacao.status === 'concluido' && (
+                                    <div className="mt-2 p-2 bg-gray-50 rounded text-sm">
+                                      <div className="flex items-center space-x-4">
+                                        <span className="font-medium">Nota: {participacao.nota_final}/20</span>
+                                        {participacao.data_avaliacao && (
+                                          <span className="text-gray-600">
+                                            Avaliado em: {new Date(participacao.data_avaliacao).toLocaleDateString('pt-PT')}
+                                          </span>
+                                        )}
+                                      </div>
+                                      {participacao.relatorio_desempenho && (
+                                        <p className="mt-1 text-gray-700">
+                                          <strong>Relatório:</strong> {participacao.relatorio_desempenho}
+                                        </p>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
                               </div>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleRemoverParticipante(participacao.id)}
-                                disabled={submittingParticipante}
-                                className="text-red-600 hover:text-red-700"
-                              >
-                                Remover
-                              </Button>
+                              
+                              {/* Botões de Ação */}
+                              <div className="flex space-x-2 pt-2 border-t">
+                                {participacao.status === 'inscrito' && (
+                                  <>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleMarcarEmAvaliacao(participacao)}
+                                      className="text-blue-600 hover:text-blue-700"
+                                      title="Marcar como em avaliação"
+                                    >
+                                      <FileText className="h-4 w-4 mr-1" />
+                                      Em Avaliação
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleAvaliarParticipante(participacao)}
+                                      className="text-green-600 hover:text-green-700"
+                                      title="Avaliar participante"
+                                    >
+                                      <Star className="h-4 w-4 mr-1" />
+                                      Avaliar
+                                    </Button>
+                                  </>
+                                )}
+                                
+                                {participacao.status === 'em_avaliacao' && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleAvaliarParticipante(participacao)}
+                                    className="text-green-600 hover:text-green-700"
+                                    title="Finalizar avaliação"
+                                  >
+                                    <Award className="h-4 w-4 mr-1" />
+                                    Finalizar Avaliação
+                                  </Button>
+                                )}
+                                
+                                {participacao.status === 'concluido' && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleAvaliarParticipante(participacao)}
+                                    className="text-blue-600 hover:text-blue-700"
+                                    title="Editar avaliação"
+                                  >
+                                    <Edit className="h-4 w-4 mr-1" />
+                                    Editar Avaliação
+                                  </Button>
+                                )}
+                                
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleRemoverParticipante(participacao.id)}
+                                  disabled={submittingParticipante}
+                                  className="text-red-600 hover:text-red-700"
+                                  title="Remover participante"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-1" />
+                                  Remover
+                                </Button>
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -2668,6 +2878,147 @@ const SistemaFormacao = () => {
                 disabled={submittingEdicaoTipo || !editarTipoForm.codigo || !editarTipoForm.nome}
               >
                 {submittingEdicaoTipo ? "Salvando..." : "Salvar Alterações"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal de Avaliação de Participante */}
+        <Dialog open={avaliacaoOpen} onOpenChange={setAvaliacaoOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center space-x-2">
+                <Star className="h-5 w-5 text-yellow-600" />
+                <span>Avaliar Participante</span>
+              </DialogTitle>
+              <DialogDescription>
+                {participanteAvaliacao && (
+                  <span>Avaliando: <strong>{participanteAvaliacao.voluntario?.nome}</strong></span>
+                )}
+              </DialogDescription>
+            </DialogHeader>
+
+            {participanteAvaliacao && (
+              <div className="space-y-6">
+                {/* Informações do Participante */}
+                <Card>
+                  <CardContent className="pt-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="bg-blue-100 p-2 rounded-full">
+                        <User className="h-6 w-6 text-blue-600" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold">{participanteAvaliacao.voluntario?.nome}</h3>
+                        <p className="text-sm text-gray-600">{participanteAvaliacao.voluntario?.email}</p>
+                        <p className="text-xs text-gray-500">
+                          Inscrito em: {new Date(participanteAvaliacao.data_inscricao || participanteAvaliacao.created_at).toLocaleDateString('pt-PT')}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Formulário de Avaliação */}
+                <div className="space-y-4">
+                  {/* Nota Final */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="nota_final">Nota Final (0-20) *</Label>
+                      <Input
+                        id="nota_final"
+                        type="number"
+                        min="0"
+                        max="20"
+                        step="0.1"
+                        value={avaliacaoForm.nota_final}
+                        onChange={(e) => setAvaliacaoForm({...avaliacaoForm, nota_final: e.target.value})}
+                        placeholder="Ex: 15.5"
+                      />
+                      <p className="text-xs text-gray-500">
+                        Nota mínima para aprovação: 10.0
+                      </p>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="resultado">Resultado</Label>
+                      <Select 
+                        value={avaliacaoForm.resultado} 
+                        onValueChange={(value) => setAvaliacaoForm({...avaliacaoForm, resultado: value})}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="em_avaliacao">Em Avaliação</SelectItem>
+                          <SelectItem value="aprovado">Aprovado</SelectItem>
+                          <SelectItem value="reprovado">Reprovado</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-gray-500">
+                        Será determinado automaticamente pela nota se deixar "Em Avaliação"
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Relatório de Desempenho */}
+                  <div className="space-y-2">
+                    <Label htmlFor="relatorio_desempenho">Relatório de Desempenho</Label>
+                    <Textarea
+                      id="relatorio_desempenho"
+                      value={avaliacaoForm.relatorio_desempenho}
+                      onChange={(e) => setAvaliacaoForm({...avaliacaoForm, relatorio_desempenho: e.target.value})}
+                      placeholder="Descreva o desempenho do participante, pontos fortes, áreas de melhoria, observações gerais..."
+                      rows={4}
+                    />
+                  </div>
+
+                  {/* Preview do Resultado */}
+                  {avaliacaoForm.nota_final && (
+                    <Card className="bg-gray-50">
+                      <CardContent className="pt-4">
+                        <h4 className="font-medium mb-2 flex items-center space-x-2">
+                          <Award className="h-4 w-4" />
+                          <span>Preview do Resultado</span>
+                        </h4>
+                        <div className="space-y-2">
+                          <div className="flex items-center space-x-2">
+                            <span className="font-medium">Nota:</span>
+                            <Badge variant="outline">{avaliacaoForm.nota_final}/20</Badge>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <span className="font-medium">Resultado:</span>
+                            <Badge 
+                              variant={avaliacaoForm.resultado === 'aprovado' || 
+                                      (avaliacaoForm.resultado === 'em_avaliacao' && parseFloat(avaliacaoForm.nota_final) >= 10) ? 
+                                      'default' : 'destructive'}
+                              className={avaliacaoForm.resultado === 'aprovado' || 
+                                        (avaliacaoForm.resultado === 'em_avaliacao' && parseFloat(avaliacaoForm.nota_final) >= 10) ? 
+                                        'bg-green-600' : ''}
+                            >
+                              {avaliacaoForm.resultado === 'em_avaliacao' ? 
+                                (parseFloat(avaliacaoForm.nota_final) >= 10 ? '✅ Aprovado (automático)' : '❌ Reprovado (automático)') :
+                                (avaliacaoForm.resultado === 'aprovado' ? '✅ Aprovado' : '❌ Reprovado')
+                              }
+                            </Badge>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button variant="outline" onClick={() => setAvaliacaoOpen(false)}>
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleSalvarAvaliacao}
+                disabled={submittingAvaliacao || !avaliacaoForm.nota_final}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                {submittingAvaliacao ? "Salvando..." : "Salvar Avaliação"}
               </Button>
             </div>
           </DialogContent>

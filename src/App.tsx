@@ -38,6 +38,7 @@ import VoluntarioProfile from "./pages/VoluntarioProfile";
 import NovoVoluntario from "./pages/NovoVoluntario";
 import EditarVoluntario from "./pages/EditarVoluntario";
 import SistemaFormacao from "@/pages/SistemaFormacao";
+import FormacoesFrequentadas from "@/pages/FormacoesFrequentadas";
 import RelatoriosVoluntarios from "./pages/RelatoriosVoluntarios";
 
 const queryClient = new QueryClient();
@@ -73,6 +74,7 @@ const App = () => (
             <Route path="/voluntarios/novo" element={<ProtectedRoute><NovoVoluntario /></ProtectedRoute>} />
             <Route path="/voluntarios/editar/:id" element={<ProtectedRoute><EditarVoluntario /></ProtectedRoute>} />
             <Route path="/voluntarios/perfil/:id" element={<ProtectedRoute><VoluntarioProfile /></ProtectedRoute>} />
+            <Route path="/voluntarios/:id/formacoes" element={<ProtectedRoute><FormacoesFrequentadas /></ProtectedRoute>} />
             <Route path="/sistema-formacao" element={<ProtectedRoute><SistemaFormacao /></ProtectedRoute>} />
             <Route path="/voluntarios/relatorios" element={<ProtectedRoute><RelatoriosVoluntarios /></ProtectedRoute>} />
             <Route path="/voluntario/:id" element={<ProtectedRoute><VoluntarioDetail /></ProtectedRoute>} />
