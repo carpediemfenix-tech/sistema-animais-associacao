@@ -539,6 +539,34 @@ const SistemaFormacao = () => {
     }));
   };
 
+  // Funções para ações das formações
+  const handleVerAcao = (acao: AcaoFormacao) => {
+    console.log('👁️ [AÇÃO] Ver detalhes da ação:', acao.nome_acao);
+    toast({
+      title: "Ver Detalhes",
+      description: `Visualizando detalhes de: ${acao.nome_acao}`,
+    });
+    // TODO: Implementar modal ou página de detalhes
+  };
+
+  const handleEditarAcao = (acao: AcaoFormacao) => {
+    console.log('✏️ [AÇÃO] Editar ação:', acao.nome_acao);
+    toast({
+      title: "Editar Ação",
+      description: `Editando: ${acao.nome_acao}`,
+    });
+    // TODO: Implementar modal de edição
+  };
+
+  const handleGerirParticipantes = (acao: AcaoFormacao) => {
+    console.log('👥 [AÇÃO] Gerir participantes da ação:', acao.nome_acao);
+    toast({
+      title: "Gerir Participantes",
+      description: `Gerindo participantes de: ${acao.nome_acao}`,
+    });
+    // TODO: Implementar modal de gestão de participantes
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -781,13 +809,28 @@ const SistemaFormacao = () => {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-2">
-                            <Button variant="outline" size="sm">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleVerAcao(acao)}
+                              title="Ver detalhes da ação"
+                            >
                               <Eye className="h-4 w-4" />
                             </Button>
-                            <Button variant="outline" size="sm">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleEditarAcao(acao)}
+                              title="Editar ação de formação"
+                            >
                               <Edit className="h-4 w-4" />
                             </Button>
-                            <Button variant="outline" size="sm">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleGerirParticipantes(acao)}
+                              title="Gerir participantes"
+                            >
                               <UserPlus className="h-4 w-4" />
                             </Button>
                           </div>
