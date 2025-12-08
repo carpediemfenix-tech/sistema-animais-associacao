@@ -167,12 +167,19 @@ const EditarVoluntario = () => {
               <ArrowLeft className="h-4 w-4 mr-2" />
               Voltar à Gestão
             </Button>
-            <h1 className="text-2xl font-bold text-gray-900">Editar Voluntário</h1>
-            {voluntario && (
-              <Badge variant="outline" className="ml-2">
-                {voluntario.nome}
-              </Badge>
-            )}
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Editar Voluntário</h1>
+              {voluntario && (
+                <div className="flex items-center space-x-2 mt-1">
+                  <Badge variant="outline">
+                    {voluntario.nome}
+                  </Badge>
+                  <Badge variant={voluntario.ativo ? "default" : "secondary"}>
+                    {voluntario.ativo ? "Ativo" : "Inativo"}
+                  </Badge>
+                </div>
+              )}
+            </div>
           </div>
           
           <Button onClick={handleSave} disabled={saving}>

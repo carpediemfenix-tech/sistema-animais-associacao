@@ -1,94 +1,260 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   ArrowLeft, 
-  Edit, 
-  Award, 
-  Calendar, 
-  Mail, 
+  User, 
   Phone, 
-  MapPin,
-  User,
-  Briefcase,
-  Hash,
-  CheckCircle,
-  Clock,
-  Target,
-  TrendingUp,
-  Sprout,
-  Shield,
-  Sword,
-  Crown,
+  Mail, 
+  MapPin, 
+  Calendar,
+  PawPrint,
+  Stethoscope,
+  Activity,
   Heart,
-  Zap,
-  Star,
-  AlertCircle
+  Clock,
+  AlertCircle,
+  CheckCircle,
+  Users,
+  GraduationCap,
+  Target,
+  Shirt,
+  Package,
+  Award,
+  History,
+  Loader2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import UserHeader from "@/components/UserHeader";
-import { VoluntarioValentao, ProgressaoIndividual, NivelFormacao, Especializacao, VoluntarioConquista } from "@/types/voluntarios";
+
+interface VoluntarioCompleto {
+  id: string;
+  nome: string;
+  email: string;
+  telefone?: string;
+  morada?: string;
+  nif?: string;
+  data_nascimento?: string;
+  profissao?: string;
+  especialidade?: string;
+  observacoes?: string;
+  ativo: boolean;
+  tem_formacao: boolean;
+  data_entrada?: string;
+  created_at: string;
+}
+
+interface ResponsabilidadeAtual {
+  id: string;
+  animal_id: string;
+  data_inicio: string;
+  data_fim?: string;
+  ativo: boolean;
+  animal: {
+    nome: string;
+    numero_processo: string;
+    especie: string;
+    estado: string;
+  };
+}
+
+interface HistoricoResponsabilidade {
+  id: string;
+  animal_id: string;
+  data_inicio: string;
+  data_fim: string;
+  motivo_fim?: string;
+  animal: {
+    nome: string;
+    numero_processo: string;
+    especie: string;
+  };
+}
+
+interface FormacaoFrequentada {
+  id: string;
+  data_participacao: string;
+  status: string;
+  certificado_obtido: boolean;
+  acao_formacao: {
+    nome: string;
+    data_inicio: string;
+    data_fim: string;
+    tipo_formacao: {
+      nome: string;
+      codigo: string;
+    };
+  };
+}
+
+interface MissaoParticipada {
+  id: string;
+  data_missao: string;
+  tipo_missao: string;
+  descricao: string;
+  status: string;
+  resultado?: string;
+}
+
+interface MaterialFardamento {
+  id: string;
+  tipo_item: string;
+  descricao: string;
+  tamanho?: string;
+  data_entrega: string;
+  data_devolucao?: string;
+  estado: string;
+  observacoes?: string;
+}
 
 const VoluntarioProfile = () => {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const [voluntario, setVoluntario] = useState<VoluntarioValentao | null>(null);
-  const [progressao, setProgressao] = useState<ProgressaoIndividual | null>(null);
+  const [voluntario, setVoluntario] = useState<VoluntarioCompleto | null>(null);
+  const [responsabilidadesAtuais, setResponsabilidadesAtuais] = useState<ResponsabilidadeAtual[]>([]);
+  const [historicoResponsabilidades, setHistoricoResponsabilidades] = useState<HistoricoResponsabilidade[]>([]);
+  const [formacoesFrequentadas, setFormacoesFrequentadas] = useState<FormacaoFrequentada[]>([]);
+  const [missoesParticipadas, setMissoesParticipadas] = useState<MissaoParticipada[]>([]);
+  const [materialFardamento, setMaterialFardamento] = useState<MaterialFardamento[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
     if (id) {
-      loadVoluntarioData();
+      loadVoluntarioCompleto();
     }
   }, [id]);
 
-  const loadVoluntarioData = async () => {
+  const loadVoluntarioCompleto = async () => {
     try {
       setLoading(true);
-
-      // Carregar APENAS dados básicos do voluntário
+      
+      // Carregar dados básicos do voluntário
       const { data: voluntarioData, error: voluntarioError } = await supabase
         .from('voluntarios')
         .select('*')
         .eq('id', id)
         .single();
 
-      if (voluntarioError) {
-        console.error('Erro ao carregar voluntário:', voluntarioError);
-        throw new Error('Voluntário não encontrado');
-      }
-
-      console.log('✅ Voluntário carregado:', voluntarioData);
-
-      // Definir dados básicos (sem consultas adicionais por agora)
+      if (voluntarioError) throw voluntarioError;
       setVoluntario(voluntarioData);
-      
-      // Progressão simplificada
-      setProgressao({
-        nivelAtual: 'FORMA BASE',
-        proximoNivel: 'N1',
-        progresso: 0,
-        criteriosCumpridos: [],
-        historicoFormacao: [],
-        especializacoesObtidas: [],
-        especializacoesDisponiveis: [],
-        conquistas: []
-      });
 
-      // Dados processados de forma simples
-      console.log('✅ Definindo voluntário:', voluntarioData);
+      // Carregar responsabilidades atuais
+      const { data: responsabilidadesData } = await supabase
+        .from('responsabilidades_voluntarios')
+        .select(`
+          *,
+          animais:animal_id (
+            nome,
+            numero_processo,
+            especie,
+            estado
+          )
+        `)
+        .eq('voluntario_id', id)
+        .eq('ativo', true);
 
-      // Finalizar carregamento
-      console.log('✅ Carregamento concluído');
+      setResponsabilidadesAtuais(responsabilidadesData || []);
+
+      // Carregar histórico de responsabilidades
+      const { data: historicoData } = await supabase
+        .from('responsabilidades_voluntarios')
+        .select(`
+          *,
+          animais:animal_id (
+            nome,
+            numero_processo,
+            especie
+          )
+        `)
+        .eq('voluntario_id', id)
+        .eq('ativo', false)
+        .order('data_fim', { ascending: false });
+
+      setHistoricoResponsabilidades(historicoData || []);
+
+      // Carregar formações frequentadas (dados fictícios por enquanto)
+      setFormacoesFrequentadas([
+        {
+          id: '1',
+          data_participacao: '2024-01-15',
+          status: 'concluida',
+          certificado_obtido: true,
+          acao_formacao: {
+            nome: 'Primeiros Socorros Veterinários',
+            data_inicio: '2024-01-10',
+            data_fim: '2024-01-15',
+            tipo_formacao: {
+              nome: 'FORMA BASE',
+              codigo: 'FORMA_BASE'
+            }
+          }
+        },
+        {
+          id: '2',
+          data_participacao: '2024-03-20',
+          status: 'em_curso',
+          certificado_obtido: false,
+          acao_formacao: {
+            nome: 'Técnicas de Resgate',
+            data_inicio: '2024-03-15',
+            data_fim: '2024-03-25',
+            tipo_formacao: {
+              nome: 'Formação N1',
+              codigo: 'FORMA_N1'
+            }
+          }
+        }
+      ]);
+
+      // Carregar missões participadas (dados fictícios)
+      setMissoesParticipadas([
+        {
+          id: '1',
+          data_missao: '2024-02-10',
+          tipo_missao: 'Resgate',
+          descricao: 'Resgate de cão abandonado na A1',
+          status: 'concluida',
+          resultado: 'Animal resgatado com sucesso'
+        },
+        {
+          id: '2',
+          data_missao: '2024-03-05',
+          tipo_missao: 'Transporte',
+          descricao: 'Transporte para consulta veterinária',
+          status: 'concluida',
+          resultado: 'Transporte realizado sem intercorrências'
+        }
+      ]);
+
+      // Carregar material e fardamento (dados fictícios)
+      setMaterialFardamento([
+        {
+          id: '1',
+          tipo_item: 'Fardamento',
+          descricao: 'Camisola oficial VR',
+          tamanho: 'M',
+          data_entrega: '2024-01-01',
+          estado: 'bom',
+          observacoes: 'Em uso regular'
+        },
+        {
+          id: '2',
+          tipo_item: 'Equipamento',
+          descricao: 'Kit de primeiros socorros',
+          data_entrega: '2024-01-15',
+          estado: 'excelente',
+          observacoes: 'Completo e atualizado'
+        }
+      ]);
 
     } catch (error: any) {
-      console.error('Erro ao carregar voluntário:', error);
+      console.error('Erro ao carregar dados do voluntário:', error);
       toast({
         title: "Erro",
         description: "Erro ao carregar dados do voluntário",
@@ -99,30 +265,15 @@ const VoluntarioProfile = () => {
     }
   };
 
-  const getNivelIcon = (codigo: string) => {
-    switch (codigo) {
-      case 'FORMA_BASE': return <Sprout className="h-5 w-5" />;
-      case 'FORMA_N1': return <Shield className="h-5 w-5" />;
-      case 'FORMA_N2': return <Sword className="h-5 w-5" />;
-      case 'FORMA_N3': return <Crown className="h-5 w-5" />;
-      default: return <User className="h-5 w-5" />;
-    }
-  };
-
-  const getEspecializacaoIcon = (codigo: string) => {
-    switch (codigo) {
-      case 'FORMA_VET': return <Heart className="h-5 w-5" />;
-      case 'FORMA_RESCUE': return <Zap className="h-5 w-5" />;
-      default: return <Award className="h-5 w-5" />;
-    }
-  };
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Carregando perfil do voluntário...</p>
+      <div className="min-h-screen bg-gray-50">
+        <UserHeader />
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin" />
+            <span className="ml-2">Carregando perfil completo...</span>
+          </div>
         </div>
       </div>
     );
@@ -130,24 +281,27 @@ const VoluntarioProfile = () => {
 
   if (!voluntario) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-            <CardTitle className="text-red-600">Voluntário não encontrado</CardTitle>
-            <CardDescription>
-              O voluntário solicitado não foi encontrado
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="text-center">
-            <Link to="/voluntarios">
-              <Button variant="outline" className="w-full">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Voltar aos Voluntários
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-gray-50">
+        <UserHeader />
+        <div className="container mx-auto px-4 py-8">
+          <Card className="w-full max-w-md mx-auto">
+            <CardHeader className="text-center">
+              <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+              <CardTitle className="text-red-600">Voluntário não encontrado</CardTitle>
+              <CardDescription>
+                O voluntário solicitado não foi encontrado
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="text-center">
+              <Link to="/voluntarios/gestao">
+                <Button variant="outline" className="w-full">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Voltar à Gestão
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
@@ -156,355 +310,368 @@ const VoluntarioProfile = () => {
     <div className="min-h-screen bg-gray-50">
       <UserHeader />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        
+      <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-              <User className="h-8 w-8 mr-3 text-blue-600" />
-              {voluntario.nome}
-            </h1>
-            <p className="text-gray-600 mt-1 flex items-center">
-              {progressao?.nivel_atual && (
-                <>
-                  <span style={{ color: progressao.nivel_atual.cor }} className="mr-2">
-                    {getNivelIcon(progressao.nivel_atual.codigo)}
-                  </span>
-                  {progressao.nivel_atual.nome}
-                  {voluntario.ativo ? (
-                    <Badge className="ml-2 bg-green-100 text-green-800">Ativo</Badge>
-                  ) : (
-                    <Badge className="ml-2 bg-red-100 text-red-800">Inativo</Badge>
-                  )}
-                </>
-              )}
-            </p>
-          </div>
-          <div className="flex items-center space-x-3">
-            <Link to="/voluntarios">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-4">
+            <Link to="/voluntarios/gestao">
               <Button variant="outline">
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Voltar
+                Voltar à Gestão
               </Button>
             </Link>
-            <Link to={`/voluntarios/editar/${voluntario.id}`}>
-              <Button className="bg-blue-600 hover:bg-blue-700">
-                <Edit className="h-4 w-4 mr-2" />
-                Editar
-              </Button>
-            </Link>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+                <User className="h-8 w-8 mr-3 text-blue-600" />
+                {voluntario.nome}
+              </h1>
+              <div className="flex items-center space-x-2 mt-1">
+                <Badge variant={voluntario.ativo ? "default" : "secondary"}>
+                  {voluntario.ativo ? "Ativo" : "Inativo"}
+                </Badge>
+                <Badge variant="outline">
+                  {voluntario.especialidade || "Geral"}
+                </Badge>
+                {voluntario.tem_formacao && (
+                  <Badge variant="outline" className="bg-green-50 text-green-700">
+                    <GraduationCap className="h-3 w-3 mr-1" />
+                    Com Formação
+                  </Badge>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          {/* Coluna Principal - Informações e Progressão */}
-          <div className="lg:col-span-2 space-y-6">
-            
-            {/* Informações Pessoais */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <User className="h-5 w-5 mr-2" />
-                  Informações Pessoais
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  
-                  <div className="flex items-center space-x-3">
-                    <Mail className="h-4 w-4 text-gray-400" />
-                    <div>
-                      <p className="text-sm text-gray-500">Email</p>
-                      <p className="font-medium">{voluntario.email}</p>
-                    </div>
-                  </div>
+        {/* Tabs com informações completas */}
+        <Tabs defaultValue="dados-pessoais" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-6">
+            <TabsTrigger value="dados-pessoais">Dados Pessoais</TabsTrigger>
+            <TabsTrigger value="animais">Animais</TabsTrigger>
+            <TabsTrigger value="historico">Histórico</TabsTrigger>
+            <TabsTrigger value="formacao">Formação</TabsTrigger>
+            <TabsTrigger value="missoes">Missões</TabsTrigger>
+            <TabsTrigger value="material">Material</TabsTrigger>
+          </TabsList>
 
-                  {voluntario.telefone && (
-                    <div className="flex items-center space-x-3">
-                      <Phone className="h-4 w-4 text-gray-400" />
-                      <div>
-                        <p className="text-sm text-gray-500">Telefone</p>
-                        <p className="font-medium">{voluntario.telefone}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {voluntario.profissao && (
-                    <div className="flex items-center space-x-3">
-                      <Briefcase className="h-4 w-4 text-gray-400" />
-                      <div>
-                        <p className="text-sm text-gray-500">Profissão</p>
-                        <p className="font-medium">{voluntario.profissao}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="flex items-center space-x-3">
-                    <Calendar className="h-4 w-4 text-gray-400" />
-                    <div>
-                      <p className="text-sm text-gray-500">Data de Ingresso</p>
-                      <p className="font-medium">
-                        {new Date(voluntario.data_ingresso).toLocaleDateString('pt-PT')}
-                      </p>
-                    </div>
-                  </div>
-
-                  {voluntario.nif && (
-                    <div className="flex items-center space-x-3">
-                      <Hash className="h-4 w-4 text-gray-400" />
-                      <div>
-                        <p className="text-sm text-gray-500">NIF</p>
-                        <p className="font-medium">{voluntario.nif}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {voluntario.morada && (
-                    <div className="flex items-center space-x-3 md:col-span-2">
-                      <MapPin className="h-4 w-4 text-gray-400" />
-                      <div>
-                        <p className="text-sm text-gray-500">Morada</p>
-                        <p className="font-medium">{voluntario.morada}</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Progressão Formativa */}
-            {progressao && (
+          {/* Aba: Dados Pessoais */}
+          <TabsContent value="dados-pessoais">
+            <div className="grid gap-6 lg:grid-cols-2">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center">
-                    <TrendingUp className="h-5 w-5 mr-2" />
-                    Progressão Formativa
+                    <User className="h-5 w-5 mr-2" />
+                    Informações Pessoais
                   </CardTitle>
-                  <CardDescription>
-                    Acompanhamento do desenvolvimento no sistema Valentão
-                  </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-6">
-                  
-                  {/* Nível Atual - Versão Segura */}
-                  <div className="p-4 rounded-lg bg-blue-50">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-blue-600">
-                          🎓
-                        </span>
-                        <span className="font-semibold">FORMA BASE</span>
-                        <Badge className="bg-blue-600 text-white">
-                          Atual
-                        </Badge>
-                      </div>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium text-gray-500">Nome Completo</Label>
+                      <p className="text-sm font-medium">{voluntario.nome}</p>
                     </div>
-                    <p className="text-sm text-gray-600">Nível inicial de formação</p>
-                    
-                    {/* Competências do Nível Atual - Versão Segura */}
-                    <div className="mt-3">
-                      <p className="text-sm font-medium text-gray-700 mb-2">Competências:</p>
-                      <div className="flex flex-wrap gap-1">
-                        <Badge variant="secondary" className="text-xs">
-                          Cuidados Básicos
-                        </Badge>
-                        <Badge variant="secondary" className="text-xs">
-                          Primeiros Socorros
-                        </Badge>
-                      </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-500">Email</Label>
+                      <p className="text-sm">{voluntario.email}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-500">Telefone</Label>
+                      <p className="text-sm">{voluntario.telefone || "Não informado"}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-500">NIF</Label>
+                      <p className="text-sm">{voluntario.nif || "Não informado"}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-500">Data de Nascimento</Label>
+                      <p className="text-sm">
+                        {voluntario.data_nascimento 
+                          ? new Date(voluntario.data_nascimento).toLocaleDateString('pt-PT')
+                          : "Não informado"
+                        }
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-500">Profissão</Label>
+                      <p className="text-sm">{voluntario.profissao || "Não informado"}</p>
                     </div>
                   </div>
-
-                  {/* Próximo Nível - Versão Segura */}
                   <div>
+                    <Label className="text-sm font-medium text-gray-500">Morada</Label>
+                    <p className="text-sm">{voluntario.morada || "Não informado"}</p>
+                  </div>
+                  {voluntario.observacoes && (
                     <div>
-                      <div className="flex items-center justify-between mb-3">
-                        <h4 className="font-medium flex items-center">
-                          <Target className="h-4 w-4 mr-2" />
-                          Próximo Nível: N1
-                        </h4>
-                        <span className="text-sm text-gray-500">
-                          0%
-                        </span>
-                      </div>
-                      
-                      <Progress value={0} className="mb-4" />
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                        <div className="flex items-center space-x-2">
-                          <Clock className="h-4 w-4 text-yellow-500" />
-                          <span>Tempo: 6 meses restantes</span>
-                        </div>
-                        
-                        <div className="flex items-center space-x-2">
-                          <Clock className="h-4 w-4 text-yellow-500" />
-                          <span>Missões: 5 restantes</span>
-                        </div>
-                        
-                        <div className="flex items-center space-x-2">
-                          <Clock className="h-4 w-4 text-yellow-500" />
-                          <span>Outros requisitos</span>
-                        </div>
-                      </div>
+                      <Label className="text-sm font-medium text-gray-500">Observações</Label>
+                      <p className="text-sm">{voluntario.observacoes}</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Activity className="h-5 w-5 mr-2" />
+                    Informações do Sistema
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium text-gray-500">Data de Entrada</Label>
+                      <p className="text-sm">
+                        {voluntario.data_entrada 
+                          ? new Date(voluntario.data_entrada).toLocaleDateString('pt-PT')
+                          : new Date(voluntario.created_at).toLocaleDateString('pt-PT')
+                        }
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-500">Especialidade</Label>
+                      <p className="text-sm">{voluntario.especialidade || "Geral"}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-500">Status</Label>
+                      <Badge variant={voluntario.ativo ? "default" : "secondary"}>
+                        {voluntario.ativo ? "Ativo" : "Inativo"}
+                      </Badge>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-500">Formação</Label>
+                      <Badge variant={voluntario.tem_formacao ? "default" : "outline"}>
+                        {voluntario.tem_formacao ? "Com Formação" : "Sem Formação"}
+                      </Badge>
                     </div>
                   </div>
                 </CardContent>
               </Card>
-            )}
+            </div>
+          </TabsContent>
 
-            {/* Histórico de Progressão */}
-            {voluntario.progressao && voluntario.progressao.length > 0 && (
+          {/* Aba: Animais Dependentes */}
+          <TabsContent value="animais">
+            <div className="space-y-6">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center">
-                    <Calendar className="h-5 w-5 mr-2" />
-                    Histórico de Formação
+                    <PawPrint className="h-5 w-5 mr-2" />
+                    Animais Sob Responsabilidade ({responsabilidadesAtuais.length})
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {voluntario.progressao.map((prog) => (
-                      <div key={prog.id} className="flex items-start space-x-4 p-3 rounded-lg bg-gray-50">
-                        <div style={{ color: prog.nivel?.cor }}>
-                          {getNivelIcon(prog.nivel?.codigo || '')}
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between">
-                            <h4 className="font-medium">{prog.nivel?.nome}</h4>
-                            {prog.data_conclusao && (
-                              <Badge className="bg-green-100 text-green-800">
-                                <CheckCircle className="h-3 w-3 mr-1" />
-                                Concluído
-                              </Badge>
-                            )}
-                          </div>
-                          <p className="text-sm text-gray-600 mt-1">
-                            Início: {new Date(prog.data_inicio).toLocaleDateString('pt-PT')}
-                            {prog.data_conclusao && (
-                              <> • Conclusão: {new Date(prog.data_conclusao).toLocaleDateString('pt-PT')}</>
-                            )}
-                          </p>
-                          {prog.formador && (
-                            <p className="text-xs text-gray-500 mt-1">
-                              Formador: {prog.formador.nome}
+                  {responsabilidadesAtuais.length === 0 ? (
+                    <p className="text-gray-500 text-center py-8">
+                      Nenhum animal sob responsabilidade atualmente
+                    </p>
+                  ) : (
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                      {responsabilidadesAtuais.map((resp) => (
+                        <Card key={resp.id} className="border-l-4 border-l-blue-500">
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="font-semibold">{resp.animal.nome}</h4>
+                              <Badge variant="outline">{resp.animal.estado}</Badge>
+                            </div>
+                            <p className="text-sm text-gray-600 mb-1">
+                              Processo: {resp.animal.numero_processo}
                             </p>
-                          )}
-                          {prog.avaliacao_final && (
-                            <p className="text-xs text-gray-500 mt-1">
-                              Avaliação: {prog.avaliacao_final}/10
+                            <p className="text-sm text-gray-600 mb-2">
+                              Espécie: {resp.animal.especie}
                             </p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                            <p className="text-xs text-gray-500">
+                              Responsável desde: {new Date(resp.data_inicio).toLocaleDateString('pt-PT')}
+                            </p>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
-            )}
-          </div>
+            </div>
+          </TabsContent>
 
-          {/* Coluna Lateral - Especializações e Conquistas */}
-          <div className="space-y-6">
-            
-            {/* Especializações */}
+          {/* Aba: Histórico de Responsabilidades */}
+          <TabsContent value="historico">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
-                  <Award className="h-5 w-5 mr-2" />
-                  Especializações
+                  <History className="h-5 w-5 mr-2" />
+                  Histórico de Responsabilidades ({historicoResponsabilidades.length})
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {voluntario.especializacoes && voluntario.especializacoes.length > 0 ? (
-                  <div className="space-y-3">
-                    {voluntario.especializacoes.map((esp) => (
-                      <div key={esp.id} className="p-3 rounded-lg bg-gray-50">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <span style={{ color: esp.especializacao?.cor }}>
-                            {getEspecializacaoIcon(esp.especializacao?.codigo || '')}
-                          </span>
-                          <span className="font-medium">{esp.especializacao?.nome}</span>
+                {historicoResponsabilidades.length === 0 ? (
+                  <p className="text-gray-500 text-center py-8">
+                    Nenhum histórico de responsabilidades
+                  </p>
+                ) : (
+                  <div className="space-y-4">
+                    {historicoResponsabilidades.map((hist) => (
+                      <div key={hist.id} className="border rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-semibold">{hist.animal.nome}</h4>
+                          <Badge variant="secondary">Finalizada</Badge>
                         </div>
-                        <p className="text-xs text-gray-500">
-                          Obtida em: {new Date(esp.data_obtencao).toLocaleDateString('pt-PT')}
-                        </p>
-                        {esp.certificado_emitido && (
-                          <Badge className="mt-2 bg-green-100 text-green-800 text-xs">
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            Certificado
-                          </Badge>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm text-gray-600">
+                          <div>
+                            <span className="font-medium">Processo:</span> {hist.animal.numero_processo}
+                          </div>
+                          <div>
+                            <span className="font-medium">Espécie:</span> {hist.animal.especie}
+                          </div>
+                          <div>
+                            <span className="font-medium">Início:</span> {new Date(hist.data_inicio).toLocaleDateString('pt-PT')}
+                          </div>
+                          <div>
+                            <span className="font-medium">Fim:</span> {new Date(hist.data_fim).toLocaleDateString('pt-PT')}
+                          </div>
+                        </div>
+                        {hist.motivo_fim && (
+                          <p className="text-sm text-gray-600 mt-2">
+                            <span className="font-medium">Motivo:</span> {hist.motivo_fim}
+                          </p>
                         )}
                       </div>
                     ))}
                   </div>
-                ) : (
-                  <div className="text-center py-6">
-                    <Award className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-500 text-sm">Nenhuma especialização obtida</p>
-                  </div>
-                )}
-
-                {/* Especializações Disponíveis */}
-                {progressao?.especializacoes_disponiveis && progressao.especializacoes_disponiveis.length > 0 && (
-                  <div className="mt-6">
-                    <Separator className="mb-4" />
-                    <h4 className="font-medium text-sm text-gray-700 mb-3">Especializações Disponíveis:</h4>
-                    <div className="space-y-2">
-                      {progressao.especializacoes_disponiveis.map((esp) => (
-                        <div key={esp.id} className="p-2 rounded border border-dashed border-gray-300">
-                          <div className="flex items-center space-x-2">
-                            <span style={{ color: esp.cor }}>
-                              {getEspecializacaoIcon(esp.codigo)}
-                            </span>
-                            <span className="text-sm font-medium">{esp.nome}</span>
-                          </div>
-                          <p className="text-xs text-gray-500 mt-1">{esp.descricao}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
 
-            {/* Conquistas */}
+          {/* Aba: Formações Frequentadas */}
+          <TabsContent value="formacao">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
-                  <Star className="h-5 w-5 mr-2" />
-                  Conquistas
+                  <GraduationCap className="h-5 w-5 mr-2" />
+                  Formações Frequentadas ({formacoesFrequentadas.length})
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {voluntario.conquistas && voluntario.conquistas.length > 0 ? (
-                  <div className="space-y-3">
-                    {voluntario.conquistas.map((conquista) => (
-                      <div key={conquista.id} className="p-3 rounded-lg bg-gray-50">
-                        <div className="flex items-center space-x-2 mb-1">
-                          <span style={{ color: conquista.conquista?.cor }}>
-                            <Award className="h-4 w-4" />
-                          </span>
-                          <span className="font-medium text-sm">{conquista.conquista?.nome}</span>
+                <div className="space-y-4">
+                  {formacoesFrequentadas.map((formacao) => (
+                    <div key={formacao.id} className="border rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-semibold">{formacao.acao_formacao.nome}</h4>
+                        <div className="flex items-center space-x-2">
+                          <Badge variant={formacao.status === 'concluida' ? 'default' : 'secondary'}>
+                            {formacao.status === 'concluida' ? 'Concluída' : 'Em Curso'}
+                          </Badge>
+                          {formacao.certificado_obtido && (
+                            <Badge variant="outline" className="bg-green-50 text-green-700">
+                              <Award className="h-3 w-3 mr-1" />
+                              Certificado
+                            </Badge>
+                          )}
                         </div>
-                        <p className="text-xs text-gray-600">{conquista.conquista?.descricao}</p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {new Date(conquista.data_obtencao).toLocaleDateString('pt-PT')}
-                        </p>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-6">
-                    <Star className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-500 text-sm">Nenhuma conquista obtida</p>
-                  </div>
-                )}
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm text-gray-600">
+                        <div>
+                          <span className="font-medium">Tipo:</span> {formacao.acao_formacao.tipo_formacao.nome}
+                        </div>
+                        <div>
+                          <span className="font-medium">Início:</span> {new Date(formacao.acao_formacao.data_inicio).toLocaleDateString('pt-PT')}
+                        </div>
+                        <div>
+                          <span className="font-medium">Fim:</span> {new Date(formacao.acao_formacao.data_fim).toLocaleDateString('pt-PT')}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </CardContent>
             </Card>
-          </div>
-        </div>
+          </TabsContent>
+
+          {/* Aba: Missões Participadas */}
+          <TabsContent value="missoes">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Target className="h-5 w-5 mr-2" />
+                  Missões Participadas ({missoesParticipadas.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {missoesParticipadas.map((missao) => (
+                    <div key={missao.id} className="border rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-semibold">{missao.tipo_missao}</h4>
+                        <Badge variant={missao.status === 'concluida' ? 'default' : 'secondary'}>
+                          {missao.status === 'concluida' ? 'Concluída' : 'Em Andamento'}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-gray-700 mb-2">{missao.descricao}</p>
+                      <div className="text-sm text-gray-600 mb-2">
+                        <span className="font-medium">Data:</span> {new Date(missao.data_missao).toLocaleDateString('pt-PT')}
+                      </div>
+                      {missao.resultado && (
+                        <p className="text-sm text-green-700 bg-green-50 p-2 rounded">
+                          <span className="font-medium">Resultado:</span> {missao.resultado}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Aba: Fardamento e Material */}
+          <TabsContent value="material">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Package className="h-5 w-5 mr-2" />
+                  Fardamento e Material ({materialFardamento.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {materialFardamento.map((item) => (
+                    <div key={item.id} className="border rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-semibold flex items-center">
+                          {item.tipo_item === 'Fardamento' ? (
+                            <Shirt className="h-4 w-4 mr-2" />
+                          ) : (
+                            <Package className="h-4 w-4 mr-2" />
+                          )}
+                          {item.descricao}
+                        </h4>
+                        <Badge variant={item.estado === 'excelente' ? 'default' : 'outline'}>
+                          {item.estado}
+                        </Badge>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm text-gray-600">
+                        <div>
+                          <span className="font-medium">Tipo:</span> {item.tipo_item}
+                        </div>
+                        {item.tamanho && (
+                          <div>
+                            <span className="font-medium">Tamanho:</span> {item.tamanho}
+                          </div>
+                        )}
+                        <div>
+                          <span className="font-medium">Entregue em:</span> {new Date(item.data_entrega).toLocaleDateString('pt-PT')}
+                        </div>
+                      </div>
+                      {item.observacoes && (
+                        <p className="text-sm text-gray-600 mt-2">
+                          <span className="font-medium">Observações:</span> {item.observacoes}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

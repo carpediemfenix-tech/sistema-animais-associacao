@@ -4,10 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { 
@@ -34,8 +30,7 @@ import {
   Crown,
   Heart,
   Zap,
-  User,
-  Settings
+  User
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -49,23 +44,9 @@ const GestaoVoluntarios = () => {
   const [especializacoes, setEspecializacoes] = useState<Especializacao[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingVoluntario, setEditingVoluntario] = useState<VoluntarioValentao | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"todos" | "ativo" | "inativo">("todos");
   const [nivelFilter, setNivelFilter] = useState<string>("todos");
-  
-  const [formData, setFormData] = useState<VoluntarioFormData>({
-    nome: "",
-    email: "",
-    telefone: "",
-    morada: "",
-    nif: "",
-    data_nascimento: "",
-    profissao: "",
-    nivel_formacao_atual: "",
-    observacoes: ""
-  });
 
   const { toast } = useToast();
   const { hasPermission } = useAuth();
@@ -143,111 +124,7 @@ const GestaoVoluntarios = () => {
     }
   };
 
-  const resetForm = () => {
-    setFormData({
-      nome: "",
-      email: "",
-      telefone: "",
-      morada: "",
-      nif: "",
-      data_nascimento: "",
-      profissao: "",
-      nivel_formacao_atual: "sem_nivel",
-      observacoes: ""
-    });
-    setEditingVoluntario(null);
-  };
-
-  const openDialog = (voluntario?: VoluntarioValentao) => {
-    if (voluntario) {
-      setEditingVoluntario(voluntario);
-      setFormData({
-        nome: voluntario.nome,
-        email: voluntario.email,
-        telefone: voluntario.telefone || "",
-        morada: voluntario.morada || "",
-        nif: voluntario.nif || "",
-        data_nascimento: voluntario.data_nascimento || "",
-        profissao: voluntario.profissao || "",
-        nivel_formacao_atual: voluntario.nivel_formacao_atual || "sem_nivel",
-        observacoes: voluntario.observacoes || ""
-      });
-    } else {
-      resetForm();
-    }
-    setDialogOpen(true);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.nome.trim() || !formData.email.trim()) {
-      toast({
-        title: "Erro",
-        description: "Nome e email são obrigatórios",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      setSubmitting(true);
-
-      const voluntarioData = {
-        nome: formData.nome.trim(),
-        email: formData.email.trim(),
-        telefone: formData.telefone?.trim() || null,
-        morada: formData.morada?.trim() || null,
-        nif: formData.nif?.trim() || null,
-        data_nascimento: formData.data_nascimento || null,
-        profissao: formData.profissao?.trim() || null,
-        // nivel_formacao_atual: Campo removido - não existe na tabela (MODO DEV)
-        observacoes: formData.observacoes?.trim() || null,
-        ativo: true
-      };
-
-      if (editingVoluntario) {
-        // Atualizar voluntário existente
-        const { error } = await supabase
-          .from('voluntarios')
-          .update(voluntarioData)
-          .eq('id', editingVoluntario.id);
-
-        if (error) throw error;
-
-        toast({
-          title: "Sucesso",
-          description: "Voluntário atualizado com sucesso",
-        });
-      } else {
-        // Criar novo voluntário
-        const { error } = await supabase
-          .from('voluntarios')
-          .insert([voluntarioData]);
-
-        if (error) throw error;
-
-        toast({
-          title: "Sucesso",
-          description: "Voluntário criado com sucesso",
-        });
-      }
-
-      setDialogOpen(false);
-      resetForm();
-      loadData();
-
-    } catch (error: any) {
-      console.error('Erro ao salvar voluntário:', error);
-      toast({
-        title: "Erro",
-        description: error.message || "Erro ao salvar voluntário",
-        variant: "destructive",
-      });
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  // Funções do modal removidas - agora usa página dedicada de edição
 
   const handleToggleStatus = async (voluntario: VoluntarioValentao) => {
     try {
@@ -790,20 +667,10 @@ const GestaoVoluntarios = () => {
                               </Button>
                             </Link>
 
-                            {/* Edição Rápida (Modal) */}
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => openDialog(voluntario)}
-                              title="Edição rápida"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            
-                            {/* Edição Completa (Página) */}
+                            {/* Editar Voluntário (Única Opção) */}
                             <Link to={`/voluntarios/editar/${voluntario.id}`}>
-                              <Button variant="outline" size="sm" title="Edição completa">
-                                <Settings className="h-4 w-4" />
+                              <Button variant="outline" size="sm" title="Editar voluntário">
+                                <Edit className="h-4 w-4" />
                               </Button>
                             </Link>
 
