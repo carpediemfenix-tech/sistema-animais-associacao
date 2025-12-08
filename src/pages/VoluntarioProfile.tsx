@@ -145,38 +145,66 @@ const VoluntarioProfile = () => {
       setVoluntario(voluntarioData);
 
       // Carregar responsabilidades atuais
-      const { data: responsabilidadesData } = await supabase
-        .from('responsabilidades_voluntarios')
-        .select(`
-          *,
-          animais:animal_id (
-            nome,
-            numero_processo,
-            especie,
-            estado
-          )
-        `)
-        .eq('voluntario_id', id)
-        .eq('ativo', true);
+      try {
+        const { data: responsabilidadesData, error: respError } = await supabase
+          .from('responsabilidades_voluntarios')
+          .select(`
+            *,
+            animais:animal_id (
+              nome,
+              numero_processo,
+              especie,
+              estado
+            )
+          `)
+          .eq('voluntario_id', id)
+          .eq('ativo', true);
 
-      setResponsabilidadesAtuais(responsabilidadesData || []);
+        if (respError) {
+          console.error('Erro ao carregar responsabilidades:', respError);
+        }
+        
+        // Filtrar apenas responsabilidades com dados de animais válidos
+        const responsabilidadesValidas = (responsabilidadesData || []).filter(resp => 
+          resp.animal_id && resp.animais
+        );
+        
+        setResponsabilidadesAtuais(responsabilidadesValidas);
+      } catch (error) {
+        console.error('Erro ao carregar responsabilidades atuais:', error);
+        setResponsabilidadesAtuais([]);
+      }
 
       // Carregar histórico de responsabilidades
-      const { data: historicoData } = await supabase
-        .from('responsabilidades_voluntarios')
-        .select(`
-          *,
-          animais:animal_id (
-            nome,
-            numero_processo,
-            especie
-          )
-        `)
-        .eq('voluntario_id', id)
-        .eq('ativo', false)
-        .order('data_fim', { ascending: false });
+      try {
+        const { data: historicoData, error: histError } = await supabase
+          .from('responsabilidades_voluntarios')
+          .select(`
+            *,
+            animais:animal_id (
+              nome,
+              numero_processo,
+              especie
+            )
+          `)
+          .eq('voluntario_id', id)
+          .eq('ativo', false)
+          .order('data_fim', { ascending: false });
 
-      setHistoricoResponsabilidades(historicoData || []);
+        if (histError) {
+          console.error('Erro ao carregar histórico:', histError);
+        }
+        
+        // Filtrar apenas histórico com dados de animais válidos
+        const historicoValido = (historicoData || []).filter(hist => 
+          hist.animal_id && hist.animais
+        );
+        
+        setHistoricoResponsabilidades(historicoValido);
+      } catch (error) {
+        console.error('Erro ao carregar histórico de responsabilidades:', error);
+        setHistoricoResponsabilidades([]);
+      }
 
       // Carregar formações frequentadas (dados fictícios por enquanto)
       setFormacoesFrequentadas([
@@ -470,14 +498,14 @@ const VoluntarioProfile = () => {
                         <Card key={resp.id} className="border-l-4 border-l-blue-500">
                           <CardContent className="p-4">
                             <div className="flex items-center justify-between mb-2">
-                              <h4 className="font-semibold">{resp.animal.nome}</h4>
-                              <Badge variant="outline">{resp.animal.estado}</Badge>
+                              <h4 className="font-semibold">{resp.animais?.nome || 'Nome não disponível'}</h4>
+                              <Badge variant="outline">{resp.animais?.estado || 'Estado desconhecido'}</Badge>
                             </div>
                             <p className="text-sm text-gray-600 mb-1">
-                              Processo: {resp.animal.numero_processo}
+                              Processo: {resp.animais?.numero_processo || 'N/A'}
                             </p>
                             <p className="text-sm text-gray-600 mb-2">
-                              Espécie: {resp.animal.especie}
+                              Espécie: {resp.animais?.especie || 'N/A'}
                             </p>
                             <p className="text-xs text-gray-500">
                               Responsável desde: {new Date(resp.data_inicio).toLocaleDateString('pt-PT')}
@@ -511,15 +539,15 @@ const VoluntarioProfile = () => {
                     {historicoResponsabilidades.map((hist) => (
                       <div key={hist.id} className="border rounded-lg p-4">
                         <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-semibold">{hist.animal.nome}</h4>
+                          <h4 className="font-semibold">{hist.animais?.nome || 'Nome não disponível'}</h4>
                           <Badge variant="secondary">Finalizada</Badge>
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm text-gray-600">
                           <div>
-                            <span className="font-medium">Processo:</span> {hist.animal.numero_processo}
+                            <span className="font-medium">Processo:</span> {hist.animais?.numero_processo || 'N/A'}
                           </div>
                           <div>
-                            <span className="font-medium">Espécie:</span> {hist.animal.especie}
+                            <span className="font-medium">Espécie:</span> {hist.animais?.especie || 'N/A'}
                           </div>
                           <div>
                             <span className="font-medium">Início:</span> {new Date(hist.data_inicio).toLocaleDateString('pt-PT')}
