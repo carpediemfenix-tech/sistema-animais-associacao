@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { 
@@ -270,165 +272,13 @@ const GestaoVoluntarios = () => {
                 Dashboard Voluntários
               </Button>
             </Link>
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger asChild>
-                <Button onClick={() => openDialog()} className="bg-blue-600 hover:bg-blue-700">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Novo Voluntário
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle>
-                    {editingVoluntario ? 'Editar Voluntário' : 'Novo Voluntário'}
-                  </DialogTitle>
-                  <DialogDescription>
-                    {editingVoluntario 
-                      ? 'Edite as informações do voluntário' 
-                      : 'Adicione um novo voluntário ao sistema Valentão'
-                    }
-                  </DialogDescription>
-                </DialogHeader>
-                
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    
-                    {/* Nome */}
-                    <div>
-                      <Label htmlFor="nome">Nome *</Label>
-                      <Input
-                        id="nome"
-                        value={formData.nome}
-                        onChange={(e) => setFormData({...formData, nome: e.target.value})}
-                        placeholder="Nome completo"
-                        required
-                      />
-                    </div>
-
-                    {/* Email */}
-                    <div>
-                      <Label htmlFor="email">Email *</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => setFormData({...formData, email: e.target.value})}
-                        placeholder="email@exemplo.com"
-                        required
-                      />
-                    </div>
-
-                    {/* Telefone */}
-                    <div>
-                      <Label htmlFor="telefone">Telefone</Label>
-                      <Input
-                        id="telefone"
-                        value={formData.telefone}
-                        onChange={(e) => setFormData({...formData, telefone: e.target.value})}
-                        placeholder="+351 912 345 678"
-                      />
-                    </div>
-
-                    {/* NIF */}
-                    <div>
-                      <Label htmlFor="nif">NIF</Label>
-                      <Input
-                        id="nif"
-                        value={formData.nif}
-                        onChange={(e) => setFormData({...formData, nif: e.target.value})}
-                        placeholder="123456789"
-                      />
-                    </div>
-
-                    {/* Data de Nascimento */}
-                    <div>
-                      <Label htmlFor="data_nascimento">Data de Nascimento</Label>
-                      <Input
-                        id="data_nascimento"
-                        type="date"
-                        value={formData.data_nascimento}
-                        onChange={(e) => setFormData({...formData, data_nascimento: e.target.value})}
-                      />
-                    </div>
-
-                    {/* Profissão */}
-                    <div>
-                      <Label htmlFor="profissao">Profissão</Label>
-                      <Input
-                        id="profissao"
-                        value={formData.profissao}
-                        onChange={(e) => setFormData({...formData, profissao: e.target.value})}
-                        placeholder="Engenheiro, Professor, etc."
-                      />
-                    </div>
-
-                    {/* Nível de Formação */}
-                    <div className="md:col-span-2">
-                      <Label htmlFor="nivel_formacao">Nível de Formação Valentão</Label>
-                      <Select 
-                        value={formData.nivel_formacao_atual} 
-                        onValueChange={(value) => setFormData({...formData, nivel_formacao_atual: value})}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecionar nível de formação" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="sem_nivel">Sem nível atribuído</SelectItem>
-                          {niveisFormacao.map((nivel) => (
-                            <SelectItem key={nivel.id} value={nivel.id}>
-                              <div className="flex items-center space-x-2">
-                                <span style={{ color: nivel.cor }}>
-                                  {getNivelIcon(nivel.codigo)}
-                                </span>
-                                <span>{nivel.nome}</span>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Morada */}
-                    <div className="md:col-span-2">
-                      <Label htmlFor="morada">Morada</Label>
-                      <Input
-                        id="morada"
-                        value={formData.morada}
-                        onChange={(e) => setFormData({...formData, morada: e.target.value})}
-                        placeholder="Rua, número, código postal, cidade"
-                      />
-                    </div>
-
-                    {/* Observações */}
-                    <div className="md:col-span-2">
-                      <Label htmlFor="observacoes">Observações</Label>
-                      <Textarea
-                        id="observacoes"
-                        value={formData.observacoes}
-                        onChange={(e) => setFormData({...formData, observacoes: e.target.value})}
-                        placeholder="Observações adicionais sobre o voluntário"
-                        rows={3}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end space-x-3 pt-4">
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      onClick={() => setDialogOpen(false)}
-                      disabled={submitting}
-                    >
-                      Cancelar
-                    </Button>
-                    <Button type="submit" disabled={submitting}>
-                      {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                      {editingVoluntario ? 'Atualizar' : 'Criar'} Voluntário
-                    </Button>
-                  </div>
-                </form>
-              </DialogContent>
-            </Dialog>
+            <Link to="/voluntarios/novo">
+              <Button className="bg-blue-600 hover:bg-blue-700">
+                <Plus className="h-4 w-4 mr-2" />
+                Novo Voluntário
+              </Button>
+            </Link>
+          {/* Modal removido - agora usa página dedicada */}
           </div>
         </div>
 
