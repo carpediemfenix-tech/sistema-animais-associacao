@@ -118,7 +118,8 @@ const EditarAnimal = () => {
         adotante_nome: data.adotante_nome || "",
         adotante_contacto: data.adotante_contacto || "",
         observacoes: data.observacoes || "",
-        data_entrada: data.data_entrada || ""
+        data_entrada: data.data_entrada || "",
+        voluntario_responsavel: data.voluntario_responsavel || ""
       });
 
     } catch (error: any) {
@@ -299,6 +300,9 @@ const EditarAnimal = () => {
     }
 
     setLoading(true);
+    
+    console.log('🔍 [DEBUG] Salvando animal com dados:', formData);
+    console.log('🔍 [DEBUG] Voluntário responsável selecionado:', formData.voluntario_responsavel);
 
     try {
       const updateData = {
@@ -319,6 +323,7 @@ const EditarAnimal = () => {
         adotante_contacto: formData.adotante_contacto.trim() || null,
         observacoes: formData.observacoes.trim() || null,
         data_entrada: formData.data_entrada,
+        voluntario_responsavel: formData.voluntario_responsavel || null,
         updated_at: new Date().toISOString()
       };
 

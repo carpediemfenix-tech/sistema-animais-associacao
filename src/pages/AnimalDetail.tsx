@@ -55,16 +55,27 @@ const AnimalDetail = () => {
         .single();
 
       // Se animal carregado com sucesso, buscar voluntário responsável separadamente
+      console.log('🔍 [DEBUG] Animal carregado:', data?.nome);
+      console.log('🔍 [DEBUG] Voluntário responsável ID:', data?.voluntario_responsavel);
+      
       if (!error && data && data.voluntario_responsavel) {
-        const { data: voluntarioData } = await supabase
+        console.log('🔍 [DEBUG] Buscando voluntário com ID:', data.voluntario_responsavel);
+        
+        const { data: voluntarioData, error: voluntarioError } = await supabase
           .from('voluntarios')
           .select('nome')
           .eq('id', data.voluntario_responsavel)
           .single();
         
+        console.log('🔍 [DEBUG] Voluntário encontrado:', voluntarioData);
+        console.log('🔍 [DEBUG] Erro na busca do voluntário:', voluntarioError);
+        
         if (voluntarioData) {
           data.voluntario_responsavel_nome = voluntarioData.nome;
+          console.log('✅ [DEBUG] Nome do voluntário definido:', voluntarioData.nome);
         }
+      } else {
+        console.log('⚠️ [DEBUG] Nenhum voluntário responsável definido');
       }
 
       if (error) {
