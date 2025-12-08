@@ -75,21 +75,27 @@ const EditarVoluntario = () => {
     try {
       setSaving(true);
 
+      // Preparar dados para atualização (apenas campos que existem na tabela)
+      const updateData = {
+        nome: voluntario.nome?.trim() || '',
+        email: voluntario.email?.trim() || '',
+        telefone: voluntario.telefone?.trim() || null,
+        morada: voluntario.morada?.trim() || null,
+        nif: voluntario.nif?.trim() || null,
+        data_nascimento: voluntario.data_nascimento || null,
+        profissao: voluntario.profissao?.trim() || null,
+        especialidade: voluntario.especialidade || 'Geral',
+        observacoes: voluntario.observacoes?.trim() || null,
+        ativo: voluntario.ativo,
+        tem_formacao: voluntario.tem_formacao || false
+      };
+
+      console.log('📊 [DEBUG] Dados para atualização:', updateData);
+      console.log('📊 [DEBUG] ID do voluntário:', id);
+
       const { error } = await supabase
         .from('voluntarios')
-        .update({
-          nome: voluntario.nome,
-          email: voluntario.email,
-          telefone: voluntario.telefone,
-          morada: voluntario.morada,
-          nif: voluntario.nif,
-          data_nascimento: voluntario.data_nascimento,
-          profissao: voluntario.profissao,
-          especialidade: voluntario.especialidade,
-          observacoes: voluntario.observacoes,
-          ativo: voluntario.ativo,
-          tem_formacao: voluntario.tem_formacao
-        })
+        .update(updateData)
         .eq('id', id);
 
       if (error) throw error;
@@ -101,10 +107,17 @@ const EditarVoluntario = () => {
 
       navigate('/voluntarios/gestao');
     } catch (error: any) {
-      console.error('Erro ao salvar:', error);
+      console.error('😨 [ERRO] Erro ao salvar voluntário:', error);
+      console.error('😨 [ERRO] Detalhes do erro:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
+      
       toast({
-        title: "Erro",
-        description: "Erro ao salvar alterações",
+        title: "Erro ao Salvar",
+        description: error.message || "Erro ao salvar alterações do voluntário",
         variant: "destructive",
       });
     } finally {
