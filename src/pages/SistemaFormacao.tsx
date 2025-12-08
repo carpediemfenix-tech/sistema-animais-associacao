@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { 
@@ -26,7 +27,8 @@ import {
   AlertCircle,
   Eye,
   Edit,
-  UserPlus
+  UserPlus,
+  Trash2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -606,6 +608,68 @@ const SistemaFormacao = () => {
     setParticipantesAcaoOpen(true);
   };
 
+  const handleEliminarAcao = async (acao: AcaoFormacao) => {
+    try {
+      console.log('🗑️ [AÇÃO] Eliminar ação:', acao.nome_acao);
+      
+      // Verificar se a ação tem participantes
+      const { data: participantes, error: checkError } = await supabase
+        .from('participacoes_formacao')
+        .select('id')
+        .eq('acao_formacao_id', acao.id)
+        .eq('status', 'inscrito')
+        .limit(1);
+
+      if (checkError) {
+        console.error('Erro ao verificar participantes:', checkError);
+      }
+
+      // Se tem participantes, bloquear eliminação
+      if (participantes && participantes.length > 0) {
+        toast({
+          title: "❌ Não é possível eliminar",
+          description: `A ação "${acao.nome_acao}" tem participantes inscritos. Remova todos os participantes antes de eliminar a ação.`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Se não tem participantes, pode eliminar
+      const { error } = await supabase
+        .from('acoes_formacao')
+        .delete()
+        .eq('id', acao.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "✅ Sucesso",
+        description: `Ação "${acao.nome_acao}" eliminada com sucesso`,
+      });
+
+      // Recarregar dados
+      loadData();
+
+    } catch (error: any) {
+      console.error('🚨 [ERRO] Erro ao eliminar ação:', error);
+      
+      // Tratar especificamente erro de constraint de integridade referencial
+      if (error.code === '23503') {
+        toast({
+          title: "❌ Não é possível eliminar",
+          description: `A ação "${acao.nome_acao}" tem registros associados. Remova todos os participantes antes de eliminar.`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "🚨 Erro",
+          description: error.message || "Erro inesperado ao eliminar ação",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
   // Função para salvar edição
   const handleSalvarEdicao = async () => {
     if (!acaoSelecionada) return;
@@ -1067,6 +1131,50 @@ const SistemaFormacao = () => {
                             >
                               <UserPlus className="h-4 w-4" />
                             </Button>
+                            
+                            {/* Botão Eliminar com Confirmação */}
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="text-red-600 hover:text-red-700"
+                                  title="Eliminar ação de formação"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle className="text-red-600">
+                                    ⚠️ Eliminar Ação de Formação
+                                  </AlertDialogTitle>
+                                  <AlertDialogDescription className="space-y-2">
+                                    <p>
+                                      Tem a certeza que deseja <strong>eliminar permanentemente</strong> a ação <strong>"{acao.nome_acao}"</strong>?
+                                    </p>
+                                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mt-3">
+                                      <p className="text-sm text-yellow-800">
+                                        💡 <strong>Nota:</strong> Se a ação tiver participantes inscritos, 
+                                        terá de removê-los primeiro na gestão de participantes.
+                                      </p>
+                                    </div>
+                                    <p className="text-red-600 font-medium">
+                                      ⚠️ Esta ação não pode ser desfeita!
+                                    </p>
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleEliminarAcao(acao)}
+                                    className="bg-red-600 hover:bg-red-700"
+                                  >
+                                    Eliminar Ação
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           </div>
                         </TableCell>
                       </TableRow>
