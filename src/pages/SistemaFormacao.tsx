@@ -75,6 +75,14 @@ const SistemaFormacao = () => {
   });
   const [submittingNovaAcao, setSubmittingNovaAcao] = useState(false);
   
+  // Estados para modais de ações
+  const [detalhesAcaoOpen, setDetalhesAcaoOpen] = useState(false);
+  const [acaoSelecionada, setAcaoSelecionada] = useState<AcaoFormacao | null>(null);
+  const [editarAcaoOpen, setEditarAcaoOpen] = useState(false);
+  const [participantesAcaoOpen, setParticipantesAcaoOpen] = useState(false);
+  const [editarAcaoForm, setEditarAcaoForm] = useState<any>({});
+  const [submittingEdicao, setSubmittingEdicao] = useState(false);
+  
   // Estados para modal de novo tipo de formação
   const [novoTipoDialogOpen, setNovoTipoDialogOpen] = useState(false);
   const [novoTipoForm, setNovoTipoForm] = useState({
@@ -542,29 +550,82 @@ const SistemaFormacao = () => {
   // Funções para ações das formações
   const handleVerAcao = (acao: AcaoFormacao) => {
     console.log('👁️ [AÇÃO] Ver detalhes da ação:', acao.nome_acao);
-    toast({
-      title: "Ver Detalhes",
-      description: `Visualizando detalhes de: ${acao.nome_acao}`,
-    });
-    // TODO: Implementar modal ou página de detalhes
+    setAcaoSelecionada(acao);
+    setDetalhesAcaoOpen(true);
   };
 
   const handleEditarAcao = (acao: AcaoFormacao) => {
     console.log('✏️ [AÇÃO] Editar ação:', acao.nome_acao);
-    toast({
-      title: "Editar Ação",
-      description: `Editando: ${acao.nome_acao}`,
+    setAcaoSelecionada(acao);
+    setEditarAcaoForm({
+      codigo_acao: acao.codigo_acao,
+      tipo_formacao_id: acao.tipo_formacao_id,
+      nome_acao: acao.nome_acao,
+      descricao: acao.descricao || '',
+      formador: acao.formador || '',
+      local_formacao: acao.local_formacao || '',
+      data_inicio: acao.data_inicio || '',
+      data_fim: acao.data_fim || '',
+      carga_horaria_real: acao.carga_horaria_real || 0,
+      vagas_maximas: acao.vagas_maximas || 20,
+      preco: acao.preco || 0,
+      status: acao.status || 'planeada',
+      observacoes: acao.observacoes || ''
     });
-    // TODO: Implementar modal de edição
+    setEditarAcaoOpen(true);
   };
 
   const handleGerirParticipantes = (acao: AcaoFormacao) => {
     console.log('👥 [AÇÃO] Gerir participantes da ação:', acao.nome_acao);
-    toast({
-      title: "Gerir Participantes",
-      description: `Gerindo participantes de: ${acao.nome_acao}`,
-    });
-    // TODO: Implementar modal de gestão de participantes
+    setAcaoSelecionada(acao);
+    setParticipantesAcaoOpen(true);
+  };
+
+  // Função para salvar edição
+  const handleSalvarEdicao = async () => {
+    if (!acaoSelecionada) return;
+
+    try {
+      setSubmittingEdicao(true);
+
+      const { error } = await supabase
+        .from('acoes_formacao')
+        .update({
+          codigo_acao: editarAcaoForm.codigo_acao,
+          nome_acao: editarAcaoForm.nome_acao,
+          descricao: editarAcaoForm.descricao || null,
+          formador: editarAcaoForm.formador || null,
+          local_formacao: editarAcaoForm.local_formacao || null,
+          data_inicio: editarAcaoForm.data_inicio || null,
+          data_fim: editarAcaoForm.data_fim || null,
+          carga_horaria_real: parseInt(editarAcaoForm.carga_horaria_real) || 0,
+          vagas_maximas: parseInt(editarAcaoForm.vagas_maximas) || 20,
+          preco: parseFloat(editarAcaoForm.preco) || 0,
+          status: editarAcaoForm.status,
+          observacoes: editarAcaoForm.observacoes || null
+        })
+        .eq('id', acaoSelecionada.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "✅ Sucesso",
+        description: "Ação de formação atualizada com sucesso",
+      });
+
+      setEditarAcaoOpen(false);
+      loadData();
+
+    } catch (error: any) {
+      console.error('Erro ao atualizar ação:', error);
+      toast({
+        title: "🚨 Erro",
+        description: "Erro ao atualizar ação de formação",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmittingEdicao(false);
+    }
   };
 
   if (loading) {
@@ -1431,6 +1492,335 @@ const SistemaFormacao = () => {
               </Button>
               <Button onClick={handleNovoTipoSubmit} disabled={submittingNovoTipo}>
                 {submittingNovoTipo ? 'Criando...' : 'Criar Tipo'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal de Detalhes da Ação */}
+        <Dialog open={detalhesAcaoOpen} onOpenChange={setDetalhesAcaoOpen}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center space-x-2">
+                <Eye className="h-5 w-5 text-blue-600" />
+                <span>Detalhes da Ação de Formação</span>
+              </DialogTitle>
+              <DialogDescription>
+                Informações completas sobre a ação de formação selecionada
+              </DialogDescription>
+            </DialogHeader>
+
+            {acaoSelecionada && (
+              <div className="space-y-6">
+                {/* Informações Básicas */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center space-x-2">
+                      <BookOpen className="h-5 w-5" />
+                      <span>Informações Básicas</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-sm font-medium text-gray-600">Código da Ação</Label>
+                        <p className="text-lg font-semibold">{acaoSelecionada.codigo_acao}</p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-gray-600">Nome da Ação</Label>
+                        <p className="text-lg font-semibold">{acaoSelecionada.nome_acao}</p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-gray-600">Tipo de Formação</Label>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-2xl">{getTipoFormacaoIcon(acaoSelecionada.tipo_formacao?.codigo || '')}</span>
+                          <span className="font-medium">{acaoSelecionada.tipo_formacao?.nome || 'N/A'}</span>
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-gray-600">Status</Label>
+                        <Badge 
+                          variant="outline" 
+                          style={{ 
+                            borderColor: getStatusColor(acaoSelecionada.status),
+                            color: getStatusColor(acaoSelecionada.status)
+                          }}
+                        >
+                          {STATUS_ACAO_LABELS[acaoSelecionada.status]}
+                        </Badge>
+                      </div>
+                    </div>
+                    {acaoSelecionada.descricao && (
+                      <div>
+                        <Label className="text-sm font-medium text-gray-600">Descrição</Label>
+                        <p className="text-gray-800 mt-1">{acaoSelecionada.descricao}</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Detalhes da Formação */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center space-x-2">
+                      <Calendar className="h-5 w-5" />
+                      <span>Detalhes da Formação</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div>
+                        <Label className="text-sm font-medium text-gray-600">Formador</Label>
+                        <p className="font-medium">{acaoSelecionada.formador || 'Não definido'}</p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-gray-600">Local</Label>
+                        <div className="flex items-center space-x-1">
+                          <MapPin className="h-4 w-4 text-gray-400" />
+                          <span>{acaoSelecionada.local_formacao || 'Não definido'}</span>
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-gray-600">Carga Horária</Label>
+                        <div className="flex items-center space-x-1">
+                          <Clock className="h-4 w-4 text-gray-400" />
+                          <span>{acaoSelecionada.carga_horaria_real}h</span>
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-gray-600">Data de Início</Label>
+                        <p>{acaoSelecionada.data_inicio ? new Date(acaoSelecionada.data_inicio).toLocaleDateString('pt-PT') : 'Não definida'}</p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-gray-600">Data de Fim</Label>
+                        <p>{acaoSelecionada.data_fim ? new Date(acaoSelecionada.data_fim).toLocaleDateString('pt-PT') : 'Não definida'}</p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-gray-600">Preço</Label>
+                        <p className="font-semibold text-green-600">€{acaoSelecionada.preco?.toFixed(2) || '0.00'}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Participantes */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center space-x-2">
+                      <Users className="h-5 w-5" />
+                      <span>Participantes</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center space-x-4">
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-blue-600">{acaoSelecionada.vagas_ocupadas || 0}</p>
+                          <p className="text-sm text-gray-600">Ocupadas</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-gray-600">{acaoSelecionada.vagas_maximas}</p>
+                          <p className="text-sm text-gray-600">Máximas</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-green-600">{(acaoSelecionada.vagas_maximas || 0) - (acaoSelecionada.vagas_ocupadas || 0)}</p>
+                          <p className="text-sm text-gray-600">Disponíveis</p>
+                        </div>
+                      </div>
+                      <div className="w-32">
+                        <div className="w-full bg-gray-200 rounded-full h-3">
+                          <div 
+                            className="bg-blue-600 h-3 rounded-full transition-all duration-300" 
+                            style={{ width: `${((acaoSelecionada.vagas_ocupadas || 0) / (acaoSelecionada.vagas_maximas || 1)) * 100}%` }}
+                          ></div>
+                        </div>
+                        <p className="text-xs text-center mt-1 text-gray-600">
+                          {Math.round(((acaoSelecionada.vagas_ocupadas || 0) / (acaoSelecionada.vagas_maximas || 1)) * 100)}% ocupado
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {acaoSelecionada.observacoes && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center space-x-2">
+                        <AlertCircle className="h-5 w-5" />
+                        <span>Observações</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-gray-800">{acaoSelecionada.observacoes}</p>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            )}
+
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button variant="outline" onClick={() => setDetalhesAcaoOpen(false)}>
+                Fechar
+              </Button>
+              <Button onClick={() => {
+                setDetalhesAcaoOpen(false);
+                handleEditarAcao(acaoSelecionada!);
+              }}>
+                <Edit className="h-4 w-4 mr-2" />
+                Editar Ação
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal de Edição da Ação */}
+        <Dialog open={editarAcaoOpen} onOpenChange={setEditarAcaoOpen}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center space-x-2">
+                <Edit className="h-5 w-5 text-blue-600" />
+                <span>Editar Ação de Formação</span>
+              </DialogTitle>
+              <DialogDescription>
+                Edite as informações da ação de formação selecionada
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="edit_codigo_acao">Código da Ação *</Label>
+                  <Input
+                    id="edit_codigo_acao"
+                    value={editarAcaoForm.codigo_acao || ''}
+                    onChange={(e) => setEditarAcaoForm(prev => ({ ...prev, codigo_acao: e.target.value }))}
+                    placeholder="Ex: FORMA-001"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit_nome_acao">Nome da Ação *</Label>
+                  <Input
+                    id="edit_nome_acao"
+                    value={editarAcaoForm.nome_acao || ''}
+                    onChange={(e) => setEditarAcaoForm(prev => ({ ...prev, nome_acao: e.target.value }))}
+                    placeholder="Nome da ação de formação"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit_formador">Formador</Label>
+                  <Input
+                    id="edit_formador"
+                    value={editarAcaoForm.formador || ''}
+                    onChange={(e) => setEditarAcaoForm(prev => ({ ...prev, formador: e.target.value }))}
+                    placeholder="Nome do formador"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit_local_formacao">Local da Formação</Label>
+                  <Input
+                    id="edit_local_formacao"
+                    value={editarAcaoForm.local_formacao || ''}
+                    onChange={(e) => setEditarAcaoForm(prev => ({ ...prev, local_formacao: e.target.value }))}
+                    placeholder="Local onde decorrerá a formação"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit_data_inicio">Data de Início</Label>
+                  <Input
+                    id="edit_data_inicio"
+                    type="date"
+                    value={editarAcaoForm.data_inicio || ''}
+                    onChange={(e) => setEditarAcaoForm(prev => ({ ...prev, data_inicio: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit_data_fim">Data de Fim</Label>
+                  <Input
+                    id="edit_data_fim"
+                    type="date"
+                    value={editarAcaoForm.data_fim || ''}
+                    onChange={(e) => setEditarAcaoForm(prev => ({ ...prev, data_fim: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit_carga_horaria">Carga Horária (horas)</Label>
+                  <Input
+                    id="edit_carga_horaria"
+                    type="number"
+                    min="0"
+                    value={editarAcaoForm.carga_horaria_real || 0}
+                    onChange={(e) => setEditarAcaoForm(prev => ({ ...prev, carga_horaria_real: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit_vagas_maximas">Vagas Máximas</Label>
+                  <Input
+                    id="edit_vagas_maximas"
+                    type="number"
+                    min="1"
+                    value={editarAcaoForm.vagas_maximas || 20}
+                    onChange={(e) => setEditarAcaoForm(prev => ({ ...prev, vagas_maximas: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit_preco">Preço (€)</Label>
+                  <Input
+                    id="edit_preco"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={editarAcaoForm.preco || 0}
+                    onChange={(e) => setEditarAcaoForm(prev => ({ ...prev, preco: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit_status">Status</Label>
+                  <Select 
+                    value={editarAcaoForm.status || 'planeada'} 
+                    onValueChange={(value) => setEditarAcaoForm(prev => ({ ...prev, status: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecionar status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="planeada">Planeada</SelectItem>
+                      <SelectItem value="em_curso">Em Curso</SelectItem>
+                      <SelectItem value="concluida">Concluída</SelectItem>
+                      <SelectItem value="cancelada">Cancelada</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="edit_descricao">Descrição</Label>
+                <Textarea
+                  id="edit_descricao"
+                  value={editarAcaoForm.descricao || ''}
+                  onChange={(e) => setEditarAcaoForm(prev => ({ ...prev, descricao: e.target.value }))}
+                  placeholder="Descrição detalhada da ação de formação"
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="edit_observacoes">Observações</Label>
+                <Textarea
+                  id="edit_observacoes"
+                  value={editarAcaoForm.observacoes || ''}
+                  onChange={(e) => setEditarAcaoForm(prev => ({ ...prev, observacoes: e.target.value }))}
+                  placeholder="Observações adicionais"
+                  rows={2}
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button variant="outline" onClick={() => setEditarAcaoOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleSalvarEdicao} disabled={submittingEdicao}>
+                {submittingEdicao ? 'Salvando...' : 'Salvar Alterações'}
               </Button>
             </div>
           </DialogContent>
