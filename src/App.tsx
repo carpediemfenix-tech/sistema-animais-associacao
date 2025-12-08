@@ -36,6 +36,7 @@ import Dashboard from "./pages/Dashboard";
 import VoluntariosDashboard from "./pages/VoluntariosDashboard";
 import VoluntarioProfile from "./pages/VoluntarioProfile";
 import NovoVoluntario from "./pages/NovoVoluntario";
+import EditarVoluntario from "./pages/EditarVoluntario";
 import SistemaFormacao from "@/pages/SistemaFormacao";
 import RelatoriosVoluntarios from "./pages/RelatoriosVoluntarios";
 
@@ -70,6 +71,7 @@ const App = () => (
             <Route path="/voluntarios" element={<ProtectedRoute><VoluntariosDashboard /></ProtectedRoute>} />
             <Route path="/voluntarios/gestao" element={<ProtectedRoute><GestaoVoluntarios /></ProtectedRoute>} />
             <Route path="/voluntarios/novo" element={<ProtectedRoute><NovoVoluntario /></ProtectedRoute>} />
+            <Route path="/voluntarios/editar/:id" element={<ProtectedRoute><EditarVoluntario /></ProtectedRoute>} />
             <Route path="/voluntarios/perfil/:id" element={<ProtectedRoute><VoluntarioProfile /></ProtectedRoute>} />
             <Route path="/sistema-formacao" element={<ProtectedRoute><SistemaFormacao /></ProtectedRoute>} />
             <Route path="/voluntarios/relatorios" element={<ProtectedRoute><RelatoriosVoluntarios /></ProtectedRoute>} />

@@ -200,7 +200,7 @@ const GestaoVoluntarios = () => {
         nif: formData.nif?.trim() || null,
         data_nascimento: formData.data_nascimento || null,
         profissao: formData.profissao?.trim() || null,
-        nivel_formacao_atual: formData.nivel_formacao_atual === "sem_nivel" ? null : formData.nivel_formacao_atual || null,
+        // nivel_formacao_atual: Campo removido - não existe na tabela (MODO DEV)
         observacoes: formData.observacoes?.trim() || null,
         ativo: true
       };
