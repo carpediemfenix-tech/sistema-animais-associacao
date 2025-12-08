@@ -145,87 +145,90 @@ const VoluntarioProfile = () => {
       if (voluntarioError) throw voluntarioError;
       setVoluntario(voluntarioData);
 
-      // Carregar responsabilidades atuais
+      // Carregar responsabilidades atuais com consulta otimizada
       try {
         const { data: responsabilidadesData, error: respError } = await supabase
           .from('responsabilidades_voluntarios')
-          .select('*')
+          .select(`
+            id,
+            animal_id,
+            data_inicio,
+            data_fim,
+            motivo_fim,
+            ativo,
+            created_at,
+            animais!inner (
+              id,
+              nome,
+              numero_processo,
+              especie,
+              estado
+            )
+          `)
           .eq('voluntario_id', id)
-          .eq('ativo', true);
+          .eq('ativo', true)
+          .order('created_at', { ascending: false });
 
         if (respError) {
-          console.error('Erro ao carregar responsabilidades:', respError);
+          console.error('❌ Erro ao carregar responsabilidades ativas:', respError);
+          setResponsabilidadesAtuais([]);
+        } else {
+          console.log('✅ Responsabilidades ativas carregadas:', responsabilidadesData?.length || 0);
+          setResponsabilidadesAtuais(responsabilidadesData || []);
         }
-        
-        console.log('🔍 [DEBUG] Responsabilidades atuais:', responsabilidadesData);
-        
-        // Buscar dados dos animais para responsabilidades ativas
-        const responsabilidadesComAnimais = [];
-        if (responsabilidadesData && responsabilidadesData.length > 0) {
-          for (const resp of responsabilidadesData) {
-            if (resp.animal_id) {
-              const { data: animalData } = await supabase
-                .from('animais')
-                .select('nome, numero_processo, especie, estado')
-                .eq('id', resp.animal_id)
-                .single();
-              
-              if (animalData) {
-                responsabilidadesComAnimais.push({
-                  ...resp,
-                  animais: animalData
-                });
-              }
-            }
-          }
-        }
-        
-        setResponsabilidadesAtuais(responsabilidadesComAnimais);
       } catch (error) {
         console.error('Erro ao carregar responsabilidades atuais:', error);
         setResponsabilidadesAtuais([]);
       }
 
-      // Carregar histórico de responsabilidades
+      // Carregar TODAS as responsabilidades (histórico completo)
       try {
-        // Primeiro, vamos buscar todas as responsabilidades sem join
-        const { data: historicoData, error: histError } = await supabase
+        const { data: todasResponsabilidades, error: histError } = await supabase
           .from('responsabilidades_voluntarios')
-          .select('*')
+          .select(`
+            id,
+            animal_id,
+            data_inicio,
+            data_fim,
+            motivo_fim,
+            ativo,
+            created_at,
+            animais!inner (
+              id,
+              nome,
+              numero_processo,
+              especie,
+              estado
+            )
+          `)
           .eq('voluntario_id', id)
           .order('created_at', { ascending: false });
 
         if (histError) {
-          console.error('Erro ao carregar histórico:', histError);
-        }
-        
-        console.log('🔍 [DEBUG] Dados brutos do histórico:', historicoData);
-        console.log('🔍 [DEBUG] Voluntário ID:', id);
-        
-        // Buscar dados dos animais para cada responsabilidade
-        const historicoComAnimais = [];
-        if (historicoData && historicoData.length > 0) {
-          for (const resp of historicoData) {
-            if (resp.animal_id) {
-              const { data: animalData } = await supabase
-                .from('animais')
-                .select('nome, numero_processo, especie')
-                .eq('id', resp.animal_id)
-                .single();
-              
-              if (animalData) {
-                historicoComAnimais.push({
-                  ...resp,
-                  animais: animalData
-                });
+          console.error('❌ Erro ao carregar responsabilidades:', histError);
+          setHistoricoResponsabilidades([]);
+        } else {
+          console.log('✅ TODAS as responsabilidades carregadas:', todasResponsabilidades?.length || 0);
+          
+          if (todasResponsabilidades && todasResponsabilidades.length > 0) {
+            console.log('🔍 Primeira responsabilidade encontrada:');
+            console.log('  - ID:', todasResponsabilidades[0].id);
+            console.log('  - Animal ID:', todasResponsabilidades[0].animal_id);
+            console.log('  - Ativo:', todasResponsabilidades[0].ativo);
+            console.log('  - Animal:', todasResponsabilidades[0].animais);
+            console.log('  - Data Início:', todasResponsabilidades[0].data_inicio);
+            
+            // Verificar se é a responsabilidade do Dodge
+            todasResponsabilidades.forEach((resp, index) => {
+              if (resp.animais?.nome?.toLowerCase().includes('dodge')) {
+                console.log(`🐶 DODGE ENCONTRADO no índice ${index}:`, resp);
               }
-            }
+            });
           }
+          
+          // Definir histórico (todas as responsabilidades)
+          setHistoricoResponsabilidades(todasResponsabilidades || []);
         }
-        
-        console.log('🔍 [DEBUG] Histórico com animais:', historicoComAnimais);
-        
-        setHistoricoResponsabilidades(historicoComAnimais);
       } catch (error) {
         console.error('Erro ao carregar histórico de responsabilidades:', error);
         setHistoricoResponsabilidades([]);
@@ -598,39 +601,75 @@ const VoluntarioProfile = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {historicoResponsabilidades.length === 0 ? (
-                  <p className="text-gray-500 text-center py-8">
-                    Nenhum histórico de responsabilidades
+                <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    🔍 <strong>Debug:</strong> Encontradas {historicoResponsabilidades.length} responsabilidades
                   </p>
+                </div>
+                
+                {historicoResponsabilidades.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500 mb-2">Nenhuma responsabilidade encontrada</p>
+                    <p className="text-xs text-gray-400">Verifique se as responsabilidades foram criadas corretamente</p>
+                  </div>
                 ) : (
                   <div className="space-y-4">
-                    {historicoResponsabilidades.map((hist) => (
-                      <div key={hist.id} className="border rounded-lg p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-semibold">{hist.animais?.nome || 'Nome não disponível'}</h4>
-                          <Badge variant="secondary">Finalizada</Badge>
+                    {historicoResponsabilidades.map((hist, index) => {
+                      console.log(`🔍 Renderizando responsabilidade ${index + 1}:`, hist);
+                      return (
+                        <div key={hist.id || index} className="border rounded-lg p-4 bg-white shadow-sm">
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className="font-semibold text-lg flex items-center">
+                              🐶 {hist.animais?.nome || `Animal ID: ${hist.animal_id}` || 'Nome não disponível'}
+                            </h4>
+                            <div className="flex space-x-2">
+                              <Badge variant={hist.ativo ? 'default' : 'secondary'}>
+                                {hist.ativo ? '✅ Ativa' : '📝 Finalizada'}
+                              </Badge>
+                              {hist.animais?.nome?.toLowerCase().includes('dodge') && (
+                                <Badge variant="outline" className="bg-yellow-100 text-yellow-800">
+                                  🐶 DODGE
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                            <div className="bg-gray-50 p-2 rounded">
+                              <span className="font-medium text-gray-700">Processo:</span>
+                              <p className="text-gray-900">{hist.animais?.numero_processo || 'N/A'}</p>
+                            </div>
+                            <div className="bg-gray-50 p-2 rounded">
+                              <span className="font-medium text-gray-700">Espécie:</span>
+                              <p className="text-gray-900">{hist.animais?.especie || 'N/A'}</p>
+                            </div>
+                            <div className="bg-gray-50 p-2 rounded">
+                              <span className="font-medium text-gray-700">Início:</span>
+                              <p className="text-gray-900">
+                                {hist.data_inicio ? new Date(hist.data_inicio).toLocaleDateString('pt-PT') : 'N/A'}
+                              </p>
+                            </div>
+                            <div className="bg-gray-50 p-2 rounded">
+                              <span className="font-medium text-gray-700">Fim:</span>
+                              <p className="text-gray-900">
+                                {hist.data_fim ? new Date(hist.data_fim).toLocaleDateString('pt-PT') : 'Em andamento'}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          {hist.motivo_fim && (
+                            <div className="mt-3 p-2 bg-yellow-50 rounded border-l-4 border-yellow-400">
+                              <p className="text-sm text-yellow-800">
+                                <span className="font-medium">Motivo do fim:</span> {hist.motivo_fim}
+                              </p>
+                            </div>
+                          )}
+                          
+                          <div className="mt-2 text-xs text-gray-500">
+                            ID da Responsabilidade: {hist.id} | Animal ID: {hist.animal_id}
+                          </div>
                         </div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm text-gray-600">
-                          <div>
-                            <span className="font-medium">Processo:</span> {hist.animais?.numero_processo || 'N/A'}
-                          </div>
-                          <div>
-                            <span className="font-medium">Espécie:</span> {hist.animais?.especie || 'N/A'}
-                          </div>
-                          <div>
-                            <span className="font-medium">Início:</span> {new Date(hist.data_inicio).toLocaleDateString('pt-PT')}
-                          </div>
-                          <div>
-                            <span className="font-medium">Fim:</span> {new Date(hist.data_fim).toLocaleDateString('pt-PT')}
-                          </div>
-                        </div>
-                        {hist.motivo_fim && (
-                          <p className="text-sm text-gray-600 mt-2">
-                            <span className="font-medium">Motivo:</span> {hist.motivo_fim}
-                          </p>
-                        )}
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </CardContent>
