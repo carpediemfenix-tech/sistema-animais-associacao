@@ -44,15 +44,28 @@ const AnimalDetail = () => {
       setLoading(true);
       setError(null);
 
+      // Carregar dados do animal sem JOIN problemático
       const { data, error } = await supabase
         .from('animais')
         .select(`
           *,
-          grupos(nome, tipo),
-          voluntario_responsavel_nome:voluntarios!voluntario_responsavel(nome)
+          grupos(nome, tipo)
         `)
         .eq('id', id)
         .single();
+
+      // Se animal carregado com sucesso, buscar voluntário responsável separadamente
+      if (!error && data && data.voluntario_responsavel) {
+        const { data: voluntarioData } = await supabase
+          .from('voluntarios')
+          .select('nome')
+          .eq('id', data.voluntario_responsavel)
+          .single();
+        
+        if (voluntarioData) {
+          data.voluntario_responsavel_nome = voluntarioData.nome;
+        }
+      }
 
       if (error) {
         console.error('Erro ao carregar animal:', error);

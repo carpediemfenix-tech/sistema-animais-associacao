@@ -147,34 +147,41 @@ const VoluntarioProfile = () => {
 
       // Carregar responsabilidades atuais com consulta otimizada
       try {
+        // Carregar responsabilidades ativas sem JOIN problemático
         const { data: responsabilidadesData, error: respError } = await supabase
           .from('responsabilidades_voluntarios')
-          .select(`
-            id,
-            animal_id,
-            data_inicio,
-            data_fim,
-            motivo_fim,
-            ativo,
-            created_at,
-            animais!inner (
-              id,
-              nome,
-              numero_processo,
-              especie,
-              estado
-            )
-          `)
+          .select('*')
           .eq('voluntario_id', id)
           .eq('ativo', true)
           .order('created_at', { ascending: false });
+
+        // Buscar dados dos animais separadamente
+        const responsabilidadesComAnimais = [];
+        if (!respError && responsabilidadesData) {
+          for (const resp of responsabilidadesData) {
+            if (resp.animal_id) {
+              const { data: animalData } = await supabase
+                .from('animais')
+                .select('id, nome, numero_processo, especie, estado')
+                .eq('id', resp.animal_id)
+                .single();
+              
+              if (animalData) {
+                responsabilidadesComAnimais.push({
+                  ...resp,
+                  animais: animalData
+                });
+              }
+            }
+          }
+        }
 
         if (respError) {
           console.error('❌ Erro ao carregar responsabilidades ativas:', respError);
           setResponsabilidadesAtuais([]);
         } else {
-          console.log('✅ Responsabilidades ativas carregadas:', responsabilidadesData?.length || 0);
-          setResponsabilidadesAtuais(responsabilidadesData || []);
+          console.log('✅ Responsabilidades ativas carregadas:', responsabilidadesComAnimais.length);
+          setResponsabilidadesAtuais(responsabilidadesComAnimais);
         }
       } catch (error) {
         console.error('Erro ao carregar responsabilidades atuais:', error);
@@ -183,43 +190,50 @@ const VoluntarioProfile = () => {
 
       // Carregar TODAS as responsabilidades (histórico completo)
       try {
+        // Carregar TODAS as responsabilidades sem JOIN problemático
         const { data: todasResponsabilidades, error: histError } = await supabase
           .from('responsabilidades_voluntarios')
-          .select(`
-            id,
-            animal_id,
-            data_inicio,
-            data_fim,
-            motivo_fim,
-            ativo,
-            created_at,
-            animais!inner (
-              id,
-              nome,
-              numero_processo,
-              especie,
-              estado
-            )
-          `)
+          .select('*')
           .eq('voluntario_id', id)
           .order('created_at', { ascending: false });
+
+        // Buscar dados dos animais separadamente para o histórico
+        const historicoComAnimais = [];
+        if (!histError && todasResponsabilidades) {
+          for (const resp of todasResponsabilidades) {
+            if (resp.animal_id) {
+              const { data: animalData } = await supabase
+                .from('animais')
+                .select('id, nome, numero_processo, especie, estado')
+                .eq('id', resp.animal_id)
+                .single();
+              
+              if (animalData) {
+                historicoComAnimais.push({
+                  ...resp,
+                  animais: animalData
+                });
+              }
+            }
+          }
+        }
 
         if (histError) {
           console.error('❌ Erro ao carregar responsabilidades:', histError);
           setHistoricoResponsabilidades([]);
         } else {
-          console.log('✅ TODAS as responsabilidades carregadas:', todasResponsabilidades?.length || 0);
+          console.log('✅ TODAS as responsabilidades carregadas:', historicoComAnimais.length);
           
-          if (todasResponsabilidades && todasResponsabilidades.length > 0) {
+          if (historicoComAnimais.length > 0) {
             console.log('🔍 Primeira responsabilidade encontrada:');
-            console.log('  - ID:', todasResponsabilidades[0].id);
-            console.log('  - Animal ID:', todasResponsabilidades[0].animal_id);
-            console.log('  - Ativo:', todasResponsabilidades[0].ativo);
-            console.log('  - Animal:', todasResponsabilidades[0].animais);
-            console.log('  - Data Início:', todasResponsabilidades[0].data_inicio);
+            console.log('  - ID:', historicoComAnimais[0].id);
+            console.log('  - Animal ID:', historicoComAnimais[0].animal_id);
+            console.log('  - Ativo:', historicoComAnimais[0].ativo);
+            console.log('  - Animal:', historicoComAnimais[0].animais);
+            console.log('  - Data Início:', historicoComAnimais[0].data_inicio);
             
             // Verificar se é a responsabilidade do Dodge
-            todasResponsabilidades.forEach((resp, index) => {
+            historicoComAnimais.forEach((resp, index) => {
               if (resp.animais?.nome?.toLowerCase().includes('dodge')) {
                 console.log(`🐶 DODGE ENCONTRADO no índice ${index}:`, resp);
               }
@@ -227,7 +241,7 @@ const VoluntarioProfile = () => {
           }
           
           // Definir histórico (todas as responsabilidades)
-          setHistoricoResponsabilidades(todasResponsabilidades || []);
+          setHistoricoResponsabilidades(historicoComAnimais);
         }
       } catch (error) {
         console.error('Erro ao carregar histórico de responsabilidades:', error);
