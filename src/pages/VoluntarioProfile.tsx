@@ -149,15 +149,7 @@ const VoluntarioProfile = () => {
       try {
         const { data: responsabilidadesData, error: respError } = await supabase
           .from('responsabilidades_voluntarios')
-          .select(`
-            *,
-            animais:animal_id (
-              nome,
-              numero_processo,
-              especie,
-              estado
-            )
-          `)
+          .select('*')
           .eq('voluntario_id', id)
           .eq('ativo', true);
 
@@ -165,12 +157,30 @@ const VoluntarioProfile = () => {
           console.error('Erro ao carregar responsabilidades:', respError);
         }
         
-        // Filtrar apenas responsabilidades com dados de animais válidos
-        const responsabilidadesValidas = (responsabilidadesData || []).filter(resp => 
-          resp.animal_id && resp.animais
-        );
+        console.log('🔍 [DEBUG] Responsabilidades atuais:', responsabilidadesData);
         
-        setResponsabilidadesAtuais(responsabilidadesValidas);
+        // Buscar dados dos animais para responsabilidades ativas
+        const responsabilidadesComAnimais = [];
+        if (responsabilidadesData && responsabilidadesData.length > 0) {
+          for (const resp of responsabilidadesData) {
+            if (resp.animal_id) {
+              const { data: animalData } = await supabase
+                .from('animais')
+                .select('nome, numero_processo, especie, estado')
+                .eq('id', resp.animal_id)
+                .single();
+              
+              if (animalData) {
+                responsabilidadesComAnimais.push({
+                  ...resp,
+                  animais: animalData
+                });
+              }
+            }
+          }
+        }
+        
+        setResponsabilidadesAtuais(responsabilidadesComAnimais);
       } catch (error) {
         console.error('Erro ao carregar responsabilidades atuais:', error);
         setResponsabilidadesAtuais([]);
@@ -178,16 +188,10 @@ const VoluntarioProfile = () => {
 
       // Carregar histórico de responsabilidades
       try {
+        // Primeiro, vamos buscar todas as responsabilidades sem join
         const { data: historicoData, error: histError } = await supabase
           .from('responsabilidades_voluntarios')
-          .select(`
-            *,
-            animais:animal_id (
-              nome,
-              numero_processo,
-              especie
-            )
-          `)
+          .select('*')
           .eq('voluntario_id', id)
           .order('created_at', { ascending: false });
 
@@ -195,12 +199,33 @@ const VoluntarioProfile = () => {
           console.error('Erro ao carregar histórico:', histError);
         }
         
-        // Filtrar apenas histórico com dados de animais válidos
-        const historicoValido = (historicoData || []).filter(hist => 
-          hist.animal_id && hist.animais
-        );
+        console.log('🔍 [DEBUG] Dados brutos do histórico:', historicoData);
+        console.log('🔍 [DEBUG] Voluntário ID:', id);
         
-        setHistoricoResponsabilidades(historicoValido);
+        // Buscar dados dos animais para cada responsabilidade
+        const historicoComAnimais = [];
+        if (historicoData && historicoData.length > 0) {
+          for (const resp of historicoData) {
+            if (resp.animal_id) {
+              const { data: animalData } = await supabase
+                .from('animais')
+                .select('nome, numero_processo, especie')
+                .eq('id', resp.animal_id)
+                .single();
+              
+              if (animalData) {
+                historicoComAnimais.push({
+                  ...resp,
+                  animais: animalData
+                });
+              }
+            }
+          }
+        }
+        
+        console.log('🔍 [DEBUG] Histórico com animais:', historicoComAnimais);
+        
+        setHistoricoResponsabilidades(historicoComAnimais);
       } catch (error) {
         console.error('Erro ao carregar histórico de responsabilidades:', error);
         setHistoricoResponsabilidades([]);
