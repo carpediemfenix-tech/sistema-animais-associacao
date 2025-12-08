@@ -97,36 +97,65 @@ const GestaoVoluntarios = () => {
       // Para cada voluntário, buscar a última formação aprovada
       const voluntariosComFormacao = await Promise.all(
         (voluntariosData || []).map(async (voluntario) => {
-          const { data: ultimaFormacao } = await supabase
-            .from('participacoes_formacao')
-            .select(`
-              data_avaliacao,
-              acao_formacao:acoes_formacao(
-                tipo_formacao:tipos_formacao(
-                  nome,
-                  codigo
-                )
-              )
-            `)
-            .eq('voluntario_id', voluntario.id)
-            .eq('status', 'concluido')
-            .eq('resultado', 'aprovado')
-            .order('data_avaliacao', { ascending: false })
-            .limit(1)
-            .single();
+          try {
+            // Consulta simplificada - buscar última participação aprovada
+            const { data: participacoes } = await supabase
+              .from('participacoes_formacao')
+              .select('acao_formacao_id, data_avaliacao')
+              .eq('voluntario_id', voluntario.id)
+              .eq('status', 'concluido')
+              .eq('resultado', 'aprovado')
+              .order('data_avaliacao', { ascending: false })
+              .limit(1);
+
+            if (participacoes && participacoes.length > 0) {
+              // Buscar ação de formação
+              const { data: acaoFormacao } = await supabase
+                .from('acoes_formacao')
+                .select('tipo_formacao_id')
+                .eq('id', participacoes[0].acao_formacao_id)
+                .single();
+
+              if (acaoFormacao) {
+                // Buscar tipo de formação
+                const { data: tipoFormacao } = await supabase
+                  .from('tipos_formacao')
+                  .select('nome')
+                  .eq('id', acaoFormacao.tipo_formacao_id)
+                  .single();
+
+                return {
+                  ...voluntario,
+                  ultima_formacao: tipoFormacao?.nome || 'Sem formação'
+                };
+              }
+            }
+          } catch (error) {
+            console.error('Erro ao buscar formação:', voluntario.nome, error);
+          }
 
           return {
             ...voluntario,
-            ultima_formacao: ultimaFormacao?.acao_formacao?.tipo_formacao?.nome || 'Sem formação'
+            ultima_formacao: 'Sem formação'
           };
         })
       );
 
       setVoluntarios(voluntariosComFormacao);
 
-      console.log('📊 Usando dados fixos para níveis e especializações');
+      // Dados fixos para compatibilidade
+      const niveisFixos = [
+        { id: '1', nome: 'FORMA BASE', codigo: 'FORMA_BASE', ativo: true },
+        { id: '2', nome: 'Formação N1', codigo: 'FORMA_N1', ativo: true },
+        { id: '3', nome: 'Formação N2', codigo: 'FORMA_N2', ativo: true }
+      ];
+      
+      const especializacoesFixas = [
+        { id: '1', nome: 'Geral', ativo: true },
+        { id: '2', nome: 'Veterinária', ativo: true },
+        { id: '3', nome: 'Resgate', ativo: true }
+      ];
 
-      setVoluntarios(voluntariosData || []);
       setNiveisFormacao(niveisFixos);
       setEspecializacoes(especializacoesFixas);
 

@@ -1055,9 +1055,12 @@ const SistemaFormacao = () => {
         console.error('Erro ao carregar voluntários:', voluntariosError);
       }
 
-      // Filtrar voluntários que já estão inscritos
-      const participantesIds = (participantesData || []).map(p => p.voluntario?.id).filter(Boolean);
-      const voluntariosDisponiveis = (voluntariosData || []).filter(v => !participantesIds.includes(v.id));
+      // Filtrar voluntários que já participaram (ativos + histórico)
+      const participantesAtivosIds = (participantesData || []).map(p => p.voluntario?.id).filter(Boolean);
+      const participantesHistoricoIds = (historicoData || []).map(p => p.voluntario?.id).filter(Boolean);
+      const todosParticipantesIds = [...participantesAtivosIds, ...participantesHistoricoIds];
+      
+      const voluntariosDisponiveis = (voluntariosData || []).filter(v => !todosParticipantesIds.includes(v.id));
       
       setVoluntariosDisponiveis(voluntariosDisponiveis);
 
