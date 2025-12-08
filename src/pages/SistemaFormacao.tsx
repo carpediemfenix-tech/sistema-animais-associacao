@@ -83,6 +83,13 @@ const SistemaFormacao = () => {
   const [editarAcaoForm, setEditarAcaoForm] = useState<any>({});
   const [submittingEdicao, setSubmittingEdicao] = useState(false);
   
+  // Estados para gestão de participantes
+  const [voluntariosDisponiveis, setVoluntariosDisponiveis] = useState<any[]>([]);
+  const [participantesAtuais, setParticipantesAtuais] = useState<any[]>([]);
+  const [loadingParticipantes, setLoadingParticipantes] = useState(false);
+  const [submittingParticipante, setSubmittingParticipante] = useState(false);
+  const [searchVoluntario, setSearchVoluntario] = useState('');
+  
   // Estados para modal de novo tipo de formação
   const [novoTipoDialogOpen, setNovoTipoDialogOpen] = useState(false);
   const [novoTipoForm, setNovoTipoForm] = useState({
@@ -185,7 +192,7 @@ const SistemaFormacao = () => {
         throw error;
       }
 
-      // Carregar ações de formação com tipos
+      // Carregar ações de formação com tipos e contadores
       const { data: acoesData, error: acoesError } = await supabase
         .from('acoes_formacao')
         .select(`
@@ -195,6 +202,24 @@ const SistemaFormacao = () => {
         .order('data_inicio', { ascending: false });
 
       if (acoesError) throw acoesError;
+
+      // Carregar contadores de participantes para cada ação
+      const acoesComContadores = await Promise.all(
+        (acoesData || []).map(async (acao) => {
+          const { count } = await supabase
+            .from('participacoes_formacao')
+            .select('*', { count: 'exact', head: true })
+            .eq('acao_formacao_id', acao.id)
+            .eq('status', 'inscrito');
+          
+          return {
+            ...acao,
+            vagas_ocupadas: count || 0
+          };
+        })
+      );
+
+      setAcoesFormacao(acoesComContadores);
 
       // Carregar participações recentes
       const { data: participacoesData, error: participacoesError } = await supabase
@@ -221,7 +246,6 @@ const SistemaFormacao = () => {
       console.log('Tipos de formação carregados:', tiposProcessados);
       
       setTiposFormacao(tiposProcessados);
-      setAcoesFormacao(acoesData || []);
       setParticipacoes(participacoesData || []);
 
       // Calcular estatísticas
@@ -575,9 +599,10 @@ const SistemaFormacao = () => {
     setEditarAcaoOpen(true);
   };
 
-  const handleGerirParticipantes = (acao: AcaoFormacao) => {
+  const handleGerirParticipantes = async (acao: AcaoFormacao) => {
     console.log('👥 [AÇÃO] Gerir participantes da ação:', acao.nome_acao);
     setAcaoSelecionada(acao);
+    await loadParticipantesData(acao.id);
     setParticipantesAcaoOpen(true);
   };
 
@@ -626,6 +651,154 @@ const SistemaFormacao = () => {
     } finally {
       setSubmittingEdicao(false);
     }
+  };
+
+  // Funções para gestão de participantes
+  const loadParticipantesData = async (acaoId: string) => {
+    try {
+      setLoadingParticipantes(true);
+
+      // Carregar participantes atuais da ação
+      const { data: participantesData, error: participantesError } = await supabase
+        .from('participacoes_formacao')
+        .select(`
+          *,
+          voluntario:voluntarios(
+            id,
+            nome,
+            email,
+            telefone,
+            ativo
+          )
+        `)
+        .eq('acao_formacao_id', acaoId)
+        .eq('status', 'inscrito');
+
+      if (participantesError) {
+        console.error('Erro ao carregar participantes:', participantesError);
+      }
+
+      setParticipantesAtuais(participantesData || []);
+
+      // Carregar todos os voluntários ativos
+      const { data: voluntariosData, error: voluntariosError } = await supabase
+        .from('voluntarios')
+        .select('id, nome, email, telefone, ativo')
+        .eq('ativo', true)
+        .order('nome');
+
+      if (voluntariosError) {
+        console.error('Erro ao carregar voluntários:', voluntariosError);
+      }
+
+      // Filtrar voluntários que já estão inscritos
+      const participantesIds = (participantesData || []).map(p => p.voluntario?.id).filter(Boolean);
+      const voluntariosDisponiveis = (voluntariosData || []).filter(v => !participantesIds.includes(v.id));
+      
+      setVoluntariosDisponiveis(voluntariosDisponiveis);
+
+    } catch (error) {
+      console.error('Erro ao carregar dados de participantes:', error);
+      toast({
+        title: "🚨 Erro",
+        description: "Erro ao carregar dados de participantes",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingParticipantes(false);
+    }
+  };
+
+  const handleInscreverVoluntario = async (voluntarioId: string) => {
+    if (!acaoSelecionada) return;
+
+    try {
+      setSubmittingParticipante(true);
+
+      // Verificar se ainda há vagas
+      if (participantesAtuais.length >= (acaoSelecionada.vagas_maximas || 0)) {
+        toast({
+          title: "⚠️ Vagas Esgotadas",
+          description: "Não há mais vagas disponíveis para esta ação",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Inscrever voluntário
+      const { error } = await supabase
+        .from('participacoes_formacao')
+        .insert({
+          acao_formacao_id: acaoSelecionada.id,
+          voluntario_id: voluntarioId,
+          status: 'inscrito',
+          data_inscricao: new Date().toISOString()
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "✅ Sucesso",
+        description: "Voluntário inscrito com sucesso",
+      });
+
+      // Recarregar dados
+      await loadParticipantesData(acaoSelecionada.id);
+      await loadData(); // Atualizar contadores na tabela principal
+
+    } catch (error: any) {
+      console.error('Erro ao inscrever voluntário:', error);
+      toast({
+        title: "🚨 Erro",
+        description: "Erro ao inscrever voluntário",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmittingParticipante(false);
+    }
+  };
+
+  const handleRemoverParticipante = async (participacaoId: string) => {
+    if (!acaoSelecionada) return;
+
+    try {
+      setSubmittingParticipante(true);
+
+      // Remover participação
+      const { error } = await supabase
+        .from('participacoes_formacao')
+        .delete()
+        .eq('id', participacaoId);
+
+      if (error) throw error;
+
+      toast({
+        title: "✅ Sucesso",
+        description: "Participante removido com sucesso",
+      });
+
+      // Recarregar dados
+      await loadParticipantesData(acaoSelecionada.id);
+      await loadData(); // Atualizar contadores na tabela principal
+
+    } catch (error: any) {
+      console.error('Erro ao remover participante:', error);
+      toast({
+        title: "🚨 Erro",
+        description: "Erro ao remover participante",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmittingParticipante(false);
+    }
+  };
+
+  // Atualizar a função handleGerirParticipantes
+  const handleGerirParticipantesAtualizada = async (acao: AcaoFormacao) => {
+    console.log('👥 [AÇÃO] Gerir participantes da ação:', acao.nome_acao);
+    setAcaoSelecionada(acao);
+    await loadParticipantesData(acao.id);
+    setParticipantesAcaoOpen(true);
   };
 
   if (loading) {
@@ -1821,6 +1994,200 @@ const SistemaFormacao = () => {
               </Button>
               <Button onClick={handleSalvarEdicao} disabled={submittingEdicao}>
                 {submittingEdicao ? 'Salvando...' : 'Salvar Alterações'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal de Gestão de Participantes */}
+        <Dialog open={participantesAcaoOpen} onOpenChange={setParticipantesAcaoOpen}>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center space-x-2">
+                <UserPlus className="h-5 w-5 text-blue-600" />
+                <span>Gerir Participantes</span>
+              </DialogTitle>
+              <DialogDescription>
+                {acaoSelecionada && (
+                  <span>Gestão de participantes para: <strong>{acaoSelecionada.nome_acao}</strong></span>
+                )}
+              </DialogDescription>
+            </DialogHeader>
+
+            {acaoSelecionada && (
+              <div className="space-y-6">
+                {/* Resumo de Vagas */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center space-x-2">
+                      <Users className="h-5 w-5" />
+                      <span>Resumo de Vagas</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <div className="text-center p-4 bg-blue-50 rounded-lg">
+                        <p className="text-3xl font-bold text-blue-600">{participantesAtuais.length}</p>
+                        <p className="text-sm text-gray-600">Inscritos</p>
+                      </div>
+                      <div className="text-center p-4 bg-gray-50 rounded-lg">
+                        <p className="text-3xl font-bold text-gray-600">{acaoSelecionada.vagas_maximas}</p>
+                        <p className="text-sm text-gray-600">Máximas</p>
+                      </div>
+                      <div className="text-center p-4 bg-green-50 rounded-lg">
+                        <p className="text-3xl font-bold text-green-600">
+                          {(acaoSelecionada.vagas_maximas || 0) - participantesAtuais.length}
+                        </p>
+                        <p className="text-sm text-gray-600">Disponíveis</p>
+                      </div>
+                      <div className="text-center p-4 bg-purple-50 rounded-lg">
+                        <p className="text-3xl font-bold text-purple-600">
+                          {Math.round((participantesAtuais.length / (acaoSelecionada.vagas_maximas || 1)) * 100)}%
+                        </p>
+                        <p className="text-sm text-gray-600">Ocupado</p>
+                      </div>
+                    </div>
+                    <div className="mt-4">
+                      <div className="w-full bg-gray-200 rounded-full h-3">
+                        <div 
+                          className="bg-blue-600 h-3 rounded-full transition-all duration-300" 
+                          style={{ 
+                            width: `${(participantesAtuais.length / (acaoSelecionada.vagas_maximas || 1)) * 100}%` 
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Participantes Atuais */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <CheckCircle className="h-5 w-5 text-green-600" />
+                          <span>Participantes Inscritos ({participantesAtuais.length})</span>
+                        </div>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {loadingParticipantes ? (
+                        <div className="text-center py-8">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                          <p className="text-gray-600 mt-2">Carregando...</p>
+                        </div>
+                      ) : participantesAtuais.length === 0 ? (
+                        <div className="text-center py-8">
+                          <Users className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+                          <p className="text-gray-600">Nenhum participante inscrito</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3 max-h-96 overflow-y-auto">
+                          {participantesAtuais.map((participacao) => (
+                            <div key={participacao.id} className="flex items-center justify-between p-3 border rounded-lg">
+                              <div className="flex-1">
+                                <p className="font-medium">{participacao.voluntario?.nome || 'Nome não disponível'}</p>
+                                <p className="text-sm text-gray-600">{participacao.voluntario?.email || 'Email não disponível'}</p>
+                                {participacao.voluntario?.telefone && (
+                                  <p className="text-sm text-gray-600">{participacao.voluntario.telefone}</p>
+                                )}
+                                <p className="text-xs text-gray-500">
+                                  Inscrito em: {new Date(participacao.data_inscricao || participacao.created_at).toLocaleDateString('pt-PT')}
+                                </p>
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleRemoverParticipante(participacao.id)}
+                                disabled={submittingParticipante}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                Remover
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Voluntários Disponíveis */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <User className="h-5 w-5 text-blue-600" />
+                          <span>Voluntários Disponíveis ({voluntariosDisponiveis.filter(v => 
+                            v.nome.toLowerCase().includes(searchVoluntario.toLowerCase()) ||
+                            v.email.toLowerCase().includes(searchVoluntario.toLowerCase())
+                          ).length})</span>
+                        </div>
+                      </CardTitle>
+                      <div className="mt-2">
+                        <Input
+                          placeholder="Pesquisar voluntários..."
+                          value={searchVoluntario}
+                          onChange={(e) => setSearchVoluntario(e.target.value)}
+                          className="w-full"
+                        />
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      {loadingParticipantes ? (
+                        <div className="text-center py-8">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                          <p className="text-gray-600 mt-2">Carregando...</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3 max-h-96 overflow-y-auto">
+                          {voluntariosDisponiveis
+                            .filter(voluntario => 
+                              voluntario.nome.toLowerCase().includes(searchVoluntario.toLowerCase()) ||
+                              voluntario.email.toLowerCase().includes(searchVoluntario.toLowerCase())
+                            )
+                            .map((voluntario) => (
+                            <div key={voluntario.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                              <div className="flex-1">
+                                <p className="font-medium">{voluntario.nome}</p>
+                                <p className="text-sm text-gray-600">{voluntario.email}</p>
+                                {voluntario.telefone && (
+                                  <p className="text-sm text-gray-600">{voluntario.telefone}</p>
+                                )}
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleInscreverVoluntario(voluntario.id)}
+                                disabled={submittingParticipante || participantesAtuais.length >= (acaoSelecionada.vagas_maximas || 0)}
+                                className="text-green-600 hover:text-green-700"
+                              >
+                                {participantesAtuais.length >= (acaoSelecionada.vagas_maximas || 0) ? 'Esgotado' : 'Inscrever'}
+                              </Button>
+                            </div>
+                          ))}
+                          {voluntariosDisponiveis.filter(v => 
+                            v.nome.toLowerCase().includes(searchVoluntario.toLowerCase()) ||
+                            v.email.toLowerCase().includes(searchVoluntario.toLowerCase())
+                          ).length === 0 && (
+                            <div className="text-center py-8">
+                              <User className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+                              <p className="text-gray-600">
+                                {searchVoluntario ? 'Nenhum voluntário encontrado' : 'Todos os voluntários já estão inscritos'}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button variant="outline" onClick={() => setParticipantesAcaoOpen(false)}>
+                Fechar
               </Button>
             </div>
           </DialogContent>
