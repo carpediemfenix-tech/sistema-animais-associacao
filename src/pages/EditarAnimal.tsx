@@ -300,9 +300,6 @@ const EditarAnimal = () => {
     }
 
     setLoading(true);
-    
-    console.log('🔍 [DEBUG] Salvando animal com dados:', formData);
-    console.log('🔍 [DEBUG] Voluntário responsável selecionado:', formData.voluntario_responsavel);
 
     try {
       const updateData = {
