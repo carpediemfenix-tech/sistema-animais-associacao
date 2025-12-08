@@ -48,7 +48,8 @@ const AnimalDetail = () => {
         .from('animais')
         .select(`
           *,
-          grupos(nome, tipo)
+          grupos(nome, tipo),
+          voluntario_responsavel_nome:voluntarios!voluntario_responsavel(nome)
         `)
         .eq('id', id)
         .single();
@@ -306,6 +307,10 @@ const AnimalDetail = () => {
               <div>
                 <label className="text-orange-700 font-medium">Transponder</label>
                 <p className="text-orange-900">{animal.transponder || 'N/A'}</p>
+              </div>
+              <div>
+                <label className="text-orange-700 font-medium">Voluntário Responsável</label>
+                <p className="text-orange-900">{animal.voluntario_responsavel_nome || 'Sem responsável'}</p>
               </div>
             </div>
             

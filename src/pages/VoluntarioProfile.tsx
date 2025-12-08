@@ -189,8 +189,7 @@ const VoluntarioProfile = () => {
             )
           `)
           .eq('voluntario_id', id)
-          .eq('ativo', false)
-          .order('data_fim', { ascending: false });
+          .order('created_at', { ascending: false });
 
         if (histError) {
           console.error('Erro ao carregar histórico:', histError);

@@ -48,7 +48,8 @@ const EditarAnimal = () => {
     adotante_nome: "",
     adotante_contacto: "",
     observacoes: "",
-    data_entrada: ""
+    data_entrada: "",
+    voluntario_responsavel: ""
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -58,6 +59,7 @@ const EditarAnimal = () => {
   const [grupoNome, setGrupoNome] = useState<string>("");
   const [grupos, setGrupos] = useState<any[]>([]);
   const [grupoAtual, setGrupoAtual] = useState<any>(null);
+  const [voluntarios, setVoluntarios] = useState<any[]>([]);
   const [incompatibilityAlert, setIncompatibilityAlert] = useState<{show: boolean, message: string}>({show: false, message: ""});
 
   useEffect(() => {
@@ -66,6 +68,7 @@ const EditarAnimal = () => {
       fetchEspecies();
       fetchSexos();
       fetchGrupos();
+      fetchVoluntarios();
     }
   }, [id]);
 
@@ -173,6 +176,21 @@ const EditarAnimal = () => {
       setGrupos(data || []);
     } catch (error: any) {
       console.error('Erro ao carregar grupos:', error);
+    }
+  };
+
+  const fetchVoluntarios = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('voluntarios')
+        .select('id, nome, ativo')
+        .eq('ativo', true)
+        .order('nome');
+
+      if (error) throw error;
+      setVoluntarios(data || []);
+    } catch (error: any) {
+      console.error('Erro ao carregar voluntários:', error);
     }
   };
 
@@ -722,6 +740,30 @@ const EditarAnimal = () => {
                       {errors.data_entrada}
                     </p>
                   )}
+                </div>
+
+                {/* Voluntário Responsável */}
+                <div>
+                  <Label htmlFor="voluntario_responsavel">Voluntário Responsável</Label>
+                  <Select
+                    value={formData.voluntario_responsavel || ""}
+                    onValueChange={(value) => handleInputChange("voluntario_responsavel", value === "none" ? "" : value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um voluntário responsável" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Sem responsável</SelectItem>
+                      {voluntarios
+                        .filter(v => v.ativo)
+                        .map((voluntario) => (
+                          <SelectItem key={voluntario.id} value={voluntario.id}>
+                            {voluntario.nome}
+                          </SelectItem>
+                        ))
+                      }
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 

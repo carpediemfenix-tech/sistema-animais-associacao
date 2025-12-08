@@ -18,7 +18,8 @@ import {
   Plus,
   RefreshCw,
   ArrowUpRight,
-  ArrowDownRight
+  ArrowDownRight,
+  Building
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -62,30 +63,41 @@ const DashboardFinanceiro = () => {
     try {
       setLoading(true);
 
-      // Resumo da Associação
-      const { data: resumoAssoc, error: errorAssoc } = await supabase
-        .from('vw_resumo_financeiro_associacao')
-        .select('*')
-        .single();
+      // Resumo da Associação - consulta simplificada
+      const { data: movimentosAssoc } = await supabase
+        .from('movimentos_financeiros')
+        .select('tipo, valor')
+        .eq('escopo', 'associacao');
 
-      if (!errorAssoc && resumoAssoc) {
-        setResumoAssociacao(resumoAssoc);
+      if (movimentosAssoc) {
+        const receitas = movimentosAssoc
+          .filter(m => m.tipo === 'receita')
+          .reduce((sum, m) => sum + (Number(m.valor) || 0), 0);
+        
+        const despesas = movimentosAssoc
+          .filter(m => m.tipo === 'despesa')
+          .reduce((sum, m) => sum + (Number(m.valor) || 0), 0);
+        
+        setResumoAssociacao({
+          total_receitas: receitas,
+          total_despesas: despesas,
+          saldo: receitas - despesas
+        });
       }
 
-      // Resumo dos Animais (consulta direta para evitar NaN)
-      const { data: movimentosAnimais, error: errorAnim } = await supabase
+      // Resumo dos Animais - consulta simplificada
+      const { data: movimentosAnimais } = await supabase
         .from('movimentos_financeiros')
-        .select('tipo_movimento, valor')
-        .eq('escopo', 'animal')
-        .eq('status', 'confirmado');
+        .select('tipo, valor')
+        .eq('escopo', 'animal');
 
-      if (!errorAnim && movimentosAnimais) {
+      if (movimentosAnimais) {
         const receitas = movimentosAnimais
-          .filter(m => m.tipo_movimento === 'receita')
+          .filter(m => m.tipo === 'receita')
           .reduce((sum, m) => sum + (Number(m.valor) || 0), 0);
         
         const despesas = movimentosAnimais
-          .filter(m => m.tipo_movimento === 'despesa')
+          .filter(m => m.tipo === 'despesa')
           .reduce((sum, m) => sum + (Number(m.valor) || 0), 0);
         
         setResumoAnimais({
