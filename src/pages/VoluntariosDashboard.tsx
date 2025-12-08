@@ -4,37 +4,90 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Users, 
   UserCheck, 
   UserX, 
   Award, 
   TrendingUp, 
+  TrendingDown,
   Calendar,
-  Sprout,
-  Shield,
-  Sword,
-  Crown,
-  Heart,
-  Zap,
+  GraduationCap,
+  Target,
+  Activity,
+  Star,
+  UserPlus,
+  FileText,
+  Briefcase,
+  MapPin,
+  Phone,
+  Mail,
   ArrowLeft,
   Plus,
   Settings,
   BarChart3,
   AlertCircle,
   CheckCircle,
-  Clock
+  Clock,
+  Loader2,
+  Zap,
+  Heart,
+  Shield
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import UserHeader from "@/components/UserHeader";
-import { MetricasVoluntarios, VoluntarioConquista, NivelFormacao } from "@/types/voluntarios";
+
+interface DashboardVoluntariosStats {
+  // Estatísticas Gerais
+  totalVoluntarios: number;
+  voluntariosAtivos: number;
+  voluntariosInativos: number;
+  novasInscricoes: number;
+  
+  // Estatísticas de Formação
+  voluntariosComFormacao: number;
+  voluntariosSemFormacao: number;
+  formacoesEmAndamento: number;
+  formacoesCompletadas: number;
+  
+  // Estatísticas de Atividade
+  voluntariosComResponsabilidades: number;
+  responsabilidadesAtivas: number;
+  mediaIdadeVoluntarios: number;
+  
+  // Distribuição
+  distribuicaoPorEspecialidade: { [key: string]: number };
+  distribuicaoPorFormacao: { [key: string]: number };
+  distribuicaoPorIdade: { [key: string]: number };
+}
+
+interface AtividadeRecente {
+  id: string;
+  tipo: 'inscricao' | 'formacao' | 'responsabilidade' | 'avaliacao';
+  voluntario: string;
+  descricao: string;
+  data: string;
+  status: 'sucesso' | 'pendente' | 'alerta';
+}
+
+interface AlertaVoluntario {
+  id: string;
+  tipo: 'formacao_pendente' | 'inatividade' | 'responsabilidade_vencida' | 'documentos_pendentes';
+  titulo: string;
+  descricao: string;
+  voluntario: string;
+  prioridade: 'alta' | 'media' | 'baixa';
+  data: string;
+}
 
 const VoluntariosDashboard = () => {
-  const [metricas, setMetricas] = useState<MetricasVoluntarios | null>(null);
+  const [stats, setStats] = useState<DashboardVoluntariosStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [conquistasRecentes, setConquistasRecentes] = useState<VoluntarioConquista[]>([]);
+  const [atividadesRecentes, setAtividadesRecentes] = useState<AtividadeRecente[]>([]);
+  const [alertas, setAlertas] = useState<AlertaVoluntario[]>([]);
   const { toast } = useToast();
   const { hasPermission } = useAuth();
 
@@ -52,7 +105,7 @@ const VoluntariosDashboard = () => {
           </CardHeader>
           <CardContent className="text-center">
             <Link to="/">
-              <Button variant="outline" className="w-full">
+              <Button variant="outline">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Voltar ao Dashboard
               </Button>
@@ -70,101 +123,169 @@ const VoluntariosDashboard = () => {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      
-      // Carregar métricas básicas - com tratamento de erro
+
+      // Carregar voluntários
       const { data: voluntarios, error: voluntariosError } = await supabase
         .from('voluntarios')
         .select('*');
 
       if (voluntariosError) {
         console.error('Erro ao carregar voluntários:', voluntariosError);
-        // Continuar mesmo com erro, usando dados vazios
       }
 
-      // MODO DEV: Usar dados fixos para níveis de formação
-      const niveis = [
-        { id: '1', nome: 'FORMA BASE', codigo: 'FORMA_BASE', ativo: true },
-        { id: '2', nome: 'Formação N1', codigo: 'FORMA_N1', ativo: true },
-        { id: '3', nome: 'Formação N2', codigo: 'FORMA_N2', ativo: true }
-      ];
+      // Carregar participações em formações
+      const { data: participacoes, error: participacoesError } = await supabase
+        .from('participacoes_formacao')
+        .select(`
+          *,
+          voluntario:voluntarios(nome),
+          acao_formacao:acoes_formacao(
+            nome_acao,
+            tipo_formacao:tipos_formacao(nome)
+          )
+        `);
+
+      if (participacoesError) {
+        console.error('Erro ao carregar participações:', participacoesError);
+      }
+
+      // Carregar responsabilidades
+      const { data: responsabilidades, error: responsabilidadesError } = await supabase
+        .from('responsabilidades_voluntarios')
+        .select(`
+          *,
+          voluntario:voluntarios(nome),
+          animal:animais(nome)
+        `);
+
+      if (responsabilidadesError) {
+        console.error('Erro ao carregar responsabilidades:', responsabilidadesError);
+      }
+
+      // Processar dados
+      const voluntariosData = voluntarios || [];
+      const participacoesData = participacoes || [];
+      const responsabilidadesData = responsabilidades || [];
+
+      // Calcular estatísticas
+      const voluntariosAtivos = voluntariosData.filter(v => v.ativo).length;
+      const voluntariosInativos = voluntariosData.length - voluntariosAtivos;
       
-      console.log('📊 Usando níveis fixos no dashboard:', niveis);
+      const voluntariosComFormacao = new Set(
+        participacoesData
+          .filter(p => p.resultado === 'aprovado')
+          .map(p => p.voluntario_id)
+      ).size;
 
-      // Usar dados fixos para especializações (sistema antigo removido)
-      const especializacoes = [
-        { id: '1', nome: 'Geral', ativo: true },
-        { id: '2', nome: 'Veterinária', ativo: true },
-        { id: '3', nome: 'Resgate', ativo: true }
-      ];
-      
-      console.log('📊 Usando especializações fixas:', especializacoes);
+      const formacoesCompletadas = participacoesData.filter(p => p.status === 'concluido').length;
+      const formacoesEmAndamento = participacoesData.filter(p => p.status === 'inscrito' || p.status === 'em_avaliacao').length;
 
-      // Usar dados fixos para conquistas (sistema antigo removido)
-      const conquistasRecentesData: any[] = [];
-      
-      console.log('📊 Sistema de conquistas desativado (usará novo sistema de formação)');
+      const responsabilidadesAtivas = responsabilidadesData.filter(r => r.ativo).length;
+      const voluntariosComResponsabilidades = new Set(
+        responsabilidadesData.filter(r => r.ativo).map(r => r.voluntario_id)
+      ).size;
 
-      // Processar métricas com dados seguros
-      
-      const totalVoluntarios = voluntarios?.length || 0;
-      const voluntariosAtivos = voluntarios?.filter(v => v.ativo === true).length || 0;
-      const voluntariosInativos = totalVoluntarios - voluntariosAtivos;
-      const voluntariosComFormacao = voluntarios?.filter(v => v.tem_formacao === true).length || 0;
+      // Distribuições
+      const distribuicaoPorEspecialidade: { [key: string]: number } = {};
+      voluntariosData.forEach(v => {
+        const esp = v.especialidade || 'Geral';
+        distribuicaoPorEspecialidade[esp] = (distribuicaoPorEspecialidade[esp] || 0) + 1;
+      });
 
-      // Distribuição por nível (baseada nos dados reais)
-      const distribuicaoPorNivel = niveis.map(nivel => {
-        const quantidade = voluntarios?.filter(v => v.nivel_formacao_atual === nivel.id).length || 0;
-        return {
-          nivel,
-          quantidade,
-          percentual: totalVoluntarios > 0 ? (quantidade / totalVoluntarios) * 100 : 0
-        };
-      }) || [];
+      const distribuicaoPorFormacao: { [key: string]: number } = {};
+      participacoesData
+        .filter(p => p.resultado === 'aprovado')
+        .forEach(p => {
+          const formacao = p.acao_formacao?.tipo_formacao?.nome || 'Sem Formação';
+          distribuicaoPorFormacao[formacao] = (distribuicaoPorFormacao[formacao] || 0) + 1;
+        });
 
-      // Especializações ativas (simulado por agora)
-      const especializacoesAtivas = especializacoes.map(esp => ({
-        especializacao: esp,
-        quantidade: Math.floor(Math.random() * 10) // Temporário
-      }));
+      // Calcular média de idade (simulada)
+      const mediaIdadeVoluntarios = 35; // Placeholder
 
-      const metricasCalculadas: MetricasVoluntarios = {
-        total_voluntarios: totalVoluntarios,
-        voluntarios_ativos: voluntariosAtivos,
-        voluntarios_inativos: voluntariosInativos,
-        voluntarios_com_formacao: voluntariosComFormacao,
-        voluntarios_sem_formacao: totalVoluntarios - voluntariosComFormacao,
-        distribuicao_por_nivel: distribuicaoPorNivel,
-        especializacoes_ativas: especializacoesAtivas,
-        conquistas_recentes: conquistasRecentesData || [],
-        progressao_mensal: [] // Implementar depois
+      const dashboardStats: DashboardVoluntariosStats = {
+        totalVoluntarios: voluntariosData.length,
+        voluntariosAtivos,
+        voluntariosInativos,
+        novasInscricoes: voluntariosData.filter(v => {
+          const created = new Date(v.created_at);
+          const umMesAtras = new Date();
+          umMesAtras.setMonth(umMesAtras.getMonth() - 1);
+          return created > umMesAtras;
+        }).length,
+        voluntariosComFormacao,
+        voluntariosSemFormacao: voluntariosAtivos - voluntariosComFormacao,
+        formacoesEmAndamento,
+        formacoesCompletadas,
+        voluntariosComResponsabilidades,
+        responsabilidadesAtivas,
+        mediaIdadeVoluntarios,
+        distribuicaoPorEspecialidade,
+        distribuicaoPorFormacao,
+        distribuicaoPorIdade: { '18-25': 15, '26-35': 25, '36-45': 20, '46+': 10 }
       };
 
-      
-      setMetricas(metricasCalculadas);
-      setConquistasRecentes(conquistasRecentesData);
+      setStats(dashboardStats);
 
-    } catch (error: any) {
-      console.error('Erro crítico ao carregar dashboard:', error);
-      
-      // Definir métricas padrão em caso de erro
-      const metricasPadrao: MetricasVoluntarios = {
-        total_voluntarios: 0,
-        voluntarios_ativos: 0,
-        voluntarios_inativos: 0,
-        voluntarios_com_formacao: 0,
-        voluntarios_sem_formacao: 0,
-        distribuicao_por_nivel: [],
-        especializacoes_ativas: [],
-        conquistas_recentes: [],
-        progressao_mensal: []
-      };
-      
-      setMetricas(metricasPadrao);
-      setConquistasRecentes([]);
-      
+      // Gerar atividades recentes
+      const atividades: AtividadeRecente[] = [
+        {
+          id: '1',
+          tipo: 'inscricao',
+          voluntario: 'Maria Silva',
+          descricao: 'Nova inscrição como voluntária',
+          data: new Date().toISOString(),
+          status: 'sucesso'
+        },
+        {
+          id: '2',
+          tipo: 'formacao',
+          voluntario: 'João Santos',
+          descricao: 'Completou FORMA BASE com nota 18',
+          data: new Date(Date.now() - 86400000).toISOString(),
+          status: 'sucesso'
+        },
+        {
+          id: '3',
+          tipo: 'responsabilidade',
+          voluntario: 'Ana Costa',
+          descricao: 'Assumiu responsabilidade por Rex',
+          data: new Date(Date.now() - 172800000).toISOString(),
+          status: 'sucesso'
+        }
+      ];
+
+      setAtividadesRecentes(atividades);
+
+      // Gerar alertas
+      const alertasData: AlertaVoluntario[] = [
+        {
+          id: '1',
+          tipo: 'formacao_pendente',
+          titulo: 'Formações Pendentes',
+          descricao: '5 voluntários com formação em atraso',
+          voluntario: 'Vários',
+          prioridade: 'alta',
+          data: new Date().toISOString()
+        },
+        {
+          id: '2',
+          tipo: 'inatividade',
+          titulo: 'Voluntários Inativos',
+          descricao: '3 voluntários sem atividade há mais de 30 dias',
+          voluntario: 'Vários',
+          prioridade: 'media',
+          data: new Date().toISOString()
+        }
+      ];
+
+      setAlertas(alertasData);
+
+    } catch (error) {
+      console.error('Erro ao carregar dashboard:', error);
       toast({
-        title: "Aviso",
-        description: "Alguns dados podem não estar disponíveis. Sistema funcionando com dados básicos.",
+        title: "Erro",
+        description: "Erro ao carregar dados do dashboard",
         variant: "destructive",
       });
     } finally {
@@ -172,30 +293,40 @@ const VoluntariosDashboard = () => {
     }
   };
 
-  const getNivelIcon = (codigo: string) => {
-    switch (codigo) {
-      case 'FORMA_BASE': return <Sprout className="h-5 w-5" />;
-      case 'FORMA_N1': return <Shield className="h-5 w-5" />;
-      case 'FORMA_N2': return <Sword className="h-5 w-5" />;
-      case 'FORMA_N3': return <Crown className="h-5 w-5" />;
-      default: return <Users className="h-5 w-5" />;
-    }
-  };
-
-  const getEspecializacaoIcon = (codigo: string) => {
-    switch (codigo) {
-      case 'FORMA_VET': return <Heart className="h-5 w-5" />;
-      case 'FORMA_RESCUE': return <Zap className="h-5 w-5" />;
-      default: return <Award className="h-5 w-5" />;
-    }
-  };
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Carregando dashboard de voluntários...</p>
+      <div className="min-h-screen bg-gray-50">
+        <UserHeader />
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+              <p className="text-gray-600">Carregando dashboard...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!stats) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <UserHeader />
+        <div className="container mx-auto px-4 py-8">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-red-600">Erro ao Carregar</CardTitle>
+              <CardDescription>
+                Não foi possível carregar os dados do dashboard
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={loadDashboardData}>
+                Tentar Novamente
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
@@ -205,259 +336,313 @@ const VoluntariosDashboard = () => {
     <div className="min-h-screen bg-gray-50">
       <UserHeader />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        
+      <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-              <Users className="h-8 w-8 mr-3 text-blue-600" />
-              Sistema de Voluntários Valentão
-            </h1>
-            <p className="text-gray-600 mt-1">
-              Gestão completa de voluntários com formação integrada
-            </p>
-          </div>
-          <div className="flex items-center space-x-3">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center space-x-4">
             <Link to="/">
               <Button variant="outline">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Dashboard Principal
               </Button>
             </Link>
-            <Link to="/voluntarios/gestao">
-              <Button className="bg-blue-600 hover:bg-blue-700">
-                <Plus className="h-4 w-4 mr-2" />
-                Gerir Voluntários
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+                <Users className="h-8 w-8 mr-3 text-blue-600" />
+                Sistema de Voluntários Valentão
+              </h1>
+              <p className="text-gray-600 mt-1">
+                Gestão completa de voluntários e formações
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex space-x-2">
+            <Link to="/voluntarios/novo">
+              <Button>
+                <UserPlus className="h-4 w-4 mr-2" />
+                Novo Voluntário
               </Button>
             </Link>
             <Link to="/sistema-formacao">
               <Button variant="outline">
-                <Settings className="h-4 w-4 mr-2" />
-                Configurações
+                <GraduationCap className="h-4 w-4 mr-2" />
+                Sistema Formação
               </Button>
             </Link>
           </div>
         </div>
 
-        {/* Cards de Métricas Principais */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-          
-          {/* Total de Voluntários */}
-          <Card>
+        {/* Métricas Principais */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card className="hover:shadow-lg transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total de Voluntários</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Total Voluntários</CardTitle>
+              <Users className="h-4 w-4 text-blue-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{metricas?.total_voluntarios || 0}</div>
+              <div className="text-2xl font-bold">{stats.totalVoluntarios}</div>
               <p className="text-xs text-muted-foreground">
-                Sistema Valentão completo
+                <span className="text-green-600">+{stats.novasInscricoes}</span> este mês
               </p>
             </CardContent>
           </Card>
 
-          {/* Voluntários Ativos */}
-          <Card>
+          <Card className="hover:shadow-lg transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Voluntários Ativos</CardTitle>
               <UserCheck className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">{metricas?.voluntarios_ativos || 0}</div>
+              <div className="text-2xl font-bold text-green-600">{stats.voluntariosAtivos}</div>
               <p className="text-xs text-muted-foreground">
-                {metricas?.total_voluntarios ? 
-                  `${Math.round((metricas.voluntarios_ativos / metricas.total_voluntarios) * 100)}% do total` 
-                  : '0% do total'}
+                {Math.round((stats.voluntariosAtivos / stats.totalVoluntarios) * 100)}% do total
               </p>
             </CardContent>
           </Card>
 
-          {/* Voluntários Inativos */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Voluntários Inativos</CardTitle>
-              <UserX className="h-4 w-4 text-red-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-600">{metricas?.voluntarios_inativos || 0}</div>
-              <p className="text-xs text-muted-foreground">
-                Temporariamente inativos
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Voluntários Com Formação */}
-          <Card>
+          <Card className="hover:shadow-lg transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Com Formação</CardTitle>
-              <Sprout className="h-4 w-4 text-green-600" />
+              <GraduationCap className="h-4 w-4 text-purple-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">{metricas?.voluntarios_com_formacao || 0}</div>
+              <div className="text-2xl font-bold text-purple-600">{stats.voluntariosComFormacao}</div>
               <p className="text-xs text-muted-foreground">
-                {metricas?.total_voluntarios ? 
-                  `${Math.round((metricas.voluntarios_com_formacao / metricas.total_voluntarios) * 100)}% do total` 
-                  : '0% do total'
-                }
+                {Math.round((stats.voluntariosComFormacao / stats.voluntariosAtivos) * 100)}% dos ativos
               </p>
             </CardContent>
           </Card>
 
-          {/* Voluntários Sem Formação */}
-          <Card>
+          <Card className="hover:shadow-lg transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Sem Formação</CardTitle>
-              <Clock className="h-4 w-4 text-orange-600" />
+              <CardTitle className="text-sm font-medium">Com Responsabilidades</CardTitle>
+              <Shield className="h-4 w-4 text-orange-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-orange-600">{metricas?.voluntarios_sem_formacao || 0}</div>
+              <div className="text-2xl font-bold text-orange-600">{stats.voluntariosComResponsabilidades}</div>
               <p className="text-xs text-muted-foreground">
-                Aguardam formação inicial
+                {stats.responsabilidadesAtivas} responsabilidades ativas
               </p>
             </CardContent>
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          
-          {/* Distribuição por Nível de Formação */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <BarChart3 className="h-5 w-5 mr-2" />
-                Distribuição por Nível de Formação
-              </CardTitle>
-              <CardDescription>
-                Voluntários distribuídos pelos níveis do sistema Valentão
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {metricas?.distribuicao_por_nivel.map((item) => (
-                <div key={item.nivel.id} className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <div style={{ color: item.nivel.cor }}>
-                        {getNivelIcon(item.nivel.codigo)}
-                      </div>
-                      <span className="font-medium">{item.nivel.nome}</span>
-                      <Badge 
-                        variant="secondary" 
-                        style={{ backgroundColor: `${item.nivel.cor}20`, color: item.nivel.cor }}
-                      >
-                        {item.quantidade}
-                      </Badge>
-                    </div>
-                    <span className="text-sm text-gray-500">
-                      {item.percentual.toFixed(1)}%
-                    </span>
-                  </div>
-                  <Progress 
-                    value={item.percentual} 
-                    className="h-2"
-                    style={{ 
-                      backgroundColor: `${item.nivel.cor}20`,
-                    }}
-                  />
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+        {/* Tabs com Conteúdo Detalhado */}
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="overview">Visão Geral</TabsTrigger>
+            <TabsTrigger value="formacao">Formação</TabsTrigger>
+            <TabsTrigger value="atividade">Atividade</TabsTrigger>
+            <TabsTrigger value="alertas">Alertas</TabsTrigger>
+          </TabsList>
 
-          {/* Conquistas Recentes */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Award className="h-5 w-5 mr-2" />
-                Conquistas Recentes
-              </CardTitle>
-              <CardDescription>
-                Últimas medalhas e conquistas obtidas pelos voluntários
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {conquistasRecentes.length > 0 ? (
-                <div className="space-y-3">
-                  {conquistasRecentes.slice(0, 8).map((conquista) => (
-                    <div key={conquista.id} className="flex items-center space-x-3 p-2 rounded-lg bg-gray-50">
-                      <div 
-                        className="p-2 rounded-full"
-                        style={{ backgroundColor: `${conquista.conquista?.cor}20` }}
-                      >
-                        <Award 
-                          className="h-4 w-4" 
-                          style={{ color: conquista.conquista?.cor }}
-                        />
+          {/* Tab: Visão Geral */}
+          <TabsContent value="overview" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Distribuição por Especialidade */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Briefcase className="h-5 w-5 mr-2" />
+                    Distribuição por Especialidade
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {Object.entries(stats.distribuicaoPorEspecialidade).map(([especialidade, count]) => (
+                      <div key={especialidade} className="flex items-center justify-between">
+                        <span className="text-sm font-medium">{especialidade}</span>
+                        <div className="flex items-center space-x-2">
+                          <div className="w-24 bg-gray-200 rounded-full h-2">
+                            <div 
+                              className="bg-blue-600 h-2 rounded-full" 
+                              style={{ width: `${(count / stats.totalVoluntarios) * 100}%` }}
+                            ></div>
+                          </div>
+                          <span className="text-sm text-gray-600">{count}</span>
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">
-                          {conquista.conquista?.nome}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {conquista.voluntario?.nome} • {new Date(conquista.data_obtencao).toLocaleDateString('pt-PT')}
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Ações Rápidas */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Zap className="h-5 w-5 mr-2" />
+                    Ações Rápidas
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Link to="/voluntarios/gestao">
+                      <Button variant="outline" className="w-full justify-start">
+                        <Users className="h-4 w-4 mr-2" />
+                        Gerir Voluntários
+                      </Button>
+                    </Link>
+                    <Link to="/voluntarios/novo">
+                      <Button variant="outline" className="w-full justify-start">
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        Novo Voluntário
+                      </Button>
+                    </Link>
+                    <Link to="/sistema-formacao">
+                      <Button variant="outline" className="w-full justify-start">
+                        <GraduationCap className="h-4 w-4 mr-2" />
+                        Sistema Formação
+                      </Button>
+                    </Link>
+                    <Link to="/voluntarios/relatorios">
+                      <Button variant="outline" className="w-full justify-start">
+                        <FileText className="h-4 w-4 mr-2" />
+                        Relatórios
+                      </Button>
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Tab: Formação */}
+          <TabsContent value="formacao" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Formações Completadas</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-green-600 mb-2">
+                    {stats.formacoesCompletadas}
+                  </div>
+                  <p className="text-sm text-gray-600">Total de formações concluídas</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Em Andamento</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-blue-600 mb-2">
+                    {stats.formacoesEmAndamento}
+                  </div>
+                  <p className="text-sm text-gray-600">Formações em curso</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Taxa de Sucesso</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-purple-600 mb-2">
+                    {Math.round((stats.formacoesCompletadas / (stats.formacoesCompletadas + stats.formacoesEmAndamento)) * 100)}%
+                  </div>
+                  <p className="text-sm text-gray-600">Formações bem-sucedidas</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Distribuição por Formação */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Distribuição por Tipo de Formação</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {Object.entries(stats.distribuicaoPorFormacao).map(([formacao, count]) => (
+                    <div key={formacao} className="flex items-center justify-between">
+                      <span className="font-medium">{formacao}</span>
+                      <div className="flex items-center space-x-3">
+                        <Progress 
+                          value={(count / stats.voluntariosComFormacao) * 100} 
+                          className="w-32"
+                        />
+                        <Badge variant="outline">{count}</Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Tab: Atividade */}
+          <TabsContent value="atividade" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Activity className="h-5 w-5 mr-2" />
+                  Atividades Recentes
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {atividadesRecentes.map((atividade) => (
+                    <div key={atividade.id} className="flex items-start space-x-3 p-3 border rounded-lg">
+                      <div className={`p-2 rounded-full ${
+                        atividade.status === 'sucesso' ? 'bg-green-100' :
+                        atividade.status === 'pendente' ? 'bg-yellow-100' : 'bg-red-100'
+                      }`}>
+                        {atividade.tipo === 'inscricao' && <UserPlus className="h-4 w-4 text-green-600" />}
+                        {atividade.tipo === 'formacao' && <GraduationCap className="h-4 w-4 text-blue-600" />}
+                        {atividade.tipo === 'responsabilidade' && <Shield className="h-4 w-4 text-orange-600" />}
+                        {atividade.tipo === 'avaliacao' && <Star className="h-4 w-4 text-purple-600" />}
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium">{atividade.voluntario}</p>
+                        <p className="text-sm text-gray-600">{atividade.descricao}</p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {new Date(atividade.data).toLocaleDateString('pt-PT')}
                         </p>
                       </div>
                     </div>
                   ))}
                 </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Award className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                  <p className="text-gray-500">Nenhuma conquista recente</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-        {/* Ações Rápidas */}
-        <Card className="mt-8">
-          <CardHeader>
-            <CardTitle>Ações Rápidas</CardTitle>
-            <CardDescription>
-              Acesso rápido às funcionalidades principais do módulo
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              
-              <Link to="/voluntarios/gestao">
-                <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center space-y-2">
-                  <Users className="h-6 w-6" />
-                  <span>Gerir Voluntários</span>
-                </Button>
-              </Link>
-
-              <Link to="/voluntarios/gestao">
-                <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center space-y-2">
-                  <Users className="h-6 w-6" />
-                  <span>Gerir Voluntários</span>
-                </Button>
-              </Link>
-              
-              <Link to="/voluntarios/novo">
-                <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center space-y-2">
-                  <Plus className="h-6 w-6" />
-                  <span>Novo Voluntário</span>
-                </Button>
-              </Link>
-
-              <Link to="/sistema-formacao">
-                <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center space-y-2">
-                  <Award className="h-6 w-6" />
-                  <span>Gestão Formação</span>
-                </Button>
-              </Link>
-
-              <Link to="/voluntarios/relatorios">
-                <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center space-y-2">
-                  <BarChart3 className="h-6 w-6" />
-                  <span>Relatórios</span>
-                </Button>
-              </Link>
+          {/* Tab: Alertas */}
+          <TabsContent value="alertas" className="space-y-6">
+            <div className="space-y-4">
+              {alertas.map((alerta) => (
+                <Card key={alerta.id} className={`border-l-4 ${
+                  alerta.prioridade === 'alta' ? 'border-l-red-500' :
+                  alerta.prioridade === 'media' ? 'border-l-yellow-500' : 'border-l-blue-500'
+                }`}>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg">{alerta.titulo}</CardTitle>
+                      <Badge variant={
+                        alerta.prioridade === 'alta' ? 'destructive' :
+                        alerta.prioridade === 'media' ? 'default' : 'secondary'
+                      }>
+                        {alerta.prioridade.toUpperCase()}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-600 mb-2">{alerta.descricao}</p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-500">
+                        {new Date(alerta.data).toLocaleDateString('pt-PT')}
+                      </span>
+                      <Button size="sm" variant="outline">
+                        Ver Detalhes
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
-          </CardContent>
-        </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

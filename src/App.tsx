@@ -40,6 +40,8 @@ import EditarVoluntario from "./pages/EditarVoluntario";
 import SistemaFormacao from "@/pages/SistemaFormacao";
 import FormacoesFrequentadas from "@/pages/FormacoesFrequentadas";
 import RelatoriosVoluntarios from "./pages/RelatoriosVoluntarios";
+import ModuloVoluntarios from "@/pages/ModuloVoluntarios";
+import ModuloFormacao from "@/pages/ModuloFormacao";
 
 const queryClient = new QueryClient();
 
@@ -77,6 +79,9 @@ const App = () => (
             <Route path="/voluntarios/:id/formacoes" element={<ProtectedRoute><FormacoesFrequentadas /></ProtectedRoute>} />
             <Route path="/sistema-formacao" element={<ProtectedRoute><SistemaFormacao /></ProtectedRoute>} />
             <Route path="/voluntarios/relatorios" element={<ProtectedRoute><RelatoriosVoluntarios /></ProtectedRoute>} />
+            {/* Novos Módulos Dedicados */}
+            <Route path="/modulo-voluntarios" element={<ProtectedRoute><ModuloVoluntarios /></ProtectedRoute>} />
+            <Route path="/modulo-formacao" element={<ProtectedRoute><ModuloFormacao /></ProtectedRoute>} />
             <Route path="/voluntario/:id" element={<ProtectedRoute><VoluntarioDetail /></ProtectedRoute>} />
             <Route path="/gestao-financeira" element={<ProtectedRoute><GestaoFinanceira /></ProtectedRoute>} />
             <Route path="/financeiro" element={<ProtectedRoute><DashboardFinanceiro /></ProtectedRoute>} />
