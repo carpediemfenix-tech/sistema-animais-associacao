@@ -166,6 +166,33 @@ const GestaoVoluntarios = () => {
 
   const handleDelete = async (voluntario: VoluntarioValentao) => {
     try {
+      console.log('🔍 [DEBUG] Verificando dependências para voluntário:', voluntario.nome);
+      
+      // Primeiro, verificar se o voluntário tem dependências
+      const { data: responsabilidades, error: checkError } = await supabase
+        .from('responsabilidades_voluntarios')
+        .select('id')
+        .eq('voluntario_id', voluntario.id)
+        .limit(1);
+
+      if (checkError) {
+        console.error('Erro ao verificar dependências:', checkError);
+      }
+
+      console.log('📊 [DEBUG] Responsabilidades encontradas:', responsabilidades?.length || 0);
+
+      // Se tem dependências, oferecer arquivamento em vez de eliminação
+      if (responsabilidades && responsabilidades.length > 0) {
+        toast({
+          title: "❌ Não é possível eliminar",
+          description: `${voluntario.nome} tem responsabilidades por animais registradas. Use o botão 'Inativar' para arquivar o voluntário mantendo todo o histórico.`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Se não tem dependências, pode eliminar
+      console.log('✅ [DEBUG] Sem dependências, procedendo com eliminação');
       const { error } = await supabase
         .from('voluntarios')
         .delete()
@@ -174,18 +201,28 @@ const GestaoVoluntarios = () => {
       if (error) throw error;
 
       toast({
-        title: "Sucesso",
-        description: "Voluntário removido com sucesso",
+        title: "✅ Sucesso",
+        description: `${voluntario.nome} foi removido com sucesso`,
       });
 
       loadData();
     } catch (error: any) {
-      console.error('Erro ao remover voluntário:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao remover voluntário",
-        variant: "destructive",
-      });
+      console.error('🚨 [ERRO] Erro ao remover voluntário:', error);
+      
+      // Tratar especificamente erro de constraint de integridade referencial
+      if (error.code === '23503') {
+        toast({
+          title: "❌ Não é possível eliminar",
+          description: `${voluntario.nome} tem registros associados (responsabilidades, histórico, etc.). Use o botão 'Inativar' para arquivar o voluntário preservando os dados.`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "🚨 Erro",
+          description: error.message || "Erro inesperado ao remover voluntário",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -530,6 +567,7 @@ const GestaoVoluntarios = () => {
                               size="sm"
                               onClick={() => handleToggleStatus(voluntario)}
                               className={voluntario.ativo ? "text-red-600 hover:text-red-700" : "text-green-600 hover:text-green-700"}
+                              title={voluntario.ativo ? "Inativar voluntário (preserva histórico)" : "Ativar voluntário"}
                             >
                               {voluntario.ativo ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
                             </Button>
@@ -537,16 +575,33 @@ const GestaoVoluntarios = () => {
                             {/* Remover */}
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="text-red-600 hover:text-red-700"
+                                  title="Eliminar permanentemente (apenas se sem dependências)"
+                                >
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
                               </AlertDialogTrigger>
                               <AlertDialogContent>
                                 <AlertDialogHeader>
-                                  <AlertDialogTitle>Remover Voluntário</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Tem a certeza que deseja remover o voluntário <strong>{voluntario.nome}</strong>? 
-                                    Esta ação não pode ser desfeita.
+                                  <AlertDialogTitle className="text-red-600">
+                                    ⚠️ Remover Voluntário Permanentemente
+                                  </AlertDialogTitle>
+                                  <AlertDialogDescription className="space-y-2">
+                                    <p>
+                                      Tem a certeza que deseja <strong>eliminar permanentemente</strong> o voluntário <strong>{voluntario.nome}</strong>?
+                                    </p>
+                                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mt-3">
+                                      <p className="text-sm text-yellow-800">
+                                        💡 <strong>Sugestão:</strong> Se o voluntário tem responsabilidades por animais, 
+                                        use o botão <strong>"Inativar"</strong> em vez de eliminar para preservar o histórico.
+                                      </p>
+                                    </div>
+                                    <p className="text-red-600 font-medium">
+                                      ⚠️ Esta ação não pode ser desfeita!
+                                    </p>
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
