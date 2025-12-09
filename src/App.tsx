@@ -81,6 +81,7 @@ const App = () => (
             <Route path="/eventos" element={<ProtectedRoute><EventosPage /></ProtectedRoute>} />
             {/* Rotas do Sistema de Voluntários Valentão */}
             <Route path="/voluntarios" element={<ProtectedRoute><VoluntariosDashboard /></ProtectedRoute>} />
+            <Route path="/voluntarios/dashboard" element={<ProtectedRoute><VoluntariosDashboard /></ProtectedRoute>} />
             <Route path="/voluntarios/gestao" element={<ProtectedRoute><GestaoVoluntarios /></ProtectedRoute>} />
             <Route path="/voluntarios/novo" element={<ProtectedRoute><NovoVoluntario /></ProtectedRoute>} />
             <Route path="/voluntarios/editar/:id" element={<ProtectedRoute><EditarVoluntario /></ProtectedRoute>} />

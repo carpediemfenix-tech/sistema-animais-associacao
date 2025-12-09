@@ -876,11 +876,8 @@ const SistemaFormacao = () => {
       }
 
       // Determinar resultado automaticamente baseado na nota
-      let resultado = avaliacaoForm.resultado;
-      // Sempre determinar pela nota se ela foi fornecida
-      if (avaliacaoForm.nota_final) {
-        resultado = notaFinal >= 10 ? 'aprovado' : 'reprovado';
-      }
+      // SEMPRE usar a nota para determinar o resultado (nota >= 10 = aprovado)
+      const resultado = notaFinal >= 10 ? 'aprovado' : 'reprovado';
 
       const { error } = await supabase
         .from('participacoes_formacao')

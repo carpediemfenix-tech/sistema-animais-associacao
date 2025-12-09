@@ -123,24 +123,9 @@ const RelatoriosVoluntarios = () => {
         };
       });
 
-      // Carregar progressões recentes (simplificado)
-      const { data: progressoes, error: progressoesError } = await supabase
-        .from('voluntario_progressao')
-        .select('id, data_progressao, observacoes, voluntario_id')
-        .gte('data_progressao', dataInicio.toISOString())
-        .order('data_progressao', { ascending: false })
-        .limit(10);
-
-      if (progressoesError) throw progressoesError;
-
-      const progressoesFormatadas: ProgressaoRecente[] = (progressoes || []).map(p => ({
-        id: p.id,
-        voluntario_nome: 'Voluntário', // Simplificar por agora
-        nivel_anterior: 'Anterior',
-        nivel_atual: 'Atual',
-        data_progressao: p.data_progressao,
-        observacoes: p.observacoes
-      }));
+      // Carregar progressões recentes (simplificado - tabela não existe ainda)
+      const progressoes: any[] = [];
+      const progressoesFormatadas: ProgressaoRecente[] = [];
 
       setEstatisticas({
         totalVoluntarios,
