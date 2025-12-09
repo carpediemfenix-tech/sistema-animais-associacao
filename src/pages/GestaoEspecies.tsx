@@ -45,6 +45,26 @@ const GestaoEspecies = () => {
     ativo: true
   });
 
+  // Ícones disponíveis para seleção
+  const iconesDisponiveis = [
+    { emoji: '🐕', nome: 'Cão' },
+    { emoji: '🐱', nome: 'Gato' },
+    { emoji: '🐰', nome: 'Coelho' },
+    { emoji: '🐹', nome: 'Hamster' },
+    { emoji: '🐦', nome: 'Pássaro' },
+    { emoji: '🐠', nome: 'Peixe' },
+    { emoji: '🐢', nome: 'Tartaruga' },
+    { emoji: '🐍', nome: 'Serpente' },
+    { emoji: '🐸', nome: 'Sapo' },
+    { emoji: '🐾', nome: 'Genérico' },
+    { emoji: '🦎', nome: 'Lagarto' },
+    { emoji: '🐭', nome: 'Rato' },
+    { emoji: '🐿️', nome: 'Esquilo' },
+    { emoji: '🦔', nome: 'Ouriço' },
+    { emoji: '🐇', nome: 'Lebre' },
+    { emoji: '🦜', nome: 'Papagaio' }
+  ];
+
   useEffect(() => {
     loadEspecies();
   }, []);
@@ -230,16 +250,51 @@ const GestaoEspecies = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="icone">Ícone (Emoji)</Label>
-                  <Input
-                    id="icone"
-                    value={formData.icone}
-                    onChange={(e) => setFormData({ ...formData, icone: e.target.value })}
-                    placeholder="Ex: 🐕, 🐱, 🐰..."
-                  />
-                  <p className="text-sm text-gray-500 mt-1">
-                    Use um emoji para representar a espécie. Deixe vazio para usar 🐾
-                  </p>
+                  <Label htmlFor="icone">Ícone da Espécie</Label>
+                  <div className="space-y-3">
+                    {/* Seletor Visual de Ícones */}
+                    <div className="grid grid-cols-8 gap-2 p-3 border rounded-lg bg-gray-50">
+                      {iconesDisponiveis.map((icone) => (
+                        <button
+                          key={icone.emoji}
+                          type="button"
+                          className={`p-2 text-2xl rounded-md border-2 hover:bg-white transition-colors ${
+                            formData.icone === icone.emoji 
+                              ? 'border-blue-500 bg-blue-50' 
+                              : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                          onClick={() => setFormData({ ...formData, icone: icone.emoji })}
+                          title={icone.nome}
+                        >
+                          {icone.emoji}
+                        </button>
+                      ))}
+                    </div>
+                    
+                    {/* Campo de texto para ícone personalizado */}
+                    <div>
+                      <Label htmlFor="icone-custom" className="text-sm">Ou insira um ícone personalizado:</Label>
+                      <Input
+                        id="icone-custom"
+                        value={formData.icone}
+                        onChange={(e) => setFormData({ ...formData, icone: e.target.value })}
+                        placeholder="Ex: 🐕, 🐱, 🐰..."
+                        className="mt-1"
+                      />
+                    </div>
+                    
+                    {/* Preview do ícone selecionado */}
+                    {formData.icone && (
+                      <div className="flex items-center space-x-2 p-2 bg-blue-50 rounded-md">
+                        <span className="text-2xl">{formData.icone}</span>
+                        <span className="text-sm text-gray-600">Preview do ícone selecionado</span>
+                      </div>
+                    )}
+                    
+                    <p className="text-xs text-gray-500">
+                      Selecione um ícone da grade acima ou insira um emoji personalizado. Deixe vazio para usar 🐾
+                    </p>
+                  </div>
                 </div>
 
                 <div className="flex items-center space-x-2">
