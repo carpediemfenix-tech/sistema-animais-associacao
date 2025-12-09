@@ -115,13 +115,31 @@ export interface CustoAnimal {
 export interface ClinicaVeterinaria {
   id: string;
   nome: string;
+  codigo?: string;
   endereco?: string;
+  codigo_postal?: string;
+  localidade?: string;
+  distrito?: string;
   telefone?: string;
   email?: string;
-  contacto_responsavel?: string;
+  website?: string;
+  nif?: string;
   especialidades?: string[];
   tem_protocolo: boolean;
+  desconto_protocolo: number;
   observacoes?: string;
+  ativo: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ContactoClinica {
+  id: string;
+  clinica_id: string;
+  nome: string;
+  vinculo: string;
+  telemovel?: string;
+  email?: string;
   ativo: boolean;
   created_at: string;
   updated_at: string;
