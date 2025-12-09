@@ -49,7 +49,8 @@ const EditarAnimal = () => {
     adotante_contacto: "",
     observacoes: "",
     data_entrada: "",
-    voluntario_responsavel: ""
+    voluntario_responsavel: "",
+    grupo_id: ""
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -119,7 +120,8 @@ const EditarAnimal = () => {
         adotante_contacto: data.adotante_contacto || "",
         observacoes: data.observacoes || "",
         data_entrada: data.data_entrada || "",
-        voluntario_responsavel: data.voluntario_responsavel || ""
+        voluntario_responsavel: data.voluntario_responsavel || "",
+        grupo_id: data.grupo_id || ""
       });
 
     } catch (error: any) {
@@ -321,6 +323,7 @@ const EditarAnimal = () => {
         observacoes: formData.observacoes.trim() || null,
         data_entrada: formData.data_entrada,
         voluntario_responsavel: formData.voluntario_responsavel || null,
+        grupo_id: formData.grupo_id || null,
         updated_at: new Date().toISOString()
       };
 
