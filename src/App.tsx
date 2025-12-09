@@ -42,6 +42,9 @@ import FormacoesFrequentadas from "@/pages/FormacoesFrequentadas";
 import RelatoriosVoluntarios from "./pages/RelatoriosVoluntarios";
 import ModuloVoluntarios from "@/pages/ModuloVoluntarios";
 import ModuloFormacao from "@/pages/ModuloFormacao";
+import GestaoEspecies from "./pages/GestaoEspecies";
+import GestaoLocalizacoes from "./pages/GestaoLocalizacoes";
+import GestaoCategorias from "./pages/GestaoCategorias";
 
 const queryClient = new QueryClient();
 
@@ -89,6 +92,10 @@ const App = () => (
             <Route path="/financeiro/movimentos/novo" element={<ProtectedRoute><GestaoMovimentos /></ProtectedRoute>} />
             <Route path="/relatorios" element={<ProtectedRoute><Relatorios /></ProtectedRoute>} />
             <Route path="/configuracoes" element={<ProtectedRoute><Configuracoes /></ProtectedRoute>} />
+            <Route path="/configuracoes/especies" element={<ProtectedRoute><GestaoEspecies /></ProtectedRoute>} />
+            <Route path="/configuracoes/grupos" element={<ProtectedRoute><GestaoGrupos /></ProtectedRoute>} />
+            <Route path="/configuracoes/localizacoes" element={<ProtectedRoute><GestaoLocalizacoes /></ProtectedRoute>} />
+            <Route path="/configuracoes/categorias" element={<ProtectedRoute><GestaoCategorias /></ProtectedRoute>} />
             <Route path="/utilizadores" element={<ProtectedRoute><GestaoUtilizadores /></ProtectedRoute>} />
             <Route path="/animais-arquivados" element={<ProtectedRoute><AnimaisArquivados /></ProtectedRoute>} />
             <Route path="/grupos" element={<ProtectedRoute><GestaoGrupos /></ProtectedRoute>} />
