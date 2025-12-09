@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { 
   Users, 
   UserCheck, 
@@ -88,6 +89,7 @@ const VoluntariosDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [atividadesRecentes, setAtividadesRecentes] = useState<AtividadeRecente[]>([]);
   const [alertas, setAlertas] = useState<AlertaVoluntario[]>([]);
+  const [alertaSelecionado, setAlertaSelecionado] = useState<AlertaVoluntario | null>(null);
   const { toast } = useToast();
   const { hasPermission } = useAuth();
 
@@ -222,62 +224,131 @@ const VoluntariosDashboard = () => {
         mediaIdadeVoluntarios,
         distribuicaoPorEspecialidade,
         distribuicaoPorFormacao,
-        distribuicaoPorIdade: { '18-25': 15, '26-35': 25, '36-45': 20, '46+': 10 }
+        distribuicaoPorIdade: { 'Sem dados': voluntariosAtivos } // Simplificado - dados de idade não disponíveis
       };
 
       setStats(dashboardStats);
 
-      // Gerar atividades recentes
-      const atividades: AtividadeRecente[] = [
-        {
-          id: '1',
+      // Carregar atividades recentes REAIS
+      const atividades: AtividadeRecente[] = [];
+      
+      // Adicionar inscrições recentes (novos voluntários)
+      const voluntariosRecentes = voluntariosData
+        .filter(v => {
+          const created = new Date(v.created_at);
+          const seteDiasAtras = new Date();
+          seteDiasAtras.setDate(seteDiasAtras.getDate() - 7);
+          return created > seteDiasAtras;
+        })
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 3);
+      
+      voluntariosRecentes.forEach(v => {
+        atividades.push({
+          id: `inscricao_${v.id}`,
           tipo: 'inscricao',
-          voluntario: 'Maria Silva',
-          descricao: 'Nova inscrição como voluntária',
-          data: new Date().toISOString(),
+          voluntario: v.nome,
+          descricao: 'Nova inscrição como voluntário',
+          data: v.created_at,
           status: 'sucesso'
-        },
-        {
-          id: '2',
+        });
+      });
+      
+      // Adicionar formações concluídas recentemente
+      const formacoesRecentes = participacoesData
+        .filter(p => p.status === 'concluido' && p.data_avaliacao)
+        .sort((a, b) => new Date(b.data_avaliacao).getTime() - new Date(a.data_avaliacao).getTime())
+        .slice(0, 5);
+      
+      formacoesRecentes.forEach(p => {
+        atividades.push({
+          id: `formacao_${p.id}`,
           tipo: 'formacao',
-          voluntario: 'João Santos',
-          descricao: 'Completou FORMA BASE com nota 18',
-          data: new Date(Date.now() - 86400000).toISOString(),
-          status: 'sucesso'
-        },
-        {
-          id: '3',
+          voluntario: p.voluntario?.nome || 'Voluntário',
+          descricao: `Completou ${p.acao_formacao?.nome_acao || 'formação'} - ${p.resultado}`,
+          data: p.data_avaliacao,
+          status: p.resultado === 'aprovado' ? 'sucesso' : 'alerta'
+        });
+      });
+      
+      // Adicionar responsabilidades recentes
+      const responsabilidadesRecentes = responsabilidadesData
+        .filter(r => r.ativo && r.created_at)
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 3);
+      
+      responsabilidadesRecentes.forEach(r => {
+        atividades.push({
+          id: `resp_${r.id}`,
           tipo: 'responsabilidade',
-          voluntario: 'Ana Costa',
-          descricao: 'Assumiu responsabilidade por Rex',
-          data: new Date(Date.now() - 172800000).toISOString(),
+          voluntario: r.voluntario?.nome || 'Voluntário',
+          descricao: `Assumiu responsabilidade por ${r.animal?.nome || 'animal'}`,
+          data: r.created_at,
           status: 'sucesso'
-        }
-      ];
+        });
+      });
+      
+      // Ordenar todas as atividades por data (mais recente primeiro)
+      atividades.sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
+      
+      // Limitar a 10 atividades mais recentes
+      const atividadesLimitadas = atividades.slice(0, 10);
 
-      setAtividadesRecentes(atividades);
+      setAtividadesRecentes(atividadesLimitadas);
 
-      // Gerar alertas
-      const alertasData: AlertaVoluntario[] = [
-        {
-          id: '1',
+      // Gerar alertas REAIS baseados nos dados
+      const alertasData: AlertaVoluntario[] = [];
+      
+      // Alerta: Voluntários sem formação
+      const voluntariosSemFormacao = voluntariosData.filter(v => 
+        v.ativo && !participacoesData.some(p => p.voluntario_id === v.id && p.resultado === 'aprovado')
+      );
+      
+      if (voluntariosSemFormacao.length > 0) {
+        alertasData.push({
+          id: 'sem_formacao',
           tipo: 'formacao_pendente',
-          titulo: 'Formações Pendentes',
-          descricao: '5 voluntários com formação em atraso',
-          voluntario: 'Vários',
+          titulo: 'Voluntários Sem Formação',
+          descricao: `${voluntariosSemFormacao.length} voluntários ativos ainda não têm formação aprovada`,
+          voluntario: voluntariosSemFormacao.map(v => v.nome).join(', '),
           prioridade: 'alta',
           data: new Date().toISOString()
-        },
-        {
-          id: '2',
-          tipo: 'inatividade',
-          titulo: 'Voluntários Inativos',
-          descricao: '3 voluntários sem atividade há mais de 30 dias',
+        });
+      }
+      
+      // Alerta: Formações em avaliação há muito tempo
+      const formacoesPendentes = participacoesData.filter(p => {
+        if (p.status !== 'em_avaliacao') return false;
+        const dataInscricao = new Date(p.created_at);
+        const quinzeDiasAtras = new Date();
+        quinzeDiasAtras.setDate(quinzeDiasAtras.getDate() - 15);
+        return dataInscricao < quinzeDiasAtras;
+      });
+      
+      if (formacoesPendentes.length > 0) {
+        alertasData.push({
+          id: 'avaliacao_pendente',
+          tipo: 'formacao_pendente',
+          titulo: 'Avaliações Pendentes',
+          descricao: `${formacoesPendentes.length} formações aguardam avaliação há mais de 15 dias`,
           voluntario: 'Vários',
           prioridade: 'media',
           data: new Date().toISOString()
-        }
-      ];
+        });
+      }
+      
+      // Alerta: Voluntários inativos
+      if (voluntariosInativos > 0) {
+        alertasData.push({
+          id: 'voluntarios_inativos',
+          tipo: 'inatividade',
+          titulo: 'Voluntários Inativos',
+          descricao: `${voluntariosInativos} voluntários marcados como inativos`,
+          voluntario: 'Vários',
+          prioridade: 'baixa',
+          data: new Date().toISOString()
+        });
+      }
 
       setAlertas(alertasData);
 
@@ -633,9 +704,49 @@ const VoluntariosDashboard = () => {
                       <span className="text-sm text-gray-500">
                         {new Date(alerta.data).toLocaleDateString('pt-PT')}
                       </span>
-                      <Button size="sm" variant="outline">
-                        Ver Detalhes
-                      </Button>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button size="sm" variant="outline">
+                            Ver Detalhes
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>{alerta.titulo}</DialogTitle>
+                            <DialogDescription>
+                              Detalhes do alerta de {alerta.tipo.replace('_', ' ')}
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="space-y-4">
+                            <div>
+                              <h4 className="font-medium mb-2">Descrição:</h4>
+                              <p className="text-sm text-gray-600">{alerta.descricao}</p>
+                            </div>
+                            <div>
+                              <h4 className="font-medium mb-2">Voluntários Afetados:</h4>
+                              <p className="text-sm text-gray-600">{alerta.voluntario}</p>
+                            </div>
+                            <div>
+                              <h4 className="font-medium mb-2">Prioridade:</h4>
+                              <Badge variant={alerta.prioridade === 'alta' ? 'destructive' : alerta.prioridade === 'media' ? 'default' : 'secondary'}>
+                                {alerta.prioridade.charAt(0).toUpperCase() + alerta.prioridade.slice(1)}
+                              </Badge>
+                            </div>
+                            <div>
+                              <h4 className="font-medium mb-2">Data:</h4>
+                              <p className="text-sm text-gray-600">
+                                {new Date(alerta.data).toLocaleDateString('pt-PT', {
+                                  year: 'numeric',
+                                  month: 'long',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </p>
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
                     </div>
                   </CardContent>
                 </Card>
