@@ -31,7 +31,7 @@ const NovoAnimal = () => {
     observacoes: "",
     grupo_id: "",
     url_fotografia: "", // Nova: URL da fotografia
-    voluntario_responsavel_id: "", // Nova: Voluntário responsável (obrigatório)
+    voluntario_responsavel: "", // Nova: Voluntário responsável (obrigatório)
     data_entrada: new Date().toISOString().split('T')[0]
   });
 
@@ -277,8 +277,8 @@ const NovoAnimal = () => {
       newErrors.data_entrada = "Data de entrada é obrigatória";
     }
 
-    if (!formData.voluntario_responsavel_id) {
-      newErrors.voluntario_responsavel_id = "Voluntário responsável é obrigatório";
+    if (!formData.voluntario_responsavel) {
+      newErrors.voluntario_responsavel = "Voluntário responsável é obrigatório";
     }
 
     if (formData.idade_estimada && (isNaN(Number(formData.idade_estimada)) || Number(formData.idade_estimada) < 0)) {
@@ -327,6 +327,7 @@ const NovoAnimal = () => {
         observacoes: formData.observacoes.trim() || null,
         grupo_id: formData.grupo_id || null,
         url_fotografia: formData.url_fotografia.trim() || null,
+        voluntario_responsavel: formData.voluntario_responsavel || null,
         estado: 'Ativo',
         arquivado: false,
         created_at: new Date().toISOString(),
@@ -367,16 +368,17 @@ const NovoAnimal = () => {
       console.log('✅ === SUCESSO ===');
       console.log('📋 Animal criado:', data);
 
-      // Criar responsabilidade do voluntário
-      const responsabilidadeData = {
-        animal_id: data.id,
-        voluntario_id: formData.voluntario_responsavel_id,
-        tipo_responsabilidade: 'Cuidador Principal',
-        data_inicio: formData.data_entrada,
-        ativo: true,
-        observacoes: `Responsabilidade atribuída automaticamente no cadastro do animal ${formData.nome}`,
-        created_at: new Date().toISOString()
-      };
+      // Criar responsabilidade do voluntário (se foi selecionado)
+      if (formData.voluntario_responsavel) {
+        const responsabilidadeData = {
+          animal_id: data.id,
+          voluntario_id: formData.voluntario_responsavel,
+          tipo_responsabilidade: 'Cuidador Principal',
+          data_inicio: formData.data_entrada,
+          ativo: true,
+          observacoes: `Responsabilidade atribuída automaticamente no cadastro do animal ${formData.nome}`,
+          created_at: new Date().toISOString()
+        };
 
       const { error: responsabilidadeError } = await supabase
         .from('responsabilidades_voluntarios')
@@ -390,8 +392,11 @@ const NovoAnimal = () => {
           description: "Animal cadastrado, mas houve erro ao atribuir responsabilidade",
           variant: "destructive",
         });
+        } else {
+          console.log('Responsabilidade criada com sucesso');
+        }
       } else {
-        console.log('Responsabilidade criada com sucesso');
+        console.log('Nenhum voluntário responsável selecionado, responsabilidade não criada');
       }
 
       toast({
@@ -663,12 +668,12 @@ const NovoAnimal = () => {
 
               {/* Voluntário Responsável - CORRIGIDO */}
               <div>
-                <Label htmlFor="voluntario_responsavel_id">Voluntário Responsável *</Label>
+                <Label htmlFor="voluntario_responsavel">Voluntário Responsável *</Label>
                 <Select 
-                  value={formData.voluntario_responsavel_id} 
-                  onValueChange={(value) => handleInputChange("voluntario_responsavel_id", value)}
+                  value={formData.voluntario_responsavel} 
+                  onValueChange={(value) => handleInputChange("voluntario_responsavel", value)}
                 >
-                  <SelectTrigger className={errors.voluntario_responsavel_id ? "border-red-500" : ""}>
+                  <SelectTrigger className={errors.voluntario_responsavel ? "border-red-500" : ""}>
                     <SelectValue placeholder="Selecionar voluntário responsável" />
                   </SelectTrigger>
                   <SelectContent>
@@ -684,10 +689,10 @@ const NovoAnimal = () => {
                     ))}
                   </SelectContent>
                 </Select>
-                {errors.voluntario_responsavel_id && (
+                {errors.voluntario_responsavel && (
                   <p className="text-sm text-red-500 mt-1 flex items-center">
                     <AlertCircle className="h-4 w-4 mr-1" />
-                    {errors.voluntario_responsavel_id}
+                    {errors.voluntario_responsavel}
                   </p>
                 )}
                 <p className="text-sm text-blue-600 mt-1">
