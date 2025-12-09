@@ -45,6 +45,7 @@ import ModuloFormacao from "@/pages/ModuloFormacao";
 import GestaoEspecies from "./pages/GestaoEspecies";
 import GestaoLocalizacoes from "./pages/GestaoLocalizacoes";
 import GestaoCategorias from "./pages/GestaoCategorias";
+import GestaoClinicas from "./pages/GestaoClinicas";
 import ModuloAnimais from "./pages/ModuloAnimais";
 import ModuloEquipamentos from "./pages/ModuloEquipamentos";
 import ModuloClinicas from "./pages/ModuloClinicas";
@@ -109,6 +110,7 @@ const App = () => (
             <Route path="/configuracoes/grupos" element={<ProtectedRoute><GestaoGrupos /></ProtectedRoute>} />
             <Route path="/configuracoes/localizacoes" element={<ProtectedRoute><GestaoLocalizacoes /></ProtectedRoute>} />
             <Route path="/configuracoes/categorias" element={<ProtectedRoute><GestaoCategorias /></ProtectedRoute>} />
+            <Route path="/configuracoes/clinicas" element={<ProtectedRoute><GestaoClinicas /></ProtectedRoute>} />
             <Route path="/utilizadores" element={<ProtectedRoute><GestaoUtilizadores /></ProtectedRoute>} />
             <Route path="/animais-arquivados" element={<ProtectedRoute><AnimaisArquivados /></ProtectedRoute>} />
             <Route path="/grupos" element={<ProtectedRoute><GestaoGrupos /></ProtectedRoute>} />

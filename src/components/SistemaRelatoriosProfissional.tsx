@@ -107,7 +107,7 @@ const SistemaRelatoriosProfissional = () => {
         supabase.from('eventos').select('*').order('data_evento', { ascending: false }),
         supabase.from('voluntarios').select('*').order('nome'),
         supabase.from('movimentos_financeiros').select('*').order('data_movimento', { ascending: false }),
-        supabase.from('localizacoes').select('*').order('data_entrada', { ascending: false }),
+        supabase.from('localizacoes').select('*').order('created_at', { ascending: false }),
         supabase.from('tipos_intervencoes').select('*').order('nome')
       ]);
 
