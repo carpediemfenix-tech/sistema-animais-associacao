@@ -23,7 +23,8 @@ import {
   Zap,
   Star,
   Award,
-  Plus
+  Plus,
+  Settings
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -433,6 +434,67 @@ const Index = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Ações Rápidas */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Zap className="h-6 w-6 mr-2 text-yellow-600" />
+              Ações Rápidas
+            </CardTitle>
+            <CardDescription>
+              Atalhos para as ações mais comuns do sistema
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              <Link to="/novo-animal">
+                <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center space-y-2 hover:bg-red-50 hover:border-red-200">
+                  <Plus className="h-6 w-6 text-red-600" />
+                  <span className="text-xs font-medium">Novo Animal</span>
+                </Button>
+              </Link>
+              <Link to="/voluntarios/novo">
+                <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center space-y-2 hover:bg-blue-50 hover:border-blue-200">
+                  <Users className="h-6 w-6 text-blue-600" />
+                  <span className="text-xs font-medium">Novo Voluntário</span>
+                </Button>
+              </Link>
+              <Link to="/sistema-formacao">
+                <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center space-y-2 hover:bg-green-50 hover:border-green-200">
+                  <GraduationCap className="h-6 w-6 text-green-600" />
+                  <span className="text-xs font-medium">Formação</span>
+                </Button>
+              </Link>
+              <Link to="/financeiro">
+                <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center space-y-2 hover:bg-purple-50 hover:border-purple-200">
+                  <DollarSign className="h-6 w-6 text-purple-600" />
+                  <span className="text-xs font-medium">Financeiro</span>
+                </Button>
+              </Link>
+              <Link to="/configuracoes">
+                <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center space-y-2 hover:bg-gray-50 hover:border-gray-200">
+                  <Settings className="h-6 w-6 text-gray-600" />
+                  <span className="text-xs font-medium">Configurações</span>
+                </Button>
+              </Link>
+              <Link to="/relatorios">
+                <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center space-y-2 hover:bg-orange-50 hover:border-orange-200">
+                  <BarChart3 className="h-6 w-6 text-orange-600" />
+                  <span className="text-xs font-medium">Relatórios</span>
+                </Button>
+              </Link>
+            </div>
+            <div className="mt-4 flex justify-center">
+              <Link to="/estatisticas-avancadas">
+                <Button variant="outline" className="px-6 py-3 hover:bg-indigo-50 hover:border-indigo-200">
+                  <TrendingUp className="h-5 w-5 mr-2 text-indigo-600" />
+                  Ver Estatísticas Avançadas
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Acesso Rápido */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
