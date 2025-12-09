@@ -15,7 +15,15 @@ import {
   TrendingDown,
   Activity,
   AlertTriangle,
-  DollarSign
+  DollarSign,
+  Bell,
+  Clock,
+  CheckCircle,
+  XCircle,
+  Zap,
+  Star,
+  Award,
+  Plus
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -322,6 +330,109 @@ const Index = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Alertas Inteligentes e Atividades Recentes */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Alertas Inteligentes */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Bell className="h-5 w-5 mr-2 text-orange-600" />
+                Alertas Inteligentes
+              </CardTitle>
+              <CardDescription>
+                Notificações importantes do sistema
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {estatisticas.saldoAtual < 0 && (
+                  <div className="flex items-center p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <AlertTriangle className="h-5 w-5 text-red-600 mr-3" />
+                    <div>
+                      <p className="font-semibold text-red-800">Saldo Negativo</p>
+                      <p className="text-sm text-red-600">Situação financeira requer atenção</p>
+                    </div>
+                  </div>
+                )}
+                {estatisticas.animaisAtivos > estatisticas.voluntariosAtivos * 3 && (
+                  <div className="flex items-center p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <Clock className="h-5 w-5 text-yellow-600 mr-3" />
+                    <div>
+                      <p className="font-semibold text-yellow-800">Sobrecarga de Animais</p>
+                      <p className="text-sm text-yellow-600">Muitos animais por voluntário ativo</p>
+                    </div>
+                  </div>
+                )}
+                {estatisticas.voluntariosAtivos < estatisticas.totalVoluntarios * 0.7 && (
+                  <div className="flex items-center p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <Users className="h-5 w-5 text-blue-600 mr-3" />
+                    <div>
+                      <p className="font-semibold text-blue-800">Poucos Voluntários Ativos</p>
+                      <p className="text-sm text-blue-600">Considere ativar mais voluntários</p>
+                    </div>
+                  </div>
+                )}
+                {estatisticas.alertasCriticos === 0 && (
+                  <div className="flex items-center p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <CheckCircle className="h-5 w-5 text-green-600 mr-3" />
+                    <div>
+                      <p className="font-semibold text-green-800">Sistema Saudável</p>
+                      <p className="text-sm text-green-600">Todos os indicadores estão normais</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Atividades Recentes */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Activity className="h-5 w-5 mr-2 text-blue-600" />
+                Atividades Recentes
+              </CardTitle>
+              <CardDescription>
+                Últimas ações no sistema
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex items-center p-2 hover:bg-gray-50 rounded">
+                  <div className="p-2 bg-green-100 rounded-full mr-3">
+                    <Plus className="h-4 w-4 text-green-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">Sistema iniciado</p>
+                    <p className="text-xs text-gray-500">Dashboard modular implementado</p>
+                  </div>
+                  <span className="text-xs text-gray-400">Agora</span>
+                </div>
+                <div className="flex items-center p-2 hover:bg-gray-50 rounded">
+                  <div className="p-2 bg-blue-100 rounded-full mr-3">
+                    <Users className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">Módulos organizados</p>
+                    <p className="text-xs text-gray-500">7 módulos disponíveis</p>
+                  </div>
+                  <span className="text-xs text-gray-400">Hoje</span>
+                </div>
+                <div className="flex items-center p-2 hover:bg-gray-50 rounded">
+                  <div className="p-2 bg-purple-100 rounded-full mr-3">
+                    <Star className="h-4 w-4 text-purple-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">Sistema otimizado</p>
+                    <p className="text-xs text-gray-500">Performance melhorada</p>
+                  </div>
+                  <span className="text-xs text-gray-400">Hoje</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Acesso Rápido */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

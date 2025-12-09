@@ -10,8 +10,9 @@ import {
   Eye,
   Plus
 } from "lucide-react";
-
-
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ModuloFormacaoStats {
   // Tipos de Formação
