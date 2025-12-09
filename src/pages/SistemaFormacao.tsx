@@ -34,7 +34,8 @@ import {
   FileText,
   GraduationCap as GradIcon,
   History,
-  Edit
+  Edit,
+  Settings
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -876,8 +877,8 @@ const SistemaFormacao = () => {
 
       // Determinar resultado automaticamente baseado na nota
       let resultado = avaliacaoForm.resultado;
-      // Se o usuário não alterou manualmente, determinar pela nota
-      if (avaliacaoForm.nota_final && !avaliacaoForm.resultado) {
+      // Sempre determinar pela nota se ela foi fornecida
+      if (avaliacaoForm.nota_final) {
         resultado = notaFinal >= 10 ? 'aprovado' : 'reprovado';
       }
 
@@ -1272,11 +1273,12 @@ const SistemaFormacao = () => {
 
         {/* Tabs */}
         <Tabs defaultValue="acoes" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-1 lg:grid-cols-4">
+          <TabsList className="grid w-full grid-cols-1 lg:grid-cols-5">
             <TabsTrigger value="acoes">Ações de Formação</TabsTrigger>
             <TabsTrigger value="tipos">Tipos de Formação</TabsTrigger>
             <TabsTrigger value="participacoes">Participações</TabsTrigger>
             <TabsTrigger value="estatisticas">Estatísticas</TabsTrigger>
+            <TabsTrigger value="configuracoes">Configurações</TabsTrigger>
           </TabsList>
 
           {/* Ações de Formação */}
@@ -1757,6 +1759,108 @@ const SistemaFormacao = () => {
                 </div>
               </>
             )}
+          </TabsContent>
+
+          {/* Configurações */}
+          <TabsContent value="configuracoes" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="h-5 w-5" />
+                  Configurações do Módulo
+                </CardTitle>
+                <CardDescription>
+                  Gestão avançada de tipos de formação e configurações do sistema
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Gestão de Tipos de Formação */}
+                <div className="border rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="text-lg font-semibold">Gestão de Tipos de Formação</h3>
+                      <p className="text-sm text-gray-600">Criar, editar e gerir os templates base para formações</p>
+                    </div>
+                    <Badge variant="default" className="bg-green-600">
+                      {tiposFormacao.length} tipos ativos
+                    </Badge>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {/* Resumo dos Tipos */}
+                    <div className="bg-blue-50 p-4 rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <GraduationCap className="h-5 w-5 text-blue-600" />
+                        <span className="font-medium">Tipos Disponíveis</span>
+                      </div>
+                      <div className="text-2xl font-bold text-blue-600">{tiposFormacao.length}</div>
+                      <div className="text-sm text-gray-600">Templates configurados</div>
+                    </div>
+
+                    {/* Ações Criadas */}
+                    <div className="bg-green-50 p-4 rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Calendar className="h-5 w-5 text-green-600" />
+                        <span className="font-medium">Ações Criadas</span>
+                      </div>
+                      <div className="text-2xl font-bold text-green-600">{acoesFormacao.length}</div>
+                      <div className="text-sm text-gray-600">Instâncias ativas</div>
+                    </div>
+
+                    {/* Participações */}
+                    <div className="bg-purple-50 p-4 rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Users className="h-5 w-5 text-purple-600" />
+                        <span className="font-medium">Participações</span>
+                      </div>
+                      <div className="text-2xl font-bold text-purple-600">{participacoes.length}</div>
+                      <div className="text-sm text-gray-600">Total de inscrições</div>
+                    </div>
+                  </div>
+
+                  {/* Botão para Gestão Avançada */}
+                  <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-medium">Gestão Avançada de Tipos</h4>
+                        <p className="text-sm text-gray-600">Acesso completo à criação, edição e eliminação de tipos de formação</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm text-gray-500 mb-2">Funcionalidade disponível na aba "Tipos de Formação"</p>
+                        <Button 
+                          onClick={() => {
+                            // Mudar para a aba tipos
+                            const tabsTrigger = document.querySelector('[value="tipos"]') as HTMLElement;
+                            if (tabsTrigger) tabsTrigger.click();
+                          }}
+                          className="bg-blue-600 hover:bg-blue-700"
+                        >
+                          <Settings className="h-4 w-4 mr-2" />
+                          Gerir Tipos de Formação
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Outras Configurações */}
+                <div className="border rounded-lg p-4">
+                  <h3 className="text-lg font-semibold mb-4">Configurações do Sistema</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-3 border rounded">
+                      <h4 className="font-medium mb-2">Avaliações</h4>
+                      <p className="text-sm text-gray-600 mb-2">Nota mínima para aprovação: <strong>10/20</strong></p>
+                      <p className="text-sm text-gray-600">Sistema de avaliação automático ativo</p>
+                    </div>
+                    <div className="p-3 border rounded">
+                      <h4 className="font-medium mb-2">Certificações</h4>
+                      <p className="text-sm text-gray-600 mb-2">Certificados gerados automaticamente</p>
+                      <p className="text-sm text-gray-600">Válidos por tempo indeterminado</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
 

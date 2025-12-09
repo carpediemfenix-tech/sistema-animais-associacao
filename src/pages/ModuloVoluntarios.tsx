@@ -47,7 +47,7 @@ const ModuloVoluntarios = () => {
       titulo: "Dashboard de Voluntários",
       descricao: "Visão geral e estatísticas completas",
       icone: BarChart3,
-      rota: "/voluntarios",
+      rota: "/voluntarios/dashboard",
       cor: "bg-blue-500",
       status: "ativo"
     },

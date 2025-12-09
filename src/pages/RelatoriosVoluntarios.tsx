@@ -103,12 +103,12 @@ const RelatoriosVoluntarios = () => {
         v.data_entrada && new Date(v.data_entrada) >= dataInicio
       ).length || 0;
 
-      // Carregar níveis de formação
+      // Carregar tipos de formação
       const { data: niveis, error: niveisError } = await supabase
-        .from('niveis_formacao')
+        .from('tipos_formacao')
         .select('*')
         .eq('ativo', true)
-        .order('ordem');
+        .order('nivel_ordem');
 
       if (niveisError) throw niveisError;
 

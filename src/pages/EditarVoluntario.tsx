@@ -90,9 +90,6 @@ const EditarVoluntario = () => {
         tem_formacao: voluntario.tem_formacao || false
       };
 
-      console.log('📊 [DEBUG] Dados para atualização:', updateData);
-      console.log('📊 [DEBUG] ID do voluntário:', id);
-
       const { error } = await supabase
         .from('voluntarios')
         .update(updateData)
@@ -107,13 +104,7 @@ const EditarVoluntario = () => {
 
       navigate('/voluntarios/gestao');
     } catch (error: any) {
-      console.error('😨 [ERRO] Erro ao salvar voluntário:', error);
-      console.error('😨 [ERRO] Detalhes do erro:', {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code
-      });
+      console.error('Erro ao salvar voluntário:', error);
       
       toast({
         title: "Erro ao Salvar",
