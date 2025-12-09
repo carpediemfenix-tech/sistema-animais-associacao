@@ -112,9 +112,56 @@ const RelatoriosVoluntarios = () => {
 
       if (niveisError) throw niveisError;
 
-      // Calcular distribuição por níveis (simplificado)
+      // Calcular distribuição real por níveis de formação
+      const { data: participacoes, error: participacoesError } = await supabase
+        .from('participacoes_formacao')
+        .select(`
+          voluntario_id,
+          resultado,
+          status,
+          acao_formacao:acoes_formacao(
+            tipo_formacao:tipos_formacao(
+              id,
+              nome,
+              codigo,
+              nivel_ordem,
+              cor
+            )
+          )
+        `)
+        .eq('resultado', 'aprovado')
+        .eq('status', 'concluido');
+
+      if (participacoesError) {
+        console.error('Erro ao carregar participações:', participacoesError);
+      }
+
+      // Calcular o nível mais alto de cada voluntário ativo
+      const niveisVoluntarios = new Map<string, any>();
+      
+      (participacoes || []).forEach(p => {
+        if (p.acao_formacao?.tipo_formacao) {
+          const voluntarioId = p.voluntario_id;
+          const tipoFormacao = p.acao_formacao.tipo_formacao;
+          
+          // Manter apenas o nível mais alto (maior nivel_ordem)
+          if (!niveisVoluntarios.has(voluntarioId) || 
+              niveisVoluntarios.get(voluntarioId).nivel_ordem < tipoFormacao.nivel_ordem) {
+            niveisVoluntarios.set(voluntarioId, tipoFormacao);
+          }
+        }
+      });
+
+      // Contar voluntários por nível
+      const contagemNiveis = new Map<string, number>();
+      niveisVoluntarios.forEach(nivel => {
+        const nivelId = nivel.id;
+        contagemNiveis.set(nivelId, (contagemNiveis.get(nivelId) || 0) + 1);
+      });
+
+      // Criar distribuição final
       const distribuicao: DistribuicaoNivel[] = (niveis || []).map(nivel => {
-        const quantidade = 0; // Simplificar por agora
+        const quantidade = contagemNiveis.get(nivel.id) || 0;
         
         return {
           nivel,
@@ -123,16 +170,43 @@ const RelatoriosVoluntarios = () => {
         };
       });
 
-      // Carregar progressões recentes (simplificado - tabela não existe ainda)
-      const progressoes: any[] = [];
-      const progressoesFormatadas: ProgressaoRecente[] = [];
+      // Carregar atividade recente (participações concluídas recentemente)
+      const { data: atividadeRecente, error: atividadeError } = await supabase
+        .from('participacoes_formacao')
+        .select(`
+          id,
+          data_avaliacao,
+          resultado,
+          voluntario:voluntarios(nome),
+          acao_formacao:acoes_formacao(
+            nome_acao,
+            tipo_formacao:tipos_formacao(nome, codigo)
+          )
+        `)
+        .not('data_avaliacao', 'is', null)
+        .gte('data_avaliacao', dataInicio.toISOString())
+        .order('data_avaliacao', { ascending: false })
+        .limit(10);
+
+      if (atividadeError) {
+        console.error('Erro ao carregar atividade recente:', atividadeError);
+      }
+
+      const progressoesFormatadas: ProgressaoRecente[] = (atividadeRecente || []).map(p => ({
+        id: p.id,
+        voluntario_nome: p.voluntario?.nome || 'Voluntário',
+        nivel_anterior: 'Anterior',
+        nivel_atual: p.acao_formacao?.tipo_formacao?.nome || 'Nível',
+        data_progressao: p.data_avaliacao,
+        observacoes: `Concluiu: ${p.acao_formacao?.nome_acao || 'Formação'} - ${p.resultado}`
+      }));
 
       setEstatisticas({
         totalVoluntarios,
         voluntariosAtivos,
         voluntariosInativos,
         novasEntradas30Dias,
-        progressoes30Dias: progressoes?.length || 0
+        progressoes30Dias: atividadeRecente?.length || 0
       });
 
       setDistribuicaoNiveis(distribuicao);
