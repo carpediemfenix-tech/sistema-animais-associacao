@@ -1,24 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
-  Users, 
-  UserCheck, 
+  Users,
+  ArrowLeft,
+  GraduationCap,
+  Settings,
   UserX, 
   UserPlus,
-  GraduationCap,
   Shield,
   Award,
   TrendingUp,
   Activity,
-  Settings,
   FileText,
   BarChart3,
-  ArrowLeft,
   ArrowRight,
   Plus,
   Eye,
@@ -43,6 +39,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import UserHeader from "@/components/UserHeader";
+
+
 
 interface ModuloVoluntariosStats {
   // Estatísticas Principais

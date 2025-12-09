@@ -3,41 +3,15 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   GraduationCap,
-  BookOpen,
-  Users,
-  Award,
-  Target,
-  TrendingUp,
-  Activity,
-  Settings,
-  FileText,
-  BarChart3,
   ArrowLeft,
-  ArrowRight,
-  Plus,
+  Settings,
   Eye,
-  Edit,
-  Calendar,
-  Clock,
-  Star,
-  CheckCircle,
-  AlertCircle,
-  Zap,
-  Heart,
-  Shield,
-  Crown,
-  Briefcase,
-  MapPin,
-  Loader2
+  Plus
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
-import UserHeader from "@/components/UserHeader";
+
+
 
 interface ModuloFormacaoStats {
   // Tipos de Formação
