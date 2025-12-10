@@ -402,6 +402,14 @@ const Configuracoes = () => {
                       </div>
                     </Button>
                   </Link>
+                  <Link to="/historico-nomes">
+                    <Button variant="outline" className="w-full justify-start h-auto p-4">
+                      <div className="text-left">
+                        <div className="font-medium">Histórico de Nomes</div>
+                        <div className="text-sm text-muted-foreground">Ver alterações de nomes dos animais</div>
+                      </div>
+                    </Button>
+                  </Link>
                 </div>
               </CardContent>
             </Card>

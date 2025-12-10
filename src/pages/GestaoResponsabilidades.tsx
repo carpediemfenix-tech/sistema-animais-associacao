@@ -72,10 +72,10 @@ const GestaoResponsabilidades = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center">
-            <Link to="/configuracoes">
+            <Link to="/">
               <Button variant="outline">
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Voltar às Configurações
+                Dashboard Principal
               </Button>
             </Link>
           </CardContent>
