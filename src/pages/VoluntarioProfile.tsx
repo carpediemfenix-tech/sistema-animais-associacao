@@ -150,7 +150,7 @@ const VoluntarioProfile = () => {
         // Carregar responsabilidades ativas sem JOIN problemático
         const { data: responsabilidadesData, error: respError } = await supabase
           .from('responsabilidades_voluntarios')
-          .select('*')
+          .select('*, tipo_responsabilidade')
           .eq('voluntario_id', id)
           .eq('ativo', true)
           .order('created_at', { ascending: false });
@@ -193,7 +193,7 @@ const VoluntarioProfile = () => {
         // Carregar TODAS as responsabilidades sem JOIN problemático
         const { data: todasResponsabilidades, error: histError } = await supabase
           .from('responsabilidades_voluntarios')
-          .select('*')
+          .select('*, tipo_responsabilidade')
           .eq('voluntario_id', id)
           .order('created_at', { ascending: false });
 
@@ -499,7 +499,14 @@ const VoluntarioProfile = () => {
                       <Label className="text-sm font-medium text-gray-500">Data de Nascimento</Label>
                       <p className="text-sm">
                         {voluntario.data_nascimento 
-                          ? new Date(voluntario.data_nascimento).toLocaleDateString('pt-PT')
+                          ? (() => {
+                              const dataNascimento = new Date(voluntario.data_nascimento);
+                              const hoje = new Date();
+                              const idade = hoje.getFullYear() - dataNascimento.getFullYear() - 
+                                (hoje.getMonth() < dataNascimento.getMonth() || 
+                                 (hoje.getMonth() === dataNascimento.getMonth() && hoje.getDate() < dataNascimento.getDate()) ? 1 : 0);
+                              return `${dataNascimento.toLocaleDateString('pt-PT')} (${idade} anos)`;
+                            })()
                           : "Não informado"
                         }
                       </p>
@@ -586,6 +593,11 @@ const VoluntarioProfile = () => {
                               <h4 className="font-semibold">{resp.animais?.nome || 'Nome não disponível'}</h4>
                               <Badge variant="outline">{resp.animais?.estado || 'Estado desconhecido'}</Badge>
                             </div>
+                            <div className="mb-2">
+                              <Badge variant="secondary" className="text-xs">
+                                {resp.tipo_responsabilidade || 'Tipo não definido'}
+                              </Badge>
+                            </div>
                             <p className="text-sm text-gray-600 mb-1">
                               Processo: {resp.animais?.numero_processo || 'N/A'}
                             </p>
@@ -633,9 +645,14 @@ const VoluntarioProfile = () => {
                       return (
                         <div key={hist.id || index} className="border rounded-lg p-4 bg-white shadow-sm">
                           <div className="flex items-center justify-between mb-3">
-                            <h4 className="font-semibold text-lg flex items-center">
-                              🐶 {hist.animais?.nome || `Animal ID: ${hist.animal_id}` || 'Nome não disponível'}
-                            </h4>
+                            <div>
+                              <h4 className="font-semibold text-lg flex items-center">
+                                🐶 {hist.animais?.nome || `Animal ID: ${hist.animal_id}` || 'Nome não disponível'}
+                              </h4>
+                              <Badge variant="outline" className="text-xs mt-1">
+                                {hist.tipo_responsabilidade || 'Tipo não definido'}
+                              </Badge>
+                            </div>
                             <div className="flex space-x-2">
                               <Badge variant={hist.ativo ? 'default' : 'secondary'}>
                                 {hist.ativo ? '✅ Ativa' : '📝 Finalizada'}

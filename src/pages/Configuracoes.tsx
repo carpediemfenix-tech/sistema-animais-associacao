@@ -9,10 +9,12 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft, Settings, User, Bell, Palette, Database, Shield, Moon, Sun, Monitor } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "@/components/theme-provider";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Configuracoes = () => {
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
+  const { hasPermission } = useAuth();
   const [perfilUsuario, setPerfilUsuario] = useState<'consulta' | 'edicao' | 'admin'>('edicao');
   const [notificacoes, setNotificacoes] = useState(true);
   const [notificacoesEmail, setNotificacoesEmail] = useState(false);
@@ -337,6 +339,73 @@ const Configuracoes = () => {
               )}
             </CardContent>
           </Card>
+
+          {/* Gestão de Dados */}
+          {hasPermission('admin') && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Settings className="h-5 w-5" />
+                  <span>Gestão de Dados</span>
+                </CardTitle>
+                <CardDescription>
+                  Configurar e gerir dados do sistema (apenas administradores)
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <Link to="/configuracoes/especies">
+                    <Button variant="outline" className="w-full justify-start h-auto p-4">
+                      <div className="text-left">
+                        <div className="font-medium">Espécies</div>
+                        <div className="text-sm text-muted-foreground">Gerir espécies de animais</div>
+                      </div>
+                    </Button>
+                  </Link>
+                  <Link to="/configuracoes/localizacoes">
+                    <Button variant="outline" className="w-full justify-start h-auto p-4">
+                      <div className="text-left">
+                        <div className="font-medium">Localizações</div>
+                        <div className="text-sm text-muted-foreground">Gerir locais de alojamento</div>
+                      </div>
+                    </Button>
+                  </Link>
+                  <Link to="/configuracoes/categorias">
+                    <Button variant="outline" className="w-full justify-start h-auto p-4">
+                      <div className="text-left">
+                        <div className="font-medium">Categorias</div>
+                        <div className="text-sm text-muted-foreground">Gerir categorias de eventos</div>
+                      </div>
+                    </Button>
+                  </Link>
+                  <Link to="/configuracoes/clinicas">
+                    <Button variant="outline" className="w-full justify-start h-auto p-4">
+                      <div className="text-left">
+                        <div className="font-medium">Clínicas</div>
+                        <div className="text-sm text-muted-foreground">Gerir clínicas veterinárias</div>
+                      </div>
+                    </Button>
+                  </Link>
+                  <Link to="/configuracoes/responsabilidades">
+                    <Button variant="outline" className="w-full justify-start h-auto p-4">
+                      <div className="text-left">
+                        <div className="font-medium">Responsabilidades</div>
+                        <div className="text-sm text-muted-foreground">Tipos de responsabilidades</div>
+                      </div>
+                    </Button>
+                  </Link>
+                  <Link to="/utilizadores">
+                    <Button variant="outline" className="w-full justify-start h-auto p-4">
+                      <div className="text-left">
+                        <div className="font-medium">Utilizadores</div>
+                        <div className="text-sm text-muted-foreground">Gerir utilizadores do sistema</div>
+                      </div>
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Informações do Sistema */}
           <Card>
