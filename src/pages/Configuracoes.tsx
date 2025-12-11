@@ -10,6 +10,8 @@ import { ArrowLeft, Settings, User, Bell, Palette, Database, Shield, Moon, Sun, 
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "@/components/theme-provider";
 import { useAuth } from "@/contexts/AuthContext";
+import EnhancedHeader from "@/components/EnhancedHeader";
+import EnhancedFooter from "@/components/EnhancedFooter";
 
 const Configuracoes = () => {
   const { toast } = useToast();
@@ -68,7 +70,8 @@ const Configuracoes = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <EnhancedHeader />
       {/* Header */}
       <div className="bg-card shadow-sm border-b">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -474,6 +477,8 @@ const Configuracoes = () => {
           </div>
         </div>
       </div>
+      
+      <EnhancedFooter />
     </div>
   );
 };

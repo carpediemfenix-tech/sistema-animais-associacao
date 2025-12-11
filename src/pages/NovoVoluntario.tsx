@@ -32,7 +32,8 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import UserHeader from "@/components/UserHeader";
+import EnhancedHeader from "@/components/EnhancedHeader";
+import EnhancedFooter from "@/components/EnhancedFooter";
 import { 
   NivelFormacao, 
   VoluntarioValentao, 
@@ -225,13 +226,15 @@ const NovoVoluntario = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-4">
-        <div className="max-w-4xl mx-auto">
-          <UserHeader />
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
-              <p className="text-gray-600">Carregando formulário...</p>
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <EnhancedHeader />
+        <div className="p-4 flex-1">
+          <div className="max-w-4xl mx-auto">
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+                <p className="text-gray-600">Carregando formulário...</p>
+              </div>
             </div>
           </div>
         </div>
@@ -240,9 +243,10 @@ const NovoVoluntario = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <EnhancedHeader />
+      <div className="p-4 flex-1">
       <div className="max-w-4xl mx-auto space-y-6">
-        <UserHeader />
         
         {/* Cabeçalho */}
         <div className="flex items-center justify-between">
@@ -468,6 +472,9 @@ const NovoVoluntario = () => {
           </div>
         </form>
       </div>
+      </div>
+      
+      <EnhancedFooter />
     </div>
   );
 };

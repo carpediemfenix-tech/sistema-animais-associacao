@@ -27,6 +27,8 @@ import { Animal } from "@/types/animal";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import LogotipoValentao from "@/components/LogotipoValentao";
+import EnhancedHeader from "@/components/EnhancedHeader";
+import EnhancedFooter from "@/components/EnhancedFooter";
 
 const AnimaisArquivados = () => {
   const [animais, setAnimais] = useState<Animal[]>([]);
@@ -255,7 +257,8 @@ const AnimaisArquivados = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <EnhancedHeader />
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -633,6 +636,8 @@ const AnimaisArquivados = () => {
           </div>
         </DialogContent>
       </Dialog>
+    
+      <EnhancedFooter />
     </div>
   );
 };

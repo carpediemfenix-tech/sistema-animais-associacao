@@ -40,7 +40,8 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import UserHeader from "@/components/UserHeader";
+import EnhancedHeader from "@/components/EnhancedHeader";
+import EnhancedFooter from "@/components/EnhancedFooter";
 import { 
   TipoFormacao, 
   AcaoFormacao, 
@@ -1178,8 +1179,8 @@ const SistemaFormacao = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <UserHeader />
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <EnhancedHeader />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         
@@ -3222,6 +3223,8 @@ const SistemaFormacao = () => {
           </DialogContent>
         </Dialog>
       </div>
+      
+      <EnhancedFooter />
     </div>
   );
 };

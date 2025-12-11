@@ -22,6 +22,8 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import EnhancedHeader from "@/components/EnhancedHeader";
+import EnhancedFooter from "@/components/EnhancedFooter";
 
 interface EstatisticasFormacao {
   totalTipos: number;
@@ -166,7 +168,9 @@ const ModuloFormacao = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 p-6">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <EnhancedHeader />
+      <div className="bg-gradient-to-br from-green-50 to-emerald-100 p-6 flex-1">
       <div className="max-w-7xl mx-auto">
         {/* Cabeçalho */}
         <div className="flex items-center justify-between mb-8">
@@ -339,6 +343,9 @@ const ModuloFormacao = () => {
           </CardContent>
         </Card>
       </div>
+      </div>
+      
+      <EnhancedFooter />
     </div>
   );
 };
