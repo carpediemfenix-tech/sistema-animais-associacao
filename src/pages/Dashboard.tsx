@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import UserHeader from "@/components/UserHeader";
+import EnhancedHeader from "@/components/EnhancedHeader";
+import EnhancedFooter from "@/components/EnhancedFooter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -143,10 +144,8 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <UserHeader 
-        title="📊 Dashboard de Estatísticas" 
-        subtitle="Visão geral completa da Associação Valentão ao Resgate"
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <EnhancedHeader
         backTo="/"
       />
 
@@ -473,6 +472,8 @@ const Dashboard: React.FC = () => {
           <p className="text-xs mt-1">Sistema de Gestão Completo - Desenvolvido com ❤️ para os animais</p>
         </div>
       </div>
+      
+      <EnhancedFooter />
     </div>
   );
 };

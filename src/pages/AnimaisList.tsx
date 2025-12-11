@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import UserHeader from "@/components/UserHeader";
+import EnhancedHeader from "@/components/EnhancedHeader";
+import EnhancedFooter from "@/components/EnhancedFooter";
 import {
   Search,
   Plus,
@@ -231,11 +232,8 @@ const AnimaisList: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <UserHeader 
-        title="Gestão de Animais"
-        subtitle={`${filteredAnimais.length} animais encontrados`}
-      />
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <EnhancedHeader />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         
@@ -518,6 +516,8 @@ const AnimaisList: React.FC = () => {
           </div>
         )}
       </div>
+      
+      <EnhancedFooter />
     </div>
   );
 };

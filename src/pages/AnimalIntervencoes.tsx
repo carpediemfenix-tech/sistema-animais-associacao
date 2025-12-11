@@ -101,20 +101,15 @@ const AnimalIntervencoes = () => {
       // Carregar intervenções
       const { data: intervencoesData, error: intervencoesError } = await supabase
         .from('intervencoes')
-        .select(`
-          *,
-          tipos_intervencoes(nome),
-          clinicas_veterinarias(nome, tem_protocolo)
-        `)
+        .select('*')
         .eq('animal_id', id)
         .order('data_intervencao', { ascending: false });
 
       if (intervencoesError) {
         console.error('Erro ao carregar intervenções:', intervencoesError);
-      }
-
-      if (intervencoesData) {
-        setIntervencoes(intervencoesData);
+      } else {
+        console.log('Intervenções carregadas:', intervencoesData?.length || 0);
+        setIntervencoes(intervencoesData || []);
       }
 
       // Carregar tipos de intervenções

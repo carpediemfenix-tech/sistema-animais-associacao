@@ -27,7 +27,8 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { Animal, ResponsabilidadeVoluntario, Voluntario } from "@/types/animal";
 import { useToast } from "@/hooks/use-toast";
-import UserHeader from "@/components/UserHeader";
+import EnhancedHeader from "@/components/EnhancedHeader";
+import EnhancedFooter from "@/components/EnhancedFooter";
 
 
 // Tipos de responsabilidades predefinidos
@@ -335,7 +336,7 @@ const AnimalResponsabilidades = () => {
 
     try {
       const { error } = await supabase
-        .from('responsabilidades_voluntarios')
+        .from('responsabilidades_animal')
         .update({
           ativo: true,
           data_fim: null
@@ -439,12 +440,8 @@ const AnimalResponsabilidades = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <UserHeader 
-        title={`${animal.nome} - Timeline de Responsabilidades`}
-        subtitle={`${animal.especie} • ${animal.sexo} • ${animal.estado}`}
-        backTo={`/animal/${id}`}
-      />
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <EnhancedHeader />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         
@@ -785,6 +782,8 @@ const AnimalResponsabilidades = () => {
           </form>
         </DialogContent>
       </Dialog>
+      
+      <EnhancedFooter />
     </div>
   );
 };
