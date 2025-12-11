@@ -19,6 +19,8 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import EnhancedHeader from "@/components/EnhancedHeader";
+import EnhancedFooter from "@/components/EnhancedFooter";
 
 interface EstatisticasAnimais {
   totalAnimais: number;
@@ -127,7 +129,7 @@ const ModuloAnimais = () => {
       // Carregar animais
       const { data: animais } = await supabase
         .from('animais')
-        .select('estado, arquivado, especies(nome)')
+        .select('estado, arquivado, especie')
         .then(result => ({ data: result.data || [] }))
         .catch(() => ({ data: [] }));
 
@@ -150,8 +152,8 @@ const ModuloAnimais = () => {
       const animaisAtivos = animais?.filter(a => !a.arquivado && a.estado !== 'Adotado').length || 0;
       const animaisAdotados = animais?.filter(a => a.estado === 'Adotado').length || 0;
       const animaisArquivados = animais?.filter(a => a.arquivado).length || 0;
-      const totalCaes = animais?.filter(a => a.especies?.nome === 'Cão').length || 0;
-      const totalGatos = animais?.filter(a => a.especies?.nome === 'Gato').length || 0;
+      const totalCaes = animais?.filter(a => a.especie === 'Cão').length || 0;
+      const totalGatos = animais?.filter(a => a.especie === 'Gato').length || 0;
       const totalGrupos = grupos?.length || 0;
       const totalLocalizacoes = localizacoes?.length || 0;
 
@@ -179,7 +181,9 @@ const ModuloAnimais = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-50 to-pink-100 p-6">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <EnhancedHeader />
+      <div className="bg-gradient-to-br from-red-50 to-pink-100 p-6 flex-1">
       <div className="max-w-7xl mx-auto">
         {/* Cabeçalho */}
         <div className="flex items-center justify-between mb-8">
@@ -333,6 +337,9 @@ const ModuloAnimais = () => {
           </CardContent>
         </Card>
       </div>
+      </div>
+      
+      <EnhancedFooter />
     </div>
   );
 };

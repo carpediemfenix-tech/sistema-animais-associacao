@@ -37,6 +37,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Grupo, Animal, DespesaGrupo, EventoGrupo } from "@/types/animal";
 import { useToast } from "@/hooks/use-toast";
 import LogotipoValentao from "@/components/LogotipoValentao";
+import EnhancedHeader from "@/components/EnhancedHeader";
+import EnhancedFooter from "@/components/EnhancedFooter";
 
 const GrupoDetail = () => {
   const { id } = useParams();
@@ -523,7 +525,8 @@ const GrupoDetail = () => {
   const totalDespesas = despesas.reduce((sum, d) => sum + d.valor, 0);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <EnhancedHeader />
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1276,6 +1279,8 @@ const GrupoDetail = () => {
           </TabsContent>
         </Tabs>
       </div>
+      
+      <EnhancedFooter />
     </div>
   );
 };
