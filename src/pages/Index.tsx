@@ -175,12 +175,12 @@ const Index = () => {
     {
       id: 'agenda',
       nome: 'Agenda',
-      descricao: 'Calendário de eventos e agendamentos',
+      descricao: 'Sistema completo de calendário e agendamentos',
       icone: Calendar,
       cor: 'bg-pink-500',
       rota: '/modulo-agenda',
-      desenvolvido: false,
-      stats: 'Em desenvolvimento'
+      desenvolvido: true,
+      stats: 'Sistema ativo'
     }
   ];
 
