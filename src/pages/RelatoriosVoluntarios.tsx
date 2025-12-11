@@ -10,7 +10,8 @@ import { ArrowLeft, BarChart3, AlertCircle, Users, UserCheck, UserX, TrendingUp,
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import UserHeader from "@/components/UserHeader";
+import EnhancedHeader from "@/components/EnhancedHeader";
+import EnhancedFooter from "@/components/EnhancedFooter";
 
 interface EstatisticasGerais {
   totalVoluntarios: number;
@@ -268,8 +269,8 @@ const RelatoriosVoluntarios = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <UserHeader />
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <EnhancedHeader />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         
@@ -476,6 +477,8 @@ const RelatoriosVoluntarios = () => {
           </TabsContent>
         </Tabs>
       </div>
+      
+      <EnhancedFooter />
     </div>
   );
 };

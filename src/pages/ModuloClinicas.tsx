@@ -30,7 +30,8 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import UserHeader from "@/components/UserHeader";
+import EnhancedHeader from "@/components/EnhancedHeader";
+import EnhancedFooter from "@/components/EnhancedFooter";
 
 interface ClinicaVeterinaria {
   id: string;
@@ -217,8 +218,8 @@ const ModuloClinicas = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <UserHeader />
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <EnhancedHeader />
       
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
@@ -760,6 +761,8 @@ const ModuloClinicas = () => {
           </TabsContent>
         </Tabs>
       </div>
+      
+      <EnhancedFooter />
     </div>
   );
 };

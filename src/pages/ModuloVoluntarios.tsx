@@ -20,6 +20,8 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import EnhancedHeader from "@/components/EnhancedHeader";
+import EnhancedFooter from "@/components/EnhancedFooter";
 
 interface EstatisticasVoluntarios {
   totalVoluntarios: number;
@@ -155,7 +157,9 @@ const ModuloVoluntarios = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <EnhancedHeader />
+      <div className="bg-gradient-to-br from-blue-50 to-indigo-100 p-6 flex-1">
       <div className="max-w-7xl mx-auto">
         {/* Cabeçalho */}
         <div className="flex items-center justify-between mb-8">
@@ -358,6 +362,9 @@ const ModuloVoluntarios = () => {
           </CardContent>
         </Card>
       </div>
+      </div>
+      
+      <EnhancedFooter />
     </div>
   );
 };

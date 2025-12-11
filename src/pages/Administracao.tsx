@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import UserHeader from "@/components/UserHeader";
+import EnhancedHeader from "@/components/EnhancedHeader";
+import EnhancedFooter from "@/components/EnhancedFooter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -582,13 +583,8 @@ const Administracao = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-green-50">
-      <UserHeader 
-        title="Administração do Sistema" 
-        description="Gestão de campos e configurações do sistema"
-        showBackButton
-        backTo="/"
-      />
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <EnhancedHeader />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         
@@ -806,6 +802,8 @@ const Administracao = () => {
       
       {/* Debug Logger */}
       <DebugLoggerComponent title="Administração Completa - Debug" />
+      
+      <EnhancedFooter />
     </div>
   );
 };
