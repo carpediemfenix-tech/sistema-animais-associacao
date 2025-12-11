@@ -73,6 +73,13 @@ const ModuloAnimais = () => {
       icone: MapPin,
       rota: "/configuracoes/localizacoes",
       cor: "bg-purple-500"
+    },
+    {
+      titulo: "Histórico de Nomes",
+      descricao: "Histórico de alterações de nomes",
+      icone: Settings,
+      rota: "/historico-nomes",
+      cor: "bg-indigo-500"
     }
   ];
 

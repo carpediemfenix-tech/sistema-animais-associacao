@@ -21,7 +21,8 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { Animal } from "@/types/animal";
 import { useToast } from "@/hooks/use-toast";
-import UserHeader from "@/components/UserHeader";
+import EnhancedHeader from "@/components/EnhancedHeader";
+import EnhancedFooter from "@/components/EnhancedFooter";
 
 const AnimalDetail = () => {
   const { id } = useParams();
@@ -184,12 +185,8 @@ const AnimalDetail = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <UserHeader 
-        title={`${animal.nome} - Ficha Completa`}
-        subtitle={`${animal.especie} • ${animal.sexo} • ${animal.estado}`}
-        backTo="/animais"
-      />
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <EnhancedHeader />
 
       {/* Navegação Adicional */}
       <div className="bg-white border-b border-gray-200">
@@ -444,11 +441,31 @@ const AnimalDetail = () => {
                 </Card>
               </Link>
               
+              {/* Histórico de Nomes */}
+              <Link to={`/animal/${id}/historico-nomes`}>
+                <Card className="hover:shadow-lg transition-shadow cursor-pointer border-indigo-200 bg-gradient-to-br from-indigo-50 to-indigo-100">
+                  <CardContent className="p-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="bg-indigo-600 p-2 rounded-full">
+                        <Edit className="h-5 w-5 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-indigo-800">Histórico de Nomes</h3>
+                        <p className="text-sm text-indigo-600">Alterações de nomes do animal</p>
+                      </div>
+                      <ExternalLink className="h-4 w-4 text-indigo-600" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+              
             </div>
           </CardContent>
         </Card>
 
       </div>
+      
+      <EnhancedFooter />
     </div>
   );
 };

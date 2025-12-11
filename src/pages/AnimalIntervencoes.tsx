@@ -25,7 +25,8 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { Animal, Intervencao, TipoIntervencao, Voluntario, ClinicaVeterinaria } from "@/types/animal";
 import { useToast } from "@/hooks/use-toast";
-import UserHeader from "@/components/UserHeader";
+import EnhancedHeader from "@/components/EnhancedHeader";
+import EnhancedFooter from "@/components/EnhancedFooter";
 
 const AnimalIntervencoes = () => {
   const { id } = useParams();
@@ -98,7 +99,7 @@ const AnimalIntervencoes = () => {
   const loadRelatedData = async () => {
     try {
       // Carregar intervenções
-      const { data: intervencoesData } = await supabase
+      const { data: intervencoesData, error: intervencoesError } = await supabase
         .from('intervencoes')
         .select(`
           *,
@@ -107,6 +108,10 @@ const AnimalIntervencoes = () => {
         `)
         .eq('animal_id', id)
         .order('data_intervencao', { ascending: false });
+
+      if (intervencoesError) {
+        console.error('Erro ao carregar intervenções:', intervencoesError);
+      }
 
       if (intervencoesData) {
         setIntervencoes(intervencoesData);
@@ -350,12 +355,8 @@ const AnimalIntervencoes = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <UserHeader 
-        title={`${animal.nome} - Intervenções Médicas`}
-        subtitle={`${animal.especie} • ${animal.sexo} • ${animal.estado}`}
-        backTo={`/animal/${id}`}
-      />
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <EnhancedHeader />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         
@@ -659,6 +660,8 @@ const AnimalIntervencoes = () => {
           </form>
         </DialogContent>
       </Dialog>
+      
+      <EnhancedFooter />
     </div>
   );
 };

@@ -95,7 +95,7 @@ const EstatisticasAvancadasPage = () => {
       // Carregar dados dos animais
       const { data: animais } = await supabase
         .from('animais')
-        .select('estado, arquivado, especies(nome), sexos(nome)')
+        .select('estado, arquivado, especie, sexo')
         .then(result => ({ data: result.data || [] }))
         .catch(() => ({ data: [] }));
 
@@ -135,14 +135,14 @@ const EstatisticasAvancadasPage = () => {
       // Distribuição por espécies
       const distribuicaoEspecies: { [key: string]: number } = {};
       animais?.forEach(animal => {
-        const especie = animal.especies?.nome || 'Não definido';
+        const especie = animal.especie || 'Não definido';
         distribuicaoEspecies[especie] = (distribuicaoEspecies[especie] || 0) + 1;
       });
 
       // Distribuição por sexos
       const distribuicaoSexos: { [key: string]: number } = {};
       animais?.forEach(animal => {
-        const sexo = animal.sexos?.nome || 'Não definido';
+        const sexo = animal.sexo || 'Não definido';
         distribuicaoSexos[sexo] = (distribuicaoSexos[sexo] || 0) + 1;
       });
 
@@ -183,9 +183,9 @@ const EstatisticasAvancadasPage = () => {
         receitaTotal: receitas,
         despesaTotal: despesas,
         movimentosMes,
-        eficienciaOperacional: Math.min(95, Math.max(60, 85 + (voluntariosAtivos / totalAnimais) * 10)),
+        eficienciaOperacional: Math.min(95, Math.max(60, 85 + (voluntariosAtivos / Math.max(totalAnimais, 1)) * 10)),
         satisfacaoGeral: Math.min(100, Math.max(70, 90 + taxaAprovacao / 10)),
-        crescimentoMensal: Math.round(Math.random() * 20 + 5) // Simulado
+        crescimentoMensal: Math.round((movimentosMes / Math.max(totalAnimais, 1)) * 100) // Baseado em movimentos por animal
       });
 
     } catch (error) {

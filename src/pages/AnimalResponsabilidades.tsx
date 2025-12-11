@@ -327,6 +327,48 @@ const AnimalResponsabilidades = () => {
     }
   };
 
+  // Função para reativar responsabilidade
+  const handleReativarResponsabilidade = async (responsabilidadeId: string) => {
+    if (!confirm('Tem certeza que deseja reativar esta responsabilidade?')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('responsabilidades_voluntarios')
+        .update({
+          ativo: true,
+          data_fim: null
+        })
+        .eq('id', responsabilidadeId);
+
+      if (error) {
+        console.error('Erro ao reativar responsabilidade:', error);
+        toast({
+          title: "Erro ao reativar",
+          description: "Não foi possível reativar a responsabilidade",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Responsabilidade reativada",
+        description: "Responsabilidade reativada com sucesso",
+      });
+
+      await loadRelatedData();
+
+    } catch (error) {
+      console.error('Erro:', error);
+      toast({
+        title: "Erro inesperado",
+        description: "Ocorreu um erro inesperado",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Função para formatar data relativa
   const getRelativeDate = (dateString: string) => {
     const eventDate = new Date(dateString);
@@ -573,6 +615,22 @@ const AnimalResponsabilidades = () => {
                                 </div>
                                 
                                 <div className="flex space-x-2 ml-4">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => openResponsabilidadeDialog(responsabilidade)}
+                                    className="text-blue-600 hover:text-blue-700"
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleReativarResponsabilidade(responsabilidade.id)}
+                                    className="text-green-600 hover:text-green-700"
+                                  >
+                                    <Star className="h-4 w-4" />
+                                  </Button>
                                   <Button
                                     variant="outline"
                                     size="sm"
