@@ -165,12 +165,12 @@ const Index = () => {
     {
       id: 'missoes',
       nome: 'Missões',
-      descricao: 'Sistema de missões e tarefas para voluntários',
+      descricao: 'Sistema de gamificação e missões para voluntários',
       icone: Target,
       cor: 'bg-indigo-500',
       rota: '/modulo-missoes',
-      desenvolvido: false,
-      stats: 'Em desenvolvimento'
+      desenvolvido: true,
+      stats: 'Sistema ativo'
     },
     {
       id: 'agenda',

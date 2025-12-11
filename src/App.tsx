@@ -48,6 +48,7 @@ import GestaoCategorias from "./pages/GestaoCategorias";
 import GestaoClinicas from "./pages/GestaoClinicas";
 import GestaoResponsabilidades from "./pages/GestaoResponsabilidades";
 import HistoricoNomesAnimais from "./pages/HistoricoNomesAnimais";
+import ModuloMissoes from "./pages/ModuloMissoes";
 import ModuloAnimais from "./pages/ModuloAnimais";
 import ModuloEquipamentos from "./pages/ModuloEquipamentos";
 import ModuloClinicas from "./pages/ModuloClinicas";
@@ -122,6 +123,7 @@ const App = () => (
             <Route path="/grupo/:id" element={<ProtectedRoute><GrupoDetail /></ProtectedRoute>} />
             <Route path="/manual" element={<ProtectedRoute><ManualUtilizador /></ProtectedRoute>} />
             <Route path="/administracao" element={<ProtectedRoute><Administracao /></ProtectedRoute>} />
+            <Route path="/modulo-missoes" element={<ProtectedRoute><ModuloMissoes /></ProtectedRoute>} />
             
             {/* Rota 404 */}
             <Route path="*" element={<NotFound />} />
