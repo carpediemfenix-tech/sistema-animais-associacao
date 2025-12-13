@@ -93,15 +93,15 @@ const AnimalDetail = () => {
         .single();
       
       if (localizacaoData && !localizacaoError) {
-        // Buscar tipo de localização separadamente
-        const { data: tipoData } = await supabase
-          .from('tipos_localizacoes')
+        // Buscar localização separadamente
+        const { data: localizacaoInfo } = await supabase
+          .from('localizacoes')
           .select('nome, descricao')
-          .eq('id', localizacaoData.tipo_localizacao)
+          .eq('id', localizacaoData.localizacao_id)
           .single();
         
-        if (tipoData) {
-          localizacaoData.tipos_localizacoes = tipoData;
+        if (localizacaoInfo) {
+          localizacaoData.localizacao = localizacaoInfo;
         }
         
         setLocalizacaoAtual(localizacaoData);
@@ -286,23 +286,23 @@ const AnimalDetail = () => {
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="text-sm font-medium opacity-90">Estado Atual</h3>
                     <div className={`w-3 h-3 rounded-full animate-pulse ${
-                      animal.estado === 'disponivel' ? 'bg-green-400' :
-                      animal.estado === 'adotado' ? 'bg-blue-300' :
-                      animal.estado === 'tratamento' ? 'bg-yellow-400' :
+                      animal.estado?.toLowerCase() === 'disponivel' ? 'bg-green-400' :
+                      animal.estado?.toLowerCase() === 'adotado' ? 'bg-blue-300' :
+                      animal.estado?.toLowerCase() === 'tratamento' ? 'bg-yellow-400' :
                       'bg-gray-400'
                     }`}></div>
                   </div>
                   <div className={`text-3xl font-bold mb-1 ${
-                    animal.estado === 'disponivel' ? 'text-green-100' :
-                    animal.estado === 'adotado' ? 'text-blue-100' :
-                    animal.estado === 'tratamento' ? 'text-yellow-100' :
+                    animal.estado?.toLowerCase() === 'disponivel' ? 'text-green-100' :
+                    animal.estado?.toLowerCase() === 'adotado' ? 'text-blue-100' :
+                    animal.estado?.toLowerCase() === 'tratamento' ? 'text-yellow-100' :
                     'text-gray-100'
                   }`}>
                     {animal.estado?.toUpperCase()}
                   </div>
                   <div className="text-sm opacity-75">
-                    {animal.estado === 'disponivel' && 'Pronto para adoção'}
-                    {animal.estado === 'adotado' && (
+                    {animal.estado?.toLowerCase() === 'disponivel' && 'Pronto para adoção'}
+                    {animal.estado?.toLowerCase() === 'adotado' && (
                       <div>
                         <div>Já tem uma família</div>
                         {animal.adotante_nome && (
@@ -317,9 +317,9 @@ const AnimalDetail = () => {
                         )}
                       </div>
                     )}
-                    {animal.estado === 'tratamento' && 'Em cuidados veterinários'}
-                    {animal.estado === 'quarentena' && 'Em período de observação'}
-                    {!['disponivel', 'adotado', 'tratamento', 'quarentena'].includes(animal.estado) && 'Estado especial'}
+                    {animal.estado?.toLowerCase() === 'tratamento' && 'Em cuidados veterinários'}
+                    {animal.estado?.toLowerCase() === 'quarentena' && 'Em período de observação'}
+                    {!['disponivel', 'adotado', 'tratamento', 'quarentena'].includes(animal.estado?.toLowerCase()) && 'Estado especial'}
                   </div>
                 </div>
                 <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-white bg-opacity-10 rounded-full"></div>
@@ -333,10 +333,10 @@ const AnimalDetail = () => {
                     <MapPin className="w-5 h-5 opacity-75" />
                   </div>
                   <div className="text-2xl font-bold mb-1 text-emerald-100">
-                    {localizacaoAtual?.tipos_localizacoes?.nome || 'Não definida'}
+                    {localizacaoAtual?.localizacao?.nome || 'Não definida'}
                   </div>
                   <div className="text-sm opacity-75">
-                    {localizacaoAtual?.tipos_localizacoes?.descricao || 'Localização não especificada'}
+                    {localizacaoAtual?.localizacao?.descricao || 'Localização não especificada'}
                   </div>
                   {localizacaoAtual?.endereco_detalhes && (
                     <div className="text-xs opacity-60 mt-1">

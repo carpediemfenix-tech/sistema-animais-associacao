@@ -60,7 +60,7 @@ const AnimalLocalizacoes = () => {
 
   // Formulário de localização
   const [localizacaoForm, setLocalizacaoForm] = useState({
-    tipo_localizacao: '',
+    localizacao_id: '',
     data_inicio: '',
     endereco_detalhes: '',
     responsavel_id: '',
@@ -128,14 +128,14 @@ const AnimalLocalizacoes = () => {
 
       // Carregar tipos de localizações
       const { data: tiposLocalizacoesData } = await supabase
-        .from('tipos_localizacoes')
+        .from('localizacoes')
         .select('*')
         .eq('ativo', true)
         .order('nome');
 
-      console.log('DEBUG - Tipos de localizações carregados:', tiposLocalizacoesData);
-      console.log('DEBUG - Primeiro tipo estrutura:', tiposLocalizacoesData?.[0]);
-      console.log('DEBUG - IDs dos tipos:', tiposLocalizacoesData?.map(t => ({ id: t.id, nome: t.nome })));
+      console.log('DEBUG - Localizações carregadas:', tiposLocalizacoesData);
+      console.log('DEBUG - Primeira localização estrutura:', tiposLocalizacoesData?.[0]);
+      console.log('DEBUG - IDs das localizações:', tiposLocalizacoesData?.map(t => ({ id: t.id, nome: t.nome })));
       setTiposLocalizacoes(tiposLocalizacoesData || []);
 
       // Carregar voluntários
@@ -159,7 +159,7 @@ const AnimalLocalizacoes = () => {
   // Funções de gestão de localizações
   const resetLocalizacaoForm = () => {
     setLocalizacaoForm({
-      tipo_localizacao: '',
+      localizacao_id: '',
       data_inicio: '',
       endereco_detalhes: '',
       responsavel_id: '',
@@ -172,7 +172,7 @@ const AnimalLocalizacoes = () => {
     if (localizacao) {
       setEditingLocalizacao(localizacao);
       setLocalizacaoForm({
-        tipo_localizacao: localizacao.tipo_localizacao || '',
+        localizacao_id: localizacao.localizacao_id || '',
         data_inicio: localizacao.data_inicio || '',
         endereco_detalhes: localizacao.endereco_detalhes || '',
         responsavel_id: localizacao.responsavel_id || '',
@@ -231,7 +231,7 @@ const AnimalLocalizacoes = () => {
 
       const localizacaoData = {
         animal_id: id,
-        tipo_localizacao: localizacaoForm.tipo_localizacao,
+        localizacao_id: localizacaoForm.localizacao_id,
         data_inicio: localizacaoForm.data_inicio,
         endereco_detalhes: localizacaoForm.endereco_detalhes,
         responsavel_id: localizacaoForm.responsavel_id || null,
@@ -319,11 +319,11 @@ const AnimalLocalizacoes = () => {
   };
 
   // Função para obter informações do tipo de localização
-  const getTipoLocalizacaoInfo = (tipo: string) => {
-    const tipoInfo = tiposLocalizacoes.find(t => t.id === tipo);
+  const getTipoLocalizacaoInfo = (localizacaoId: string) => {
+    const localizacaoInfo = tiposLocalizacoes.find(t => t.id === localizacaoId);
     return {
-      emoji: tipoInfo?.nome?.split(' ')[0] || '📍',
-      nome: tipoInfo?.nome || tipo
+      emoji: '📍',
+      nome: localizacaoInfo?.nome || 'Localização'
     };
   };
 
@@ -428,12 +428,12 @@ const AnimalLocalizacoes = () => {
             <CardContent>
               <div className="flex items-start space-x-4">
                 <div className="flex-shrink-0 w-16 h-16 rounded-full bg-blue-500 flex items-center justify-center text-white text-2xl">
-                  {getTipoLocalizacaoInfo(localizacaoAtual.tipo_localizacao).emoji}
+                  {getTipoLocalizacaoInfo(localizacaoAtual.localizacao_id).emoji}
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center space-x-2 mb-2">
                     <h3 className="text-xl font-semibold text-gray-900">
-                      {getTipoLocalizacaoInfo(localizacaoAtual.tipo_localizacao).nome}
+                      {getTipoLocalizacaoInfo(localizacaoAtual.localizacao_id).nome}
                     </h3>
                     <Badge className="bg-green-100 text-green-800">ATUAL</Badge>
                   </div>
@@ -492,7 +492,7 @@ const AnimalLocalizacoes = () => {
             {historicoLocalizacoes.length > 0 ? (
               <div className="space-y-4">
                 {historicoLocalizacoes.map((localizacao) => {
-                  const tipoInfo = getTipoLocalizacaoInfo(localizacao.tipo_localizacao);
+                  const tipoInfo = getTipoLocalizacaoInfo(localizacao.localizacao_id);
                   return (
                     <div key={localizacao.id} className="border rounded-lg p-4 bg-gray-50">
                       <div className="flex items-start space-x-4">
@@ -579,14 +579,14 @@ const AnimalLocalizacoes = () => {
           
           <form onSubmit={handleLocalizacaoSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="tipo_localizacao" className="text-blue-700 font-medium">
+              <Label htmlFor="localizacao_id" className="text-blue-700 font-medium">
                 Tipo de Localização *
               </Label>
               <Select 
                 key={`select-${localizacaoDialogOpen}`}
-                value={localizacaoForm.tipo_localizacao || ""} 
+                value={localizacaoForm.localizacao_id || ""} 
                 onValueChange={(value) => {
-                  setLocalizacaoForm(prev => ({ ...prev, tipo_localizacao: value }));
+                  setLocalizacaoForm(prev => ({ ...prev, localizacao_id: value }));
                 }}
               >
                 <SelectTrigger className="border-blue-200 focus:border-blue-400">
@@ -595,12 +595,12 @@ const AnimalLocalizacoes = () => {
                 <SelectContent>
                   {tiposLocalizacoes.length === 0 && (
                     <SelectItem value="loading" disabled>
-                      Carregando tipos...
+                      Carregando localizações...
                     </SelectItem>
                   )}
-                  {tiposLocalizacoes.map((tipo) => (
-                    <SelectItem key={tipo.id} value={String(tipo.id)}>
-                      {tipo.nome}
+                  {tiposLocalizacoes.map((localizacao) => (
+                    <SelectItem key={localizacao.id} value={String(localizacao.id)}>
+                      {localizacao.nome}
                     </SelectItem>
                   ))}
                 </SelectContent>
