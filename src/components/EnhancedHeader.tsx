@@ -376,7 +376,7 @@ const EnhancedHeader = () => {
         navigationButtons: [
           { label: 'Lista Animais', path: '/animais', icon: <PawPrint className="h-4 w-4" /> },
           { label: 'Editar Animal', path: `${path}/editar`, icon: <Edit className="h-4 w-4" /> },
-          { label: 'Histórico Nomes', path: `${path}/historico-nomes`, icon: <History className="h-4 w-4" /> },
+          { label: 'Histórico Nomes', path: `/animal/${path.split('/')[2]}/historico-nomes`, icon: <History className="h-4 w-4" /> },
           { label: 'Dashboard', path: '/', icon: <Home className="h-4 w-4" /> }
         ]
       };
