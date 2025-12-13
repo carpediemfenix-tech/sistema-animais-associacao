@@ -344,8 +344,8 @@ const ConfiguracoesFinanceiras = () => {
     const matchSearch = categoria.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
                        categoria.codigo.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchTipo = !filterTipo || categoria.tipo === filterTipo;
-    const matchEscopo = !filterEscopo || categoria.escopo === filterEscopo;
+    const matchTipo = !filterTipo || filterTipo === 'todos' || categoria.tipo === filterTipo;
+    const matchEscopo = !filterEscopo || filterEscopo === 'todos' || categoria.escopo === filterEscopo;
 
     return matchSearch && matchTipo && matchEscopo;
   });
@@ -499,7 +499,7 @@ const ConfiguracoesFinanceiras = () => {
                         <SelectValue placeholder="Todos" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Todos</SelectItem>
+                        <SelectItem value="todos">Todos</SelectItem>
                         <SelectItem value="receita">Receita</SelectItem>
                         <SelectItem value="despesa">Despesa</SelectItem>
                       </SelectContent>
@@ -513,7 +513,7 @@ const ConfiguracoesFinanceiras = () => {
                         <SelectValue placeholder="Todos" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Todos</SelectItem>
+                        <SelectItem value="todos">Todos</SelectItem>
                         <SelectItem value="animal">Animal</SelectItem>
                         <SelectItem value="associacao">Associação</SelectItem>
                         <SelectItem value="ambos">Ambos</SelectItem>

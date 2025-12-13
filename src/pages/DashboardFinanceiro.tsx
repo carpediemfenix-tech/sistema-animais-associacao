@@ -21,11 +21,13 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Building,
+  Building2,
   PawPrint,
   CreditCard,
   Wallet,
   FileText,
-  Settings
+  Settings,
+  Stethoscope
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -91,6 +93,8 @@ const DashboardFinanceiro = () => {
   });
   const [movimentosRecentes, setMovimentosRecentes] = useState<MovimentoFinanceiro[]>([]);
   const [contas, setContas] = useState<ContaFinanceira[]>([]);
+  const [estatisticasClinicas, setEstatisticasClinicas] = useState<any[]>([]);
+  const [estatisticasIntervencoes, setEstatisticasIntervencoes] = useState<any[]>([]);
 
   useEffect(() => {
     loadDashboardData();
@@ -102,7 +106,9 @@ const DashboardFinanceiro = () => {
       await Promise.all([
         loadResumoFinanceiro(),
         loadMovimentosRecentes(),
-        loadContas()
+        loadContas(),
+        loadEstatisticasClinicas(),
+        loadEstatisticasIntervencoes()
       ]);
     } catch (error) {
       console.error('Erro ao carregar dashboard:', error);
@@ -212,6 +218,60 @@ const DashboardFinanceiro = () => {
 
     if (data) {
       setContas(data);
+    }
+  };
+
+  const loadEstatisticasClinicas = async () => {
+    const { data } = await supabase
+      .from('movimentos_financeiros_2025_12_13_06_00')
+      .select(`
+        valor,
+        intervencoes!inner(clinicas_veterinarias(nome))
+      `)
+      .eq('tipo', 'despesa')
+      .not('intervencao_id', 'is', null);
+
+    if (data) {
+      const clinicasMap = new Map();
+      data.forEach((movimento: any) => {
+        const clinicaNome = movimento.intervencoes?.clinicas_veterinarias?.nome || 'Sem Clínica';
+        const valorAtual = clinicasMap.get(clinicaNome) || 0;
+        clinicasMap.set(clinicaNome, valorAtual + movimento.valor);
+      });
+      
+      const estatisticas = Array.from(clinicasMap.entries())
+        .map(([nome, valor]) => ({ nome, valor }))
+        .sort((a, b) => b.valor - a.valor)
+        .slice(0, 5);
+      
+      setEstatisticasClinicas(estatisticas);
+    }
+  };
+
+  const loadEstatisticasIntervencoes = async () => {
+    const { data } = await supabase
+      .from('movimentos_financeiros_2025_12_13_06_00')
+      .select(`
+        valor,
+        intervencoes!inner(tipos_intervencoes(nome))
+      `)
+      .eq('tipo', 'despesa')
+      .not('intervencao_id', 'is', null);
+
+    if (data) {
+      const tiposMap = new Map();
+      data.forEach((movimento: any) => {
+        const tipoNome = movimento.intervencoes?.tipos_intervencoes?.nome || 'Sem Tipo';
+        const valorAtual = tiposMap.get(tipoNome) || 0;
+        tiposMap.set(tipoNome, valorAtual + movimento.valor);
+      });
+      
+      const estatisticas = Array.from(tiposMap.entries())
+        .map(([nome, valor]) => ({ nome, valor }))
+        .sort((a, b) => b.valor - a.valor)
+        .slice(0, 5);
+      
+      setEstatisticasIntervencoes(estatisticas);
     }
   };
 
@@ -517,6 +577,85 @@ const DashboardFinanceiro = () => {
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* Estatísticas de Clínicas e Intervenções */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Despesas por Clínicas */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Building2 className="h-5 w-5 mr-2 text-blue-600" />
+                Top 5 Despesas por Clínicas
+              </CardTitle>
+              <CardDescription>
+                Clínicas com maiores despesas em intervenções
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {estatisticasClinicas.map((clinica, index) => (
+                  <div key={clinica.nome} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-bold">
+                        {index + 1}
+                      </div>
+                      <div>
+                        <div className="font-medium text-gray-900">{clinica.nome}</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-bold text-red-600">{formatCurrency(clinica.valor)}</div>
+                    </div>
+                  </div>
+                ))}
+                {estatisticasClinicas.length === 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    <Building2 className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p>Nenhuma despesa com clínicas registrada</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Despesas por Tipos de Intervenções */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Stethoscope className="h-5 w-5 mr-2 text-green-600" />
+                Top 5 Despesas por Tipo de Intervenção
+              </CardTitle>
+              <CardDescription>
+                Tipos de intervenções com maiores custos
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {estatisticasIntervencoes.map((tipo, index) => (
+                  <div key={tipo.nome} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-sm font-bold">
+                        {index + 1}
+                      </div>
+                      <div>
+                        <div className="font-medium text-gray-900">{tipo.nome}</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-bold text-red-600">{formatCurrency(tipo.valor)}</div>
+                    </div>
+                  </div>
+                ))}
+                {estatisticasIntervencoes.length === 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    <Stethoscope className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p>Nenhuma despesa com intervenções registrada</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Ações Rápidas */}
         <Card>

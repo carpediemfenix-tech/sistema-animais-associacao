@@ -251,8 +251,8 @@ const GestaoContas = () => {
                        conta.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
                        conta.banco?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchTipo = !filterTipo || conta.tipo === filterTipo;
-    const matchStatus = filterStatus === '' || 
+    const matchTipo = !filterTipo || filterTipo === 'todos' || conta.tipo === filterTipo;
+    const matchStatus = filterStatus === '' || filterStatus === 'todos' || 
                        (filterStatus === 'ativo' && conta.ativo) ||
                        (filterStatus === 'inativo' && !conta.ativo);
 
@@ -391,7 +391,7 @@ const GestaoContas = () => {
                     <SelectValue placeholder="Todos" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos</SelectItem>
+                    <SelectItem value="todos">Todos</SelectItem>
                     <SelectItem value="banco">Banco</SelectItem>
                     <SelectItem value="caixa">Caixa</SelectItem>
                     <SelectItem value="poupanca">Poupança</SelectItem>
@@ -406,7 +406,7 @@ const GestaoContas = () => {
                     <SelectValue placeholder="Todos" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos</SelectItem>
+                    <SelectItem value="todos">Todos</SelectItem>
                     <SelectItem value="ativo">Ativo</SelectItem>
                     <SelectItem value="inativo">Inativo</SelectItem>
                   </SelectContent>

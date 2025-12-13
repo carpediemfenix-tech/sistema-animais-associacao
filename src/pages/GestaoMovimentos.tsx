@@ -197,10 +197,10 @@ const GestaoMovimentos = () => {
                        movimento.numero_movimento.toLowerCase().includes(searchTerm.toLowerCase()) ||
                        movimento.animal?.nome?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchTipo = !filterTipo || movimento.tipo === filterTipo;
-    const matchEscopo = !filterEscopo || movimento.escopo === filterEscopo;
-    const matchStatus = !filterStatus || movimento.status === filterStatus;
-    const matchCategoria = !filterCategoria || movimento.categoria?.nome === filterCategoria;
+    const matchTipo = !filterTipo || filterTipo === 'todos' || movimento.tipo === filterTipo;
+    const matchEscopo = !filterEscopo || filterEscopo === 'todos' || movimento.escopo === filterEscopo;
+    const matchStatus = !filterStatus || filterStatus === 'todos' || movimento.status === filterStatus;
+    const matchCategoria = !filterCategoria || filterCategoria === 'todas' || movimento.categoria?.nome === filterCategoria;
 
     return matchSearch && matchTipo && matchEscopo && matchStatus && matchCategoria;
   });
@@ -339,7 +339,7 @@ const GestaoMovimentos = () => {
                     <SelectValue placeholder="Todos" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos</SelectItem>
+                    <SelectItem value="todos">Todos</SelectItem>
                     <SelectItem value="receita">Receita</SelectItem>
                     <SelectItem value="despesa">Despesa</SelectItem>
                   </SelectContent>
@@ -353,7 +353,7 @@ const GestaoMovimentos = () => {
                     <SelectValue placeholder="Todos" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos</SelectItem>
+                    <SelectItem value="todos">Todos</SelectItem>
                     <SelectItem value="associacao">Associação</SelectItem>
                     <SelectItem value="animal">Animal</SelectItem>
                   </SelectContent>
@@ -367,7 +367,7 @@ const GestaoMovimentos = () => {
                     <SelectValue placeholder="Todos" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos</SelectItem>
+                    <SelectItem value="todos">Todos</SelectItem>
                     <SelectItem value="pago">Pago</SelectItem>
                     <SelectItem value="pendente">Pendente</SelectItem>
                     <SelectItem value="parcial">Parcial</SelectItem>
@@ -383,7 +383,7 @@ const GestaoMovimentos = () => {
                     <SelectValue placeholder="Todas" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todas</SelectItem>
+                    <SelectItem value="todas">Todas</SelectItem>
                     {categorias.map((categoria) => (
                       <SelectItem key={categoria.id} value={categoria.nome}>
                         {categoria.nome}
