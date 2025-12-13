@@ -101,7 +101,11 @@ const AnimalIntervencoes = () => {
       // Carregar intervenções
       const { data: intervencoesData, error: intervencoesError } = await supabase
         .from('intervencoes')
-        .select('*')
+        .select(`
+          *,
+          tipos_intervencoes(nome),
+          clinicas_veterinarias(nome)
+        `)
         .eq('animal_id', id)
         .order('data_intervencao', { ascending: false });
 
