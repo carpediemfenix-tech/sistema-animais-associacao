@@ -168,9 +168,13 @@ const AnimaisArquivados = () => {
 
       const especiesUnicas = [...new Set(especiesData?.map(item => item.especie).filter(Boolean))];
       const sexosUnicos = [...new Set(sexosData?.map(item => item.sexo).filter(Boolean))];
+      
+      // Garantir que todos os sexos possíveis estão disponíveis
+      const todosSexos = ['Macho', 'Fêmea', 'Indeterminado'];
+      const sexosCompletos = [...new Set([...sexosUnicos, ...todosSexos])];
 
       setEspecies(especiesUnicas);
-      setSexos(sexosUnicos);
+      setSexos(sexosCompletos);
     } catch (error) {
       console.error('Erro ao carregar dados de filtro:', error);
     }

@@ -50,6 +50,7 @@ import GestaoResponsabilidades from "./pages/GestaoResponsabilidades";
 import HistoricoNomesAnimais from "./pages/HistoricoNomesAnimais";
 import ModuloMissoes from "./pages/ModuloMissoes";
 import ModuloAgenda from "./pages/ModuloAgenda";
+import ModuloEquipamentos from "./pages/ModuloEquipamentos";
 import ModuloAnimais from "./pages/ModuloAnimais";
 import ModuloEquipamentos from "./pages/ModuloEquipamentos";
 import ModuloClinicas from "./pages/ModuloClinicas";
@@ -126,6 +127,7 @@ const App = () => (
             <Route path="/administracao" element={<ProtectedRoute><Administracao /></ProtectedRoute>} />
             <Route path="/modulo-missoes" element={<ProtectedRoute><ModuloMissoes /></ProtectedRoute>} />
             <Route path="/modulo-agenda" element={<ProtectedRoute><ModuloAgenda /></ProtectedRoute>} />
+            <Route path="/modulo-equipamentos" element={<ProtectedRoute><ModuloEquipamentos /></ProtectedRoute>} />
             
             {/* Rota 404 */}
             <Route path="*" element={<NotFound />} />

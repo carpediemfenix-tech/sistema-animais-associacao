@@ -27,6 +27,7 @@ import {
   Plus,
   Settings,
   PawPrint,
+  Package,
   Eye,
   Archive,
   BarChart2,
@@ -179,6 +180,16 @@ const Index = () => {
       icone: Calendar,
       cor: 'bg-pink-500',
       rota: '/modulo-agenda',
+      desenvolvido: true,
+      stats: 'Sistema ativo'
+    },
+    {
+      id: 'equipamentos',
+      nome: 'Equipamentos',
+      descricao: 'Sistema de gestão de equipamentos e materiais',
+      icone: Package,
+      cor: 'bg-orange-500',
+      rota: '/modulo-equipamentos',
       desenvolvido: true,
       stats: 'Sistema ativo'
     }

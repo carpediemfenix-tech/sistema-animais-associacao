@@ -25,6 +25,9 @@ import {
   Target,
   Shirt,
   Package,
+  Shield,
+  Truck,
+  Smartphone,
   Award,
   History,
   Loader2,
@@ -32,7 +35,177 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import UserHeader from "@/components/UserHeader";
+import EnhancedHeader from "@/components/EnhancedHeader";
+import EnhancedFooter from "@/components/EnhancedFooter";
+
+// Componente para Material do Voluntário
+const MaterialVoluntario = ({ voluntarioId }: { voluntarioId: string }) => {
+  const [equipamentos, setEquipamentos] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    loadEquipamentosVoluntario();
+  }, [voluntarioId]);
+
+  const loadEquipamentosVoluntario = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('atribuicoes_equipamentos_2025_12_13_01_00')
+        .select(`
+          *,
+          equipamento:equipamentos_2025_12_13_01_00(
+            *,
+            tipo_equipamento:tipos_equipamentos_2025_12_13_01_00(
+              *,
+              categoria:categorias_equipamentos_2025_12_13_01_00(*)
+            )
+          )
+        `)
+        .eq('voluntario_id', voluntarioId)
+        .eq('ativo', true)
+        .order('data_atribuicao', { ascending: false });
+
+      if (error) throw error;
+      setEquipamentos(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar equipamentos:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar equipamentos do voluntário",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getIconComponent = (iconName: string) => {
+    const icons: { [key: string]: React.ComponentType<any> } = {
+      Shield, Truck, Heart, Smartphone, Shirt, Package
+    };
+    return icons[iconName] || Package;
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="h-6 w-6 animate-spin mr-2" />
+        <span>Carregando equipamentos...</span>
+      </div>
+    );
+  }
+
+  // Agrupar equipamentos por categoria
+  const equipamentosPorCategoria = equipamentos.reduce((acc, atribuicao) => {
+    const categoria = atribuicao.equipamento?.tipo_equipamento?.categoria;
+    if (categoria) {
+      if (!acc[categoria.codigo]) {
+        acc[categoria.codigo] = {
+          categoria,
+          equipamentos: []
+        };
+      }
+      acc[categoria.codigo].equipamentos.push(atribuicao);
+    }
+    return acc;
+  }, {} as any);
+
+  return (
+    <div className="space-y-6">
+      {Object.keys(equipamentosPorCategoria).length === 0 ? (
+        <Card>
+          <CardContent className="text-center py-8">
+            <Package className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-500 text-lg">Nenhum equipamento atribuído</p>
+            <p className="text-gray-400">Este voluntário não possui equipamentos atribuídos atualmente</p>
+          </CardContent>
+        </Card>
+      ) : (
+        Object.entries(equipamentosPorCategoria).map(([codigo, grupo]: [string, any]) => {
+          const IconComponent = getIconComponent(grupo.categoria.icone);
+          
+          return (
+            <Card key={codigo}>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <div 
+                    className="p-2 rounded-full text-white mr-3"
+                    style={{ backgroundColor: grupo.categoria.cor }}
+                  >
+                    <IconComponent className="h-5 w-5" />
+                  </div>
+                  {grupo.categoria.nome}
+                  <Badge variant="outline" className="ml-2">
+                    {grupo.equipamentos.length} {grupo.equipamentos.length === 1 ? 'item' : 'itens'}
+                  </Badge>
+                </CardTitle>
+                <CardDescription>
+                  {grupo.categoria.descricao}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {grupo.equipamentos.map((atribuicao: any) => {
+                    const equipamento = atribuicao.equipamento;
+                    const tipoEquipamento = equipamento?.tipo_equipamento;
+                    
+                    return (
+                      <div key={atribuicao.id} className="border rounded-lg p-4 bg-white hover:shadow-md transition-shadow">
+                        <div className="flex items-start justify-between mb-3">
+                          <div>
+                            <h4 className="font-semibold text-sm">{equipamento?.codigo_interno}</h4>
+                            <p className="text-xs text-gray-600">{tipoEquipamento?.nome}</p>
+                          </div>
+                          <Badge 
+                            className="text-xs"
+                            variant={equipamento?.estado === 'em_uso' ? 'default' : 'secondary'}
+                          >
+                            {equipamento?.estado}
+                          </Badge>
+                        </div>
+                        
+                        <div className="space-y-2 text-xs text-gray-600">
+                          <div className="flex justify-between">
+                            <span className="font-medium">Condição:</span>
+                            <Badge variant="outline" className="text-xs">
+                              {equipamento?.condicao}
+                            </Badge>
+                          </div>
+                          
+                          <div className="flex justify-between">
+                            <span className="font-medium">Atribuído em:</span>
+                            <span>{new Date(atribuicao.data_atribuicao).toLocaleDateString('pt-PT')}</span>
+                          </div>
+                          
+                          {equipamento?.numero_serie && (
+                            <div className="flex justify-between">
+                              <span className="font-medium">Série:</span>
+                              <span className="font-mono">{equipamento.numero_serie}</span>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {atribuicao.motivo_atribuicao && (
+                          <div className="mt-3 pt-3 border-t">
+                            <p className="text-xs text-gray-600">
+                              <span className="font-medium">Motivo:</span> {atribuicao.motivo_atribuicao}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })
+      )}
+    </div>
+  );
+};
 
 interface VoluntarioCompleto {
   id: string;
@@ -384,8 +557,8 @@ const VoluntarioProfile = () => {
 
   if (!voluntario) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <UserHeader />
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <EnhancedHeader />
         <div className="container mx-auto px-4 py-8">
           <Card className="w-full max-w-md mx-auto">
             <CardHeader className="text-center">
@@ -405,13 +578,14 @@ const VoluntarioProfile = () => {
             </CardContent>
           </Card>
         </div>
+        <EnhancedFooter />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <UserHeader />
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <EnhancedHeader />
       
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
@@ -881,8 +1055,15 @@ const VoluntarioProfile = () => {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* Aba: Material */}
+          <TabsContent value="material">
+            <MaterialVoluntario voluntarioId={voluntario.id} />
+          </TabsContent>
         </Tabs>
       </div>
+      
+      <EnhancedFooter />
     </div>
   );
 };
