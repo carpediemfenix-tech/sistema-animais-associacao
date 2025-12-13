@@ -1,608 +1,517 @@
-import React, { useState, useEffect } from 'react';
-import { Search, Filter, Plus, Edit2, Trash2, Eye, Download, Calendar, DollarSign, TrendingUp, TrendingDown, ArrowUpDown } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import EnhancedHeader from "@/components/EnhancedHeader";
+import EnhancedFooter from "@/components/EnhancedFooter";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { 
+  Search, 
+  Filter, 
+  Plus, 
+  Edit2, 
+  Trash2, 
+  Eye, 
+  Download, 
+  Calendar, 
+  DollarSign, 
+  TrendingUp, 
+  TrendingDown,
+  RefreshCw,
+  ArrowLeft,
+  Building2,
+  PawPrint
+} from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
-interface Movement {
+interface MovimentoFinanceiro {
   id: string;
-  type: 'receita' | 'despesa';
-  description: string;
-  amount: number;
-  category: string;
-  account: string;
-  date: string;
-  status: 'pendente' | 'confirmado' | 'cancelado';
-  reference?: string;
-  notes?: string;
+  numero_movimento: string;
+  tipo: 'receita' | 'despesa' | 'transferencia';
+  escopo: 'animal' | 'associacao';
+  categoria: {
+    nome: string;
+    cor: string;
+    icone: string;
+  };
+  animal?: {
+    nome: string;
+    especie: string;
+  };
+  conta_origem?: {
+    nome: string;
+    codigo: string;
+  };
+  descricao: string;
+  valor: number;
+  data_movimento: string;
+  status: string;
+  forma_pagamento: string;
+  created_at: string;
 }
 
-interface Account {
+interface CategoriaFinanceira {
   id: string;
-  name: string;
-  type: string;
+  codigo: string;
+  nome: string;
+  tipo: string;
+  escopo: string;
 }
 
-interface Category {
+interface ContaFinanceira {
   id: string;
-  name: string;
-  type: 'receita' | 'despesa';
+  codigo: string;
+  nome: string;
+  tipo: string;
 }
 
-const EnhancedHeader: React.FC = () => {
-  return (
-    <header className="bg-white shadow-sm border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          <div className="flex items-center">
-            <h1 className="text-xl font-semibold text-gray-900">Sistema Financeiro</h1>
-          </div>
-          <nav className="flex space-x-8">
-            <a href="#" className="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm font-medium">Dashboard</a>
-            <a href="#" className="text-blue-600 hover:text-blue-700 px-3 py-2 text-sm font-medium">Movimentos</a>
-            <a href="#" className="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm font-medium">Contas</a>
-            <a href="#" className="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm font-medium">Relatórios</a>
-          </nav>
-        </div>
-      </div>
-    </header>
-  );
-};
-
-const EnhancedFooter: React.FC = () => {
-  return (
-    <footer className="bg-gray-50 border-t border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="text-center text-sm text-gray-500">
-          © 2024 Sistema Financeiro - Associação de Animais. Todos os direitos reservados.
-        </div>
-      </div>
-    </footer>
-  );
-};
-
-const GestaoMovimentos: React.FC = () => {
-  const [movements, setMovements] = useState<Movement[]>([]);
-  const [filteredMovements, setFilteredMovements] = useState<Movement[]>([]);
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
+const GestaoMovimentos = () => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  
+  const [loading, setLoading] = useState(true);
+  const [movimentos, setMovimentos] = useState<MovimentoFinanceiro[]>([]);
+  const [categorias, setCategorias] = useState<CategoriaFinanceira[]>([]);
+  const [contas, setContas] = useState<ContaFinanceira[]>([]);
+  
+  // Filtros
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedType, setSelectedType] = useState<'all' | 'receita' | 'despesa'>('all');
-  const [selectedAccount, setSelectedAccount] = useState<string>('all');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [selectedStatus, setSelectedStatus] = useState<string>('all');
-  const [dateRange, setDateRange] = useState({ start: '', end: '' });
-  const [sortBy, setSortBy] = useState<'date' | 'amount' | 'description'>('date');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [showFilters, setShowFilters] = useState(false);
-  const [selectedMovements, setSelectedMovements] = useState<string[]>([]);
+  const [filterTipo, setFilterTipo] = useState('');
+  const [filterEscopo, setFilterEscopo] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+  const [filterCategoria, setFilterCategoria] = useState('');
 
-  // Mock data
   useEffect(() => {
-    const mockAccounts: Account[] = [
-      { id: '1', name: 'Conta Corrente Principal', type: 'corrente' },
-      { id: '2', name: 'Conta Poupança', type: 'poupanca' },
-      { id: '3', name: 'Caixa', type: 'caixa' }
-    ];
-
-    const mockCategories: Category[] = [
-      { id: '1', name: 'Doações', type: 'receita' },
-      { id: '2', name: 'Eventos', type: 'receita' },
-      { id: '3', name: 'Veterinário', type: 'despesa' },
-      { id: '4', name: 'Alimentação', type: 'despesa' },
-      { id: '5', name: 'Medicamentos', type: 'despesa' }
-    ];
-
-    const mockMovements: Movement[] = [
-      {
-        id: '1',
-        type: 'receita',
-        description: 'Doação mensal - João Silva',
-        amount: 500.00,
-        category: 'Doações',
-        account: 'Conta Corrente Principal',
-        date: '2024-01-15',
-        status: 'confirmado',
-        reference: 'DOA001'
-      },
-      {
-        id: '2',
-        type: 'despesa',
-        description: 'Consulta veterinária - Rex',
-        amount: 150.00,
-        category: 'Veterinário',
-        account: 'Conta Corrente Principal',
-        date: '2024-01-14',
-        status: 'confirmado',
-        reference: 'VET001'
-      },
-      {
-        id: '3',
-        type: 'receita',
-        description: 'Evento beneficente',
-        amount: 2500.00,
-        category: 'Eventos',
-        account: 'Conta Corrente Principal',
-        date: '2024-01-13',
-        status: 'pendente',
-        reference: 'EVT001'
-      },
-      {
-        id: '4',
-        type: 'despesa',
-        description: 'Ração premium 20kg',
-        amount: 180.00,
-        category: 'Alimentação',
-        account: 'Caixa',
-        date: '2024-01-12',
-        status: 'confirmado',
-        reference: 'ALI001'
-      }
-    ];
-
-    setAccounts(mockAccounts);
-    setCategories(mockCategories);
-    setMovements(mockMovements);
-    setFilteredMovements(mockMovements);
+    loadData();
   }, []);
 
-  // Filter and search logic
-  useEffect(() => {
-    let filtered = movements.filter(movement => {
-      const matchesSearch = movement.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          movement.reference?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesType = selectedType === 'all' || movement.type === selectedType;
-      const matchesAccount = selectedAccount === 'all' || movement.account === selectedAccount;
-      const matchesCategory = selectedCategory === 'all' || movement.category === selectedCategory;
-      const matchesStatus = selectedStatus === 'all' || movement.status === selectedStatus;
-      
-      let matchesDate = true;
-      if (dateRange.start && dateRange.end) {
-        const movementDate = new Date(movement.date);
-        const startDate = new Date(dateRange.start);
-        const endDate = new Date(dateRange.end);
-        matchesDate = movementDate >= startDate && movementDate <= endDate;
-      }
-
-      return matchesSearch && matchesType && matchesAccount && matchesCategory && matchesStatus && matchesDate;
-    });
-
-    // Sort
-    filtered.sort((a, b) => {
-      let comparison = 0;
-      switch (sortBy) {
-        case 'date':
-          comparison = new Date(a.date).getTime() - new Date(b.date).getTime();
-          break;
-        case 'amount':
-          comparison = a.amount - b.amount;
-          break;
-        case 'description':
-          comparison = a.description.localeCompare(b.description);
-          break;
-      }
-      return sortOrder === 'asc' ? comparison : -comparison;
-    });
-
-    setFilteredMovements(filtered);
-  }, [movements, searchTerm, selectedType, selectedAccount, selectedCategory, selectedStatus, dateRange, sortBy, sortOrder]);
-
-  const handleSort = (field: 'date' | 'amount' | 'description') => {
-    if (sortBy === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(field);
-      setSortOrder('desc');
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      await Promise.all([
+        loadMovimentos(),
+        loadCategorias(),
+        loadContas()
+      ]);
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error);
+      toast({
+        title: "Erro ao carregar dados",
+        description: "Não foi possível carregar os movimentos financeiros",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleSelectMovement = (movementId: string) => {
-    setSelectedMovements(prev => 
-      prev.includes(movementId) 
-        ? prev.filter(id => id !== movementId)
-        : [...prev, movementId]
-    );
-  };
+  const loadMovimentos = async () => {
+    const { data } = await supabase
+      .from('movimentos_financeiros_2025_12_13_06_00')
+      .select(`
+        *,
+        categoria:categorias_financeiras_2025_12_13_06_00(nome, cor, icone),
+        animal:animais(nome, especie),
+        conta_origem:contas_financeiras_2025_12_13_06_00!movimentos_financeiros_2025_12_13_06_00_conta_origem_id_fkey(nome, codigo)
+      `)
+      .order('created_at', { ascending: false });
 
-  const handleSelectAll = () => {
-    if (selectedMovements.length === filteredMovements.length) {
-      setSelectedMovements([]);
-    } else {
-      setSelectedMovements(filteredMovements.map(m => m.id));
+    if (data) {
+      setMovimentos(data as MovimentoFinanceiro[]);
     }
   };
 
-  const getTotalReceitas = () => {
-    return filteredMovements
-      .filter(m => m.type === 'receita' && m.status === 'confirmado')
-      .reduce((sum, m) => sum + m.amount, 0);
+  const loadCategorias = async () => {
+    const { data } = await supabase
+      .from('categorias_financeiras_2025_12_13_06_00')
+      .select('*')
+      .eq('ativo', true)
+      .order('ordem');
+
+    if (data) {
+      setCategorias(data);
+    }
   };
 
-  const getTotalDespesas = () => {
-    return filteredMovements
-      .filter(m => m.type === 'despesa' && m.status === 'confirmado')
-      .reduce((sum, m) => sum + m.amount, 0);
-  };
+  const loadContas = async () => {
+    const { data } = await supabase
+      .from('contas_financeiras_2025_12_13_06_00')
+      .select('*')
+      .eq('ativo', true)
+      .order('codigo');
 
-  const getSaldo = () => {
-    return getTotalReceitas() - getTotalDespesas();
+    if (data) {
+      setContas(data);
+    }
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
+    return new Intl.NumberFormat('pt-PT', {
       style: 'currency',
-      currency: 'BRL'
+      currency: 'EUR',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
     }).format(value);
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR');
+    return new Date(dateString).toLocaleDateString('pt-PT');
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'confirmado':
-        return 'bg-green-100 text-green-800';
-      case 'pendente':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'cancelado':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+      case 'pago': return 'bg-green-100 text-green-800';
+      case 'pendente': return 'bg-yellow-100 text-yellow-800';
+      case 'parcial': return 'bg-blue-100 text-blue-800';
+      case 'cancelado': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const getTypeColor = (type: string) => {
-    return type === 'receita' ? 'text-green-600' : 'text-red-600';
+  const getTipoIcon = (tipo: string) => {
+    switch (tipo) {
+      case 'receita': return <TrendingUp className="h-4 w-4 text-green-600" />;
+      case 'despesa': return <TrendingDown className="h-4 w-4 text-red-600" />;
+      default: return <DollarSign className="h-4 w-4 text-blue-600" />;
+    }
   };
 
+  const getEscopoIcon = (escopo: string) => {
+    switch (escopo) {
+      case 'associacao': return <Building2 className="h-4 w-4 text-blue-600" />;
+      case 'animal': return <PawPrint className="h-4 w-4 text-green-600" />;
+      default: return <DollarSign className="h-4 w-4 text-gray-600" />;
+    }
+  };
+
+  // Filtrar movimentos
+  const movimentosFiltrados = movimentos.filter(movimento => {
+    const matchSearch = movimento.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                       movimento.numero_movimento.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                       movimento.animal?.nome?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchTipo = !filterTipo || movimento.tipo === filterTipo;
+    const matchEscopo = !filterEscopo || movimento.escopo === filterEscopo;
+    const matchStatus = !filterStatus || movimento.status === filterStatus;
+    const matchCategoria = !filterCategoria || movimento.categoria?.nome === filterCategoria;
+
+    return matchSearch && matchTipo && matchEscopo && matchStatus && matchCategoria;
+  });
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <EnhancedHeader />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="flex items-center space-x-2">
+            <RefreshCw className="h-6 w-6 animate-spin text-blue-600" />
+            <span className="text-lg text-gray-600">Carregando movimentos financeiros...</span>
+          </div>
+        </div>
+        <EnhancedFooter />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <EnhancedHeader />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Gestão de Movimentos</h1>
-          <p className="text-gray-600">Gerencie todas as receitas e despesas da associação</p>
-        </div>
-
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <TrendingUp className="h-6 w-6 text-green-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Receitas</p>
-                <p className="text-2xl font-bold text-green-600">{formatCurrency(getTotalReceitas())}</p>
-              </div>
-            </div>
+      <div className="flex-1 container mx-auto px-4 py-8 space-y-8">
+        {/* Cabeçalho */}
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Gestão de Movimentos</h1>
+            <p className="text-gray-600 mt-1">Histórico completo de receitas e despesas</p>
           </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-red-100 rounded-lg">
-                <TrendingDown className="h-6 w-6 text-red-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Despesas</p>
-                <p className="text-2xl font-bold text-red-600">{formatCurrency(getTotalDespesas())}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <DollarSign className="h-6 w-6 text-blue-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Saldo</p>
-                <p className={`text-2xl font-bold ${getSaldo() >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {formatCurrency(getSaldo())}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-gray-100 rounded-lg">
-                <Calendar className="h-6 w-6 text-gray-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Movimentos</p>
-                <p className="text-2xl font-bold text-gray-900">{filteredMovements.length}</p>
-              </div>
-            </div>
+          <div className="flex space-x-3">
+            <Link to="/financeiro">
+              <Button variant="outline">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Dashboard
+              </Button>
+            </Link>
+            <Button onClick={loadData} variant="outline">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Atualizar
+            </Button>
+            <Link to="/financeiro/movimentos/novo">
+              <Button className="bg-green-600 hover:bg-green-700">
+                <Plus className="h-4 w-4 mr-2" />
+                Novo Movimento
+              </Button>
+            </Link>
           </div>
         </div>
 
-        {/* Controls */}
-        <div className="bg-white rounded-lg shadow mb-6">
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-              <div className="flex-1 max-w-md">
+        {/* Estatísticas Rápidas */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <Card className="border-blue-200">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-blue-600">Total Movimentos</p>
+                  <p className="text-2xl font-bold text-blue-700">{movimentos.length}</p>
+                </div>
+                <DollarSign className="h-8 w-8 text-blue-600" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="border-green-200">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-green-600">Receitas</p>
+                  <p className="text-2xl font-bold text-green-700">
+                    {formatCurrency(movimentos.filter(m => m.tipo === 'receita' && m.status === 'pago').reduce((sum, m) => sum + m.valor, 0))}
+                  </p>
+                </div>
+                <TrendingUp className="h-8 w-8 text-green-600" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="border-red-200">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-red-600">Despesas</p>
+                  <p className="text-2xl font-bold text-red-700">
+                    {formatCurrency(movimentos.filter(m => m.tipo === 'despesa' && m.status === 'pago').reduce((sum, m) => sum + m.valor, 0))}
+                  </p>
+                </div>
+                <TrendingDown className="h-8 w-8 text-red-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-yellow-200">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-yellow-600">Pendentes</p>
+                  <p className="text-2xl font-bold text-yellow-700">
+                    {movimentos.filter(m => m.status === 'pendente').length}
+                  </p>
+                </div>
+                <Calendar className="h-8 w-8 text-yellow-600" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Filtros */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Filter className="h-5 w-5 mr-2 text-blue-600" />
+              Filtros
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+              <div>
+                <Label htmlFor="search">Pesquisar</Label>
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                  <input
-                    type="text"
-                    placeholder="Buscar por descrição ou referência..."
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="search"
+                    placeholder="Descrição, número..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="pl-10"
                   />
                 </div>
               </div>
               
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowFilters(!showFilters)}
-                  className="flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              <div>
+                <Label htmlFor="tipo">Tipo</Label>
+                <Select value={filterTipo} onValueChange={setFilterTipo}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todos" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Todos</SelectItem>
+                    <SelectItem value="receita">Receita</SelectItem>
+                    <SelectItem value="despesa">Despesa</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="escopo">Escopo</Label>
+                <Select value={filterEscopo} onValueChange={setFilterEscopo}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todos" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Todos</SelectItem>
+                    <SelectItem value="associacao">Associação</SelectItem>
+                    <SelectItem value="animal">Animal</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="status">Status</Label>
+                <Select value={filterStatus} onValueChange={setFilterStatus}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todos" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Todos</SelectItem>
+                    <SelectItem value="pago">Pago</SelectItem>
+                    <SelectItem value="pendente">Pendente</SelectItem>
+                    <SelectItem value="parcial">Parcial</SelectItem>
+                    <SelectItem value="cancelado">Cancelado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="categoria">Categoria</Label>
+                <Select value={filterCategoria} onValueChange={setFilterCategoria}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todas" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Todas</SelectItem>
+                    {categorias.map((categoria) => (
+                      <SelectItem key={categoria.id} value={categoria.nome}>
+                        {categoria.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-end">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setSearchTerm('');
+                    setFilterTipo('');
+                    setFilterEscopo('');
+                    setFilterStatus('');
+                    setFilterCategoria('');
+                  }}
+                  className="w-full"
                 >
-                  <Filter className="h-4 w-4 mr-2" />
-                  Filtros
-                </button>
-                
-                <button className="flex items-center px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">
-                  <Download className="h-4 w-4 mr-2" />
-                  Exportar
-                </button>
-                
-                <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Novo Movimento
-                </button>
+                  Limpar Filtros
+                </Button>
               </div>
             </div>
-          </div>
+          </CardContent>
+        </Card>
 
-          {/* Filters */}
-          {showFilters && (
-            <div className="p-6 bg-gray-50 border-b border-gray-200">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
-                  <select
-                    value={selectedType}
-                    onChange={(e) => setSelectedType(e.target.value as 'all' | 'receita' | 'despesa')}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="all">Todos</option>
-                    <option value="receita">Receitas</option>
-                    <option value="despesa">Despesas</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Conta</label>
-                  <select
-                    value={selectedAccount}
-                    onChange={(e) => setSelectedAccount(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="all">Todas</option>
-                    {accounts.map(account => (
-                      <option key={account.id} value={account.name}>{account.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
-                  <select
-                    value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="all">Todas</option>
-                    {categories.map(category => (
-                      <option key={category.id} value={category.name}>{category.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                  <select
-                    value={selectedStatus}
-                    onChange={(e) => setSelectedStatus(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="all">Todos</option>
-                    <option value="confirmado">Confirmado</option>
-                    <option value="pendente">Pendente</option>
-                    <option value="cancelado">Cancelado</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Período</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="date"
-                      value={dateRange.start}
-                      onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
-                      className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                    <input
-                      type="date"
-                      value={dateRange.end}
-                      onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
-                      className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-              </div>
+        {/* Lista de Movimentos */}
+        <Card>
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <CardTitle className="flex items-center">
+                <DollarSign className="h-5 w-5 mr-2 text-green-600" />
+                Movimentos Financeiros ({movimentosFiltrados.length})
+              </CardTitle>
+              <Button variant="outline" size="sm">
+                <Download className="h-4 w-4 mr-2" />
+                Exportar
+              </Button>
             </div>
-          )}
-        </div>
-
-        {/* Movements Table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left">
-                    <input
-                      type="checkbox"
-                      checked={selectedMovements.length === filteredMovements.length && filteredMovements.length > 0}
-                      onChange={handleSelectAll}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                  </th>
-                  <th 
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                    onClick={() => handleSort('date')}
-                  >
-                    <div className="flex items-center">
-                      Data
-                      <ArrowUpDown className="ml-1 h-4 w-4" />
-                    </div>
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Tipo
-                  </th>
-                  <th 
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                    onClick={() => handleSort('description')}
-                  >
-                    <div className="flex items-center">
-                      Descrição
-                      <ArrowUpDown className="ml-1 h-4 w-4" />
-                    </div>
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Categoria
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Conta
-                  </th>
-                  <th 
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                    onClick={() => handleSort('amount')}
-                  >
-                    <div className="flex items-center">
-                      Valor
-                      <ArrowUpDown className="ml-1 h-4 w-4" />
-                    </div>
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Ações
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredMovements.map((movement) => (
-                  <tr key={movement.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <input
-                        type="checkbox"
-                        checked={selectedMovements.includes(movement.id)}
-                        onChange={() => handleSelectMovement(movement.id)}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatDate(movement.date)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        movement.type === 'receita' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                      }`}>
-                        {movement.type === 'receita' ? 'Receita' : 'Despesa'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">
-                      <div>
-                        <div className="font-medium">{movement.description}</div>
-                        {movement.reference && (
-                          <div className="text-gray-500 text-xs">Ref: {movement.reference}</div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {movement.category}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {movement.account}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <span className={getTypeColor(movement.type)}>
-                        {movement.type === 'receita' ? '+' : '-'}{formatCurrency(movement.amount)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(movement.status)}`}>
-                        {movement.status.charAt(0).toUpperCase() + movement.status.slice(1)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <div className="flex items-center space-x-2">
-                        <button className="text-blue-600 hover:text-blue-900">
-                          <Eye className="h-4 w-4" />
-                        </button>
-                        <button className="text-gray-600 hover:text-gray-900">
-                          <Edit2 className="h-4 w-4" />
-                        </button>
-                        <button className="text-red-600 hover:text-red-900">
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {filteredMovements.length === 0 && (
-            <div className="text-center py-12">
-              <div className="text-gray-500 text-lg mb-2">Nenhum movimento encontrado</div>
-              <div className="text-gray-400">Tente ajustar os filtros ou adicionar um novo movimento</div>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Número</TableHead>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Escopo</TableHead>
+                    <TableHead>Descrição</TableHead>
+                    <TableHead>Categoria</TableHead>
+                    <TableHead>Animal</TableHead>
+                    <TableHead>Valor</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {movimentosFiltrados.map((movimento) => (
+                    <TableRow key={movimento.id}>
+                      <TableCell className="font-mono text-sm">
+                        {movimento.numero_movimento}
+                      </TableCell>
+                      <TableCell>
+                        {formatDate(movimento.data_movimento)}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          {getTipoIcon(movimento.tipo)}
+                          <span className="capitalize">{movimento.tipo}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          {getEscopoIcon(movimento.escopo)}
+                          <span className="capitalize">{movimento.escopo}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="max-w-xs truncate">
+                        {movimento.descricao}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" style={{ backgroundColor: movimento.categoria?.cor + '20', color: movimento.categoria?.cor }}>
+                          {movimento.categoria?.nome}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {movimento.animal ? (
+                          <div className="text-sm">
+                            <div className="font-medium">{movimento.animal.nome}</div>
+                            <div className="text-gray-500">{movimento.animal.especie}</div>
+                          </div>
+                        ) : '-'}
+                      </TableCell>
+                      <TableCell>
+                        <span className={`font-bold ${movimento.tipo === 'receita' ? 'text-green-600' : 'text-red-600'}`}>
+                          {movimento.tipo === 'receita' ? '+' : '-'}{formatCurrency(movimento.valor)}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={getStatusColor(movimento.status)} variant="secondary">
+                          {movimento.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex space-x-2">
+                          <Button variant="outline" size="sm">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button variant="outline" size="sm">
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
+                          <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
-          )}
-        </div>
-
-        {/* Pagination */}
-        {filteredMovements.length > 0 && (
-          <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-6 rounded-lg shadow">
-            <div className="flex-1 flex justify-between sm:hidden">
-              <button className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                Anterior
-              </button>
-              <button className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                Próximo
-              </button>
-            </div>
-            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm text-gray-700">
-                  Mostrando <span className="font-medium">1</span> a <span className="font-medium">{filteredMovements.length}</span> de{' '}
-                  <span className="font-medium">{filteredMovements.length}</span> resultados
-                </p>
-              </div>
-              <div>
-                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                  <button className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                    Anterior
-                  </button>
-                  <button className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-blue-50 text-sm font-medium text-blue-600">
-                    1
-                  </button>
-                  <button className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                    Próximo
-                  </button>
-                </nav>
-              </div>
-            </div>
-          </div>
-        )}
+          </CardContent>
+        </Card>
       </div>
-
+      
       <EnhancedFooter />
     </div>
   );
