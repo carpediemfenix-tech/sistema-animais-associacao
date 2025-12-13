@@ -29,6 +29,7 @@ import EnhancedFooter from "@/components/EnhancedFooter";
 const AnimalDetail = () => {
   const { id } = useParams();
   const [animal, setAnimal] = useState<Animal | null>(null);
+  const [localizacaoAtual, setLocalizacaoAtual] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -82,6 +83,18 @@ const AnimalDetail = () => {
       }
 
       setAnimal(data);
+      
+      // Carregar localização atual
+      const { data: localizacaoData } = await supabase
+        .from('localizacoes_animal')
+        .select('*, tipos_localizacoes(nome, descricao)')
+        .eq('animal_id', id)
+        .eq('ativo', true)
+        .single();
+      
+      if (localizacaoData) {
+        setLocalizacaoAtual(localizacaoData);
+      }
     } catch (error) {
       console.error('Erro:', error);
       setError('Erro inesperado ao carregar animal');
@@ -278,7 +291,21 @@ const AnimalDetail = () => {
                   </div>
                   <div className="text-sm opacity-75">
                     {animal.estado === 'disponivel' && 'Pronto para adoção'}
-                    {animal.estado === 'adotado' && 'Já tem uma família'}
+                    {animal.estado === 'adotado' && (
+                      <div>
+                        <div>Já tem uma família</div>
+                        {animal.adotante_nome && (
+                          <div className="text-xs mt-1 bg-white bg-opacity-20 rounded px-2 py-1">
+                            Adotante: {animal.adotante_nome}
+                          </div>
+                        )}
+                        {animal.data_adocao && (
+                          <div className="text-xs mt-1">
+                            Adotado em: {new Date(animal.data_adocao).toLocaleDateString('pt-PT')}
+                          </div>
+                        )}
+                      </div>
+                    )}
                     {animal.estado === 'tratamento' && 'Em cuidados veterinários'}
                     {animal.estado === 'quarentena' && 'Em período de observação'}
                     {!['disponivel', 'adotado', 'tratamento', 'quarentena'].includes(animal.estado) && 'Estado especial'}
@@ -295,14 +322,19 @@ const AnimalDetail = () => {
                     <MapPin className="w-5 h-5 opacity-75" />
                   </div>
                   <div className="text-2xl font-bold mb-1 text-emerald-100">
-                    {animal.localizacoes?.nome || 'Não definida'}
+                    {localizacaoAtual?.tipos_localizacoes?.nome || 'Não definida'}
                   </div>
                   <div className="text-sm opacity-75">
-                    {animal.localizacoes?.descricao || 'Localização não especificada'}
+                    {localizacaoAtual?.tipos_localizacoes?.descricao || 'Localização não especificada'}
                   </div>
-                  {animal.localizacoes?.capacidade && (
+                  {localizacaoAtual?.endereco_detalhes && (
                     <div className="text-xs opacity-60 mt-1">
-                      Capacidade: {animal.localizacoes.capacidade} animais
+                      Endereço: {localizacaoAtual.endereco_detalhes}
+                    </div>
+                  )}
+                  {localizacaoAtual?.data_inicio && (
+                    <div className="text-xs opacity-60 mt-1">
+                      Desde: {new Date(localizacaoAtual.data_inicio).toLocaleDateString('pt-PT')}
                     </div>
                   )}
                 </div>

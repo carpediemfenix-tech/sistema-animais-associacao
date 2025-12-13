@@ -26,7 +26,8 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { Animal, LocalizacaoAnimal, Voluntario } from "@/types/animal";
 import { useToast } from "@/hooks/use-toast";
-import UserHeader from "@/components/UserHeader";
+import EnhancedHeader from "@/components/EnhancedHeader";
+import EnhancedFooter from "@/components/EnhancedFooter";
 
 // Tipos de localizações predefinidos
 const TIPOS_LOCALIZACOES = [
@@ -392,12 +393,8 @@ const AnimalLocalizacoes = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <UserHeader 
-        title={`${animal.nome} - Localizações`}
-        subtitle={`${animal.especie} • ${animal.sexo} • ${animal.estado}`}
-        backTo={`/animal/${id}`}
-      />
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <EnhancedHeader />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         
@@ -711,6 +708,8 @@ const AnimalLocalizacoes = () => {
           </form>
         </DialogContent>
       </Dialog>
+      
+      <EnhancedFooter />
     </div>
   );
 };
