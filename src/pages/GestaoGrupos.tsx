@@ -390,6 +390,34 @@ const GestaoGrupos = () => {
       <EnhancedHeader />
       
       <div className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Área de Navegação Contextual */}
+        <div className="bg-white rounded-lg shadow-sm border mb-6 p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Button variant="outline" asChild>
+                <Link to="/modulo-animais">
+                  <Heart className="h-4 w-4 mr-2" />
+                  Módulo Animais
+                </Link>
+              </Button>
+              
+              {hasPermission('create') && (
+                <Button onClick={openNewDialog}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Novo Grupo
+                </Button>
+              )}
+              
+              <Button variant="outline" asChild>
+                <Link to="/">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Dashboard Principal
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+        
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div>
@@ -400,21 +428,6 @@ const GestaoGrupos = () => {
             <p className="text-gray-600 mt-1">
               Matilhas, Colónias, Sócios e grupos especiais
             </p>
-          </div>
-          <div className="flex space-x-3">
-            {hasPermission('create') && (
-              <Button onClick={openNewDialog}>
-                <Plus className="h-4 w-4 mr-2" />
-                Novo Grupo
-              </Button>
-            )}
-            
-            <Button variant="outline" asChild>
-              <Link to="/">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Dashboard Principal
-              </Link>
-            </Button>
           </div>
         </div>
         {/* Estatísticas */}

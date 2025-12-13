@@ -144,24 +144,14 @@ const Index = () => {
       stats: `${estatisticas.totalFormacoes} formações`
     },
     {
-      id: 'equipamentos',
-      nome: 'Equipamentos',
-      descricao: 'Gestão de equipamentos e materiais da associação',
-      icone: Wrench,
-      cor: 'bg-orange-500',
-      rota: '/modulo-equipamentos',
-      desenvolvido: false,
-      stats: 'Em desenvolvimento'
-    },
-    {
       id: 'clinicas',
       nome: 'Clínicas',
       descricao: 'Gestão de clínicas veterinárias e parcerias',
       icone: Building2,
       cor: 'bg-purple-500',
       rota: '/modulo-clinicas',
-      desenvolvido: false,
-      stats: 'Em desenvolvimento'
+      desenvolvido: true,
+      stats: 'Sistema ativo'
     },
     {
       id: 'missoes',

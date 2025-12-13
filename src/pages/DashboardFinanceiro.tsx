@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import UserHeader from "@/components/UserHeader";
+import EnhancedHeader from "@/components/EnhancedHeader";
+import EnhancedFooter from "@/components/EnhancedFooter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,7 +20,8 @@ import {
   RefreshCw,
   ArrowUpRight,
   ArrowDownRight,
-  Building
+  Building,
+  PawPrint
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -65,7 +67,7 @@ const DashboardFinanceiro = () => {
 
       // Resumo da Associação - consulta simplificada
       const { data: movimentosAssoc } = await supabase
-        .from('movimentos_financeiros')
+        .from('movimentos_financeiros_2025_12_13_03_00')
         .select('tipo, valor')
         .eq('escopo', 'associacao');
 
@@ -87,7 +89,7 @@ const DashboardFinanceiro = () => {
 
       // Resumo dos Animais - consulta simplificada
       const { data: movimentosAnimais } = await supabase
-        .from('movimentos_financeiros')
+        .from('movimentos_financeiros_2025_12_13_03_00')
         .select('tipo, valor')
         .eq('escopo', 'animal');
 
@@ -116,10 +118,10 @@ const DashboardFinanceiro = () => {
 
       // Movimentos Recentes (ordenados por data)
       const { data: movimentos, error: errorMov } = await supabase
-        .from('movimentos_financeiros')
+        .from('movimentos_financeiros_2025_12_13_03_00')
         .select(`
           *,
-          categoria:categorias_financeiras(nome, cor, icone),
+          categoria:categorias_financeiras_2025_12_13_03_00(nome, cor, icone),
           animal:animais(nome, especie)
         `)
         .order('data_movimento', { ascending: false })
@@ -184,12 +186,8 @@ const DashboardFinanceiro = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <UserHeader 
-        title="Dashboard Financeiro" 
-        subtitle="Visão completa da saúde financeira da associação"
-        backTo="/"
-      />
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <EnhancedHeader />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         
@@ -474,6 +472,8 @@ const DashboardFinanceiro = () => {
           </CardContent>
         </Card>
       </div>
+      
+      <EnhancedFooter />
     </div>
   );
 };
