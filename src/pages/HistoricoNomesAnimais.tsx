@@ -18,7 +18,8 @@ import {
   AlertCircle,
   CheckCircle,
   Clock,
-  User
+  User,
+  Trash2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -62,6 +63,10 @@ const HistoricoNomesAnimais = () => {
   const [animalParaRenomear, setAnimalParaRenomear] = useState<Animal | null>(null);
   const [novoNome, setNovoNome] = useState('');
   const [motivoAlteracao, setMotivoAlteracao] = useState('');
+  const [editandoHistorico, setEditandoHistorico] = useState<HistoricoNome | null>(null);
+  const [editarNomeOpen, setEditarNomeOpen] = useState(false);
+  const [confirmarDeleteOpen, setConfirmarDeleteOpen] = useState(false);
+  const [historicoParaDelete, setHistoricoParaDelete] = useState<HistoricoNome | null>(null);
   
   const { toast } = useToast();
   const { hasPermission } = useAuth();
@@ -187,6 +192,103 @@ const HistoricoNomesAnimais = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const editarHistorico = async () => {
+    if (!editandoHistorico || !novoNome.trim()) {
+      toast({
+        title: "Erro",
+        description: "Nome é obrigatório",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('historico_nomes_animais')
+        .update({
+          nome: novoNome.trim(),
+          motivo_alteracao: motivoAlteracao.trim() || null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', editandoHistorico.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Histórico atualizado com sucesso",
+      });
+
+      setEditarNomeOpen(false);
+      setEditandoHistorico(null);
+      setNovoNome('');
+      setMotivoAlteracao('');
+      loadHistoricos();
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao editar histórico",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const eliminarHistorico = async () => {
+    if (!historicoParaDelete) return;
+
+    try {
+      // Verificar se é o único histórico ativo do animal
+      const { data: historicosAtivos } = await supabase
+        .from('historico_nomes_animais')
+        .select('id')
+        .eq('animal_id', historicoParaDelete.animal_id)
+        .eq('ativo', true);
+
+      if (historicosAtivos && historicosAtivos.length === 1 && historicoParaDelete.ativo) {
+        toast({
+          title: "Erro",
+          description: "Não é possível eliminar o único nome ativo do animal",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { error } = await supabase
+        .from('historico_nomes_animais')
+        .delete()
+        .eq('id', historicoParaDelete.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Histórico eliminado com sucesso",
+      });
+
+      setConfirmarDeleteOpen(false);
+      setHistoricoParaDelete(null);
+      loadHistoricos();
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao eliminar histórico",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const iniciarEdicao = (historico: HistoricoNome) => {
+    setEditandoHistorico(historico);
+    setNovoNome(historico.nome);
+    setMotivoAlteracao(historico.motivo_alteracao || '');
+    setEditarNomeOpen(true);
+  };
+
+  const iniciarEliminacao = (historico: HistoricoNome) => {
+    setHistoricoParaDelete(historico);
+    setConfirmarDeleteOpen(true);
   };
 
   const historicosFiltrados = historicos.filter(hist => {
@@ -484,6 +586,26 @@ const HistoricoNomesAnimais = () => {
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">
+                          {hasPermission('admin') && (
+                            <div className="flex items-center space-x-1">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => iniciarEdicao(hist)}
+                                className="h-8 w-8 p-0"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => iniciarEliminacao(hist)}
+                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          )}
                           <Badge variant={hist.ativo ? "default" : "secondary"}>
                             {hist.ativo ? "Nome Atual" : "Nome Anterior"}
                           </Badge>
@@ -521,6 +643,88 @@ const HistoricoNomesAnimais = () => {
           </div>
         )}
       </div>
+
+      {/* Diálogo de Edição */}
+      <Dialog open={editarNomeOpen} onOpenChange={setEditarNomeOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar Histórico de Nome</DialogTitle>
+            <DialogDescription>
+              Edite as informações do histórico de nome selecionado.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="nome-edit">Nome</Label>
+              <Input
+                id="nome-edit"
+                value={novoNome}
+                onChange={(e) => setNovoNome(e.target.value)}
+                placeholder="Digite o nome"
+              />
+            </div>
+            <div>
+              <Label htmlFor="motivo-edit">Motivo da Alteração</Label>
+              <Textarea
+                id="motivo-edit"
+                value={motivoAlteracao}
+                onChange={(e) => setMotivoAlteracao(e.target.value)}
+                placeholder="Descreva o motivo da alteração (opcional)"
+                rows={3}
+              />
+            </div>
+          </div>
+          <div className="flex justify-end space-x-2 mt-6">
+            <Button variant="outline" onClick={() => setEditarNomeOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={editarHistorico}>
+              Guardar Alterações
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo de Confirmação de Eliminação */}
+      <Dialog open={confirmarDeleteOpen} onOpenChange={setConfirmarDeleteOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirmar Eliminação</DialogTitle>
+            <DialogDescription>
+              Tem a certeza que pretende eliminar este histórico de nome?
+            </DialogDescription>
+          </DialogHeader>
+          {historicoParaDelete && (
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="font-medium">{historicoParaDelete.nome}</div>
+              <div className="text-sm text-gray-600">
+                {historicoParaDelete.ativo ? 'Nome Atual' : 'Nome Anterior'}
+              </div>
+              {historicoParaDelete.motivo_alteracao && (
+                <div className="text-sm text-gray-600 mt-1">
+                  Motivo: {historicoParaDelete.motivo_alteracao}
+                </div>
+              )}
+            </div>
+          )}
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+            <div className="flex items-start">
+              <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5 mr-2" />
+              <div className="text-sm text-yellow-800">
+                <strong>Atenção:</strong> Esta ação não pode ser desfeita. O histórico será permanentemente eliminado.
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-end space-x-2 mt-6">
+            <Button variant="outline" onClick={() => setConfirmarDeleteOpen(false)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={eliminarHistorico}>
+              Eliminar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       
       <EnhancedFooter />
     </div>

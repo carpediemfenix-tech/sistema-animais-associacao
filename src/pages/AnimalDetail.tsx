@@ -16,7 +16,9 @@ import {
   DollarSign,
   ExternalLink,
   Edit,
-  Archive
+  Archive,
+  Clock,
+  User
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Animal } from "@/types/animal";
@@ -252,75 +254,165 @@ const AnimalDetail = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {/* Campos em Destaque */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 p-4 bg-blue-100 rounded-lg border border-blue-300">
-              <div>
-                <label className="text-blue-700 font-semibold flex items-center">
-                  <span className="mr-2">📋</span>
-                  Número do Processo
-                </label>
-                <p className="text-lg font-bold text-blue-900 mt-1">{animal.numero_processo || "N/A"}</p>
+            {/* Estado e Localização em Grande Destaque */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+              {/* Estado do Animal */}
+              <div className="relative overflow-hidden rounded-xl p-6 bg-gradient-to-br from-blue-500 to-blue-700 text-white shadow-lg">
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-medium opacity-90">Estado Atual</h3>
+                    <div className={`w-3 h-3 rounded-full animate-pulse ${
+                      animal.estado === 'disponivel' ? 'bg-green-400' :
+                      animal.estado === 'adotado' ? 'bg-blue-300' :
+                      animal.estado === 'tratamento' ? 'bg-yellow-400' :
+                      'bg-gray-400'
+                    }`}></div>
+                  </div>
+                  <div className={`text-3xl font-bold mb-1 ${
+                    animal.estado === 'disponivel' ? 'text-green-100' :
+                    animal.estado === 'adotado' ? 'text-blue-100' :
+                    animal.estado === 'tratamento' ? 'text-yellow-100' :
+                    'text-gray-100'
+                  }`}>
+                    {animal.estado?.toUpperCase()}
+                  </div>
+                  <div className="text-sm opacity-75">
+                    {animal.estado === 'disponivel' && 'Pronto para adoção'}
+                    {animal.estado === 'adotado' && 'Já tem uma família'}
+                    {animal.estado === 'tratamento' && 'Em cuidados veterinários'}
+                    {animal.estado === 'quarentena' && 'Em período de observação'}
+                    {!['disponivel', 'adotado', 'tratamento', 'quarentena'].includes(animal.estado) && 'Estado especial'}
+                  </div>
+                </div>
+                <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-white bg-opacity-10 rounded-full"></div>
               </div>
-              <div>
-                <label className="text-blue-700 font-semibold flex items-center">
-                  <span className="mr-2">🏠</span>
-                  Grupo
-                </label>
-                <p className="text-lg font-bold text-blue-900 mt-1">{animal.grupos?.nome || "Sem grupo"}</p>
+
+              {/* Localização Atual */}
+              <div className="relative overflow-hidden rounded-xl p-6 bg-gradient-to-br from-emerald-500 to-emerald-700 text-white shadow-lg">
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-medium opacity-90">Localização Atual</h3>
+                    <MapPin className="w-5 h-5 opacity-75" />
+                  </div>
+                  <div className="text-2xl font-bold mb-1 text-emerald-100">
+                    {animal.localizacoes?.nome || 'Não definida'}
+                  </div>
+                  <div className="text-sm opacity-75">
+                    {animal.localizacoes?.descricao || 'Localização não especificada'}
+                  </div>
+                  {animal.localizacoes?.capacidade && (
+                    <div className="text-xs opacity-60 mt-1">
+                      Capacidade: {animal.localizacoes.capacidade} animais
+                    </div>
+                  )}
+                </div>
+                <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-white bg-opacity-10 rounded-full"></div>
               </div>
             </div>
 
+            {/* Informações Secundárias em Destaque */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 p-4 bg-gradient-to-r from-orange-50 to-red-50 rounded-lg border border-orange-200">
+              <div>
+                <label className="text-orange-700 font-semibold flex items-center">
+                  <span className="mr-2">📋</span>
+                  Número do Processo
+                </label>
+                <p className="text-lg font-bold text-orange-900 mt-1">{animal.numero_processo || "N/A"}</p>
+              </div>
+              <div>
+                <label className="text-orange-700 font-semibold flex items-center">
+                  <span className="mr-2">🏠</span>
+                  Grupo
+                </label>
+                <p className="text-lg font-bold text-orange-900 mt-1">{animal.grupos?.nome || "Sem grupo"}</p>
+              </div>
+            </div>
+
+            {/* Informações Detalhadas */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div>
-                <label className="text-orange-700 font-medium">Nome</label>
-                <p className="text-orange-900 text-lg font-semibold">{animal.nome}</p>
+              {/* Nome do Animal */}
+              <div className="bg-white p-4 rounded-lg border-l-4 border-l-blue-500 shadow-sm">
+                <label className="text-gray-600 text-sm font-medium flex items-center">
+                  <PawPrint className="w-4 h-4 mr-2" />
+                  Nome
+                </label>
+                <p className="text-gray-900 text-xl font-bold mt-1">{animal.nome}</p>
               </div>
-              <div>
-                <label className="text-orange-700 font-medium">Espécie</label>
-                <p className="text-orange-900">{animal.especie}</p>
+
+              {/* Espécie */}
+              <div className="bg-white p-4 rounded-lg border-l-4 border-l-green-500 shadow-sm">
+                <label className="text-gray-600 text-sm font-medium flex items-center">
+                  <span className="mr-2">🐾</span>
+                  Espécie
+                </label>
+                <p className="text-gray-900 text-lg font-semibold mt-1">{animal.especie}</p>
               </div>
-              <div>
-                <label className="text-orange-700 font-medium">Sexo</label>
-                <p className="text-orange-900">{animal.sexo}</p>
+
+              {/* Sexo */}
+              <div className="bg-white p-4 rounded-lg border-l-4 border-l-purple-500 shadow-sm">
+                <label className="text-gray-600 text-sm font-medium flex items-center">
+                  <span className="mr-2">{animal.sexo === 'Macho' ? '♂️' : animal.sexo === 'Fêmea' ? '♀️' : '⚪'}</span>
+                  Sexo
+                </label>
+                <p className="text-gray-900 text-lg font-semibold mt-1">{animal.sexo}</p>
               </div>
-              <div>
-                <label className="text-orange-700 font-medium">Estado</label>
-                <Badge className={`${
-                  animal.estado === 'disponivel' ? 'bg-green-600' :
-                  animal.estado === 'adotado' ? 'bg-blue-600' :
-                  animal.estado === 'tratamento' ? 'bg-yellow-600' :
-                  'bg-gray-600'
-                }`}>
-                  {animal.estado}
-                </Badge>
-              </div>
-              <div>
-                <label className="text-orange-700 font-medium">Data de Entrada</label>
-                <p className="text-orange-900">
+
+              {/* Data de Entrada */}
+              <div className="bg-white p-4 rounded-lg border-l-4 border-l-yellow-500 shadow-sm">
+                <label className="text-gray-600 text-sm font-medium flex items-center">
+                  <Calendar className="w-4 h-4 mr-2" />
+                  Data de Entrada
+                </label>
+                <p className="text-gray-900 text-lg font-semibold mt-1">
                   {animal.data_entrada ? new Date(animal.data_entrada).toLocaleDateString('pt-PT') : 'N/A'}
                 </p>
               </div>
-              <div>
-                <label className="text-orange-700 font-medium">Idade Estimada</label>
-                <p className="text-orange-900">
+
+              {/* Idade Estimada */}
+              <div className="bg-white p-4 rounded-lg border-l-4 border-l-indigo-500 shadow-sm">
+                <label className="text-gray-600 text-sm font-medium flex items-center">
+                  <Clock className="w-4 h-4 mr-2" />
+                  Idade Estimada
+                </label>
+                <p className="text-gray-900 text-lg font-semibold mt-1">
                   {animal.idade_estimada ? `${Math.floor(animal.idade_estimada / 12)} anos e ${animal.idade_estimada % 12} meses` : 'N/A'}
                 </p>
               </div>
-              <div>
-                <label className="text-orange-700 font-medium">Peso</label>
-                <p className="text-orange-900">{animal.peso ? `${animal.peso} kg` : 'N/A'}</p>
+
+              {/* Peso */}
+              <div className="bg-white p-4 rounded-lg border-l-4 border-l-red-500 shadow-sm">
+                <label className="text-gray-600 text-sm font-medium flex items-center">
+                  <span className="mr-2">⚖️</span>
+                  Peso
+                </label>
+                <p className="text-gray-900 text-lg font-semibold mt-1">{animal.peso ? `${animal.peso} kg` : 'N/A'}</p>
               </div>
-              <div>
-                <label className="text-orange-700 font-medium">Cor</label>
-                <p className="text-orange-900">{animal.cor || 'N/A'}</p>
+
+              {/* Cor */}
+              <div className="bg-white p-4 rounded-lg border-l-4 border-l-pink-500 shadow-sm">
+                <label className="text-gray-600 text-sm font-medium flex items-center">
+                  <span className="mr-2">🎨</span>
+                  Cor
+                </label>
+                <p className="text-gray-900 text-lg font-semibold mt-1">{animal.cor || 'N/A'}</p>
               </div>
-              <div>
-                <label className="text-orange-700 font-medium">Transponder</label>
-                <p className="text-orange-900">{animal.transponder || 'N/A'}</p>
+
+              {/* Transponder */}
+              <div className="bg-white p-4 rounded-lg border-l-4 border-l-teal-500 shadow-sm">
+                <label className="text-gray-600 text-sm font-medium flex items-center">
+                  <span className="mr-2">📶</span>
+                  Transponder
+                </label>
+                <p className="text-gray-900 text-lg font-semibold mt-1">{animal.transponder || 'N/A'}</p>
               </div>
-              <div>
-                <label className="text-orange-700 font-medium">Voluntário Responsável</label>
-                <p className="text-orange-900">{animal.voluntario_responsavel_nome || 'Sem responsável'}</p>
+
+              {/* Voluntário Responsável */}
+              <div className="bg-white p-4 rounded-lg border-l-4 border-l-orange-500 shadow-sm">
+                <label className="text-gray-600 text-sm font-medium flex items-center">
+                  <User className="w-4 h-4 mr-2" />
+                  Voluntário Responsável
+                </label>
+                <p className="text-gray-900 text-lg font-semibold mt-1">{animal.voluntario_responsavel_nome || 'Sem responsável'}</p>
               </div>
             </div>
             

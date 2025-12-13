@@ -34,7 +34,8 @@ import {
   UserCheck,
   UserPlus,
   Stethoscope,
-  ClipboardList
+  ClipboardList,
+  ExternalLink
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -394,7 +395,7 @@ const Index = () => {
 
         {/* Alertas Inteligentes e Atividades Recentes */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Alertas Inteligentes */}
+          {/* Alertas de Animais e Financeiros */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
@@ -402,44 +403,85 @@ const Index = () => {
                 Alertas Inteligentes
               </CardTitle>
               <CardDescription>
-                Notificações importantes do sistema
+                Notificações importantes de animais e financeiras
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
+                {/* Alertas Financeiros */}
                 {estatisticas.saldoAtual < 0 && (
                   <div className="flex items-center p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <AlertTriangle className="h-5 w-5 text-red-600 mr-3" />
-                    <div>
+                    <DollarSign className="h-5 w-5 text-red-600 mr-3" />
+                    <div className="flex-1">
                       <p className="font-semibold text-red-800">Saldo Negativo</p>
-                      <p className="text-sm text-red-600">Situação financeira requer atenção</p>
+                      <p className="text-sm text-red-600">Situação financeira crítica - {estatisticas.saldoAtual.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}</p>
                     </div>
+                    <Link to="/financeiro" className="text-red-600 hover:text-red-800">
+                      <ExternalLink className="h-4 w-4" />
+                    </Link>
                   </div>
                 )}
-                {estatisticas.animaisAtivos > estatisticas.voluntariosAtivos * 3 && (
+                
+                {estatisticas.saldoAtual > 0 && estatisticas.saldoAtual < 500 && (
                   <div className="flex items-center p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <Clock className="h-5 w-5 text-yellow-600 mr-3" />
-                    <div>
-                      <p className="font-semibold text-yellow-800">Sobrecarga de Animais</p>
-                      <p className="text-sm text-yellow-600">Muitos animais por voluntário ativo</p>
+                    <AlertTriangle className="h-5 w-5 text-yellow-600 mr-3" />
+                    <div className="flex-1">
+                      <p className="font-semibold text-yellow-800">Reservas Baixas</p>
+                      <p className="text-sm text-yellow-600">Saldo atual: {estatisticas.saldoAtual.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })} - Considere campanhas de angariação</p>
                     </div>
+                    <Link to="/financeiro" className="text-yellow-600 hover:text-yellow-800">
+                      <ExternalLink className="h-4 w-4" />
+                    </Link>
                   </div>
                 )}
-                {estatisticas.voluntariosAtivos < estatisticas.totalVoluntarios * 0.7 && (
+
+                {/* Alertas de Animais */}
+                {estatisticas.animaisAtivos > estatisticas.voluntariosAtivos * 3 && (
+                  <div className="flex items-center p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                    <PawPrint className="h-5 w-5 text-orange-600 mr-3" />
+                    <div className="flex-1">
+                      <p className="font-semibold text-orange-800">Sobrecarga de Animais</p>
+                      <p className="text-sm text-orange-600">{estatisticas.animaisAtivos} animais para {estatisticas.voluntariosAtivos} voluntários ativos</p>
+                    </div>
+                    <Link to="/voluntarios" className="text-orange-600 hover:text-orange-800">
+                      <ExternalLink className="h-4 w-4" />
+                    </Link>
+                  </div>
+                )}
+
+                {estatisticas.animaisDisponiveis > 10 && (
                   <div className="flex items-center p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <Users className="h-5 w-5 text-blue-600 mr-3" />
-                    <div>
-                      <p className="font-semibold text-blue-800">Poucos Voluntários Ativos</p>
-                      <p className="text-sm text-blue-600">Considere ativar mais voluntários</p>
+                    <Heart className="h-5 w-5 text-blue-600 mr-3" />
+                    <div className="flex-1">
+                      <p className="font-semibold text-blue-800">Muitos Animais Disponíveis</p>
+                      <p className="text-sm text-blue-600">{estatisticas.animaisDisponiveis} animais aguardam adoção - Promova campanhas</p>
                     </div>
+                    <Link to="/animais" className="text-blue-600 hover:text-blue-800">
+                      <ExternalLink className="h-4 w-4" />
+                    </Link>
                   </div>
                 )}
-                {estatisticas.alertasCriticos === 0 && (
+
+                {estatisticas.animaisTratamento > 5 && (
+                  <div className="flex items-center p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                    <Stethoscope className="h-5 w-5 text-purple-600 mr-3" />
+                    <div className="flex-1">
+                      <p className="font-semibold text-purple-800">Muitos Animais em Tratamento</p>
+                      <p className="text-sm text-purple-600">{estatisticas.animaisTratamento} animais em cuidados veterinários</p>
+                    </div>
+                    <Link to="/modulo-clinicas" className="text-purple-600 hover:text-purple-800">
+                      <ExternalLink className="h-4 w-4" />
+                    </Link>
+                  </div>
+                )}
+
+                {/* Alerta Positivo */}
+                {estatisticas.saldoAtual >= 500 && estatisticas.animaisAtivos <= estatisticas.voluntariosAtivos * 2 && (
                   <div className="flex items-center p-3 bg-green-50 border border-green-200 rounded-lg">
                     <CheckCircle className="h-5 w-5 text-green-600 mr-3" />
-                    <div>
-                      <p className="font-semibold text-green-800">Sistema Saudável</p>
-                      <p className="text-sm text-green-600">Todos os indicadores estão normais</p>
+                    <div className="flex-1">
+                      <p className="font-semibold text-green-800">Sistema Equilibrado</p>
+                      <p className="text-sm text-green-600">Situação financeira e operacional estável</p>
                     </div>
                   </div>
                 )}
