@@ -21,7 +21,11 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Building,
-  PawPrint
+  PawPrint,
+  CreditCard,
+  Wallet,
+  FileText,
+  Settings
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -30,12 +34,13 @@ interface ResumoFinanceiro {
   total_receitas: number;
   total_despesas: number;
   saldo: number;
+  movimentos_pendentes: number;
 }
 
 interface MovimentoFinanceiro {
   id: string;
   numero_movimento: string;
-  tipo_movimento: 'receita' | 'despesa';
+  tipo: 'receita' | 'despesa' | 'transferencia';
   escopo: 'animal' | 'associacao';
   categoria: {
     nome: string;
@@ -50,93 +55,60 @@ interface MovimentoFinanceiro {
   valor: number;
   data_movimento: string;
   status: string;
+  created_at: string;
+}
+
+interface ContaFinanceira {
+  id: string;
+  codigo: string;
+  nome: string;
+  tipo: string;
+  saldo_atual: number;
 }
 
 const DashboardFinanceiro = () => {
-  const { hasPermission } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [resumoAssociacao, setResumoAssociacao] = useState<ResumoFinanceiro>({ total_receitas: 0, total_despesas: 0, saldo: 0 });
-  const [resumoAnimais, setResumoAnimais] = useState<ResumoFinanceiro>({ total_receitas: 0, total_despesas: 0, saldo: 0 });
-  const [movimentosRecentes, setMovimentosRecentes] = useState<MovimentoFinanceiro[]>([]);
-  const [alertas, setAlertas] = useState<any[]>([]);
+  const { user } = useAuth();
   const { toast } = useToast();
+  
+  const [loading, setLoading] = useState(true);
+  const [resumoGeral, setResumoGeral] = useState<ResumoFinanceiro>({
+    total_receitas: 0,
+    total_despesas: 0,
+    saldo: 0,
+    movimentos_pendentes: 0
+  });
+  const [resumoAssociacao, setResumoAssociacao] = useState<ResumoFinanceiro>({
+    total_receitas: 0,
+    total_despesas: 0,
+    saldo: 0,
+    movimentos_pendentes: 0
+  });
+  const [resumoAnimais, setResumoAnimais] = useState<ResumoFinanceiro>({
+    total_receitas: 0,
+    total_despesas: 0,
+    saldo: 0,
+    movimentos_pendentes: 0
+  });
+  const [movimentosRecentes, setMovimentosRecentes] = useState<MovimentoFinanceiro[]>([]);
+  const [contas, setContas] = useState<ContaFinanceira[]>([]);
 
-  const fetchResumoFinanceiro = async () => {
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async () => {
     try {
       setLoading(true);
-
-      // Resumo da Associação - consulta simplificada
-      const { data: movimentosAssoc } = await supabase
-        .from('movimentos_financeiros_2025_12_13_03_00')
-        .select('tipo, valor')
-        .eq('escopo', 'associacao');
-
-      if (movimentosAssoc) {
-        const receitas = movimentosAssoc
-          .filter(m => m.tipo === 'receita')
-          .reduce((sum, m) => sum + (Number(m.valor) || 0), 0);
-        
-        const despesas = movimentosAssoc
-          .filter(m => m.tipo === 'despesa')
-          .reduce((sum, m) => sum + (Number(m.valor) || 0), 0);
-        
-        setResumoAssociacao({
-          total_receitas: receitas,
-          total_despesas: despesas,
-          saldo: receitas - despesas
-        });
-      }
-
-      // Resumo dos Animais - consulta simplificada
-      const { data: movimentosAnimais } = await supabase
-        .from('movimentos_financeiros_2025_12_13_03_00')
-        .select('tipo, valor')
-        .eq('escopo', 'animal');
-
-      if (movimentosAnimais) {
-        const receitas = movimentosAnimais
-          .filter(m => m.tipo === 'receita')
-          .reduce((sum, m) => sum + (Number(m.valor) || 0), 0);
-        
-        const despesas = movimentosAnimais
-          .filter(m => m.tipo === 'despesa')
-          .reduce((sum, m) => sum + (Number(m.valor) || 0), 0);
-        
-        setResumoAnimais({
-          total_receitas: receitas,
-          total_despesas: despesas,
-          saldo: receitas - despesas
-        });
-      } else {
-        // Fallback seguro se não houver dados
-        setResumoAnimais({
-          total_receitas: 0,
-          total_despesas: 0,
-          saldo: 0
-        });
-      }
-
-      // Movimentos Recentes (ordenados por data)
-      const { data: movimentos, error: errorMov } = await supabase
-        .from('movimentos_financeiros_2025_12_13_03_00')
-        .select(`
-          *,
-          categoria:categorias_financeiras_2025_12_13_03_00(nome, cor, icone),
-          animal:animais(nome, especie)
-        `)
-        .order('data_movimento', { ascending: false })
-        .order('created_at', { ascending: false })
-        .limit(10);
-
-      if (!errorMov && movimentos) {
-        setMovimentosRecentes(movimentos);
-      }
-
-    } catch (error: any) {
-      console.error('Erro ao carregar resumo financeiro:', error);
+      await Promise.all([
+        loadResumoFinanceiro(),
+        loadMovimentosRecentes(),
+        loadContas()
+      ]);
+    } catch (error) {
+      console.error('Erro ao carregar dashboard:', error);
       toast({
         title: "Erro ao carregar dados",
-        description: "Não foi possível carregar o resumo financeiro",
+        description: "Não foi possível carregar os dados financeiros",
         variant: "destructive",
       });
     } finally {
@@ -144,9 +116,104 @@ const DashboardFinanceiro = () => {
     }
   };
 
-  useEffect(() => {
-    fetchResumoFinanceiro();
-  }, []);
+  const loadResumoFinanceiro = async () => {
+    // Carregar resumo geral
+    const { data: movimentos } = await supabase
+      .from('movimentos_financeiros_2025_12_13_06_00')
+      .select(`
+        tipo,
+        escopo,
+        valor,
+        status
+      `);
+
+    if (movimentos) {
+      // Resumo Geral
+      const receitasGeral = movimentos
+        .filter(m => m.tipo === 'receita' && m.status === 'pago')
+        .reduce((sum, m) => sum + m.valor, 0);
+      
+      const despesasGeral = movimentos
+        .filter(m => m.tipo === 'despesa' && m.status === 'pago')
+        .reduce((sum, m) => sum + m.valor, 0);
+
+      const pendentesGeral = movimentos
+        .filter(m => m.status === 'pendente').length;
+
+      setResumoGeral({
+        total_receitas: receitasGeral,
+        total_despesas: despesasGeral,
+        saldo: receitasGeral - despesasGeral,
+        movimentos_pendentes: pendentesGeral
+      });
+
+      // Resumo Associação
+      const receitasAssoc = movimentos
+        .filter(m => m.tipo === 'receita' && m.escopo === 'associacao' && m.status === 'pago')
+        .reduce((sum, m) => sum + m.valor, 0);
+      
+      const despesasAssoc = movimentos
+        .filter(m => m.tipo === 'despesa' && m.escopo === 'associacao' && m.status === 'pago')
+        .reduce((sum, m) => sum + m.valor, 0);
+
+      const pendentesAssoc = movimentos
+        .filter(m => m.escopo === 'associacao' && m.status === 'pendente').length;
+
+      setResumoAssociacao({
+        total_receitas: receitasAssoc,
+        total_despesas: despesasAssoc,
+        saldo: receitasAssoc - despesasAssoc,
+        movimentos_pendentes: pendentesAssoc
+      });
+
+      // Resumo Animais
+      const receitasAnimais = movimentos
+        .filter(m => m.tipo === 'receita' && m.escopo === 'animal' && m.status === 'pago')
+        .reduce((sum, m) => sum + m.valor, 0);
+      
+      const despesasAnimais = movimentos
+        .filter(m => m.tipo === 'despesa' && m.escopo === 'animal' && m.status === 'pago')
+        .reduce((sum, m) => sum + m.valor, 0);
+
+      const pendentesAnimais = movimentos
+        .filter(m => m.escopo === 'animal' && m.status === 'pendente').length;
+
+      setResumoAnimais({
+        total_receitas: receitasAnimais,
+        total_despesas: despesasAnimais,
+        saldo: receitasAnimais - despesasAnimais,
+        movimentos_pendentes: pendentesAnimais
+      });
+    }
+  };
+
+  const loadMovimentosRecentes = async () => {
+    const { data } = await supabase
+      .from('movimentos_financeiros_2025_12_13_06_00')
+      .select(`
+        *,
+        categoria:categorias_financeiras_2025_12_13_06_00(nome, cor, icone),
+        animal:animais(nome, especie)
+      `)
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    if (data) {
+      setMovimentosRecentes(data as MovimentoFinanceiro[]);
+    }
+  };
+
+  const loadContas = async () => {
+    const { data } = await supabase
+      .from('contas_financeiras_2025_12_13_06_00')
+      .select('*')
+      .eq('ativo', true)
+      .order('codigo');
+
+    if (data) {
+      setContas(data);
+    }
+  };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-PT', {
@@ -161,26 +228,25 @@ const DashboardFinanceiro = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'confirmado': return 'bg-green-100 text-green-800';
+      case 'pago': return 'bg-green-100 text-green-800';
       case 'pendente': return 'bg-yellow-100 text-yellow-800';
+      case 'parcial': return 'bg-blue-100 text-blue-800';
       case 'cancelado': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const totalGeral = {
-    receitas: (resumoAssociacao.total_receitas || 0) + (resumoAnimais.total_receitas || 0),
-    despesas: (resumoAssociacao.total_despesas || 0) + (resumoAnimais.total_despesas || 0),
-    saldo: (resumoAssociacao.saldo || 0) + (resumoAnimais.saldo || 0)
-  };
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <RefreshCw className="h-16 w-16 animate-spin mx-auto mb-4 text-blue-600" />
-          <p className="text-lg text-gray-600">A carregar dashboard financeiro...</p>
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <EnhancedHeader />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="flex items-center space-x-2">
+            <RefreshCw className="h-6 w-6 animate-spin text-blue-600" />
+            <span className="text-lg text-gray-600">Carregando dados financeiros...</span>
+          </div>
         </div>
+        <EnhancedFooter />
       </div>
     );
   }
@@ -188,64 +254,29 @@ const DashboardFinanceiro = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <EnhancedHeader />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        
-        {/* Resumo Geral */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-blue-600">Total Receitas</p>
-                  <p className="text-3xl font-bold text-blue-700">{formatCurrency(totalGeral.receitas)}</p>
-                </div>
-                <TrendingUp className="h-8 w-8 text-blue-600" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="border-red-200 bg-gradient-to-br from-red-50 to-red-100">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-red-600">Total Despesas</p>
-                  <p className="text-3xl font-bold text-red-700">{formatCurrency(totalGeral.despesas)}</p>
-                </div>
-                <TrendingDown className="h-8 w-8 text-red-600" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className={`border-2 ${totalGeral.saldo >= 0 ? 'border-green-200 bg-gradient-to-br from-green-50 to-green-100' : 'border-orange-200 bg-gradient-to-br from-orange-50 to-orange-100'}`}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Saldo Total</p>
-                  <p className={`text-3xl font-bold ${totalGeral.saldo >= 0 ? 'text-green-700' : 'text-orange-700'}`}>
-                    {formatCurrency(totalGeral.saldo)}
-                  </p>
-                </div>
-                <DollarSign className={`h-8 w-8 ${totalGeral.saldo >= 0 ? 'text-green-600' : 'text-orange-600'}`} />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-purple-100">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-purple-600">Movimentos</p>
-                  <p className="text-3xl font-bold text-purple-700">{movimentosRecentes.length}</p>
-                  <p className="text-xs text-purple-500">últimos 10</p>
-                </div>
-                <BarChart3 className="h-8 w-8 text-purple-600" />
-              </div>
-            </CardContent>
-          </Card>
+      
+      <div className="flex-1 container mx-auto px-4 py-8 space-y-8">
+        {/* Cabeçalho */}
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Dashboard Financeiro</h1>
+            <p className="text-gray-600 mt-1">Gestão completa das finanças da associação e animais</p>
+          </div>
+          <div className="flex space-x-3">
+            <Button onClick={loadDashboardData} variant="outline">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Atualizar
+            </Button>
+            <Link to="/financeiro/movimentos/novo">
+              <Button className="bg-green-600 hover:bg-green-700">
+                <Plus className="h-4 w-4 mr-2" />
+                Novo Movimento
+              </Button>
+            </Link>
+          </div>
         </div>
 
-        {/* Separação por Escopo */}
+        {/* Resumo por Abas */}
         <Tabs defaultValue="geral" className="space-y-6">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="geral">📊 Visão Geral</TabsTrigger>
@@ -255,8 +286,59 @@ const DashboardFinanceiro = () => {
 
           {/* Visão Geral */}
           <TabsContent value="geral" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <Card className="border-green-200">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-green-600">Total Receitas</p>
+                      <p className="text-2xl font-bold text-green-700">{formatCurrency(resumoGeral.total_receitas)}</p>
+                    </div>
+                    <TrendingUp className="h-8 w-8 text-green-600" />
+                  </div>
+                </CardContent>
+              </Card>
               
+              <Card className="border-red-200">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-red-600">Total Despesas</p>
+                      <p className="text-2xl font-bold text-red-700">{formatCurrency(resumoGeral.total_despesas)}</p>
+                    </div>
+                    <TrendingDown className="h-8 w-8 text-red-600" />
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className={`border-2 ${resumoGeral.saldo >= 0 ? 'border-blue-200' : 'border-orange-200'}`}>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Saldo Total</p>
+                      <p className={`text-2xl font-bold ${resumoGeral.saldo >= 0 ? 'text-blue-700' : 'text-orange-700'}`}>
+                        {formatCurrency(resumoGeral.saldo)}
+                      </p>
+                    </div>
+                    <DollarSign className={`h-8 w-8 ${resumoGeral.saldo >= 0 ? 'text-blue-600' : 'text-orange-600'}`} />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-yellow-200">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-yellow-600">Pendentes</p>
+                      <p className="text-2xl font-bold text-yellow-700">{resumoGeral.movimentos_pendentes}</p>
+                    </div>
+                    <AlertTriangle className="h-8 w-8 text-yellow-600" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Comparação Associação vs Animais */}
               <Card>
                 <CardHeader>
@@ -318,8 +400,8 @@ const DashboardFinanceiro = () => {
                     {movimentosRecentes.slice(0, 5).map((movimento) => (
                       <div key={movimento.id} className="flex justify-between items-center p-3 border rounded-lg">
                         <div className="flex items-center space-x-3">
-                          <div className={`p-2 rounded-full ${movimento.tipo_movimento === 'receita' ? 'bg-green-100' : 'bg-red-100'}`}>
-                            {movimento.tipo_movimento === 'receita' ? 
+                          <div className={`p-2 rounded-full ${movimento.tipo === 'receita' ? 'bg-green-100' : 'bg-red-100'}`}>
+                            {movimento.tipo === 'receita' ? 
                               <ArrowUpRight className="h-4 w-4 text-green-600" /> : 
                               <ArrowDownRight className="h-4 w-4 text-red-600" />
                             }
@@ -332,8 +414,8 @@ const DashboardFinanceiro = () => {
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className={`font-bold ${movimento.tipo_movimento === 'receita' ? 'text-green-600' : 'text-red-600'}`}>
-                            {movimento.tipo_movimento === 'receita' ? '+' : '-'}{formatCurrency(movimento.valor)}
+                          <p className={`font-bold ${movimento.tipo === 'receita' ? 'text-green-600' : 'text-red-600'}`}>
+                            {movimento.tipo === 'receita' ? '+' : '-'}{formatCurrency(movimento.valor)}
                           </p>
                           <Badge className={getStatusColor(movimento.status)} variant="secondary">
                             {movimento.status}
@@ -446,7 +528,7 @@ const DashboardFinanceiro = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {/* Novo Movimento */}
               <Link to="/financeiro/movimentos/novo">
                 <Button className="w-full h-24 flex flex-col items-center justify-center space-y-2 bg-green-600 hover:bg-green-700 text-white">
@@ -461,7 +543,7 @@ const DashboardFinanceiro = () => {
               {/* Ver Todos os Movimentos */}
               <Link to="/financeiro/movimentos">
                 <Button variant="outline" className="w-full h-24 flex flex-col items-center justify-center space-y-2 border-blue-200 hover:bg-blue-50">
-                  <DollarSign className="h-6 w-6 text-blue-600" />
+                  <FileText className="h-6 w-6 text-blue-600" />
                   <div className="text-center">
                     <div className="text-sm font-medium text-blue-700">Ver Movimentos</div>
                     <div className="text-xs text-blue-600">Histórico completo</div>
@@ -469,25 +551,57 @@ const DashboardFinanceiro = () => {
                 </Button>
               </Link>
               
-              {/* Resumo Rápido */}
-              <Button 
-                variant="outline" 
-                className="w-full h-24 flex flex-col items-center justify-center space-y-2 border-purple-200 hover:bg-purple-50"
-                onClick={() => {
-                  const saldoTotal = resumoGeral.saldo;
-                  const status = saldoTotal >= 0 ? 'positivo' : 'negativo';
-                  toast({
-                    title: `Saldo ${status}: ${formatCurrency(saldoTotal)}`,
-                    description: `Receitas: ${formatCurrency(resumoGeral.total_receitas)} | Despesas: ${formatCurrency(resumoGeral.total_despesas)}`,
-                  });
-                }}
-              >
-                <BarChart3 className="h-6 w-6 text-purple-600" />
-                <div className="text-center">
-                  <div className="text-sm font-medium text-purple-700">Resumo Rápido</div>
-                  <div className="text-xs text-purple-600">Balanço atual</div>
+              {/* Contas */}
+              <Link to="/financeiro/contas">
+                <Button variant="outline" className="w-full h-24 flex flex-col items-center justify-center space-y-2 border-purple-200 hover:bg-purple-50">
+                  <Wallet className="h-6 w-6 text-purple-600" />
+                  <div className="text-center">
+                    <div className="text-sm font-medium text-purple-700">Contas</div>
+                    <div className="text-xs text-purple-600">Bancos e caixas</div>
+                  </div>
+                </Button>
+              </Link>
+
+              {/* Configurações */}
+              <Link to="/financeiro/configuracoes">
+                <Button variant="outline" className="w-full h-24 flex flex-col items-center justify-center space-y-2 border-gray-200 hover:bg-gray-50">
+                  <Settings className="h-6 w-6 text-gray-600" />
+                  <div className="text-center">
+                    <div className="text-sm font-medium text-gray-700">Configurações</div>
+                    <div className="text-xs text-gray-600">Categorias e contas</div>
+                  </div>
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Contas Financeiras */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <CreditCard className="h-5 w-5 mr-2 text-purple-600" />
+              Contas Financeiras
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {contas.map((conta) => (
+                <div key={conta.id} className="p-4 border rounded-lg bg-gradient-to-r from-purple-50 to-blue-50">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <p className="font-medium text-sm">{conta.nome}</p>
+                      <p className="text-xs text-gray-500">{conta.codigo}</p>
+                    </div>
+                    <Badge variant="outline" className="text-xs">
+                      {conta.tipo}
+                    </Badge>
+                  </div>
+                  <p className="text-lg font-bold text-purple-700">
+                    {formatCurrency(conta.saldo_atual)}
+                  </p>
                 </div>
-              </Button>
+              ))}
             </div>
           </CardContent>
         </Card>

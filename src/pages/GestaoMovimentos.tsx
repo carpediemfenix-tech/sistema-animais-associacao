@@ -1,627 +1,608 @@
-import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
-import EnhancedHeader from "@/components/EnhancedHeader";
-import EnhancedFooter from "@/components/EnhancedFooter";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { 
-  Plus, 
-  RefreshCw,
-  CheckCircle,
-  Loader2,
-  DollarSign,
-  TrendingUp,
-  TrendingDown,
-  Calendar,
-  Building,
-  PawPrint,
-  ArrowUpRight,
-  ArrowDownRight,
-  Edit,
-  Trash2
-} from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import DebugLoggerComponent, { debugLogger } from "@/components/DebugLogger";
+import React, { useState, useEffect } from 'react';
+import { Search, Filter, Plus, Edit2, Trash2, Eye, Download, Calendar, DollarSign, TrendingUp, TrendingDown, ArrowUpDown } from 'lucide-react';
 
-const GestaoMovimentos = () => {
-  const { hasPermission } = useAuth();
-  const [movimentos, setMovimentos] = useState<any[]>([]);
-  const [categorias, setCategorias] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [editingMovimento, setEditingMovimento] = useState<any>(null);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [movimentoToDelete, setMovimentoToDelete] = useState<any>(null);
+interface Movement {
+  id: string;
+  type: 'receita' | 'despesa';
+  description: string;
+  amount: number;
+  category: string;
+  account: string;
+  date: string;
+  status: 'pendente' | 'confirmado' | 'cancelado';
+  reference?: string;
+  notes?: string;
+}
 
-  // Estados do formulário melhorado
-  const [formData, setFormData] = useState({
-    tipo_movimento: '',
-    escopo: '',
-    categoria_id: '',
-    descricao: '',
-    valor: '',
-    data_movimento: new Date().toISOString().split('T')[0]
-  });
+interface Account {
+  id: string;
+  name: string;
+  type: string;
+}
 
-  const { toast } = useToast();
+interface Category {
+  id: string;
+  name: string;
+  type: 'receita' | 'despesa';
+}
 
-  const fetchCategorias = async () => {
-    try {
-      debugLogger.log('info', 'Carregando categorias...');
-      
-      const { data, error } = await supabase
-        .from('categorias_financeiras')
-        .select('*')
-        .eq('ativo', true)
-        .order('ordem');
-
-      if (error) {
-        debugLogger.log('error', 'Erro ao carregar categorias', error);
-        setCategorias([]);
-        return;
-      }
-
-      debugLogger.log('success', `Categorias carregadas: ${data?.length || 0}`, data?.slice(0, 3));
-      setCategorias(data || []);
-
-    } catch (error: any) {
-      debugLogger.log('error', 'Erro geral ao carregar categorias', error);
-      setCategorias([]);
-    }
-  };
-
-  const fetchMovimentos = async () => {
-    try {
-      setLoading(true);
-      console.log('🔄 Carregando movimentos...');
-
-      const { data, error } = await supabase
-        .from('movimentos_financeiros')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(20);
-
-      if (error) {
-        console.error('❌ Erro ao carregar movimentos:', error);
-        throw error;
-      }
-
-      console.log('✅ Movimentos carregados:', data?.length || 0);
-      setMovimentos(data || []);
-
-    } catch (error: any) {
-      console.error('💥 Erro geral:', error);
-      toast({
-        title: "Erro ao carregar dados",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const resetForm = () => {
-    setFormData({
-      tipo_movimento: '',
-      escopo: '',
-      categoria_id: '',
-      descricao: '',
-      valor: '',
-      data_movimento: new Date().toISOString().split('T')[0]
-    });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.tipo_movimento || !formData.escopo || !formData.categoria_id || !formData.descricao || !formData.valor) {
-      toast({
-        title: "Campos obrigatórios",
-        description: "Preencha todos os campos obrigatórios",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const valorNumerico = parseFloat(formData.valor);
-    if (isNaN(valorNumerico) || valorNumerico <= 0) {
-      toast({
-        title: "Valor inválido",
-        description: "O valor deve ser um número positivo",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      setSubmitting(true);
-
-      // Gerar número do movimento
-      const { data: numeroData, error: numeroError } = await supabase
-        .rpc('gerar_numero_movimento');
-
-      if (numeroError) throw numeroError;
-
-      // Usar categoria selecionada
-      const dadosInserir = {
-        numero_movimento: numeroData,
-        tipo_movimento: formData.tipo_movimento,
-        escopo: formData.escopo,
-        categoria_id: formData.categoria_id,
-        descricao: formData.descricao.trim(),
-        valor: valorNumerico,
-        data_movimento: formData.data_movimento,
-        status: 'confirmado'
-      };
-
-      let error;
-      
-      if (editingMovimento) {
-        // Atualizar movimento existente
-        const { error: updateError } = await supabase
-          .from('movimentos_financeiros_2025_12_13_03_00')
-          .update(dadosInserir)
-          .eq('id', editingMovimento.id);
-        error = updateError;
-      } else {
-        // Criar novo movimento
-        const { error: insertError } = await supabase
-          .from('movimentos_financeiros_2025_12_13_03_00')
-          .insert([dadosInserir]);
-        error = insertError;
-      }
-
-      if (error) throw error;
-
-      toast({
-        title: editingMovimento ? "Movimento atualizado!" : "Movimento registado!",
-        description: `${formData.tipo_movimento} de €${valorNumerico.toFixed(2)} ${editingMovimento ? 'atualizada' : 'registada'} com sucesso`,
-      });
-
-      setDialogOpen(false);
-      setEditingMovimento(null);
-      resetForm();
-      await fetchMovimentos();
-
-    } catch (error: any) {
-      console.error('❌ Erro ao registar:', error);
-      toast({
-        title: "Erro ao registar",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  // Função para editar movimento
-  const handleEditMovimento = (movimento: any) => {
-    setEditingMovimento(movimento);
-    setFormData({
-      tipo_movimento: String(movimento.tipo_movimento || ''),
-      escopo: String(movimento.escopo || ''),
-      categoria_id: String(movimento.categoria_id || ''),
-      descricao: String(movimento.descricao || ''),
-      valor: String(movimento.valor || ''),
-      data_movimento: String(movimento.data_movimento || new Date().toISOString().split('T')[0])
-    });
-    setDialogOpen(true);
-  };
-
-  // Função para eliminar movimento
-  const handleDeleteMovimento = async () => {
-    if (!movimentoToDelete) return;
-
-    try {
-      const { error } = await supabase
-        .from('movimentos_financeiros_2025_12_13_03_00')
-        .delete()
-        .eq('id', movimentoToDelete.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Movimento eliminado",
-        description: "O movimento foi eliminado com sucesso.",
-      });
-
-      setDeleteDialogOpen(false);
-      setMovimentoToDelete(null);
-      await fetchMovimentos();
-    } catch (error: any) {
-      toast({
-        title: "Erro ao eliminar",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Função para abrir diálogo de eliminação
-  const openDeleteDialog = (movimento: any) => {
-    setMovimentoToDelete(movimento);
-    setDeleteDialogOpen(true);
-  };
-
-  useEffect(() => {
-    debugLogger.log('info', 'EKO: GestaoMovimentos iniciando...');
-    fetchCategorias();
-    fetchMovimentos();
-  }, []);
-  
-  // Log quando categorias mudam
-  useEffect(() => {
-    debugLogger.log('debug', `EKO: Categorias atualizadas no estado: ${categorias.length}`);
-    if (categorias.length > 0) {
-      debugLogger.log('debug', 'EKO: Primeiras categorias no estado', categorias.slice(0, 3).map(c => c.nome));
-    }
-  }, [categorias]);
-
-  // Filtrar categorias baseadas no tipo e escopo selecionados
-  const categoriasFiltradasPorEscopo = categorias.filter(cat => 
-    (!formData.escopo || cat.escopo === formData.escopo || cat.escopo === 'ambos') &&
-    (!formData.tipo_movimento || cat.tipo === formData.tipo_movimento)
+const EnhancedHeader: React.FC = () => {
+  return (
+    <header className="bg-white shadow-sm border-b border-gray-200">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          <div className="flex items-center">
+            <h1 className="text-xl font-semibold text-gray-900">Sistema Financeiro</h1>
+          </div>
+          <nav className="flex space-x-8">
+            <a href="#" className="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm font-medium">Dashboard</a>
+            <a href="#" className="text-blue-600 hover:text-blue-700 px-3 py-2 text-sm font-medium">Movimentos</a>
+            <a href="#" className="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm font-medium">Contas</a>
+            <a href="#" className="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm font-medium">Relatórios</a>
+          </nav>
+        </div>
+      </div>
+    </header>
   );
-  
-  // Debug logs
-  debugLogger.log('debug', 'Debug categorias filtradas', {
-    totalCategorias: categorias.length,
-    categoriasFiltradasPorEscopo: categoriasFiltradasPorEscopo.length,
-    formData: { tipo: formData.tipo_movimento, escopo: formData.escopo },
-    primeirasCategoriasOriginais: categorias.slice(0, 2),
-    primeirasCategoriasFiltradasPorEscopo: categoriasFiltradasPorEscopo.slice(0, 2)
-  });
+};
+
+const EnhancedFooter: React.FC = () => {
+  return (
+    <footer className="bg-gray-50 border-t border-gray-200">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="text-center text-sm text-gray-500">
+          © 2024 Sistema Financeiro - Associação de Animais. Todos os direitos reservados.
+        </div>
+      </div>
+    </footer>
+  );
+};
+
+const GestaoMovimentos: React.FC = () => {
+  const [movements, setMovements] = useState<Movement[]>([]);
+  const [filteredMovements, setFilteredMovements] = useState<Movement[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedType, setSelectedType] = useState<'all' | 'receita' | 'despesa'>('all');
+  const [selectedAccount, setSelectedAccount] = useState<string>('all');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [dateRange, setDateRange] = useState({ start: '', end: '' });
+  const [sortBy, setSortBy] = useState<'date' | 'amount' | 'description'>('date');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [showFilters, setShowFilters] = useState(false);
+  const [selectedMovements, setSelectedMovements] = useState<string[]>([]);
+
+  // Mock data
+  useEffect(() => {
+    const mockAccounts: Account[] = [
+      { id: '1', name: 'Conta Corrente Principal', type: 'corrente' },
+      { id: '2', name: 'Conta Poupança', type: 'poupanca' },
+      { id: '3', name: 'Caixa', type: 'caixa' }
+    ];
+
+    const mockCategories: Category[] = [
+      { id: '1', name: 'Doações', type: 'receita' },
+      { id: '2', name: 'Eventos', type: 'receita' },
+      { id: '3', name: 'Veterinário', type: 'despesa' },
+      { id: '4', name: 'Alimentação', type: 'despesa' },
+      { id: '5', name: 'Medicamentos', type: 'despesa' }
+    ];
+
+    const mockMovements: Movement[] = [
+      {
+        id: '1',
+        type: 'receita',
+        description: 'Doação mensal - João Silva',
+        amount: 500.00,
+        category: 'Doações',
+        account: 'Conta Corrente Principal',
+        date: '2024-01-15',
+        status: 'confirmado',
+        reference: 'DOA001'
+      },
+      {
+        id: '2',
+        type: 'despesa',
+        description: 'Consulta veterinária - Rex',
+        amount: 150.00,
+        category: 'Veterinário',
+        account: 'Conta Corrente Principal',
+        date: '2024-01-14',
+        status: 'confirmado',
+        reference: 'VET001'
+      },
+      {
+        id: '3',
+        type: 'receita',
+        description: 'Evento beneficente',
+        amount: 2500.00,
+        category: 'Eventos',
+        account: 'Conta Corrente Principal',
+        date: '2024-01-13',
+        status: 'pendente',
+        reference: 'EVT001'
+      },
+      {
+        id: '4',
+        type: 'despesa',
+        description: 'Ração premium 20kg',
+        amount: 180.00,
+        category: 'Alimentação',
+        account: 'Caixa',
+        date: '2024-01-12',
+        status: 'confirmado',
+        reference: 'ALI001'
+      }
+    ];
+
+    setAccounts(mockAccounts);
+    setCategories(mockCategories);
+    setMovements(mockMovements);
+    setFilteredMovements(mockMovements);
+  }, []);
+
+  // Filter and search logic
+  useEffect(() => {
+    let filtered = movements.filter(movement => {
+      const matchesSearch = movement.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          movement.reference?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesType = selectedType === 'all' || movement.type === selectedType;
+      const matchesAccount = selectedAccount === 'all' || movement.account === selectedAccount;
+      const matchesCategory = selectedCategory === 'all' || movement.category === selectedCategory;
+      const matchesStatus = selectedStatus === 'all' || movement.status === selectedStatus;
+      
+      let matchesDate = true;
+      if (dateRange.start && dateRange.end) {
+        const movementDate = new Date(movement.date);
+        const startDate = new Date(dateRange.start);
+        const endDate = new Date(dateRange.end);
+        matchesDate = movementDate >= startDate && movementDate <= endDate;
+      }
+
+      return matchesSearch && matchesType && matchesAccount && matchesCategory && matchesStatus && matchesDate;
+    });
+
+    // Sort
+    filtered.sort((a, b) => {
+      let comparison = 0;
+      switch (sortBy) {
+        case 'date':
+          comparison = new Date(a.date).getTime() - new Date(b.date).getTime();
+          break;
+        case 'amount':
+          comparison = a.amount - b.amount;
+          break;
+        case 'description':
+          comparison = a.description.localeCompare(b.description);
+          break;
+      }
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+
+    setFilteredMovements(filtered);
+  }, [movements, searchTerm, selectedType, selectedAccount, selectedCategory, selectedStatus, dateRange, sortBy, sortOrder]);
+
+  const handleSort = (field: 'date' | 'amount' | 'description') => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('desc');
+    }
+  };
+
+  const handleSelectMovement = (movementId: string) => {
+    setSelectedMovements(prev => 
+      prev.includes(movementId) 
+        ? prev.filter(id => id !== movementId)
+        : [...prev, movementId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedMovements.length === filteredMovements.length) {
+      setSelectedMovements([]);
+    } else {
+      setSelectedMovements(filteredMovements.map(m => m.id));
+    }
+  };
+
+  const getTotalReceitas = () => {
+    return filteredMovements
+      .filter(m => m.type === 'receita' && m.status === 'confirmado')
+      .reduce((sum, m) => sum + m.amount, 0);
+  };
+
+  const getTotalDespesas = () => {
+    return filteredMovements
+      .filter(m => m.type === 'despesa' && m.status === 'confirmado')
+      .reduce((sum, m) => sum + m.amount, 0);
+  };
+
+  const getSaldo = () => {
+    return getTotalReceitas() - getTotalDespesas();
+  };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-PT', {
+    return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
-      currency: 'EUR'
+      currency: 'BRL'
     }).format(value);
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-PT');
+    return new Date(dateString).toLocaleDateString('pt-BR');
   };
 
-  // Cálculos básicos
-  const totalReceitas = movimentos
-    .filter(m => m.tipo_movimento === 'receita')
-    .reduce((sum, m) => sum + (parseFloat(m.valor) || 0), 0);
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'confirmado':
+        return 'bg-green-100 text-green-800';
+      case 'pendente':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'cancelado':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
 
-  const totalDespesas = movimentos
-    .filter(m => m.tipo_movimento === 'despesa')
-    .reduce((sum, m) => sum + (parseFloat(m.valor) || 0), 0);
-
-  const saldoAtual = totalReceitas - totalDespesas;
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-16 w-16 animate-spin mx-auto mb-4 text-blue-600" />
-          <p className="text-lg text-gray-600">A carregar movimentos...</p>
-        </div>
-      </div>
-    );
-  }
+  const getTypeColor = (type: string) => {
+    return type === 'receita' ? 'text-green-600' : 'text-red-600';
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gray-50">
       <EnhancedHeader />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        
-        {/* Resumo Básico */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="border-green-200">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-green-600">Total Receitas</p>
-                  <p className="text-2xl font-bold text-green-700">{formatCurrency(totalReceitas)}</p>
-                </div>
-                <TrendingUp className="h-8 w-8 text-green-600" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="border-red-200">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-red-600">Total Despesas</p>
-                  <p className="text-2xl font-bold text-red-700">{formatCurrency(totalDespesas)}</p>
-                </div>
-                <TrendingDown className="h-8 w-8 text-red-600" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className={`border-2 ${saldoAtual >= 0 ? 'border-blue-200' : 'border-orange-200'}`}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Saldo</p>
-                  <p className={`text-2xl font-bold ${saldoAtual >= 0 ? 'text-blue-700' : 'text-orange-700'}`}>
-                    {formatCurrency(saldoAtual)}
-                  </p>
-                </div>
-                <DollarSign className={`h-8 w-8 ${saldoAtual >= 0 ? 'text-blue-600' : 'text-orange-600'}`} />
-              </div>
-            </CardContent>
-          </Card>
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Gestão de Movimentos</h1>
+          <p className="text-gray-600">Gerencie todas as receitas e despesas da associação</p>
         </div>
 
-        {/* Ações e Lista */}
-        <Card>
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle>Movimentos Financeiros</CardTitle>
-              <div className="flex space-x-2">
-                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Novo Movimento
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                      <DialogTitle>{editingMovimento ? 'Editar Movimento Financeiro' : 'Novo Movimento Financeiro'}</DialogTitle>
-                      <DialogDescription>
-                        {editingMovimento ? 'Atualizar receita ou despesa existente' : 'Registar nova receita ou despesa (versão simplificada)'}
-                      </DialogDescription>
-                    </DialogHeader>
-                    
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                      {/* Tipo e Escopo */}
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="tipo_movimento">Tipo *</Label>
-                          <Select value={formData.tipo_movimento || ''} onValueChange={(value) => setFormData({...formData, tipo_movimento: value, categoria_id: ''})}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Tipo" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="receita">💰 Receita</SelectItem>
-                              <SelectItem value="despesa">💸 Despesa</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        
-                        <div>
-                          <Label htmlFor="escopo">Escopo *</Label>
-                          <Select value={formData.escopo || ''} onValueChange={(value) => setFormData({...formData, escopo: value, categoria_id: ''})}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Escopo" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="associacao">🏢 Associação</SelectItem>
-                              <SelectItem value="animal">🐾 Animal</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                      
-                      {/* Categoria */}
-                      <div>
-                        <Label htmlFor="categoria_id">Categoria *</Label>
-                        <Select value={formData.categoria_id || ''} onValueChange={(value) => setFormData({...formData, categoria_id: value})}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione a categoria" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {categoriasFiltradasPorEscopo.map((categoria) => (
-                              <SelectItem key={categoria.id} value={categoria.id}>
-                                <div className="flex items-center space-x-2">
-                                  <div 
-                                    className="w-3 h-3 rounded-full" 
-                                    style={{ backgroundColor: categoria.cor }}
-                                  />
-                                  <span>{categoria.nome}</span>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {categoriasFiltradasPorEscopo.length} categorias disponíveis
-                        </p>
-                      </div>
-                      
-                      {/* Descrição */}
-                      <div>
-                        <Label htmlFor="descricao">Descrição *</Label>
-                        <Input
-                          id="descricao"
-                          value={formData.descricao}
-                          onChange={(e) => setFormData({...formData, descricao: e.target.value})}
-                          placeholder="Descrição do movimento"
-                          required
-                        />
-                      </div>
-                      
-                      {/* Valor e Data */}
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="valor">Valor (€) *</Label>
-                          <Input
-                            id="valor"
-                            type="number"
-                            step="0.01"
-                            min="0.01"
-                            value={formData.valor}
-                            onChange={(e) => setFormData({...formData, valor: e.target.value})}
-                            placeholder="0.00"
-                            required
-                          />
-                        </div>
-                        
-                        <div>
-                          <Label htmlFor="data_movimento">Data *</Label>
-                          <Input
-                            id="data_movimento"
-                            type="date"
-                            value={formData.data_movimento}
-                            onChange={(e) => setFormData({...formData, data_movimento: e.target.value})}
-                            required
-                          />
-                        </div>
-                      </div>
-                      
-                      {/* Botões */}
-                      <div className="flex justify-end space-x-2 pt-4 border-t">
-                        <Button 
-                          type="button" 
-                          variant="outline" 
-                          onClick={() => {
-                            setDialogOpen(false);
-                            setEditingMovimento(null);
-                            resetForm();
-                          }}
-                          disabled={submitting}
-                        >
-                          Cancelar
-                        </Button>
-                        <Button 
-                          type="submit" 
-                          className="bg-green-600 hover:bg-green-700"
-                          disabled={submitting}
-                        >
-                          {submitting ? (
-                            <>
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                              {editingMovimento ? 'A atualizar...' : 'A registar...'}
-                            </>
-                          ) : (
-                            <>
-                              <CheckCircle className="h-4 w-4 mr-2" />
-                              {editingMovimento ? 'Atualizar' : 'Registar'}
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    </form>
-                  </DialogContent>
-                </Dialog>
-                
-                <Button variant="outline" onClick={fetchMovimentos}>
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Atualizar
-                </Button>
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <TrendingUp className="h-6 w-6 text-green-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total Receitas</p>
+                <p className="text-2xl font-bold text-green-600">{formatCurrency(getTotalReceitas())}</p>
               </div>
             </div>
-          </CardHeader>
-          
-          <CardContent>
-            {/* Lista Simples */}
-            {movimentos.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <DollarSign className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p className="text-lg font-medium">Nenhum movimento encontrado</p>
-                <p className="text-sm">Os movimentos financeiros aparecerão aqui</p>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-red-100 rounded-lg">
+                <TrendingDown className="h-6 w-6 text-red-600" />
               </div>
-            ) : (
-              <div className="space-y-3">
-                {movimentos.map((movimento) => (
-                  <div key={movimento.id} className="flex justify-between items-center p-4 border rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <div className={`p-2 rounded-full ${movimento.tipo_movimento === 'receita' ? 'bg-green-100' : 'bg-red-100'}`}>
-                        {movimento.tipo_movimento === 'receita' ? 
-                          <ArrowUpRight className="h-4 w-4 text-green-600" /> : 
-                          <ArrowDownRight className="h-4 w-4 text-red-600" />
-                        }
-                      </div>
-                      <div>
-                        <p className="font-medium">{movimento.descricao}</p>
-                        <p className="text-sm text-gray-500">
-                          {movimento.escopo} • {formatDate(movimento.data_movimento)}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-4">
-                      <div className="text-right">
-                        <p className={`font-bold ${movimento.tipo_movimento === 'receita' ? 'text-green-600' : 'text-red-600'}`}>
-                          {movimento.tipo_movimento === 'receita' ? '+' : '-'}{formatCurrency(parseFloat(movimento.valor) || 0)}
-                        </p>
-                        <p className="text-xs text-gray-500">{movimento.numero_movimento}</p>
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEditMovimento(movimento)}
-                          className="h-8 w-8 p-0"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openDeleteDialog(movimento)}
-                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total Despesas</p>
+                <p className="text-2xl font-bold text-red-600">{formatCurrency(getTotalDespesas())}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <DollarSign className="h-6 w-6 text-blue-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Saldo</p>
+                <p className={`text-2xl font-bold ${getSaldo() >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {formatCurrency(getSaldo())}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-gray-100 rounded-lg">
+                <Calendar className="h-6 w-6 text-gray-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total Movimentos</p>
+                <p className="text-2xl font-bold text-gray-900">{filteredMovements.length}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Controls */}
+        <div className="bg-white rounded-lg shadow mb-6">
+          <div className="p-6 border-b border-gray-200">
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+              <div className="flex-1 max-w-md">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                  <input
+                    type="text"
+                    placeholder="Buscar por descrição ou referência..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  <Filter className="h-4 w-4 mr-2" />
+                  Filtros
+                </button>
+                
+                <button className="flex items-center px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">
+                  <Download className="h-4 w-4 mr-2" />
+                  Exportar
+                </button>
+                
+                <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Novo Movimento
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Filters */}
+          {showFilters && (
+            <div className="p-6 bg-gray-50 border-b border-gray-200">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
+                  <select
+                    value={selectedType}
+                    onChange={(e) => setSelectedType(e.target.value as 'all' | 'receita' | 'despesa')}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="all">Todos</option>
+                    <option value="receita">Receitas</option>
+                    <option value="despesa">Despesas</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Conta</label>
+                  <select
+                    value={selectedAccount}
+                    onChange={(e) => setSelectedAccount(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="all">Todas</option>
+                    {accounts.map(account => (
+                      <option key={account.id} value={account.name}>{account.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="all">Todas</option>
+                    {categories.map(category => (
+                      <option key={category.id} value={category.name}>{category.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                  <select
+                    value={selectedStatus}
+                    onChange={(e) => setSelectedStatus(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="all">Todos</option>
+                    <option value="confirmado">Confirmado</option>
+                    <option value="pendente">Pendente</option>
+                    <option value="cancelado">Cancelado</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Período</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="date"
+                      value={dateRange.start}
+                      onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+                      className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    <input
+                      type="date"
+                      value={dateRange.end}
+                      onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+                      className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-      
-      {/* Debug Logger */}
-      <DebugLoggerComponent title="Gestão Movimentos - Debug" />
-      
-      {/* Diálogo de Confirmação de Eliminação */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirmar Eliminação</DialogTitle>
-            <DialogDescription>
-              Tem certeza que deseja eliminar este movimento financeiro?
-            </DialogDescription>
-          </DialogHeader>
-          {movimentoToDelete && (
-            <div className="py-4">
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="font-medium">{movimentoToDelete.descricao}</p>
-                <p className="text-sm text-gray-600">
-                  {movimentoToDelete.tipo_movimento === 'receita' ? 'Receita' : 'Despesa'} de {formatCurrency(parseFloat(movimentoToDelete.valor) || 0)}
-                </p>
-                <p className="text-xs text-gray-500">
-                  {formatDate(movimentoToDelete.data_movimento)}
-                </p>
+                </div>
               </div>
             </div>
           )}
-          <div className="flex justify-end space-x-2">
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-              Cancelar
-            </Button>
-            <Button variant="destructive" onClick={handleDeleteMovimento}>
-              <Trash2 className="h-4 w-4 mr-2" />
-              Eliminar
-            </Button>
+        </div>
+
+        {/* Movements Table */}
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left">
+                    <input
+                      type="checkbox"
+                      checked={selectedMovements.length === filteredMovements.length && filteredMovements.length > 0}
+                      onChange={handleSelectAll}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                  </th>
+                  <th 
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSort('date')}
+                  >
+                    <div className="flex items-center">
+                      Data
+                      <ArrowUpDown className="ml-1 h-4 w-4" />
+                    </div>
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Tipo
+                  </th>
+                  <th 
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSort('description')}
+                  >
+                    <div className="flex items-center">
+                      Descrição
+                      <ArrowUpDown className="ml-1 h-4 w-4" />
+                    </div>
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Categoria
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Conta
+                  </th>
+                  <th 
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSort('amount')}
+                  >
+                    <div className="flex items-center">
+                      Valor
+                      <ArrowUpDown className="ml-1 h-4 w-4" />
+                    </div>
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Ações
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredMovements.map((movement) => (
+                  <tr key={movement.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4">
+                      <input
+                        type="checkbox"
+                        checked={selectedMovements.includes(movement.id)}
+                        onChange={() => handleSelectMovement(movement.id)}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {formatDate(movement.date)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        movement.type === 'receita' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      }`}>
+                        {movement.type === 'receita' ? 'Receita' : 'Despesa'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-900">
+                      <div>
+                        <div className="font-medium">{movement.description}</div>
+                        {movement.reference && (
+                          <div className="text-gray-500 text-xs">Ref: {movement.reference}</div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {movement.category}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {movement.account}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <span className={getTypeColor(movement.type)}>
+                        {movement.type === 'receita' ? '+' : '-'}{formatCurrency(movement.amount)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(movement.status)}`}>
+                        {movement.status.charAt(0).toUpperCase() + movement.status.slice(1)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <div className="flex items-center space-x-2">
+                        <button className="text-blue-600 hover:text-blue-900">
+                          <Eye className="h-4 w-4" />
+                        </button>
+                        <button className="text-gray-600 hover:text-gray-900">
+                          <Edit2 className="h-4 w-4" />
+                        </button>
+                        <button className="text-red-600 hover:text-red-900">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        </DialogContent>
-      </Dialog>
-      
+
+          {filteredMovements.length === 0 && (
+            <div className="text-center py-12">
+              <div className="text-gray-500 text-lg mb-2">Nenhum movimento encontrado</div>
+              <div className="text-gray-400">Tente ajustar os filtros ou adicionar um novo movimento</div>
+            </div>
+          )}
+        </div>
+
+        {/* Pagination */}
+        {filteredMovements.length > 0 && (
+          <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-6 rounded-lg shadow">
+            <div className="flex-1 flex justify-between sm:hidden">
+              <button className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                Anterior
+              </button>
+              <button className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                Próximo
+              </button>
+            </div>
+            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-gray-700">
+                  Mostrando <span className="font-medium">1</span> a <span className="font-medium">{filteredMovements.length}</span> de{' '}
+                  <span className="font-medium">{filteredMovements.length}</span> resultados
+                </p>
+              </div>
+              <div>
+                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                  <button className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                    Anterior
+                  </button>
+                  <button className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-blue-50 text-sm font-medium text-blue-600">
+                    1
+                  </button>
+                  <button className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                    Próximo
+                  </button>
+                </nav>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
       <EnhancedFooter />
     </div>
   );

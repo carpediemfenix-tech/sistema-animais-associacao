@@ -58,6 +58,14 @@ import ModuloMissoes from "./pages/ModuloMissoes";
 import ModuloAgenda from "./pages/ModuloAgenda";
 import EstatisticasAvancadas from "./pages/EstatisticasAvancadas";
 
+// Módulo Financeiro
+import DashboardFinanceiro from "./pages/DashboardFinanceiro";
+import GestaoMovimentos from "./pages/GestaoMovimentos";
+import NovoMovimento from "./pages/NovoMovimento";
+import GestaoContas from "./pages/GestaoContas";
+import ConfiguracoesFinanceiras from "./pages/ConfiguracoesFinanceiras";
+import RelatoriosFinanceiros from "./pages/RelatoriosFinanceiros";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -106,12 +114,13 @@ const App = () => (
             <Route path="/estatisticas-avancadas" element={<ProtectedRoute><EstatisticasAvancadas /></ProtectedRoute>} />
             <Route path="/voluntario/:id" element={<ProtectedRoute><VoluntarioDetail /></ProtectedRoute>} />
             <Route path="/gestao-financeira" element={<ProtectedRoute><GestaoFinanceira /></ProtectedRoute>} />
+            {/* Módulo Financeiro Profissional - F01 a F06 */}
             <Route path="/financeiro" element={<ProtectedRoute><DashboardFinanceiro /></ProtectedRoute>} />
             <Route path="/financeiro/movimentos" element={<ProtectedRoute><GestaoMovimentos /></ProtectedRoute>} />
-            <Route path="/financeiro/movimentos/novo" element={<ProtectedRoute><GestaoMovimentos /></ProtectedRoute>} />
-            <Route path="/financeiro/categorias" element={<ProtectedRoute><GestaoMovimentos /></ProtectedRoute>} />
-            <Route path="/financeiro/orcamentos" element={<ProtectedRoute><GestaoMovimentos /></ProtectedRoute>} />
-            <Route path="/financeiro/relatorios" element={<ProtectedRoute><GestaoMovimentos /></ProtectedRoute>} />
+            <Route path="/financeiro/movimentos/novo" element={<ProtectedRoute><NovoMovimento /></ProtectedRoute>} />
+            <Route path="/financeiro/contas" element={<ProtectedRoute><GestaoContas /></ProtectedRoute>} />
+            <Route path="/financeiro/configuracoes" element={<ProtectedRoute><ConfiguracoesFinanceiras /></ProtectedRoute>} />
+            <Route path="/financeiro/relatorios" element={<ProtectedRoute><RelatoriosFinanceiros /></ProtectedRoute>} />
             <Route path="/relatorios" element={<ProtectedRoute><Relatorios /></ProtectedRoute>} />
             <Route path="/configuracoes" element={<ProtectedRoute><Configuracoes /></ProtectedRoute>} />
             <Route path="/configuracoes/especies" element={<ProtectedRoute><GestaoEspecies /></ProtectedRoute>} />
