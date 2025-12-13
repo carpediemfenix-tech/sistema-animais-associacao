@@ -243,7 +243,7 @@ const AnimaisList: React.FC = () => {
             <Link to="/">
               <Button variant="outline">
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Dashboard
+                Dashboard Principal
               </Button>
             </Link>
             <Link to="/novo-animal">

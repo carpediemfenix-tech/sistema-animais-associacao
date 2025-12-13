@@ -33,6 +33,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Grupo, Voluntario } from "@/types/animal";
 import { useToast } from "@/hooks/use-toast";
 import LogotipoValentao from "@/components/LogotipoValentao";
+import EnhancedHeader from "@/components/EnhancedHeader";
+import EnhancedFooter from "@/components/EnhancedFooter";
 
 const GestaoGrupos = () => {
   const [grupos, setGrupos] = useState<Grupo[]>([]);
@@ -384,43 +386,37 @@ const GestaoGrupos = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-4">
-              <LogotipoValentao size="sm" />
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 flex items-center">
-                  <Users className="h-6 w-6 mr-2 text-blue-600" />
-                  Gestão de Grupos
-                </h1>
-                <p className="text-sm text-gray-600">
-                  Matilhas, Colónias, Sócios e grupos especiais
-                </p>
-              </div>
-            </div>
-            <div className="flex space-x-3">
-              {hasPermission('create') && (
-                <Button onClick={openNewDialog}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Novo Grupo
-                </Button>
-              )}
-              
-              <Button variant="outline" asChild>
-                <Link to="/">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Voltar ao Dashboard
-                </Link>
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <EnhancedHeader />
+      
+      <div className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+              <Users className="h-8 w-8 mr-3 text-blue-600" />
+              Gestão de Grupos
+            </h1>
+            <p className="text-gray-600 mt-1">
+              Matilhas, Colónias, Sócios e grupos especiais
+            </p>
+          </div>
+          <div className="flex space-x-3">
+            {hasPermission('create') && (
+              <Button onClick={openNewDialog}>
+                <Plus className="h-4 w-4 mr-2" />
+                Novo Grupo
               </Button>
-            </div>
+            )}
+            
+            <Button variant="outline" asChild>
+              <Link to="/">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Dashboard Principal
+              </Link>
+            </Button>
           </div>
         </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Estatísticas */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card>
@@ -858,6 +854,8 @@ const GestaoGrupos = () => {
           </form>
         </DialogContent>
       </Dialog>
+      
+      <EnhancedFooter />
     </div>
   );
 };

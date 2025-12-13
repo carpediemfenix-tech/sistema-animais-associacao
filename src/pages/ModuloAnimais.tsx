@@ -49,8 +49,8 @@ const ModuloAnimais = () => {
 
   const funcionalidades = [
     {
-      titulo: "Ver Animais",
-      descricao: "Lista completa de todos os animais",
+      titulo: "Dashboard",
+      descricao: "Dashboard de gestão de animais",
       icone: Eye,
       rota: "/animais",
       cor: "bg-blue-500"

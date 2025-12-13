@@ -20,35 +20,71 @@ import {
   Loader2,
   FileText,
   PawPrint,
-  Edit
+  Edit,
+  Heart,
+  Cross,
+  ArrowRight,
+  Zap,
+  UserCheck,
+  AlertTriangle,
+  Activity,
+  MoreHorizontal,
+  Save,
+  X
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Animal } from "@/types/animal";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import LogotipoValentao from "@/components/LogotipoValentao";
 import EnhancedHeader from "@/components/EnhancedHeader";
 import EnhancedFooter from "@/components/EnhancedFooter";
 
+// Interface para motivos de arquivamento
+interface MotivoArquivamento {
+  id: string;
+  nome: string;
+  descricao: string;
+  cor: string;
+  icone: string;
+  categoria: string;
+  requer_observacoes: boolean;
+  ativo: boolean;
+  ordem: number;
+}
+
+// Interface estendida para Animal com dados de arquivamento
+interface AnimalArquivado extends Animal {
+  motivo_arquivamento_id?: string;
+  observacoes_arquivamento?: string;
+  data_arquivamento?: string;
+  motivo_arquivamento?: MotivoArquivamento;
+}
+
 const AnimaisArquivados = () => {
-  const [animais, setAnimais] = useState<Animal[]>([]);
+  const [animais, setAnimais] = useState<AnimalArquivado[]>([]);
+  const [motivosArquivamento, setMotivosArquivamento] = useState<MotivoArquivamento[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterEspecie, setFilterEspecie] = useState("todos");
-  const [filterEstado, setFilterEstado] = useState("todos");
+  const [filterMotivo, setFilterMotivo] = useState("todos");
   const [filterSexo, setFilterSexo] = useState("todos");
   const [filterDataArquivo, setFilterDataArquivo] = useState("todos");
-  const [selectedAnimal, setSelectedAnimal] = useState<Animal | null>(null);
+  const [selectedAnimal, setSelectedAnimal] = useState<AnimalArquivado | null>(null);
   
   // Estados para dados dinâmicos
-  const [especies, setEspecies] = useState<any[]>([]);
-  const [sexos, setSexos] = useState<any[]>([]);
+  const [especies, setEspecies] = useState<string[]>([]);
+  const [sexos, setSexos] = useState<string[]>([]);
+  
+  // Estados do modal de arquivamento
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingArchive, setEditingArchive] = useState<Animal | null>(null);
+  const [editingArchive, setEditingArchive] = useState<AnimalArquivado | null>(null);
   const [archiveForm, setArchiveForm] = useState({
-    motivo_arquivamento: '',
-    data_arquivamento: ''
+    motivo_arquivamento_id: '',
+    observacoes_arquivamento: '',
+    data_arquivamento: new Date().toISOString().split('T')[0]
   });
+  const [submitting, setSubmitting] = useState(false);
+  
   const { toast } = useToast();
   const { hasPermission } = useAuth();
 
@@ -80,6 +116,7 @@ const AnimaisArquivados = () => {
   useEffect(() => {
     fetchAnimaisArquivados();
     loadFilterData();
+    loadMotivosArquivamento();
   }, []);
 
   const fetchAnimaisArquivados = async () => {
@@ -89,7 +126,10 @@ const AnimaisArquivados = () => {
 
       const { data, error } = await supabase
         .from('animais')
-        .select('*')
+        .select(`
+          *,
+          motivo_arquivamento:motivos_arquivamento_2025_12_11_04_00(*)
+        `)
         .eq('arquivado', true)
         .order('data_arquivamento', { ascending: false });
 
@@ -98,7 +138,7 @@ const AnimaisArquivados = () => {
         throw error;
       }
 
-      console.log('✅ [ARQUIVO] Animais arquivados carregados:', data?.length || 0);
+      console.log(`✅ [ARQUIVO] ${data?.length || 0} animais arquivados carregados`);
       setAnimais(data || []);
     } catch (error: any) {
       console.error('💥 [ARQUIVO] Erro:', error);
@@ -112,146 +152,184 @@ const AnimaisArquivados = () => {
     }
   };
 
-  // Carregar dados dinâmicos para filtros
   const loadFilterData = async () => {
     try {
-      const [especiesData, sexosData] = await Promise.all([
-        supabase.from('especies').select('nome').eq('ativo', true).order('nome'),
-        supabase.from('sexos').select('nome').eq('ativo', true).order('nome')
-      ]);
-      
-      setEspecies(especiesData.data || []);
-      setSexos(sexosData.data || []);
-    } catch (error) {
-      console.error('Erro ao carregar dados de filtros:', error);
-    }
-  };
-
-  const handleDesarquivar = async (animal: Animal) => {
-    const confirmRestore = confirm(
-      `Tem certeza que deseja desarquivar o animal "${animal.nome}"?\n\n` +
-      `O animal voltará a aparecer na gestão normal de animais.`
-    );
-    
-    if (!confirmRestore) return;
-
-    try {
-      console.log('📤 [ARQUIVO] Desarquivando animal:', animal.nome);
-
-      const { error } = await supabase
+      // Carregar espécies únicas dos animais arquivados
+      const { data: especiesData } = await supabase
         .from('animais')
-        .update({
-          arquivado: false,
-          data_arquivamento: null,
-          motivo_arquivamento: null,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', animal.id);
+        .select('especie')
+        .eq('arquivado', true);
 
-      if (error) {
-        console.error('❌ [ARQUIVO] Erro ao desarquivar:', error);
-        throw error;
-      }
+      // Carregar sexos únicos dos animais arquivados
+      const { data: sexosData } = await supabase
+        .from('animais')
+        .select('sexo')
+        .eq('arquivado', true);
 
-      toast({
-        title: "✅ Animal desarquivado",
-        description: `${animal.nome} foi desarquivado com sucesso`,
-      });
+      const especiesUnicas = [...new Set(especiesData?.map(item => item.especie).filter(Boolean))];
+      const sexosUnicos = [...new Set(sexosData?.map(item => item.sexo).filter(Boolean))];
 
-      await fetchAnimaisArquivados();
-    } catch (error: any) {
-      console.error('💥 [ARQUIVO] Erro:', error);
-      toast({
-        title: "❌ Erro",
-        description: "Não foi possível desarquivar o animal",
-        variant: "destructive",
-      });
+      setEspecies(especiesUnicas);
+      setSexos(sexosUnicos);
+    } catch (error) {
+      console.error('Erro ao carregar dados de filtro:', error);
     }
   };
 
-  // Funções para edição de arquivo
-  const openEditArchive = (animal: Animal) => {
+  const loadMotivosArquivamento = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('motivos_arquivamento_2025_12_11_04_00')
+        .select('*')
+        .eq('ativo', true)
+        .order('ordem');
+
+      if (error) throw error;
+      setMotivosArquivamento(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar motivos de arquivamento:', error);
+    }
+  };
+
+  const openEditArchiveDialog = (animal: AnimalArquivado) => {
     setEditingArchive(animal);
     setArchiveForm({
-      motivo_arquivamento: animal.motivo_arquivamento || '',
+      motivo_arquivamento_id: animal.motivo_arquivamento_id || '',
+      observacoes_arquivamento: animal.observacoes_arquivamento || '',
       data_arquivamento: animal.data_arquivamento ? 
-        new Date(animal.data_arquivamento).toISOString().slice(0, 16) : ''
+        new Date(animal.data_arquivamento).toISOString().split('T')[0] : 
+        new Date().toISOString().split('T')[0]
     });
+    setDialogOpen(true);
   };
 
-  const handleEditArchive = async () => {
+  const handleSaveArchive = async () => {
     if (!editingArchive) return;
 
     try {
-      console.log('✏️ [ARQUIVO] Editando critérios:', editingArchive.nome);
+      setSubmitting(true);
+
+      const selectedMotivo = motivosArquivamento.find(m => m.id === archiveForm.motivo_arquivamento_id);
+      
+      // Validar se observações são obrigatórias
+      if (selectedMotivo?.requer_observacoes && !archiveForm.observacoes_arquivamento.trim()) {
+        toast({
+          title: "❌ Erro",
+          description: "Este motivo de arquivamento requer observações",
+          variant: "destructive",
+        });
+        return;
+      }
 
       const { error } = await supabase
         .from('animais')
         .update({
-          motivo_arquivamento: archiveForm.motivo_arquivamento || null,
-          data_arquivamento: archiveForm.data_arquivamento ? 
-            new Date(archiveForm.data_arquivamento).toISOString() : 
-            new Date().toISOString(),
+          motivo_arquivamento_id: archiveForm.motivo_arquivamento_id,
+          observacoes_arquivamento: archiveForm.observacoes_arquivamento,
+          data_arquivamento: archiveForm.data_arquivamento,
           updated_at: new Date().toISOString()
         })
         .eq('id', editingArchive.id);
 
-      if (error) {
-        console.error('❌ [ARQUIVO] Erro ao editar:', error);
-        throw error;
-      }
+      if (error) throw error;
 
       toast({
-        title: "✅ Critérios atualizados",
-        description: `Arquivo de ${editingArchive.nome} foi atualizado`,
+        title: "✅ Sucesso",
+        description: "Dados de arquivamento atualizados com sucesso",
       });
 
+      setDialogOpen(false);
       setEditingArchive(null);
+      setArchiveForm({
+        motivo_arquivamento_id: '',
+        observacoes_arquivamento: '',
+        data_arquivamento: new Date().toISOString().split('T')[0]
+      });
+      
       await fetchAnimaisArquivados();
     } catch (error: any) {
-      console.error('💥 [ARQUIVO] Erro:', error);
+      console.error('Erro ao salvar dados de arquivamento:', error);
       toast({
         title: "❌ Erro",
-        description: "Não foi possível atualizar os critérios",
+        description: "Não foi possível salvar os dados de arquivamento",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleRestaurarAnimal = async (animal: AnimalArquivado) => {
+    try {
+      const { error } = await supabase
+        .from('animais')
+        .update({
+          arquivado: false,
+          motivo_arquivamento_id: null,
+          observacoes_arquivamento: null,
+          data_arquivamento: null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', animal.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "✅ Animal Restaurado",
+        description: `${animal.nome} foi restaurado com sucesso`,
+      });
+
+      await fetchAnimaisArquivados();
+    } catch (error: any) {
+      console.error('Erro ao restaurar animal:', error);
+      toast({
+        title: "❌ Erro",
+        description: "Não foi possível restaurar o animal",
         variant: "destructive",
       });
     }
   };
 
+  const getIconComponent = (iconName: string) => {
+    const icons: { [key: string]: React.ComponentType<any> } = {
+      Heart, Cross, ArrowRight, Zap, UserCheck, AlertTriangle, Activity, MoreHorizontal
+    };
+    return icons[iconName] || Archive;
+  };
+
   // Filtrar animais
-  const animaisFiltrados = animais.filter(animal => {
-    const matchSearch = animal.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                       animal.numero_processo?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchEspecie = filterEspecie === "todos" || animal.especie === filterEspecie;
-    return matchSearch && matchEspecie;
-  });
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-PT');
-  };
-
-  const getEstadoBadge = (estado: string) => {
-    switch (estado) {
-      case 'Arquivado':
-        return <Badge className="bg-gray-100 text-gray-800">📦 Arquivado</Badge>;
-      case 'Óbito':
-        return <Badge className="bg-black text-white">💀 Óbito</Badge>;
-      case 'Adotado':
-        return <Badge className="bg-green-100 text-green-800">🏠 Adotado</Badge>;
-      case 'Não Adotável':
-        return <Badge className="bg-red-100 text-red-800">⚠️ Não Adotável</Badge>;
-      default:
-        return <Badge variant="secondary">{estado}</Badge>;
+  const filteredAnimais = animais.filter(animal => {
+    const matchesSearch = animal.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         animal.chip?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         animal.observacoes?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesEspecie = filterEspecie === "todos" || animal.especie === filterEspecie;
+    const matchesSexo = filterSexo === "todos" || animal.sexo === filterSexo;
+    const matchesMotivo = filterMotivo === "todos" || animal.motivo_arquivamento_id === filterMotivo;
+    
+    let matchesData = true;
+    if (filterDataArquivo !== "todos" && animal.data_arquivamento) {
+      const dataArquivo = new Date(animal.data_arquivamento);
+      const hoje = new Date();
+      const diasAtras = parseInt(filterDataArquivo);
+      const dataLimite = new Date(hoje.getTime() - (diasAtras * 24 * 60 * 60 * 1000));
+      matchesData = dataArquivo >= dataLimite;
     }
-  };
+
+    return matchesSearch && matchesEspecie && matchesSexo && matchesMotivo && matchesData;
+  });
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-16 w-16 animate-spin mx-auto mb-4 text-blue-600" />
-          <p className="text-lg text-gray-600">A carregar animais arquivados...</p>
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <EnhancedHeader />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+            <p className="text-gray-600">Carregando animais arquivados...</p>
+          </div>
         </div>
+        <EnhancedFooter />
       </div>
     );
   }
@@ -259,194 +337,196 @@ const AnimaisArquivados = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <EnhancedHeader />
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-4">
-              <LogotipoValentao size="sm" />
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 flex items-center">
-                  <Archive className="h-6 w-6 mr-2 text-gray-600" />
-                  Animais Arquivados
-                </h1>
-                <p className="text-sm text-gray-600">
-                  Gestão de animais arquivados - Acesso restrito a administradores
-                </p>
-              </div>
-            </div>
-            <Link to="/">
-              <Button variant="outline">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Voltar ao Dashboard
-              </Button>
-            </Link>
+      
+      <div className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+              <Archive className="h-8 w-8 mr-3 text-gray-600" />
+              Animais Arquivados
+            </h1>
+            <p className="text-gray-600 mt-1">
+              Gestão de animais arquivados do sistema
+            </p>
           </div>
+          <Button variant="outline" asChild>
+            <Link to="/modulo-animais">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Módulo Animais
+            </Link>
+          </Button>
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Estatísticas */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card>
             <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Total Arquivados</p>
-                  <p className="text-3xl font-bold text-gray-900">{animais.length}</p>
-                </div>
+              <div className="flex items-center">
                 <Archive className="h-8 w-8 text-gray-600" />
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Total Arquivados</p>
+                  <p className="text-2xl font-bold text-gray-900">{animais.length}</p>
+                </div>
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Por Óbito</p>
-                  <p className="text-3xl font-bold text-black">
-                    {animais.filter(a => a.estado === 'Óbito').length}
+              <div className="flex items-center">
+                <Heart className="h-8 w-8 text-green-600" />
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Adoções</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {animais.filter(a => a.motivo_arquivamento?.categoria === 'adocao').length}
                   </p>
                 </div>
-                <PawPrint className="h-8 w-8 text-black" />
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Outros Motivos</p>
-                  <p className="text-3xl font-bold text-blue-600">
-                    {animais.filter(a => a.estado !== 'Óbito').length}
+              <div className="flex items-center">
+                <ArrowRight className="h-8 w-8 text-blue-600" />
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Transferências</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {animais.filter(a => a.motivo_arquivamento?.categoria === 'transferencia').length}
                   </p>
                 </div>
-                <FileText className="h-8 w-8 text-blue-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center">
+                <Cross className="h-8 w-8 text-gray-600" />
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Óbitos</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {animais.filter(a => a.motivo_arquivamento?.categoria === 'obito').length}
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
         {/* Filtros */}
-        <Card className="mb-6">
+        <Card className="mb-8">
           <CardHeader>
-            <CardTitle>Filtros</CardTitle>
+            <CardTitle className="flex items-center">
+              <Search className="h-5 w-5 mr-2" />
+              Filtros de Pesquisa
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {/* Pesquisa Expandida */}
-              <div className="relative lg:col-span-3">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Pesquisar por nome, processo, espécie, motivo de arquivo..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              {/* Pesquisa */}
+              <div>
+                <Label htmlFor="search">Pesquisar</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="search"
+                    placeholder="Nome, chip..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
               </div>
-              
-              {/* Espécie Dinâmica */}
-              <Select value={filterEspecie} onValueChange={setFilterEspecie}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Espécie" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todas as espécies</SelectItem>
-                  {especies.map((especie) => (
-                    <SelectItem key={especie.nome} value={especie.nome}>
-                      {especie.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              
-              {/* Estado Original */}
-              <Select value={filterEstado} onValueChange={setFilterEstado}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Estado" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos os estados</SelectItem>
-                  <SelectItem value="Ativo">🟢 Ativo</SelectItem>
-                  <SelectItem value="Adotado">🏠 Adotado</SelectItem>
-                  <SelectItem value="Óbito">💀 Óbito</SelectItem>
-                  <SelectItem value="Não Adotável">⚠️ Não Adotável</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              {/* Sexo Dinâmico */}
-              <Select value={filterSexo} onValueChange={setFilterSexo}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sexo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos</SelectItem>
-                  {sexos.map((sexo) => (
-                    <SelectItem key={sexo.nome} value={sexo.nome}>
-                      {sexo.nome === 'Macho' && '♂️'}
-                      {sexo.nome === 'Fêmea' && '♀️'}
-                      {sexo.nome === 'Indeterminado' && '❓'}
-                      {' '}{sexo.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              
+
+              {/* Espécie */}
+              <div>
+                <Label htmlFor="especie">Espécie</Label>
+                <Select value={filterEspecie} onValueChange={setFilterEspecie}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todas as espécies</SelectItem>
+                    {especies.map((especie) => (
+                      <SelectItem key={especie} value={especie}>
+                        {especie}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Sexo */}
+              <div>
+                <Label htmlFor="sexo">Sexo</Label>
+                <Select value={filterSexo} onValueChange={setFilterSexo}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos os sexos</SelectItem>
+                    {sexos.map((sexo) => (
+                      <SelectItem key={sexo} value={sexo}>
+                        {sexo}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Motivo de Arquivamento */}
+              <div>
+                <Label htmlFor="motivo">Motivo</Label>
+                <Select value={filterMotivo} onValueChange={setFilterMotivo}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos os motivos</SelectItem>
+                    {motivosArquivamento.map((motivo) => (
+                      <SelectItem key={motivo.id} value={motivo.id}>
+                        {motivo.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               {/* Data de Arquivo */}
-              <Select value={filterDataArquivo} onValueChange={setFilterDataArquivo}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Data Arquivo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todas as datas</SelectItem>
-                  <SelectItem value="30_dias">📅 Últimos 30 dias</SelectItem>
-                  <SelectItem value="3_meses">📅 Últimos 3 meses</SelectItem>
-                  <SelectItem value="6_meses">📅 Últimos 6 meses</SelectItem>
-                  <SelectItem value="1_ano">📅 Último ano</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              {/* Botão Limpar */}
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  setSearchTerm("");
-                  setFilterEspecie("todos");
-                  setFilterEstado("todos");
-                  setFilterSexo("todos");
-                  setFilterDataArquivo("todos");
-                }}
-                className="w-full"
-              >
-                🗑️ Limpar Filtros
-              </Button>
+              <div>
+                <Label htmlFor="data">Data de Arquivo</Label>
+                <Select value={filterDataArquivo} onValueChange={setFilterDataArquivo}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todas as datas</SelectItem>
+                    <SelectItem value="7">Últimos 7 dias</SelectItem>
+                    <SelectItem value="30">Últimos 30 dias</SelectItem>
+                    <SelectItem value="90">Últimos 3 meses</SelectItem>
+                    <SelectItem value="365">Último ano</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Tabela de Animais Arquivados */}
+        {/* Lista de Animais */}
         <Card>
           <CardHeader>
-            <CardTitle>Lista de Animais Arquivados ({animaisFiltrados.length})</CardTitle>
-            <CardDescription>
-              Animais que foram arquivados do sistema principal
-            </CardDescription>
+            <CardTitle>
+              Animais Arquivados ({filteredAnimais.length})
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            {animaisFiltrados.length === 0 ? (
-              <div className="text-center py-12">
-                <Archive className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  Nenhum animal arquivado encontrado
-                </h3>
-                <p className="text-gray-500">
-                  {searchTerm || filterEspecie !== "todos" 
-                    ? "Tente ajustar os filtros de pesquisa"
-                    : "Não há animais arquivados no sistema"
-                  }
-                </p>
+            {filteredAnimais.length === 0 ? (
+              <div className="text-center py-8">
+                <Archive className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500 text-lg">Nenhum animal arquivado encontrado</p>
+                <p className="text-gray-400">Ajuste os filtros para ver mais resultados</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -454,131 +534,107 @@ const AnimaisArquivados = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Animal</TableHead>
-                      <TableHead>Espécie</TableHead>
-                      <TableHead>Estado</TableHead>
-                      <TableHead>Data Arquivamento</TableHead>
+                      <TableHead>Espécie/Sexo</TableHead>
                       <TableHead>Motivo</TableHead>
-                      <TableHead>Ações</TableHead>
+                      <TableHead>Data Arquivo</TableHead>
+                      <TableHead>Observações</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {animaisFiltrados.map((animal) => (
-                      <TableRow key={animal.id}>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{animal.nome}</div>
-                            <div className="text-sm text-gray-500">
-                              Processo: {animal.numero_processo || 'N/A'}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{animal.especie}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          {getEstadoBadge(animal.estado)}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center text-sm text-gray-600">
-                            <Calendar className="h-4 w-4 mr-1" />
-                            {animal.data_arquivamento ? formatDate(animal.data_arquivamento) : 'N/A'}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-sm text-gray-600">
-                            {animal.motivo_arquivamento || 'N/A'}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
-                            <Dialog>
-                              <DialogTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => setSelectedAnimal(animal)}
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                              </DialogTrigger>
-                              <DialogContent className="max-w-2xl">
-                                <DialogHeader>
-                                  <DialogTitle>Detalhes do Animal Arquivado</DialogTitle>
-                                  <DialogDescription>
-                                    Informações completas sobre {selectedAnimal?.nome}
-                                  </DialogDescription>
-                                </DialogHeader>
-                                {selectedAnimal && (
-                                  <div className="grid grid-cols-2 gap-4 py-4">
-                                    <div>
-                                      <strong>Nome:</strong> {selectedAnimal.nome}
-                                    </div>
-                                    <div>
-                                      <strong>Processo:</strong> {selectedAnimal.numero_processo || 'N/A'}
-                                    </div>
-                                    <div>
-                                      <strong>Espécie:</strong> {selectedAnimal.especie}
-                                    </div>
-                                    <div>
-                                      <strong>Sexo:</strong> {selectedAnimal.sexo}
-                                    </div>
-                                    <div>
-                                      <strong>Estado:</strong> {selectedAnimal.estado}
-                                    </div>
-                                    <div>
-                                      <strong>Data Entrada:</strong> {formatDate(selectedAnimal.data_entrada)}
-                                    </div>
-                                    <div className="col-span-2">
-                                      <strong>Data Arquivamento:</strong> {selectedAnimal.data_arquivamento ? formatDate(selectedAnimal.data_arquivamento) : 'N/A'}
-                                    </div>
-                                    <div className="col-span-2">
-                                      <strong>Motivo Arquivamento:</strong> {selectedAnimal.motivo_arquivamento || 'N/A'}
-                                    </div>
-                                    {selectedAnimal.observacoes && (
-                                      <div className="col-span-2">
-                                        <strong>Observações:</strong> {selectedAnimal.observacoes}
-                                      </div>
-                                    )}
+                    {filteredAnimais.map((animal) => {
+                      const IconComponent = animal.motivo_arquivamento ? 
+                        getIconComponent(animal.motivo_arquivamento.icone) : Archive;
+                      
+                      return (
+                        <TableRow key={animal.id}>
+                          <TableCell>
+                            <div className="flex items-center space-x-3">
+                              <PawPrint className="h-5 w-5 text-gray-400" />
+                              <div>
+                                <div className="font-medium">{animal.nome}</div>
+                                {animal.chip && (
+                                  <div className="text-sm text-gray-500">
+                                    Chip: {animal.chip}
                                   </div>
                                 )}
-                              </DialogContent>
-                            </Dialog>
-                            
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => openEditArchive(animal)}
-                              className="text-orange-600 hover:text-orange-800"
-                              title="Editar critérios de arquivo"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDesarquivar(animal)}
-                              className="text-blue-600 hover:text-blue-800"
-                              title="Desarquivar animal"
-                            >
-                              <ArchiveRestore className="h-4 w-4" />
-                            </Button>
-                            
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              asChild
-                              className="text-green-600 hover:text-green-800"
-                              title="Editar animal (acesso completo)"
-                            >
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm">
+                              <div>{animal.especie}</div>
+                              <div className="text-gray-500">{animal.sexo}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {animal.motivo_arquivamento ? (
+                              <Badge 
+                                className="text-white"
+                                style={{ backgroundColor: animal.motivo_arquivamento.cor }}
+                              >
+                                <IconComponent className="h-3 w-3 mr-1" />
+                                {animal.motivo_arquivamento.nome}
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary">
+                                <Archive className="h-3 w-3 mr-1" />
+                                Não especificado
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center text-sm">
+                              <Calendar className="h-4 w-4 mr-2 text-gray-400" />
+                              {animal.data_arquivamento ? 
+                                new Date(animal.data_arquivamento).toLocaleDateString('pt-PT') :
+                                'Não especificada'
+                              }
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="max-w-xs">
+                              {animal.observacoes_arquivamento ? (
+                                <p className="text-sm text-gray-600 truncate" title={animal.observacoes_arquivamento}>
+                                  {animal.observacoes_arquivamento}
+                                </p>
+                              ) : (
+                                <span className="text-gray-400 text-sm">Sem observações</span>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end space-x-2">
                               <Link to={`/animal/${animal.id}`}>
-                                <FileText className="h-4 w-4" />
+                                <Button variant="outline" size="sm">
+                                  <Eye className="h-4 w-4 mr-1" />
+                                  Ver
+                                </Button>
                               </Link>
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                              
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => openEditArchiveDialog(animal)}
+                              >
+                                <Edit className="h-4 w-4 mr-1" />
+                                Editar
+                              </Button>
+                              
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleRestaurarAnimal(animal)}
+                                className="text-green-600 hover:text-green-700"
+                              >
+                                <ArchiveRestore className="h-4 w-4 mr-1" />
+                                Restaurar
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>
@@ -587,56 +643,101 @@ const AnimaisArquivados = () => {
         </Card>
       </div>
 
-      {/* Modal de Edição de Arquivo */}
-      <Dialog open={!!editingArchive} onOpenChange={() => setEditingArchive(null)}>
-        <DialogContent className="max-w-md">
+      {/* Modal de Edição de Arquivamento */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Editar Critérios de Arquivo</DialogTitle>
+            <DialogTitle className="flex items-center">
+              <Edit className="h-5 w-5 mr-2" />
+              Editar Dados de Arquivamento
+            </DialogTitle>
             <DialogDescription>
-              Alterar informações do arquivamento de {editingArchive?.nome}
+              {editingArchive && `Editando dados de arquivamento de ${editingArchive.nome}`}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          
+          <div className="space-y-4">
             <div>
-              <Label htmlFor="data_arquivamento">Data de Arquivamento</Label>
-              <Input 
-                id="data_arquivamento"
-                type="datetime-local"
+              <Label htmlFor="motivo">Motivo de Arquivamento *</Label>
+              <Select 
+                value={archiveForm.motivo_arquivamento_id} 
+                onValueChange={(value) => setArchiveForm({...archiveForm, motivo_arquivamento_id: value})}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecionar motivo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {motivosArquivamento.map((motivo) => {
+                    const IconComponent = getIconComponent(motivo.icone);
+                    return (
+                      <SelectItem key={motivo.id} value={motivo.id}>
+                        <div className="flex items-center">
+                          <IconComponent className="h-4 w-4 mr-2" style={{ color: motivo.cor }} />
+                          {motivo.nome}
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="data">Data de Arquivamento *</Label>
+              <Input
+                type="date"
                 value={archiveForm.data_arquivamento}
-                onChange={(e) => setArchiveForm(prev => ({
-                  ...prev, 
-                  data_arquivamento: e.target.value
-                }))}
+                onChange={(e) => setArchiveForm({...archiveForm, data_arquivamento: e.target.value})}
               />
             </div>
+
             <div>
-              <Label htmlFor="motivo_arquivamento">Motivo do Arquivamento</Label>
-              <Textarea 
-                id="motivo_arquivamento"
-                placeholder="Descreva o motivo do arquivamento..."
-                value={archiveForm.motivo_arquivamento}
-                onChange={(e) => setArchiveForm(prev => ({
-                  ...prev, 
-                  motivo_arquivamento: e.target.value
-                }))}
-                rows={3}
+              <Label htmlFor="observacoes">
+                Observações
+                {motivosArquivamento.find(m => m.id === archiveForm.motivo_arquivamento_id)?.requer_observacoes && 
+                  <span className="text-red-500 ml-1">*</span>
+                }
+              </Label>
+              <Textarea
+                id="observacoes"
+                placeholder="Observações sobre o arquivamento..."
+                value={archiveForm.observacoes_arquivamento}
+                onChange={(e) => setArchiveForm({...archiveForm, observacoes_arquivamento: e.target.value})}
+                rows={4}
               />
+              {motivosArquivamento.find(m => m.id === archiveForm.motivo_arquivamento_id)?.requer_observacoes && (
+                <p className="text-sm text-red-600 mt-1">
+                  Este motivo requer observações obrigatórias
+                </p>
+              )}
             </div>
-          </div>
-          <div className="flex justify-end space-x-2">
-            <Button 
-              variant="outline" 
-              onClick={() => setEditingArchive(null)}
-            >
-              Cancelar
-            </Button>
-            <Button onClick={handleEditArchive}>
-              Salvar Alterações
-            </Button>
+
+            <div className="flex space-x-2 pt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => setDialogOpen(false)}
+                disabled={submitting}
+              >
+                <X className="h-4 w-4 mr-1" />
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleSaveArchive}
+                disabled={submitting || !archiveForm.motivo_arquivamento_id}
+                className="flex-1"
+              >
+                {submitting ? (
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4 mr-1" />
+                )}
+                Salvar Alterações
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
-    
+
       <EnhancedFooter />
     </div>
   );

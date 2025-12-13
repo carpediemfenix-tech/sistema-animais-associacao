@@ -82,28 +82,32 @@ const ModuloFormacao = () => {
       descricao: "Gerir e configurar tipos de formação",
       icone: BookOpen,
       quantidade: estatisticas.totalTipos,
-      status: "ativo"
+      status: "ativo",
+      rota: "/configuracoes/tipos-formacao"
     },
     {
       titulo: "Ações de Formação",
       descricao: "Criar e gerir ações específicas",
       icone: Target,
       quantidade: estatisticas.totalAcoes,
-      status: "ativo"
+      status: "ativo",
+      rota: "/sistema-formacao"
     },
     {
       titulo: "Participações",
       descricao: "Gerir inscrições e avaliações",
       icone: Users,
       quantidade: estatisticas.totalParticipacoes,
-      status: "ativo"
+      status: "ativo",
+      rota: "/voluntarios/relatorios"
     },
     {
       titulo: "Certificações",
       descricao: "Sistema de certificados e diplomas",
       icone: Award,
       quantidade: estatisticas.participacoesAprovadas,
-      status: "ativo"
+      status: "ativo",
+      rota: "/sistema-formacao"
     }
   ];
 
@@ -315,28 +319,30 @@ const ModuloFormacao = () => {
               {recursos.map((recurso, index) => {
                 const IconeRecurso = recurso.icone;
                 return (
-                  <Card key={index} className="hover:shadow-md transition-shadow">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center justify-between">
-                        <IconeRecurso className="h-6 w-6 text-green-600" />
-                        <Badge variant="outline" className="text-xs">
-                          {recurso.quantidade}
-                        </Badge>
-                      </div>
-                      <CardTitle className="text-base">{recurso.titulo}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-gray-600">
-                        {recurso.descricao}
-                      </p>
-                      <div className="mt-2">
-                        <Badge variant="secondary" className="text-xs">
-                          <CheckCircle className="h-3 w-3 mr-1" />
-                          Funcional
-                        </Badge>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <Link key={index} to={recurso.rota}>
+                    <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                          <IconeRecurso className="h-6 w-6 text-green-600" />
+                          <Badge variant="outline" className="text-xs">
+                            {recurso.quantidade}
+                          </Badge>
+                        </div>
+                        <CardTitle className="text-base">{recurso.titulo}</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-gray-600">
+                          {recurso.descricao}
+                        </p>
+                        <div className="mt-2">
+                          <Badge variant="secondary" className="text-xs">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Funcional
+                          </Badge>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
                 );
               })}
             </div>
