@@ -210,12 +210,12 @@ const GestaoMovimentos = () => {
   const handleEditMovimento = (movimento: any) => {
     setEditingMovimento(movimento);
     setFormData({
-      tipo_movimento: movimento.tipo_movimento,
-      escopo: movimento.escopo,
-      categoria_id: movimento.categoria_id,
-      descricao: movimento.descricao,
-      valor: movimento.valor.toString(),
-      data_movimento: movimento.data_movimento
+      tipo_movimento: String(movimento.tipo_movimento || ''),
+      escopo: String(movimento.escopo || ''),
+      categoria_id: String(movimento.categoria_id || ''),
+      descricao: String(movimento.descricao || ''),
+      valor: String(movimento.valor || ''),
+      data_movimento: String(movimento.data_movimento || new Date().toISOString().split('T')[0])
     });
     setDialogOpen(true);
   };
@@ -390,7 +390,7 @@ const GestaoMovimentos = () => {
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <Label htmlFor="tipo_movimento">Tipo *</Label>
-                          <Select value={formData.tipo_movimento} onValueChange={(value) => setFormData({...formData, tipo_movimento: value, categoria_id: ''})}>
+                          <Select value={formData.tipo_movimento || ''} onValueChange={(value) => setFormData({...formData, tipo_movimento: value, categoria_id: ''})}>
                             <SelectTrigger>
                               <SelectValue placeholder="Tipo" />
                             </SelectTrigger>
@@ -403,7 +403,7 @@ const GestaoMovimentos = () => {
                         
                         <div>
                           <Label htmlFor="escopo">Escopo *</Label>
-                          <Select value={formData.escopo} onValueChange={(value) => setFormData({...formData, escopo: value, categoria_id: ''})}>
+                          <Select value={formData.escopo || ''} onValueChange={(value) => setFormData({...formData, escopo: value, categoria_id: ''})}>
                             <SelectTrigger>
                               <SelectValue placeholder="Escopo" />
                             </SelectTrigger>
@@ -418,7 +418,7 @@ const GestaoMovimentos = () => {
                       {/* Categoria */}
                       <div>
                         <Label htmlFor="categoria_id">Categoria *</Label>
-                        <Select value={formData.categoria_id} onValueChange={(value) => setFormData({...formData, categoria_id: value})}>
+                        <Select value={formData.categoria_id || ''} onValueChange={(value) => setFormData({...formData, categoria_id: value})}>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione a categoria" />
                           </SelectTrigger>

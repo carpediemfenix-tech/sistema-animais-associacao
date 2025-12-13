@@ -172,7 +172,7 @@ const AnimalLocalizacoes = () => {
     if (localizacao) {
       setEditingLocalizacao(localizacao);
       setLocalizacaoForm({
-        localizacao_id: localizacao.localizacao_id || '',
+        localizacao_id: String(localizacao.localizacao_id || ''),
         data_inicio: localizacao.data_inicio || '',
         endereco_detalhes: localizacao.endereco_detalhes || '',
         responsavel_id: localizacao.responsavel_id || '',
