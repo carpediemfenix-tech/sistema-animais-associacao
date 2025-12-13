@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import UserHeader from "@/components/UserHeader";
+import EnhancedHeader from "@/components/EnhancedHeader";
+import EnhancedFooter from "@/components/EnhancedFooter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -23,7 +24,9 @@ import {
   Building,
   PawPrint,
   ArrowUpRight,
-  ArrowDownRight
+  ArrowDownRight,
+  Edit,
+  Trash2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -36,6 +39,9 @@ const GestaoMovimentos = () => {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [editingMovimento, setEditingMovimento] = useState<any>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [movimentoToDelete, setMovimentoToDelete] = useState<any>(null);
 
   // Estados do formulário melhorado
   const [formData, setFormData] = useState({
@@ -159,18 +165,32 @@ const GestaoMovimentos = () => {
         status: 'confirmado'
       };
 
-      const { error } = await supabase
-        .from('movimentos_financeiros')
-        .insert([dadosInserir]);
+      let error;
+      
+      if (editingMovimento) {
+        // Atualizar movimento existente
+        const { error: updateError } = await supabase
+          .from('movimentos_financeiros_2025_12_13_03_00')
+          .update(dadosInserir)
+          .eq('id', editingMovimento.id);
+        error = updateError;
+      } else {
+        // Criar novo movimento
+        const { error: insertError } = await supabase
+          .from('movimentos_financeiros_2025_12_13_03_00')
+          .insert([dadosInserir]);
+        error = insertError;
+      }
 
       if (error) throw error;
 
       toast({
-        title: "Movimento registado!",
-        description: `${formData.tipo_movimento} de €${valorNumerico.toFixed(2)} registada com sucesso`,
+        title: editingMovimento ? "Movimento atualizado!" : "Movimento registado!",
+        description: `${formData.tipo_movimento} de €${valorNumerico.toFixed(2)} ${editingMovimento ? 'atualizada' : 'registada'} com sucesso`,
       });
 
       setDialogOpen(false);
+      setEditingMovimento(null);
       resetForm();
       await fetchMovimentos();
 
@@ -184,6 +204,55 @@ const GestaoMovimentos = () => {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  // Função para editar movimento
+  const handleEditMovimento = (movimento: any) => {
+    setEditingMovimento(movimento);
+    setFormData({
+      tipo_movimento: movimento.tipo_movimento,
+      escopo: movimento.escopo,
+      categoria_id: movimento.categoria_id,
+      descricao: movimento.descricao,
+      valor: movimento.valor.toString(),
+      data_movimento: movimento.data_movimento
+    });
+    setDialogOpen(true);
+  };
+
+  // Função para eliminar movimento
+  const handleDeleteMovimento = async () => {
+    if (!movimentoToDelete) return;
+
+    try {
+      const { error } = await supabase
+        .from('movimentos_financeiros_2025_12_13_03_00')
+        .delete()
+        .eq('id', movimentoToDelete.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Movimento eliminado",
+        description: "O movimento foi eliminado com sucesso.",
+      });
+
+      setDeleteDialogOpen(false);
+      setMovimentoToDelete(null);
+      await fetchMovimentos();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao eliminar",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Função para abrir diálogo de eliminação
+  const openDeleteDialog = (movimento: any) => {
+    setMovimentoToDelete(movimento);
+    setDeleteDialogOpen(true);
   };
 
   useEffect(() => {
@@ -249,12 +318,8 @@ const GestaoMovimentos = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <UserHeader 
-        title="Gestão de Movimentos" 
-        subtitle="Controlo completo de receitas e despesas"
-        backTo="/financeiro"
-      />
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <EnhancedHeader />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         
@@ -314,9 +379,9 @@ const GestaoMovimentos = () => {
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-md">
                     <DialogHeader>
-                      <DialogTitle>Novo Movimento Financeiro</DialogTitle>
+                      <DialogTitle>{editingMovimento ? 'Editar Movimento Financeiro' : 'Novo Movimento Financeiro'}</DialogTitle>
                       <DialogDescription>
-                        Registar nova receita ou despesa (versão simplificada)
+                        {editingMovimento ? 'Atualizar receita ou despesa existente' : 'Registar nova receita ou despesa (versão simplificada)'}
                       </DialogDescription>
                     </DialogHeader>
                     
@@ -423,6 +488,7 @@ const GestaoMovimentos = () => {
                           variant="outline" 
                           onClick={() => {
                             setDialogOpen(false);
+                            setEditingMovimento(null);
                             resetForm();
                           }}
                           disabled={submitting}
@@ -437,12 +503,12 @@ const GestaoMovimentos = () => {
                           {submitting ? (
                             <>
                               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                              A registar...
+                              {editingMovimento ? 'A atualizar...' : 'A registar...'}
                             </>
                           ) : (
                             <>
                               <CheckCircle className="h-4 w-4 mr-2" />
-                              Registar
+                              {editingMovimento ? 'Atualizar' : 'Registar'}
                             </>
                           )}
                         </Button>
@@ -485,11 +551,31 @@ const GestaoMovimentos = () => {
                         </p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className={`font-bold ${movimento.tipo_movimento === 'receita' ? 'text-green-600' : 'text-red-600'}`}>
-                        {movimento.tipo_movimento === 'receita' ? '+' : '-'}{formatCurrency(parseFloat(movimento.valor) || 0)}
-                      </p>
-                      <p className="text-xs text-gray-500">{movimento.numero_movimento}</p>
+                    <div className="flex items-center space-x-4">
+                      <div className="text-right">
+                        <p className={`font-bold ${movimento.tipo_movimento === 'receita' ? 'text-green-600' : 'text-red-600'}`}>
+                          {movimento.tipo_movimento === 'receita' ? '+' : '-'}{formatCurrency(parseFloat(movimento.valor) || 0)}
+                        </p>
+                        <p className="text-xs text-gray-500">{movimento.numero_movimento}</p>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditMovimento(movimento)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openDeleteDialog(movimento)}
+                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -501,6 +587,42 @@ const GestaoMovimentos = () => {
       
       {/* Debug Logger */}
       <DebugLoggerComponent title="Gestão Movimentos - Debug" />
+      
+      {/* Diálogo de Confirmação de Eliminação */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar Eliminação</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja eliminar este movimento financeiro?
+            </DialogDescription>
+          </DialogHeader>
+          {movimentoToDelete && (
+            <div className="py-4">
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <p className="font-medium">{movimentoToDelete.descricao}</p>
+                <p className="text-sm text-gray-600">
+                  {movimentoToDelete.tipo_movimento === 'receita' ? 'Receita' : 'Despesa'} de {formatCurrency(parseFloat(movimentoToDelete.valor) || 0)}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {formatDate(movimentoToDelete.data_movimento)}
+                </p>
+              </div>
+            </div>
+          )}
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteMovimento}>
+              <Trash2 className="h-4 w-4 mr-2" />
+              Eliminar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      <EnhancedFooter />
     </div>
   );
 };

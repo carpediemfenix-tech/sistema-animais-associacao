@@ -85,14 +85,25 @@ const AnimalDetail = () => {
       setAnimal(data);
       
       // Carregar localização atual
-      const { data: localizacaoData } = await supabase
+      const { data: localizacaoData, error: localizacaoError } = await supabase
         .from('localizacoes_animal')
-        .select('*, tipos_localizacoes(nome, descricao)')
+        .select('*')
         .eq('animal_id', id)
         .eq('ativo', true)
         .single();
       
-      if (localizacaoData) {
+      if (localizacaoData && !localizacaoError) {
+        // Buscar tipo de localização separadamente
+        const { data: tipoData } = await supabase
+          .from('tipos_localizacoes')
+          .select('nome, descricao')
+          .eq('id', localizacaoData.tipo_localizacao)
+          .single();
+        
+        if (tipoData) {
+          localizacaoData.tipos_localizacoes = tipoData;
+        }
+        
         setLocalizacaoAtual(localizacaoData);
       }
     } catch (error) {
