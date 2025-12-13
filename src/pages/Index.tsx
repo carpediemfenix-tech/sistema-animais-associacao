@@ -28,6 +28,7 @@ import {
   Settings,
   PawPrint,
   Package,
+  DollarSign,
   Eye,
   Archive,
   BarChart2,
@@ -181,6 +182,16 @@ const Index = () => {
       icone: Package,
       cor: 'bg-orange-500',
       rota: '/modulo-equipamentos',
+      desenvolvido: true,
+      stats: 'Sistema ativo'
+    },
+    {
+      id: 'financeiro',
+      nome: 'Dashboard Financeiro',
+      descricao: 'Gestão completa de receitas, despesas e orçamentos',
+      icone: DollarSign,
+      cor: 'bg-green-500',
+      rota: '/financeiro',
       desenvolvido: true,
       stats: 'Sistema ativo'
     }

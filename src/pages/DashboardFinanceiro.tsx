@@ -437,37 +437,57 @@ const DashboardFinanceiro = () => {
         {/* Ações Rápidas */}
         <Card>
           <CardHeader>
-            <CardTitle>Ações Rápidas</CardTitle>
+            <CardTitle className="flex items-center">
+              <Target className="h-5 w-5 mr-2 text-blue-600" />
+              Ações Rápidas
+            </CardTitle>
+            <CardDescription>
+              Acesso direto às principais funcionalidades financeiras
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {/* Novo Movimento */}
               <Link to="/financeiro/movimentos/novo">
-                <Button className="w-full h-20 flex flex-col items-center justify-center space-y-2">
+                <Button className="w-full h-24 flex flex-col items-center justify-center space-y-2 bg-green-600 hover:bg-green-700 text-white">
                   <Plus className="h-6 w-6" />
-                  <span>Novo Movimento</span>
+                  <div className="text-center">
+                    <div className="text-sm font-medium">Novo Movimento</div>
+                    <div className="text-xs opacity-90">Registar receita/despesa</div>
+                  </div>
                 </Button>
               </Link>
               
-              <Link to="/financeiro/relatorios">
-                <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center space-y-2">
-                  <BarChart3 className="h-6 w-6" />
-                  <span>Relatórios</span>
+              {/* Ver Todos os Movimentos */}
+              <Link to="/financeiro/movimentos">
+                <Button variant="outline" className="w-full h-24 flex flex-col items-center justify-center space-y-2 border-blue-200 hover:bg-blue-50">
+                  <DollarSign className="h-6 w-6 text-blue-600" />
+                  <div className="text-center">
+                    <div className="text-sm font-medium text-blue-700">Ver Movimentos</div>
+                    <div className="text-xs text-blue-600">Histórico completo</div>
+                  </div>
                 </Button>
               </Link>
               
-              <Link to="/financeiro/orcamentos">
-                <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center space-y-2">
-                  <Target className="h-6 w-6" />
-                  <span>Orçamentos</span>
-                </Button>
-              </Link>
-              
-              <Link to="/financeiro/categorias">
-                <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center space-y-2">
-                  <PieChart className="h-6 w-6" />
-                  <span>Categorias</span>
-                </Button>
-              </Link>
+              {/* Resumo Rápido */}
+              <Button 
+                variant="outline" 
+                className="w-full h-24 flex flex-col items-center justify-center space-y-2 border-purple-200 hover:bg-purple-50"
+                onClick={() => {
+                  const saldoTotal = resumoGeral.saldo;
+                  const status = saldoTotal >= 0 ? 'positivo' : 'negativo';
+                  toast({
+                    title: `Saldo ${status}: ${formatCurrency(saldoTotal)}`,
+                    description: `Receitas: ${formatCurrency(resumoGeral.total_receitas)} | Despesas: ${formatCurrency(resumoGeral.total_despesas)}`,
+                  });
+                }}
+              >
+                <BarChart3 className="h-6 w-6 text-purple-600" />
+                <div className="text-center">
+                  <div className="text-sm font-medium text-purple-700">Resumo Rápido</div>
+                  <div className="text-xs text-purple-600">Balanço atual</div>
+                </div>
+              </Button>
             </div>
           </CardContent>
         </Card>
