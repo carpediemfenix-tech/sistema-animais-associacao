@@ -154,6 +154,8 @@ const ModuloAgenda = () => {
   const [turnos, setTurnos] = useState<TurnoVoluntario[]>([]);
   const [consultas, setConsultas] = useState<ConsultaVeterinaria[]>([]);
   const [lembretes, setLembretes] = useState<Lembrete[]>([]);
+  const [intervencoes, setIntervencoes] = useState<any[]>([]);
+  const [missoes, setMissoes] = useState<any[]>([]);
   
   // Estados de UI
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -192,7 +194,9 @@ const ModuloAgenda = () => {
         loadTiposEventos(),
         loadTurnos(),
         loadConsultas(),
-        loadLembretes()
+        loadLembretes(),
+        loadIntervencoes(),
+        loadMissoes()
       ]);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
@@ -357,6 +361,121 @@ const ModuloAgenda = () => {
     } catch (error) {
       console.error('Erro ao carregar lembretes:', error);
     }
+  };
+
+  const loadIntervencoes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('intervencoes')
+        .select(`
+          *,
+          animais(nome),
+          tipos_intervencoes(nome),
+          clinicas_veterinarias(nome)
+        `)
+        .gte('data_intervencao', new Date().toISOString().split('T')[0])
+        .order('data_intervencao', { ascending: true });
+
+      if (error) throw error;
+      setIntervencoes(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar intervenções:', error);
+    }
+  };
+
+  const loadMissoes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('missoes_2025_12_13_09_00')
+        .select(`
+          *,
+          tipos_missoes_2025_12_13_09_00(nome, cor, icone),
+          animais(nome),
+          voluntarios(nome)
+        `)
+        .gte('data_inicio', new Date().toISOString().split('T')[0])
+        .order('data_inicio', { ascending: true });
+
+      if (error) throw error;
+      setMissoes(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar missões:', error);
+    }
+  };
+
+  // Função para obter todos os itens agendados de uma data
+  const getItensAgendados = (data: Date) => {
+    const dataStr = data.toISOString().split('T')[0];
+    const itens = [];
+    
+    // Eventos
+    eventos.forEach(evento => {
+      if (evento.data_inicio.startsWith(dataStr)) {
+        itens.push({
+          tipo: 'evento',
+          titulo: evento.titulo,
+          hora: evento.data_inicio.split('T')[1]?.substring(0, 5),
+          cor: evento.tipo_evento?.cor || '#3B82F6'
+        });
+      }
+    });
+    
+    // Intervenções
+    intervencoes.forEach(intervencao => {
+      if (intervencao.data_intervencao === dataStr) {
+        itens.push({
+          tipo: 'intervencao',
+          titulo: `${intervencao.animais?.nome} - ${intervencao.tipos_intervencoes?.nome}`,
+          hora: intervencao.hora_intervencao,
+          cor: '#DC2626'
+        });
+      }
+    });
+    
+    // Missões
+    missoes.forEach(missao => {
+      if (missao.data_inicio === dataStr) {
+        itens.push({
+          tipo: 'missao',
+          titulo: missao.titulo,
+          hora: missao.hora_inicio,
+          cor: missao.tipos_missoes_2025_12_13_09_00?.cor || '#059669'
+        });
+      }
+    });
+    
+    return itens.sort((a, b) => (a.hora || '').localeCompare(b.hora || ''));
+  };
+
+  // Função para gerar o calendário do mês
+  const gerarCalendarioMes = (data: Date) => {
+    const ano = data.getFullYear();
+    const mes = data.getMonth();
+    const primeiroDia = new Date(ano, mes, 1);
+    const ultimoDia = new Date(ano, mes + 1, 0);
+    const diasNoMes = ultimoDia.getDate();
+    const diaSemanaInicio = primeiroDia.getDay();
+    
+    const dias = [];
+    
+    // Dias vazios no início
+    for (let i = 0; i < diaSemanaInicio; i++) {
+      dias.push(null);
+    }
+    
+    // Dias do mês
+    for (let dia = 1; dia <= diasNoMes; dia++) {
+      const dataAtual = new Date(ano, mes, dia);
+      const itens = getItensAgendados(dataAtual);
+      dias.push({
+        dia,
+        data: dataAtual,
+        itens,
+        isHoje: dataAtual.toDateString() === new Date().toDateString()
+      });
+    }
+    
+    return dias;
   };
 
   const criarEvento = async () => {
@@ -576,9 +695,11 @@ const ModuloAgenda = () => {
 
           {/* Tabs Principais */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-7">
               <TabsTrigger value="calendario">Calendário</TabsTrigger>
               <TabsTrigger value="eventos">Eventos</TabsTrigger>
+              <TabsTrigger value="intervencoes">Intervenções</TabsTrigger>
+              <TabsTrigger value="missoes">Missões</TabsTrigger>
               <TabsTrigger value="turnos">Turnos</TabsTrigger>
               <TabsTrigger value="consultas">Consultas</TabsTrigger>
               <TabsTrigger value="lembretes">Lembretes</TabsTrigger>
@@ -610,117 +731,153 @@ const ModuloAgenda = () => {
                       </div>
                     </CardHeader>
                     <CardContent>
-                      {/* Vista simplificada do calendário */}
-                      <div className="space-y-4">
-                        {/* Navegação de datas */}
-                        <div className="flex items-center justify-between">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => {
-                              const newDate = new Date(selectedDate);
-                              newDate.setDate(newDate.getDate() - 1);
-                              setSelectedDate(newDate);
-                            }}
-                          >
-                            <ChevronLeft className="h-4 w-4" />
-                          </Button>
-                          <h3 className="text-lg font-semibold">
-                            {selectedDate.toLocaleDateString('pt-PT', { 
-                              weekday: 'long', 
-                              day: 'numeric', 
-                              month: 'long' 
-                            })}
-                          </h3>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => {
-                              const newDate = new Date(selectedDate);
-                              newDate.setDate(newDate.getDate() + 1);
-                              setSelectedDate(newDate);
-                            }}
-                          >
-                            <ChevronRight className="h-4 w-4" />
-                          </Button>
+                      {/* Navegação do Calendário */}
+                      <div className="flex items-center justify-between mb-6">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            const newDate = new Date(selectedDate);
+                            newDate.setMonth(newDate.getMonth() - 1);
+                            setSelectedDate(newDate);
+                          }}
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                          Mês Anterior
+                        </Button>
+                        
+                        <div className="text-center">
+                          <div className="font-semibold text-xl">
+                            {selectedDate.toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' })}
+                          </div>
                         </div>
-
-                        {/* Eventos do dia selecionado */}
-                        <div className="space-y-3">
-                          {getEventosDoDay(selectedDate).length === 0 ? (
-                            <div className="text-center py-8 text-gray-500">
-                              <CalendarIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                              <p>Nenhum evento agendado para este dia</p>
-                            </div>
-                          ) : (
-                            getEventosDoDay(selectedDate).map((evento) => {
-                              const IconComponent = getIconComponent(evento.tipo_evento?.icone || 'CalendarIcon');
-                              return (
-                                <div 
-                                  key={evento.id} 
-                                  className="flex items-center space-x-4 p-4 rounded-lg border bg-white hover:shadow-md transition-shadow cursor-pointer"
-                                  onClick={() => {
-                                    setSelectedEvento(evento);
-                                    setShowEventoDialog(true);
-                                  }}
-                                >
-                                  <div 
-                                    className="p-2 rounded-full text-white"
-                                    style={{ backgroundColor: evento.tipo_evento?.cor }}
-                                  >
-                                    <IconComponent className="h-4 w-4" />
-                                  </div>
-                                  <div className="flex-1">
-                                    <div className="font-medium">{evento.titulo}</div>
-                                    <div className="text-sm text-gray-500">
-                                      {formatTime(evento.data_inicio)} - {formatTime(evento.data_fim)}
-                                      {evento.local && ` • ${evento.local}`}
-                                    </div>
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                    <Badge className={getStatusColor(evento.status)}>
-                                      {evento.status}
-                                    </Badge>
-                                    <Badge className={getPriorityColor(evento.prioridade)}>
-                                      {evento.prioridade}
-                                    </Badge>
-                                  </div>
-                                </div>
-                              );
-                            })
-                          )}
-                        </div>
+                        
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            const newDate = new Date(selectedDate);
+                            newDate.setMonth(newDate.getMonth() + 1);
+                            setSelectedDate(newDate);
+                          }}
+                        >
+                          Próximo Mês
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
                       </div>
-                    </CardContent>
-                  </Card>
-                </div>
 
-                {/* Painel Lateral */}
-                <div className="space-y-6">
-                  {/* Próximos Eventos */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Próximos Eventos</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        {eventos.slice(0, 5).map((evento) => {
-                          const IconComponent = getIconComponent(evento.tipo_evento?.icone || 'CalendarIcon');
-                          return (
-                            <div key={evento.id} className="flex items-center space-x-3 p-2 rounded-lg bg-gray-50">
-                              <IconComponent 
-                                className="h-4 w-4" 
-                                style={{ color: evento.tipo_evento?.cor }} 
-                              />
-                              <div className="flex-1">
-                                <div className="text-sm font-medium">{evento.titulo}</div>
-                                <div className="text-xs text-gray-500">
-                                  {formatDate(evento.data_inicio)} às {formatTime(evento.data_inicio)}
+                      {/* Calendário do Mês Atual */}
+                      <div className="mb-8">
+                        <h3 className="font-semibold text-lg mb-4 flex items-center">
+                          <CalendarIcon className="h-5 w-5 mr-2 text-blue-600" />
+                          {selectedDate.toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' })}
+                        </h3>
+                        
+                        {/* Cabeçalho dos dias da semana */}
+                        <div className="grid grid-cols-7 gap-1 mb-2">
+                          {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(dia => (
+                            <div key={dia} className="p-2 text-center text-sm font-medium text-gray-600">
+                              {dia}
+                            </div>
+                          ))}
+                        </div>
+                        
+                        {/* Dias do mês */}
+                        <div className="grid grid-cols-7 gap-1">
+                          {gerarCalendarioMes(selectedDate).map((diaInfo, index) => {
+                            if (!diaInfo) {
+                              return <div key={index} className="p-2 h-20"></div>;
+                            }
+                            
+                            return (
+                              <div 
+                                key={diaInfo.dia} 
+                                className={`p-2 h-20 border rounded-lg cursor-pointer hover:bg-gray-50 ${
+                                  diaInfo.isHoje ? 'bg-blue-100 border-blue-300' : 'bg-white'
+                                }`}
+                                onClick={() => setSelectedDate(diaInfo.data)}
+                              >
+                                <div className={`text-sm font-medium ${
+                                  diaInfo.isHoje ? 'text-blue-700' : 'text-gray-900'
+                                }`}>
+                                  {diaInfo.dia}
+                                </div>
+                                <div className="space-y-1 mt-1">
+                                  {diaInfo.itens.slice(0, 2).map((item, idx) => (
+                                    <div 
+                                      key={idx}
+                                      className="text-xs p-1 rounded truncate text-white"
+                                      style={{ backgroundColor: item.cor }}
+                                      title={`${item.hora} - ${item.titulo}`}
+                                    >
+                                      {item.hora} {item.titulo.substring(0, 10)}...
+                                    </div>
+                                  ))}
+                                  {diaInfo.itens.length > 2 && (
+                                    <div className="text-xs text-gray-500">
+                                      +{diaInfo.itens.length - 2} mais
+                                    </div>
+                                  )}
                                 </div>
                               </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Calendário do Próximo Mês */}
+                      <div>
+                        <h3 className="font-semibold text-lg mb-4 flex items-center">
+                          <CalendarIcon className="h-5 w-5 mr-2 text-green-600" />
+                          {new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 1).toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' })}
+                        </h3>
+                        
+                        {/* Cabeçalho dos dias da semana */}
+                        <div className="grid grid-cols-7 gap-1 mb-2">
+                          {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(dia => (
+                            <div key={dia} className="p-2 text-center text-sm font-medium text-gray-600">
+                              {dia}
                             </div>
-                          );
-                        })}
+                          ))}
+                        </div>
+                        
+                        {/* Dias do próximo mês */}
+                        <div className="grid grid-cols-7 gap-1">
+                          {gerarCalendarioMes(new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 1)).map((diaInfo, index) => {
+                            if (!diaInfo) {
+                              return <div key={index} className="p-2 h-20"></div>;
+                            }
+                            
+                            return (
+                              <div 
+                                key={diaInfo.dia} 
+                                className="p-2 h-20 border rounded-lg cursor-pointer hover:bg-gray-50 bg-white"
+                                onClick={() => setSelectedDate(diaInfo.data)}
+                              >
+                                <div className="text-sm font-medium text-gray-900">
+                                  {diaInfo.dia}
+                                </div>
+                                <div className="space-y-1 mt-1">
+                                  {diaInfo.itens.slice(0, 2).map((item, idx) => (
+                                    <div 
+                                      key={idx}
+                                      className="text-xs p-1 rounded truncate text-white"
+                                      style={{ backgroundColor: item.cor }}
+                                      title={`${item.hora} - ${item.titulo}`}
+                                    >
+                                      {item.hora} {item.titulo.substring(0, 10)}...
+                                    </div>
+                                  ))}
+                                  {diaInfo.itens.length > 2 && (
+                                    <div className="text-xs text-gray-500">
+                                      +{diaInfo.itens.length - 2} mais
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -976,6 +1133,119 @@ const ModuloAgenda = () => {
                         </div>
                       </div>
                     ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Intervenções Tab */}
+            <TabsContent value="intervencoes" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Heart className="h-5 w-5 mr-2 text-red-600" />
+                    Intervenções Agendadas
+                  </CardTitle>
+                  <CardDescription>
+                    Intervenções veterinárias agendadas para os animais
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {intervencoes.length === 0 ? (
+                      <div className="text-center py-8">
+                        <Heart className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                        <p className="text-gray-600">Nenhuma intervenção agendada</p>
+                      </div>
+                    ) : (
+                      intervencoes.map((intervencao) => (
+                        <div key={intervencao.id} className="flex items-center justify-between p-4 bg-red-50 rounded-lg border border-red-200">
+                          <div className="flex items-center space-x-4">
+                            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                              <Heart className="h-6 w-6 text-red-600" />
+                            </div>
+                            <div>
+                              <div className="font-medium text-gray-900">
+                                {intervencao.animais?.nome} - {intervencao.tipos_intervencoes?.nome}
+                              </div>
+                              <div className="text-sm text-gray-600">
+                                {new Date(intervencao.data_intervencao).toLocaleDateString('pt-PT')} às {intervencao.hora_intervencao}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                Clínica: {intervencao.clinicas_veterinarias?.nome || 'Não especificada'}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <Badge className="bg-red-100 text-red-800">
+                              {intervencao.status || 'Agendada'}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Missões Tab */}
+            <TabsContent value="missoes" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Target className="h-5 w-5 mr-2 text-blue-600" />
+                    Missões Agendadas
+                  </CardTitle>
+                  <CardDescription>
+                    Missões e tarefas agendadas para os voluntários
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {missoes.length === 0 ? (
+                      <div className="text-center py-8">
+                        <Target className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                        <p className="text-gray-600">Nenhuma missão agendada</p>
+                      </div>
+                    ) : (
+                      missoes.map((missao) => (
+                        <div key={missao.id} className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-200">
+                          <div className="flex items-center space-x-4">
+                            <div 
+                              className="w-12 h-12 rounded-full flex items-center justify-center"
+                              style={{ backgroundColor: missao.tipos_missoes_2025_12_13_09_00?.cor + '20' }}
+                            >
+                              <Target className="h-6 w-6" style={{ color: missao.tipos_missoes_2025_12_13_09_00?.cor }} />
+                            </div>
+                            <div>
+                              <div className="font-medium text-gray-900">
+                                {missao.titulo}
+                              </div>
+                              <div className="text-sm text-gray-600">
+                                {new Date(missao.data_inicio).toLocaleDateString('pt-PT')} às {missao.hora_inicio}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                Local: {missao.local_principal}
+                              </div>
+                              {missao.animais && (
+                                <div className="text-sm text-gray-500">
+                                  Animal: {missao.animais.nome}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <Badge className="bg-blue-100 text-blue-800">
+                              {missao.status || 'Planejada'}
+                            </Badge>
+                            <div className="text-sm text-gray-500 mt-1">
+                              Responsável: {missao.voluntarios?.nome}
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </CardContent>
               </Card>

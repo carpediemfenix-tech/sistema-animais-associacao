@@ -311,6 +311,15 @@ const EnhancedHeader = () => {
         { label: 'Administração', path: '/administracao', icon: <Shield className="h-4 w-4" /> }
       ]
     },
+    '/grupos': {
+      id: 'I02',
+      title: 'Gestão de Grupos',
+      navigationButtons: [
+        { label: 'Módulo Animais', path: '/modulo-animais', icon: <PawPrint className="h-4 w-4" /> },
+        { label: 'Novo Grupo', path: '/grupo/novo', icon: <Plus className="h-4 w-4" /> },
+        { label: 'Dashboard Principal', path: '/', icon: <Home className="h-4 w-4" /> }
+      ]
+    },
 
     // J## = Módulos Especiais
     '/modulo-agenda': {

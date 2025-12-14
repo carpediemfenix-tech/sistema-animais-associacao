@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -174,6 +174,9 @@ const ModuloEquipamentos = () => {
   const [filterEstado, setFilterEstado] = useState("todos");
   const [showNovoEquipamentoDialog, setShowNovoEquipamentoDialog] = useState(false);
   const [showConfiguracoesDialog, setShowConfiguracoesDialog] = useState(false);
+  const [showVerEquipamentoDialog, setShowVerEquipamentoDialog] = useState(false);
+  const [showEditarEquipamentoDialog, setShowEditarEquipamentoDialog] = useState(false);
+  const [equipamentoSelecionado, setEquipamentoSelecionado] = useState<Equipamento | null>(null);
 
   useEffect(() => {
     loadAllData();
@@ -441,6 +444,26 @@ const ModuloEquipamentos = () => {
     return new Date(dateString).toLocaleDateString('pt-PT');
   };
 
+  // Funções para ações dos equipamentos
+  const handleVerEquipamento = (equipamento: Equipamento) => {
+    setEquipamentoSelecionado(equipamento);
+    setShowVerEquipamentoDialog(true);
+  };
+
+  const handleEditarEquipamento = (equipamento: Equipamento) => {
+    setEquipamentoSelecionado(equipamento);
+    setShowEditarEquipamentoDialog(true);
+  };
+
+  const handleNovoEquipamento = () => {
+    setEquipamentoSelecionado(null);
+    setShowNovoEquipamentoDialog(true);
+  };
+
+  const handleConfiguracoes = () => {
+    setShowConfiguracoesDialog(true);
+  };
+
   // Aplicar filtros quando mudarem
   useEffect(() => {
     loadEquipamentos();
@@ -572,6 +595,66 @@ const ModuloEquipamentos = () => {
 
             {/* Dashboard Tab */}
             <TabsContent value="dashboard" className="space-y-6">
+              {/* Ações Rápidas */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Target className="h-5 w-5 mr-2 text-blue-600" />
+                    Ações Rápidas
+                  </CardTitle>
+                  <CardDescription>
+                    Acesso direto às principais funcionalidades do módulo
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <Button 
+                      onClick={handleNovoEquipamento}
+                      className="h-20 flex flex-col items-center justify-center space-y-2 bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      <Plus className="h-6 w-6" />
+                      <div className="text-center">
+                        <div className="text-sm font-medium">Novo Equipamento</div>
+                        <div className="text-xs opacity-90">Adicionar ao inventário</div>
+                      </div>
+                    </Button>
+                    
+                    <Button 
+                      onClick={() => setActiveTab('inventario')}
+                      className="h-20 flex flex-col items-center justify-center space-y-2 bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      <Package className="h-6 w-6" />
+                      <div className="text-center">
+                        <div className="text-sm font-medium">Inventário</div>
+                        <div className="text-xs opacity-90">Gerir equipamentos</div>
+                      </div>
+                    </Button>
+                    
+                    <Button 
+                      onClick={() => setActiveTab('manutencoes')}
+                      className="h-20 flex flex-col items-center justify-center space-y-2 bg-orange-600 hover:bg-orange-700 text-white"
+                    >
+                      <Wrench className="h-6 w-6" />
+                      <div className="text-center">
+                        <div className="text-sm font-medium">Manutenções</div>
+                        <div className="text-xs opacity-90">Gerir manutenções</div>
+                      </div>
+                    </Button>
+                    
+                    <Button 
+                      onClick={handleConfiguracoes}
+                      className="h-20 flex flex-col items-center justify-center space-y-2 bg-purple-600 hover:bg-purple-700 text-white"
+                    >
+                      <Settings className="h-6 w-6" />
+                      <div className="text-center">
+                        <div className="text-sm font-medium">Configurações</div>
+                        <div className="text-xs opacity-90">Categorias e tipos</div>
+                      </div>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+              
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Categorias de Equipamentos */}
                 <Card>
@@ -834,11 +917,19 @@ const ModuloEquipamentos = () => {
                                 </TableCell>
                                 <TableCell className="text-right">
                                   <div className="flex items-center justify-end space-x-2">
-                                    <Button variant="outline" size="sm">
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm"
+                                      onClick={() => handleVerEquipamento(equipamento)}
+                                    >
                                       <Eye className="h-4 w-4 mr-1" />
                                       Ver
                                     </Button>
-                                    <Button variant="outline" size="sm">
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm"
+                                      onClick={() => handleEditarEquipamento(equipamento)}
+                                    >
                                       <Edit className="h-4 w-4 mr-1" />
                                       Editar
                                     </Button>
@@ -1110,6 +1201,67 @@ const ModuloEquipamentos = () => {
           </Tabs>
         </div>
       </div>
+      
+      {/* Diálogos */}
+      <Dialog open={showVerEquipamentoDialog} onOpenChange={setShowVerEquipamentoDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Detalhes do Equipamento</DialogTitle>
+          </DialogHeader>
+          {equipamentoSelecionado && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Código Interno</Label>
+                  <p className="text-sm font-medium">{equipamentoSelecionado.codigo_interno}</p>
+                </div>
+                <div>
+                  <Label>Estado</Label>
+                  <Badge className={getEstadoBadge(equipamentoSelecionado.estado)}>
+                    {equipamentoSelecionado.estado}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+      
+      <Dialog open={showEditarEquipamentoDialog} onOpenChange={setShowEditarEquipamentoDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Equipamento</DialogTitle>
+          </DialogHeader>
+          <div className="text-center py-8">
+            <Package className="h-12 w-12 mx-auto mb-4 text-blue-600" />
+            <p className="text-gray-600">Funcionalidade em desenvolvimento</p>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      <Dialog open={showNovoEquipamentoDialog} onOpenChange={setShowNovoEquipamentoDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Novo Equipamento</DialogTitle>
+          </DialogHeader>
+          <div className="text-center py-8">
+            <Plus className="h-12 w-12 mx-auto mb-4 text-green-600" />
+            <p className="text-gray-600">Funcionalidade em desenvolvimento</p>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      <Dialog open={showConfiguracoesDialog} onOpenChange={setShowConfiguracoesDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Configurações</DialogTitle>
+          </DialogHeader>
+          <div className="text-center py-8">
+            <Settings className="h-12 w-12 mx-auto mb-4 text-purple-600" />
+            <p className="text-gray-600">Funcionalidade em desenvolvimento</p>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <EnhancedFooter />
     </div>

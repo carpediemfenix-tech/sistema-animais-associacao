@@ -21,6 +21,8 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import EnhancedHeader from "@/components/EnhancedHeader";
+import EnhancedFooter from "@/components/EnhancedFooter";
 
 interface Localizacao {
   id: string;
@@ -181,8 +183,10 @@ const GestaoLocalizacoes = () => {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <EnhancedHeader />
+      
+      <div className="flex-1 container mx-auto px-4 py-8">
         {/* Cabeçalho */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center space-x-4">
@@ -378,6 +382,8 @@ const GestaoLocalizacoes = () => {
           </CardContent>
         </Card>
       </div>
+      
+      <EnhancedFooter />
     </div>
   );
 };
