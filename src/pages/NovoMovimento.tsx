@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Save, Calculator, Calendar, DollarSign, FileText, Tag, Building2, CreditCard, AlertCircle } from 'lucide-react';
+import EnhancedHeader from '@/components/EnhancedHeader';
+import EnhancedFooter from '@/components/EnhancedFooter';
 
 interface FormData {
   tipo: 'receita' | 'despesa';
@@ -192,10 +194,11 @@ const NovoMovimento: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Enhanced Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <EnhancedHeader />
+      
+      <header className="bg-white border-b border-gray-200">
+        <div className="flex-1 container mx-auto px-4 py-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
               <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
@@ -536,11 +539,10 @@ const NovoMovimento: React.FC = () => {
               </ul>
             </div>
           </div>
-          <div className="border-t border-gray-200 mt-8 pt-8 text-center text-sm text-gray-500">
-            © 2024 Sistema Financeiro. Todos os direitos reservados.
-          </div>
         </div>
       </footer>
+      
+      <EnhancedFooter />
     </div>
   );
 };

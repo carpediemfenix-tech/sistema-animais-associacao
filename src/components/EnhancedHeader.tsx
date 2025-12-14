@@ -22,7 +22,9 @@ import {
   History,
   BarChart3,
   Database,
-  Shield
+  Shield,
+  Package,
+  DollarSign
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -307,6 +309,88 @@ const EnhancedHeader = () => {
       navigationButtons: [
         { label: 'Dashboard', path: '/', icon: <Home className="h-4 w-4" /> },
         { label: 'Administração', path: '/administracao', icon: <Shield className="h-4 w-4" /> }
+      ]
+    },
+
+    // J## = Módulos Especiais
+    '/modulo-agenda': {
+      id: 'J01',
+      title: 'Módulo Agenda e Calendário',
+      navigationButtons: [
+        { label: 'Dashboard', path: '/', icon: <Home className="h-4 w-4" /> },
+        { label: 'Novo Evento', path: '/modulo-agenda', icon: <Plus className="h-4 w-4" /> }
+      ]
+    },
+    '/modulo-missoes': {
+      id: 'J02',
+      title: 'Módulo Missões e Tarefas',
+      navigationButtons: [
+        { label: 'Dashboard', path: '/', icon: <Home className="h-4 w-4" /> },
+        { label: 'Nova Missão', path: '/modulo-missoes', icon: <Plus className="h-4 w-4" /> }
+      ]
+    },
+    '/modulo-equipamentos': {
+      id: 'J03',
+      title: 'Módulo Equipamentos',
+      navigationButtons: [
+        { label: 'Dashboard', path: '/', icon: <Home className="h-4 w-4" /> },
+        { label: 'Inventário', path: '/modulo-equipamentos', icon: <Package className="h-4 w-4" /> }
+      ]
+    },
+
+    // K## = Sistema Financeiro
+    '/financeiro': {
+      id: 'K01',
+      title: 'Dashboard Financeiro',
+      navigationButtons: [
+        { label: 'Dashboard', path: '/', icon: <Home className="h-4 w-4" /> },
+        { label: 'Novo Movimento', path: '/financeiro/movimentos/novo', icon: <Plus className="h-4 w-4" /> },
+        { label: 'Ver Movimentos', path: '/financeiro/movimentos', icon: <FileText className="h-4 w-4" /> }
+      ]
+    },
+    '/financeiro/movimentos': {
+      id: 'K02',
+      title: 'Gestão de Movimentos Financeiros',
+      navigationButtons: [
+        { label: 'Dashboard Financeiro', path: '/financeiro', icon: <DollarSign className="h-4 w-4" /> },
+        { label: 'Novo Movimento', path: '/financeiro/movimentos/novo', icon: <Plus className="h-4 w-4" /> },
+        { label: 'Dashboard', path: '/', icon: <Home className="h-4 w-4" /> }
+      ]
+    },
+    '/financeiro/movimentos/novo': {
+      id: 'K03',
+      title: 'Novo Movimento Financeiro',
+      navigationButtons: [
+        { label: 'Ver Movimentos', path: '/financeiro/movimentos', icon: <FileText className="h-4 w-4" /> },
+        { label: 'Dashboard Financeiro', path: '/financeiro', icon: <DollarSign className="h-4 w-4" /> },
+        { label: 'Dashboard', path: '/', icon: <Home className="h-4 w-4" /> }
+      ]
+    },
+    '/financeiro/contas': {
+      id: 'K04',
+      title: 'Gestão de Contas Financeiras',
+      navigationButtons: [
+        { label: 'Dashboard Financeiro', path: '/financeiro', icon: <DollarSign className="h-4 w-4" /> },
+        { label: 'Movimentos', path: '/financeiro/movimentos', icon: <FileText className="h-4 w-4" /> },
+        { label: 'Dashboard', path: '/', icon: <Home className="h-4 w-4" /> }
+      ]
+    },
+    '/financeiro/configuracoes': {
+      id: 'K05',
+      title: 'Configurações Financeiras',
+      navigationButtons: [
+        { label: 'Dashboard Financeiro', path: '/financeiro', icon: <DollarSign className="h-4 w-4" /> },
+        { label: 'Movimentos', path: '/financeiro/movimentos', icon: <FileText className="h-4 w-4" /> },
+        { label: 'Dashboard', path: '/', icon: <Home className="h-4 w-4" /> }
+      ]
+    },
+    '/financeiro/relatorios': {
+      id: 'K06',
+      title: 'Relatórios Financeiros',
+      navigationButtons: [
+        { label: 'Dashboard Financeiro', path: '/financeiro', icon: <DollarSign className="h-4 w-4" /> },
+        { label: 'Movimentos', path: '/financeiro/movimentos', icon: <FileText className="h-4 w-4" /> },
+        { label: 'Dashboard', path: '/', icon: <Home className="h-4 w-4" /> }
       ]
     }
   };
