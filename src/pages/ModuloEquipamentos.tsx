@@ -33,6 +33,8 @@ import {
   BarChart3,
   TrendingUp,
   RefreshCw,
+  FileText,
+  DollarSign,
   Search,
   Filter,
   Download,
@@ -177,6 +179,21 @@ const ModuloEquipamentos = () => {
   const [showVerEquipamentoDialog, setShowVerEquipamentoDialog] = useState(false);
   const [showEditarEquipamentoDialog, setShowEditarEquipamentoDialog] = useState(false);
   const [equipamentoSelecionado, setEquipamentoSelecionado] = useState<Equipamento | null>(null);
+  
+  // Estados do formulário
+  const [equipamentoForm, setEquipamentoForm] = useState({
+    tipo_equipamento_id: '',
+    codigo_interno: '',
+    numero_serie: '',
+    data_aquisicao: '',
+    data_validade: '',
+    estado: 'disponivel',
+    localizacao: '',
+    condicao: 'bom',
+    valor_aquisicao: '',
+    garantia_ate: '',
+    observacoes: ''
+  });
 
   useEffect(() => {
     loadAllData();
@@ -452,16 +469,113 @@ const ModuloEquipamentos = () => {
 
   const handleEditarEquipamento = (equipamento: Equipamento) => {
     setEquipamentoSelecionado(equipamento);
+    preencherFormularioEdicao(equipamento);
     setShowEditarEquipamentoDialog(true);
   };
 
   const handleNovoEquipamento = () => {
     setEquipamentoSelecionado(null);
+    resetEquipamentoForm();
     setShowNovoEquipamentoDialog(true);
   };
 
   const handleConfiguracoes = () => {
     setShowConfiguracoesDialog(true);
+  };
+
+  // Funções CRUD para equipamentos
+  const resetEquipamentoForm = () => {
+    setEquipamentoForm({
+      tipo_equipamento_id: '',
+      codigo_interno: '',
+      numero_serie: '',
+      data_aquisicao: '',
+      data_validade: '',
+      estado: 'disponivel',
+      localizacao: '',
+      condicao: 'bom',
+      valor_aquisicao: '',
+      garantia_ate: '',
+      observacoes: ''
+    });
+  };
+
+  const handleCriarEquipamento = async () => {
+    try {
+      const { error } = await supabase
+        .from('equipamentos_2025_12_13_01_00')
+        .insert([{
+          ...equipamentoForm,
+          valor_aquisicao: parseFloat(equipamentoForm.valor_aquisicao) || 0,
+          ativo: true
+        }]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Equipamento criado",
+        description: "Novo equipamento adicionado com sucesso",
+      });
+
+      setShowNovoEquipamentoDialog(false);
+      resetEquipamentoForm();
+      loadEquipamentos();
+    } catch (error) {
+      console.error('Erro ao criar equipamento:', error);
+      toast({
+        title: "Erro ao criar equipamento",
+        description: "Não foi possível criar o equipamento",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAtualizarEquipamento = async () => {
+    if (!equipamentoSelecionado) return;
+
+    try {
+      const { error } = await supabase
+        .from('equipamentos_2025_12_13_01_00')
+        .update({
+          ...equipamentoForm,
+          valor_aquisicao: parseFloat(equipamentoForm.valor_aquisicao) || 0
+        })
+        .eq('id', equipamentoSelecionado.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Equipamento atualizado",
+        description: "Equipamento atualizado com sucesso",
+      });
+
+      setShowEditarEquipamentoDialog(false);
+      resetEquipamentoForm();
+      loadEquipamentos();
+    } catch (error) {
+      console.error('Erro ao atualizar equipamento:', error);
+      toast({
+        title: "Erro ao atualizar equipamento",
+        description: "Não foi possível atualizar o equipamento",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const preencherFormularioEdicao = (equipamento: Equipamento) => {
+    setEquipamentoForm({
+      tipo_equipamento_id: equipamento.tipo_equipamento_id,
+      codigo_interno: equipamento.codigo_interno,
+      numero_serie: equipamento.numero_serie || '',
+      data_aquisicao: equipamento.data_aquisicao,
+      data_validade: equipamento.data_validade,
+      estado: equipamento.estado,
+      localizacao: equipamento.localizacao || '',
+      condicao: equipamento.condicao,
+      valor_aquisicao: equipamento.valor_aquisicao?.toString() || '',
+      garantia_ate: equipamento.garantia_ate,
+      observacoes: equipamento.observacoes || ''
+    });
   };
 
   // Aplicar filtros quando mudarem
@@ -1209,57 +1323,670 @@ const ModuloEquipamentos = () => {
             <DialogTitle>Detalhes do Equipamento</DialogTitle>
           </DialogHeader>
           {equipamentoSelecionado && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Código Interno</Label>
-                  <p className="text-sm font-medium">{equipamentoSelecionado.codigo_interno}</p>
-                </div>
-                <div>
-                  <Label>Estado</Label>
-                  <Badge className={getEstadoBadge(equipamentoSelecionado.estado)}>
-                    {equipamentoSelecionado.estado}
-                  </Badge>
+            <div className="space-y-6">
+              {/* Informações Básicas */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3 flex items-center">
+                  <Package className="h-5 w-5 mr-2 text-blue-600" />
+                  Informações Básicas
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Código Interno</Label>
+                    <p className="text-sm font-medium mt-1">{equipamentoSelecionado.codigo_interno}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Número de Série</Label>
+                    <p className="text-sm font-medium mt-1">{equipamentoSelecionado.numero_serie || 'Não informado'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Tipo de Equipamento</Label>
+                    <p className="text-sm font-medium mt-1">{equipamentoSelecionado.tipo_equipamento?.nome || 'Não especificado'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Categoria</Label>
+                    <p className="text-sm font-medium mt-1">{equipamentoSelecionado.tipo_equipamento?.categoria?.nome || 'Não especificada'}</p>
+                  </div>
                 </div>
               </div>
+
+              {/* Estado e Condição */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3 flex items-center">
+                  <Activity className="h-5 w-5 mr-2 text-green-600" />
+                  Estado e Condição
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Estado</Label>
+                    <div className="mt-1">
+                      <Badge className={getEstadoBadge(equipamentoSelecionado.estado)}>
+                        {equipamentoSelecionado.estado}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Condição</Label>
+                    <div className="mt-1">
+                      <Badge className={getCondicaoBadge(equipamentoSelecionado.condicao)}>
+                        {equipamentoSelecionado.condicao}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Localização e Datas */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3 flex items-center">
+                  <MapPin className="h-5 w-5 mr-2 text-purple-600" />
+                  Localização e Datas
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Localização</Label>
+                    <p className="text-sm font-medium mt-1">{equipamentoSelecionado.localizacao || 'Não especificada'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Data de Aquisição</Label>
+                    <p className="text-sm font-medium mt-1">{formatDate(equipamentoSelecionado.data_aquisicao)}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Data de Validade</Label>
+                    <p className="text-sm font-medium mt-1">{formatDate(equipamentoSelecionado.data_validade)}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Garantia Até</Label>
+                    <p className="text-sm font-medium mt-1">{formatDate(equipamentoSelecionado.garantia_ate)}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Informações Financeiras */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3 flex items-center">
+                  <DollarSign className="h-5 w-5 mr-2 text-yellow-600" />
+                  Informações Financeiras
+                </h3>
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Valor de Aquisição</Label>
+                    <p className="text-lg font-bold text-green-600 mt-1">{formatCurrency(equipamentoSelecionado.valor_aquisicao || 0)}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Observações */}
+              {equipamentoSelecionado.observacoes && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-3 flex items-center">
+                    <FileText className="h-5 w-5 mr-2 text-gray-600" />
+                    Observações
+                  </h3>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-700">{equipamentoSelecionado.observacoes}</p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>
       </Dialog>
       
       <Dialog open={showEditarEquipamentoDialog} onOpenChange={setShowEditarEquipamentoDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Editar Equipamento</DialogTitle>
+            <DialogTitle className="flex items-center">
+              <Edit className="h-5 w-5 mr-2 text-blue-600" />
+              Editar Equipamento
+            </DialogTitle>
+            <DialogDescription>
+              {equipamentoSelecionado && `Editando: ${equipamentoSelecionado.codigo_interno}`}
+            </DialogDescription>
           </DialogHeader>
-          <div className="text-center py-8">
-            <Package className="h-12 w-12 mx-auto mb-4 text-blue-600" />
-            <p className="text-gray-600">Funcionalidade em desenvolvimento</p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Informações Básicas */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold flex items-center">
+                <Package className="h-5 w-5 mr-2 text-blue-600" />
+                Informações Básicas
+              </h3>
+              
+              <div>
+                <Label htmlFor="edit_tipo_equipamento_id">Tipo de Equipamento *</Label>
+                <Select 
+                  value={equipamentoForm.tipo_equipamento_id} 
+                  onValueChange={(value) => setEquipamentoForm({...equipamentoForm, tipo_equipamento_id: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecionar tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tiposEquipamentos.map((tipo) => (
+                      <SelectItem key={tipo.id} value={tipo.id}>
+                        {tipo.nome} ({tipo.categoria?.nome})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="edit_codigo_interno">Código Interno *</Label>
+                <Input
+                  id="edit_codigo_interno"
+                  value={equipamentoForm.codigo_interno}
+                  onChange={(e) => setEquipamentoForm({...equipamentoForm, codigo_interno: e.target.value})}
+                  placeholder="Ex: EQ001"
+                  required
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="edit_numero_serie">Número de Série</Label>
+                <Input
+                  id="edit_numero_serie"
+                  value={equipamentoForm.numero_serie}
+                  onChange={(e) => setEquipamentoForm({...equipamentoForm, numero_serie: e.target.value})}
+                  placeholder="Número de série do equipamento"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="edit_localizacao">Localização</Label>
+                <Input
+                  id="edit_localizacao"
+                  value={equipamentoForm.localizacao}
+                  onChange={(e) => setEquipamentoForm({...equipamentoForm, localizacao: e.target.value})}
+                  placeholder="Ex: Armazém A, Prateleira 3"
+                />
+              </div>
+            </div>
+            
+            {/* Estado e Condição */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold flex items-center">
+                <Activity className="h-5 w-5 mr-2 text-green-600" />
+                Estado e Condição
+              </h3>
+              
+              <div>
+                <Label htmlFor="edit_estado">Estado</Label>
+                <Select 
+                  value={equipamentoForm.estado} 
+                  onValueChange={(value) => setEquipamentoForm({...equipamentoForm, estado: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="disponivel">Disponível</SelectItem>
+                    <SelectItem value="em_uso">Em Uso</SelectItem>
+                    <SelectItem value="manutencao">Manutenção</SelectItem>
+                    <SelectItem value="danificado">Danificado</SelectItem>
+                    <SelectItem value="perdido">Perdido</SelectItem>
+                    <SelectItem value="descartado">Descartado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="edit_condicao">Condição</Label>
+                <Select 
+                  value={equipamentoForm.condicao} 
+                  onValueChange={(value) => setEquipamentoForm({...equipamentoForm, condicao: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="excelente">Excelente</SelectItem>
+                    <SelectItem value="bom">Bom</SelectItem>
+                    <SelectItem value="regular">Regular</SelectItem>
+                    <SelectItem value="mau">Mau</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="edit_valor_aquisicao">Valor de Aquisição (€)</Label>
+                <Input
+                  id="edit_valor_aquisicao"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={equipamentoForm.valor_aquisicao}
+                  onChange={(e) => setEquipamentoForm({...equipamentoForm, valor_aquisicao: e.target.value})}
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+            
+            {/* Datas */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold flex items-center">
+                <Calendar className="h-5 w-5 mr-2 text-purple-600" />
+                Datas Importantes
+              </h3>
+              
+              <div>
+                <Label htmlFor="edit_data_aquisicao">Data de Aquisição *</Label>
+                <Input
+                  id="edit_data_aquisicao"
+                  type="date"
+                  value={equipamentoForm.data_aquisicao}
+                  onChange={(e) => setEquipamentoForm({...equipamentoForm, data_aquisicao: e.target.value})}
+                  required
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="edit_data_validade">Data de Validade</Label>
+                <Input
+                  id="edit_data_validade"
+                  type="date"
+                  value={equipamentoForm.data_validade}
+                  onChange={(e) => setEquipamentoForm({...equipamentoForm, data_validade: e.target.value})}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="edit_garantia_ate">Garantia Até</Label>
+                <Input
+                  id="edit_garantia_ate"
+                  type="date"
+                  value={equipamentoForm.garantia_ate}
+                  onChange={(e) => setEquipamentoForm({...equipamentoForm, garantia_ate: e.target.value})}
+                />
+              </div>
+            </div>
+            
+            {/* Observações */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold flex items-center">
+                <FileText className="h-5 w-5 mr-2 text-gray-600" />
+                Observações
+              </h3>
+              
+              <div>
+                <Label htmlFor="edit_observacoes">Observações</Label>
+                <Textarea
+                  id="edit_observacoes"
+                  value={equipamentoForm.observacoes}
+                  onChange={(e) => setEquipamentoForm({...equipamentoForm, observacoes: e.target.value})}
+                  placeholder="Observações adicionais sobre o equipamento"
+                  rows={4}
+                />
+              </div>
+            </div>
           </div>
+          
+          <DialogFooter className="mt-6">
+            <Button variant="outline" onClick={() => setShowEditarEquipamentoDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleAtualizarEquipamento} className="bg-blue-600 hover:bg-blue-700">
+              <Edit className="h-4 w-4 mr-2" />
+              Atualizar Equipamento
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
       
       <Dialog open={showNovoEquipamentoDialog} onOpenChange={setShowNovoEquipamentoDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Novo Equipamento</DialogTitle>
+            <DialogTitle className="flex items-center">
+              <Plus className="h-5 w-5 mr-2 text-green-600" />
+              Novo Equipamento
+            </DialogTitle>
+            <DialogDescription>
+              Adicione um novo equipamento ao inventário
+            </DialogDescription>
           </DialogHeader>
-          <div className="text-center py-8">
-            <Plus className="h-12 w-12 mx-auto mb-4 text-green-600" />
-            <p className="text-gray-600">Funcionalidade em desenvolvimento</p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Informações Básicas */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold flex items-center">
+                <Package className="h-5 w-5 mr-2 text-blue-600" />
+                Informações Básicas
+              </h3>
+              
+              <div>
+                <Label htmlFor="tipo_equipamento_id">Tipo de Equipamento *</Label>
+                <Select 
+                  value={equipamentoForm.tipo_equipamento_id} 
+                  onValueChange={(value) => setEquipamentoForm({...equipamentoForm, tipo_equipamento_id: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecionar tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tiposEquipamentos.map((tipo) => (
+                      <SelectItem key={tipo.id} value={tipo.id}>
+                        {tipo.nome} ({tipo.categoria?.nome})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="codigo_interno">Código Interno *</Label>
+                <Input
+                  id="codigo_interno"
+                  value={equipamentoForm.codigo_interno}
+                  onChange={(e) => setEquipamentoForm({...equipamentoForm, codigo_interno: e.target.value})}
+                  placeholder="Ex: EQ001"
+                  required
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="numero_serie">Número de Série</Label>
+                <Input
+                  id="numero_serie"
+                  value={equipamentoForm.numero_serie}
+                  onChange={(e) => setEquipamentoForm({...equipamentoForm, numero_serie: e.target.value})}
+                  placeholder="Número de série do equipamento"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="localizacao">Localização</Label>
+                <Input
+                  id="localizacao"
+                  value={equipamentoForm.localizacao}
+                  onChange={(e) => setEquipamentoForm({...equipamentoForm, localizacao: e.target.value})}
+                  placeholder="Ex: Armazém A, Prateleira 3"
+                />
+              </div>
+            </div>
+            
+            {/* Estado e Condição */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold flex items-center">
+                <Activity className="h-5 w-5 mr-2 text-green-600" />
+                Estado e Condição
+              </h3>
+              
+              <div>
+                <Label htmlFor="estado">Estado</Label>
+                <Select 
+                  value={equipamentoForm.estado} 
+                  onValueChange={(value) => setEquipamentoForm({...equipamentoForm, estado: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="disponivel">Disponível</SelectItem>
+                    <SelectItem value="em_uso">Em Uso</SelectItem>
+                    <SelectItem value="manutencao">Manutenção</SelectItem>
+                    <SelectItem value="danificado">Danificado</SelectItem>
+                    <SelectItem value="perdido">Perdido</SelectItem>
+                    <SelectItem value="descartado">Descartado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="condicao">Condição</Label>
+                <Select 
+                  value={equipamentoForm.condicao} 
+                  onValueChange={(value) => setEquipamentoForm({...equipamentoForm, condicao: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="excelente">Excelente</SelectItem>
+                    <SelectItem value="bom">Bom</SelectItem>
+                    <SelectItem value="regular">Regular</SelectItem>
+                    <SelectItem value="mau">Mau</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="valor_aquisicao">Valor de Aquisição (€)</Label>
+                <Input
+                  id="valor_aquisicao"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={equipamentoForm.valor_aquisicao}
+                  onChange={(e) => setEquipamentoForm({...equipamentoForm, valor_aquisicao: e.target.value})}
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+            
+            {/* Datas */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold flex items-center">
+                <Calendar className="h-5 w-5 mr-2 text-purple-600" />
+                Datas Importantes
+              </h3>
+              
+              <div>
+                <Label htmlFor="data_aquisicao">Data de Aquisição *</Label>
+                <Input
+                  id="data_aquisicao"
+                  type="date"
+                  value={equipamentoForm.data_aquisicao}
+                  onChange={(e) => setEquipamentoForm({...equipamentoForm, data_aquisicao: e.target.value})}
+                  required
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="data_validade">Data de Validade</Label>
+                <Input
+                  id="data_validade"
+                  type="date"
+                  value={equipamentoForm.data_validade}
+                  onChange={(e) => setEquipamentoForm({...equipamentoForm, data_validade: e.target.value})}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="garantia_ate">Garantia Até</Label>
+                <Input
+                  id="garantia_ate"
+                  type="date"
+                  value={equipamentoForm.garantia_ate}
+                  onChange={(e) => setEquipamentoForm({...equipamentoForm, garantia_ate: e.target.value})}
+                />
+              </div>
+            </div>
+            
+            {/* Observações */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold flex items-center">
+                <FileText className="h-5 w-5 mr-2 text-gray-600" />
+                Observações
+              </h3>
+              
+              <div>
+                <Label htmlFor="observacoes">Observações</Label>
+                <Textarea
+                  id="observacoes"
+                  value={equipamentoForm.observacoes}
+                  onChange={(e) => setEquipamentoForm({...equipamentoForm, observacoes: e.target.value})}
+                  placeholder="Observações adicionais sobre o equipamento"
+                  rows={4}
+                />
+              </div>
+            </div>
           </div>
+          
+          <DialogFooter className="mt-6">
+            <Button variant="outline" onClick={() => setShowNovoEquipamentoDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleCriarEquipamento} className="bg-green-600 hover:bg-green-700">
+              <Plus className="h-4 w-4 mr-2" />
+              Criar Equipamento
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
       
       <Dialog open={showConfiguracoesDialog} onOpenChange={setShowConfiguracoesDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Configurações</DialogTitle>
+            <DialogTitle className="flex items-center">
+              <Settings className="h-5 w-5 mr-2 text-purple-600" />
+              Configurações do Módulo Equipamentos
+            </DialogTitle>
+            <DialogDescription>
+              Gerir categorias e tipos de equipamentos
+            </DialogDescription>
           </DialogHeader>
-          <div className="text-center py-8">
-            <Settings className="h-12 w-12 mx-auto mb-4 text-purple-600" />
-            <p className="text-gray-600">Funcionalidade em desenvolvimento</p>
-          </div>
+          
+          <Tabs defaultValue="categorias" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="categorias">Categorias de Equipamentos</TabsTrigger>
+              <TabsTrigger value="tipos">Tipos de Equipamentos</TabsTrigger>
+            </TabsList>
+            
+            {/* Aba Categorias */}
+            <TabsContent value="categorias" className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Categorias de Equipamentos</h3>
+                <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nova Categoria
+                </Button>
+              </div>
+              
+              <div className="border rounded-lg">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Descrição</TableHead>
+                      <TableHead>Cor</TableHead>
+                      <TableHead>Ícone</TableHead>
+                      <TableHead>Ativo</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {categorias.map((categoria) => {
+                      const IconComponent = getIconComponent(categoria.icone);
+                      return (
+                        <TableRow key={categoria.id}>
+                          <TableCell className="font-medium">{categoria.nome}</TableCell>
+                          <TableCell className="text-sm text-gray-600">{categoria.descricao}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center space-x-2">
+                              <div 
+                                className="w-4 h-4 rounded-full border" 
+                                style={{ backgroundColor: categoria.cor }}
+                              ></div>
+                              <span className="text-xs text-gray-500">{categoria.cor}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center space-x-2">
+                              <IconComponent className="h-4 w-4" style={{ color: categoria.cor }} />
+                              <span className="text-xs text-gray-500">{categoria.icone}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={categoria.ativo ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                              {categoria.ativo ? 'Ativo' : 'Inativo'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end space-x-2">
+                              <Button variant="outline" size="sm">
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </TabsContent>
+            
+            {/* Aba Tipos */}
+            <TabsContent value="tipos" className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Tipos de Equipamentos</h3>
+                <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Novo Tipo
+                </Button>
+              </div>
+              
+              <div className="border rounded-lg">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Categoria</TableHead>
+                      <TableHead>Descrição</TableHead>
+                      <TableHead>Ativo</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {tiposEquipamentos.map((tipo) => (
+                      <TableRow key={tipo.id}>
+                        <TableCell className="font-medium">{tipo.nome}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            {tipo.categoria && (
+                              <>
+                                <div 
+                                  className="w-3 h-3 rounded-full" 
+                                  style={{ backgroundColor: tipo.categoria.cor }}
+                                ></div>
+                                <span>{tipo.categoria.nome}</span>
+                              </>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm text-gray-600">{tipo.descricao}</TableCell>
+                        <TableCell>
+                          <Badge className={tipo.ativo ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                            {tipo.ativo ? 'Ativo' : 'Inativo'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end space-x-2">
+                            <Button variant="outline" size="sm">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </TabsContent>
+          </Tabs>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowConfiguracoesDialog(false)}>
+              Fechar
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

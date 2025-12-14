@@ -99,6 +99,7 @@ const AnimalIntervencoes = () => {
   const loadRelatedData = async () => {
     try {
       // Carregar intervenções
+      console.log('Carregando intervenções para animal ID:', id);
       const { data: intervencoesData, error: intervencoesError } = await supabase
         .from('intervencoes')
         .select(`
@@ -113,6 +114,7 @@ const AnimalIntervencoes = () => {
         console.error('Erro ao carregar intervenções:', intervencoesError);
       } else {
         console.log('Intervenções carregadas:', intervencoesData?.length || 0);
+        console.log('Dados das intervenções:', intervencoesData);
         setIntervencoes(intervencoesData || []);
       }
 
@@ -241,7 +243,16 @@ const AnimalIntervencoes = () => {
       setIntervencaoDialogOpen(false);
       resetIntervencaoForm();
       setEditingIntervencao(null);
+      
+      // Forçar recarregamento das intervenções
+      console.log('Recarregando intervenções após inserção/atualização...');
       await loadRelatedData();
+      
+      // Forçar um refresh adicional após um pequeno delay
+      setTimeout(async () => {
+        console.log('Segundo recarregamento das intervenções...');
+        await loadRelatedData();
+      }, 1000);
 
     } catch (error) {
       console.error('Erro:', error);
