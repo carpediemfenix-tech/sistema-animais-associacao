@@ -199,6 +199,23 @@ const ModuloEquipamentos = () => {
     loadAllData();
   }, []);
 
+  // Reset do formulário quando o diálogo de novo equipamento for fechado
+  useEffect(() => {
+    if (!showNovoEquipamentoDialog) {
+      console.log('Diálogo novo equipamento fechado, resetando formulário');
+      resetEquipamentoForm();
+    }
+  }, [showNovoEquipamentoDialog]);
+
+  // Reset do formulário quando o diálogo de edição for fechado
+  useEffect(() => {
+    if (!showEditarEquipamentoDialog) {
+      console.log('Diálogo editar equipamento fechado, resetando formulário');
+      resetEquipamentoForm();
+      setEquipamentoSelecionado(null);
+    }
+  }, [showEditarEquipamentoDialog]);
+
   const loadAllData = async () => {
     try {
       setLoading(true);
@@ -359,23 +376,25 @@ const ModuloEquipamentos = () => {
 
   const loadAtribuicoes = async () => {
     try {
+      // Carregar atribuições simples primeiro
       const { data, error } = await supabase
         .from('atribuicoes_equipamentos_2025_12_13_01_00')
-        .select(`
-          *,
-          equipamento:equipamentos_2025_12_13_01_00(
-            *,
-            tipo_equipamento:tipos_equipamentos_2025_12_13_01_00(*)
-          ),
-          voluntario:voluntarios(nome, email)
-        `)
+        .select('*')
         .eq('ativo', true)
         .order('data_atribuicao', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao carregar atribuições:', error);
+        // Se houver erro, definir array vazio
+        setAtribuicoes([]);
+        return;
+      }
+      
+      console.log('Atribuições carregadas:', data?.length || 0);
       setAtribuicoes(data || []);
     } catch (error) {
       console.error('Erro ao carregar atribuições:', error);
+      setAtribuicoes([]);
     }
   };
 
@@ -383,19 +402,20 @@ const ModuloEquipamentos = () => {
     try {
       const { data, error } = await supabase
         .from('manutencoes_equipamentos_2025_12_13_01_00')
-        .select(`
-          *,
-          equipamento:equipamentos_2025_12_13_01_00(
-            *,
-            tipo_equipamento:tipos_equipamentos_2025_12_13_01_00(*)
-          )
-        `)
+        .select('*')
         .order('data_manutencao', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao carregar manutenções:', error);
+        setManutencoes([]);
+        return;
+      }
+      
+      console.log('Manutenções carregadas:', data?.length || 0);
       setManutencoes(data || []);
     } catch (error) {
       console.error('Erro ao carregar manutenções:', error);
+      setManutencoes([]);
     }
   };
 
@@ -403,20 +423,21 @@ const ModuloEquipamentos = () => {
     try {
       const { data, error } = await supabase
         .from('alertas_reposicao_2025_12_13_01_00')
-        .select(`
-          *,
-          tipo_equipamento:tipos_equipamentos_2025_12_13_01_00(
-            *,
-            categoria:categorias_equipamentos_2025_12_13_01_00(*)
-          )
-        `)
+        .select('*')
         .eq('alerta_ativo', true)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao carregar alertas:', error);
+        setAlertas([]);
+        return;
+      }
+      
+      console.log('Alertas carregados:', data?.length || 0);
       setAlertas(data || []);
     } catch (error) {
       console.error('Erro ao carregar alertas:', error);
+      setAlertas([]);
     }
   };
 
@@ -474,6 +495,7 @@ const ModuloEquipamentos = () => {
   };
 
   const handleNovoEquipamento = () => {
+    console.log('Abrindo diálogo novo equipamento');
     setEquipamentoSelecionado(null);
     resetEquipamentoForm();
     setShowNovoEquipamentoDialog(true);
@@ -502,15 +524,64 @@ const ModuloEquipamentos = () => {
 
   const handleCriarEquipamento = async () => {
     try {
-      const { error } = await supabase
+      console.log('Criando equipamento com dados:', equipamentoForm);
+      
+      // Validar campos obrigatórios
+      if (!equipamentoForm.tipo_equipamento_id) {
+        toast({
+          title: "Campo obrigatório",
+          description: "Selecione o tipo de equipamento",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (!equipamentoForm.codigo_interno) {
+        toast({
+          title: "Campo obrigatório",
+          description: "Informe o código interno",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (!equipamentoForm.data_aquisicao) {
+        toast({
+          title: "Campo obrigatório",
+          description: "Informe a data de aquisição",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const equipamentoData = {
+        tipo_equipamento_id: equipamentoForm.tipo_equipamento_id,
+        codigo_interno: equipamentoForm.codigo_interno,
+        numero_serie: equipamentoForm.numero_serie || null,
+        data_aquisicao: equipamentoForm.data_aquisicao,
+        data_validade: equipamentoForm.data_validade || null,
+        estado: equipamentoForm.estado,
+        localizacao: equipamentoForm.localizacao || null,
+        condicao: equipamentoForm.condicao,
+        valor_aquisicao: parseFloat(equipamentoForm.valor_aquisicao) || 0,
+        garantia_ate: equipamentoForm.garantia_ate || null,
+        observacoes: equipamentoForm.observacoes || null,
+        ativo: true
+      };
+      
+      console.log('Dados para inserção:', equipamentoData);
+      
+      const { data, error } = await supabase
         .from('equipamentos_2025_12_13_01_00')
-        .insert([{
-          ...equipamentoForm,
-          valor_aquisicao: parseFloat(equipamentoForm.valor_aquisicao) || 0,
-          ativo: true
-        }]);
+        .insert([equipamentoData])
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro detalhado ao criar equipamento:', error);
+        throw error;
+      }
+      
+      console.log('Equipamento criado com sucesso:', data);
 
       toast({
         title: "Equipamento criado",

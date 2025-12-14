@@ -100,23 +100,66 @@ const AnimalIntervencoes = () => {
     try {
       // Carregar intervenções
       console.log('Carregando intervenções para animal ID:', id);
+      // Primeiro, carregar intervenções sem joins para evitar erro 400
       const { data: intervencoesData, error: intervencoesError } = await supabase
         .from('intervencoes')
-        .select(`
-          *,
-          tipos_intervencoes(nome),
-          clinicas_veterinarias(nome)
-        `)
+        .select('*')
         .eq('animal_id', id)
         .order('data_intervencao', { ascending: false });
 
       if (intervencoesError) {
         console.error('Erro ao carregar intervenções:', intervencoesError);
+        // Tentar query alternativa sem joins
+        const { data: intervencoesSimples, error: erroSimples } = await supabase
+          .from('intervencoes')
+          .select('*')
+          .eq('animal_id', id);
+          
+        if (!erroSimples && intervencoesSimples) {
+          console.log('Intervenções carregadas (modo simples):', intervencoesSimples.length);
+          setIntervencoes(intervencoesSimples);
+        }
       } else {
         console.log('Intervenções carregadas:', intervencoesData?.length || 0);
         console.log('Dados das intervenções:', intervencoesData);
-        setIntervencoes(intervencoesData || []);
+        
+        // Carregar dados relacionados separadamente
+        if (intervencoesData && intervencoesData.length > 0) {
+          // Carregar tipos de intervenções
+          const tiposIds = [...new Set(intervencoesData.map(i => i.tipo_intervencao_id).filter(Boolean))];
+          if (tiposIds.length > 0) {
+            const { data: tiposData } = await supabase
+              .from('tipos_intervencoes')
+              .select('id, nome')
+              .in('id', tiposIds);
+              
+            // Carregar clínicas
+            const clinicasIds = [...new Set(intervencoesData.map(i => i.clinica_id).filter(Boolean))];
+            let clinicasData = [];
+            if (clinicasIds.length > 0) {
+              const { data: clinicasResult } = await supabase
+                .from('clinicas_veterinarias')
+                .select('id, nome')
+                .in('id', clinicasIds);
+              clinicasData = clinicasResult || [];
+            }
+            
+            // Combinar dados
+            const intervencoesCompletas = intervencoesData.map(intervencao => ({
+              ...intervencao,
+              tipos_intervencoes: tiposData?.find(t => t.id === intervencao.tipo_intervencao_id),
+              clinicas_veterinarias: clinicasData.find(c => c.id === intervencao.clinica_id)
+            }));
+            
+            setIntervencoes(intervencoesCompletas);
+          } else {
+            setIntervencoes(intervencoesData);
+          }
+        } else {
+          setIntervencoes([]);
+        }
       }
+
 
       // Carregar tipos de intervenções
       const { data: tiposData } = await supabase
