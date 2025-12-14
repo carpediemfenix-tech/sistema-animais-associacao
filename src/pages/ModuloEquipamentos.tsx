@@ -38,6 +38,7 @@ import {
   Search,
   Filter,
   Download,
+  Power,
   Upload,
   Activity,
   Target,
@@ -195,6 +196,24 @@ const ModuloEquipamentos = () => {
     observacoes: ''
   });
 
+  // Cache local para melhorar performance
+  const [cache, setCache] = useState({
+    equipamentos: null as any,
+    categorias: null as any,
+    tiposEquipamentos: null as any,
+    lastUpdate: null as Date | null
+  });
+
+  // Estados de loading detalhados
+  const [loadingStates, setLoadingStates] = useState({
+    equipamentos: false,
+    categorias: false,
+    tipos: false,
+    atribuicoes: false,
+    manutencoes: false,
+    alertas: false
+  });
+
   useEffect(() => {
     loadAllData();
   }, []);
@@ -215,6 +234,29 @@ const ModuloEquipamentos = () => {
       setEquipamentoSelecionado(null);
     }
   }, [showEditarEquipamentoDialog]);
+  
+  // Função de retry automático
+  const retryOperation = async (operation: () => Promise<any>, maxRetries = 3, delay = 1000) => {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        return await operation();
+      } catch (error) {
+        console.log(`Tentativa ${attempt}/${maxRetries} falhou:`, error);
+        if (attempt === maxRetries) {
+          throw error;
+        }
+        // Aguardar antes da próxima tentativa
+        await new Promise(resolve => setTimeout(resolve, delay * attempt));
+      }
+    }
+  };
+
+  // Função para verificar cache
+  const isCacheValid = (cacheKey: string, maxAge = 5 * 60 * 1000) => { // 5 minutos
+    const cacheData = cache[cacheKey as keyof typeof cache];
+    const lastUpdate = cache.lastUpdate;
+    return cacheData && lastUpdate && (Date.now() - lastUpdate.getTime()) < maxAge;
+  };
 
   const loadAllData = async () => {
     try {
@@ -324,7 +366,17 @@ const ModuloEquipamentos = () => {
   };
 
   const loadEquipamentos = async () => {
+    // Verificar cache primeiro
+    if (isCacheValid('equipamentos')) {
+      console.log('Usando equipamentos do cache');
+      setEquipamentos(cache.equipamentos);
+      return;
+    }
+
+    setLoadingStates(prev => ({ ...prev, equipamentos: true }));
+    
     try {
+      const result = await retryOperation(async () => {
       let query = supabase
         .from('equipamentos_2025_12_13_01_00')
         .select(`
@@ -368,9 +420,27 @@ const ModuloEquipamentos = () => {
         );
       }
       
-      setEquipamentos(filteredData);
+      return filteredData;
+      });
+
+      setEquipamentos(result);
+      
+      // Atualizar cache
+      setCache(prev => ({
+        ...prev,
+        equipamentos: result,
+        lastUpdate: new Date()
+      }));
+      
     } catch (error) {
       console.error('Erro ao carregar equipamentos:', error);
+      toast({
+        title: "Erro ao carregar equipamentos",
+        description: "Tentando novamente...",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingStates(prev => ({ ...prev, equipamentos: false }));
     }
   };
 
@@ -468,6 +538,19 @@ const ModuloEquipamentos = () => {
       'mau': 'bg-red-100 text-red-800'
     };
     return variants[condicao as keyof typeof variants] || 'bg-gray-100 text-gray-800';
+  };
+
+  // Função para cores de fundo das linhas da tabela baseadas no estado
+  const getEstadoRowBackground = (estado: string) => {
+    const backgrounds = {
+      'disponivel': 'bg-green-50 hover:bg-green-100',
+      'em_uso': 'bg-blue-50 hover:bg-blue-100',
+      'manutencao': 'bg-yellow-50 hover:bg-yellow-100',
+      'danificado': 'bg-red-50 hover:bg-red-100',
+      'perdido': 'bg-orange-50 hover:bg-orange-100',
+      'descartado': 'bg-gray-50 hover:bg-gray-100'
+    };
+    return backgrounds[estado as keyof typeof backgrounds] || 'bg-white hover:bg-gray-50';
   };
 
   const formatCurrency = (value: number) => {
@@ -649,6 +732,65 @@ const ModuloEquipamentos = () => {
     });
   };
 
+  // Funções para desativar e eliminar equipamentos
+  const handleDesativarEquipamento = async (equipamento: Equipamento) => {
+    if (!confirm(`Tem certeza que deseja desativar o equipamento "${equipamento.codigo_interno}"?`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('equipamentos_2025_12_13_01_00')
+        .update({ ativo: false })
+        .eq('id', equipamento.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Equipamento desativado",
+        description: `Equipamento "${equipamento.codigo_interno}" foi desativado com sucesso`,
+      });
+
+      loadEquipamentos();
+    } catch (error) {
+      console.error('Erro ao desativar equipamento:', error);
+      toast({
+        title: "Erro ao desativar",
+        description: "Não foi possível desativar o equipamento",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEliminarEquipamento = async (equipamento: Equipamento) => {
+    if (!confirm(`ATENÇÃO: Tem certeza que deseja eliminar permanentemente o equipamento "${equipamento.codigo_interno}"?\n\nEsta ação não pode ser desfeita!`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('equipamentos_2025_12_13_01_00')
+        .delete()
+        .eq('id', equipamento.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Equipamento eliminado",
+        description: `Equipamento "${equipamento.codigo_interno}" foi eliminado permanentemente`,
+      });
+
+      loadEquipamentos();
+    } catch (error) {
+      console.error('Erro ao eliminar equipamento:', error);
+      toast({
+        title: "Erro ao eliminar",
+        description: "Não foi possível eliminar o equipamento",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Aplicar filtros quando mudarem
   useEffect(() => {
     loadEquipamentos();
@@ -769,13 +911,49 @@ const ModuloEquipamentos = () => {
 
           {/* Tabs Principais */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-6">
-              <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-              <TabsTrigger value="inventario">Inventário</TabsTrigger>
-              <TabsTrigger value="atribuicoes">Atribuições</TabsTrigger>
-              <TabsTrigger value="manutencoes">Manutenções</TabsTrigger>
-              <TabsTrigger value="alertas">Alertas</TabsTrigger>
-              <TabsTrigger value="relatorios">Relatórios</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-6 bg-white p-1 rounded-lg shadow-sm">
+              <TabsTrigger 
+                value="dashboard" 
+                className="data-[state=active]:bg-blue-500 data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-200"
+              >
+                <BarChart3 className="h-4 w-4 mr-2" />
+                Dashboard
+              </TabsTrigger>
+              <TabsTrigger 
+                value="inventario" 
+                className="data-[state=active]:bg-green-500 data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-200"
+              >
+                <Package className="h-4 w-4 mr-2" />
+                Inventário
+              </TabsTrigger>
+              <TabsTrigger 
+                value="atribuicoes" 
+                className="data-[state=active]:bg-purple-500 data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-200"
+              >
+                <User className="h-4 w-4 mr-2" />
+                Atribuições
+              </TabsTrigger>
+              <TabsTrigger 
+                value="manutencoes" 
+                className="data-[state=active]:bg-orange-500 data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-200"
+              >
+                <Wrench className="h-4 w-4 mr-2" />
+                Manutenções
+              </TabsTrigger>
+              <TabsTrigger 
+                value="alertas" 
+                className="data-[state=active]:bg-red-500 data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-200"
+              >
+                <AlertTriangle className="h-4 w-4 mr-2" />
+                Alertas
+              </TabsTrigger>
+              <TabsTrigger 
+                value="relatorios" 
+                className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-200"
+              >
+                <TrendingUp className="h-4 w-4 mr-2" />
+                Relatórios
+              </TabsTrigger>
             </TabsList>
 
             {/* Dashboard Tab */}
@@ -1013,9 +1191,17 @@ const ModuloEquipamentos = () => {
                     </div>
 
                     <div className="flex items-end">
-                      <Button onClick={loadEquipamentos} className="w-full">
-                        <Search className="h-4 w-4 mr-2" />
-                        Pesquisar
+                      <Button 
+                        onClick={loadEquipamentos} 
+                        className="w-full" 
+                        disabled={loadingStates.equipamentos}
+                      >
+                        {loadingStates.equipamentos ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <Search className="h-4 w-4 mr-2" />
+                        )}
+                        {loadingStates.equipamentos ? 'Carregando...' : 'Pesquisar'}
                       </Button>
                     </div>
                   </div>
@@ -1030,7 +1216,13 @@ const ModuloEquipamentos = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {equipamentos.length === 0 ? (
+                  {loadingStates.equipamentos ? (
+                    <div className="text-center py-8">
+                      <Loader2 className="h-16 w-16 text-blue-500 mx-auto mb-4 animate-spin" />
+                      <p className="text-gray-500 text-lg">Carregando equipamentos...</p>
+                      <p className="text-gray-400">Por favor, aguarde</p>
+                    </div>
+                  ) : equipamentos.length === 0 ? (
                     <div className="text-center py-8">
                       <Package className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                       <p className="text-gray-500 text-lg">Nenhum equipamento encontrado</p>
@@ -1056,7 +1248,7 @@ const ModuloEquipamentos = () => {
                               getIconComponent(equipamento.tipo_equipamento.categoria.icone) : Package;
                             
                             return (
-                              <TableRow key={equipamento.id}>
+                              <TableRow key={equipamento.id} className={getEstadoRowBackground(equipamento.estado)}>
                                 <TableCell>
                                   <div className="flex items-center space-x-3">
                                     <IconComponent 
@@ -1101,22 +1293,46 @@ const ModuloEquipamentos = () => {
                                   {formatCurrency(equipamento.valor_aquisicao || 0)}
                                 </TableCell>
                                 <TableCell className="text-right">
-                                  <div className="flex items-center justify-end space-x-2">
+                                  <div className="flex items-center justify-end space-x-1">
                                     <Button 
                                       variant="outline" 
                                       size="sm"
                                       onClick={() => handleVerEquipamento(equipamento)}
+                                      className="text-blue-600 hover:text-blue-700"
                                     >
-                                      <Eye className="h-4 w-4 mr-1" />
-                                      Ver
+                                      <Eye className="h-4 w-4" />
                                     </Button>
                                     <Button 
                                       variant="outline" 
                                       size="sm"
                                       onClick={() => handleEditarEquipamento(equipamento)}
+                                      className="text-green-600 hover:text-green-700"
                                     >
-                                      <Edit className="h-4 w-4 mr-1" />
-                                      Editar
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                    {equipamento.ativo ? (
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm"
+                                        onClick={() => handleDesativarEquipamento(equipamento)}
+                                        className="text-orange-600 hover:text-orange-700"
+                                        title="Desativar equipamento"
+                                      >
+                                        <Power className="h-4 w-4" />
+                                      </Button>
+                                    ) : (
+                                      <Badge variant="secondary" className="text-xs">
+                                        Inativo
+                                      </Badge>
+                                    )}
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm"
+                                      onClick={() => handleEliminarEquipamento(equipamento)}
+                                      className="text-red-600 hover:text-red-700"
+                                      title="Eliminar equipamento permanentemente"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
                                     </Button>
                                   </div>
                                 </TableCell>
