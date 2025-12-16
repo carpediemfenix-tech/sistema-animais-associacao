@@ -42,6 +42,7 @@ import FormacoesFrequentadas from "@/pages/FormacoesFrequentadas";
 import RelatoriosVoluntarios from "./pages/RelatoriosVoluntarios";
 import ModuloVoluntarios from "@/pages/ModuloVoluntarios";
 import ModuloFormacao from "@/pages/ModuloFormacao";
+import ModuloAnimais from "./pages/ModuloAnimais";
 import GestaoEspecies from "./pages/GestaoEspecies";
 import GestaoLocalizacoes from "./pages/GestaoLocalizacoes";
 import GestaoCategorias from "./pages/GestaoCategorias";
@@ -52,6 +53,7 @@ import ModuloMissoes from "./pages/ModuloMissoes";
 import ModuloAgenda from "./pages/ModuloAgenda";
 import ModuloEquipamentos from "./pages/ModuloEquipamentos";
 import ModuloClinicas from "./pages/ModuloClinicas";
+import EstatisticasAvancadas from "./pages/EstatisticasAvancadas";
 // Páginas de Equipamentos
 import EquipamentosNavigation from "./pages/equipamentos/EquipamentosNavigation";
 import EquipamentosDashboard from "./pages/equipamentos/EquipamentosDashboard";
@@ -60,10 +62,7 @@ import EquipamentosAtribuicoes from "./pages/equipamentos/EquipamentosAtribuicoe
 import EquipamentosManutencoes from "./pages/equipamentos/EquipamentosManutencoes";
 import EquipamentosAlertas from "./pages/equipamentos/EquipamentosAlertas";
 import EquipamentosRelatorios from "./pages/equipamentos/EquipamentosRelatorios";
-import ModuloClinicas from "./pages/ModuloClinicas";
-import ModuloMissoes from "./pages/ModuloMissoes";
-import ModuloAgenda from "./pages/ModuloAgenda";
-import EstatisticasAvancadas from "./pages/EstatisticasAvancadas";
+import DashboardExecutivo from "./pages/DashboardExecutivo";
 
 // Módulo Financeiro
 import DashboardFinanceiro from "./pages/DashboardFinanceiro";
@@ -127,6 +126,7 @@ const App = () => (
             <Route path="/modulo-missoes" element={<ProtectedRoute><ModuloMissoes /></ProtectedRoute>} />
             <Route path="/modulo-agenda" element={<ProtectedRoute><ModuloAgenda /></ProtectedRoute>} />
             <Route path="/estatisticas-avancadas" element={<ProtectedRoute><EstatisticasAvancadas /></ProtectedRoute>} />
+            <Route path="/dashboard-executivo" element={<ProtectedRoute><DashboardExecutivo /></ProtectedRoute>} />
             <Route path="/voluntario/:id" element={<ProtectedRoute><VoluntarioDetail /></ProtectedRoute>} />
             <Route path="/gestao-financeira" element={<ProtectedRoute><GestaoFinanceira /></ProtectedRoute>} />
             {/* Módulo Financeiro Profissional - F01 a F06 */}

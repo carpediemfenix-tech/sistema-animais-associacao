@@ -194,6 +194,16 @@ const Index = () => {
       rota: '/financeiro',
       desenvolvido: true,
       stats: 'Sistema ativo'
+    },
+    {
+      id: 'dashboard_executivo',
+      nome: 'Dashboard Executivo',
+      descricao: 'Visão estratégica com KPIs avançados e analytics em tempo real',
+      icone: BarChart3,
+      cor: 'bg-indigo-500',
+      rota: '/dashboard-executivo',
+      desenvolvido: true,
+      stats: 'Novo sistema'
     }
   ];
 

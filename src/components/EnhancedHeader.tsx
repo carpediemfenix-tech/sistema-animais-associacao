@@ -24,10 +24,12 @@ import {
   Database,
   Shield,
   Package,
-  DollarSign
+  DollarSign,
+  Bell
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import NotificationCenter from "./NotificationCenter";
 
 interface NavigationButton {
   label: string;
@@ -48,6 +50,8 @@ const EnhancedHeader = () => {
   const navigate = useNavigate();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isConnected, setIsConnected] = useState(true);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notificationCount, setNotificationCount] = useState(0);
 
   // Atualizar hora a cada segundo
   useEffect(() => {
@@ -74,6 +78,34 @@ const EnhancedHeader = () => {
 
     return () => clearInterval(connectionTimer);
   }, []);
+
+  // Carregar contador de notificações
+  useEffect(() => {
+    const loadNotificationCount = async () => {
+      if (!user) return;
+      
+      try {
+        const { count, error } = await supabase
+          .from('notificacoes_sistema_2025_12_16_05_00')
+          .select('*', { count: 'exact', head: true })
+          .eq('usuario_id', user.id)
+          .eq('lida', false);
+
+        if (!error) {
+          setNotificationCount(count || 0);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar notificações:', error);
+      }
+    };
+
+    loadNotificationCount();
+    
+    // Atualizar contador a cada 2 minutos
+    const notificationTimer = setInterval(loadNotificationCount, 2 * 60 * 1000);
+    
+    return () => clearInterval(notificationTimer);
+  }, [user]);
 
   // Mapeamento completo de páginas com IDs únicos
   const pageConfigs: Record<string, PageConfig> = {
@@ -640,6 +672,23 @@ const EnhancedHeader = () => {
               <div className="text-sm font-medium text-gray-900">{user?.email}</div>
               <div className="text-xs text-gray-500">Administrador</div>
             </div>
+            
+            {/* Botão de Notificações */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowNotifications(true)}
+              className="relative flex items-center space-x-2 hover:bg-blue-50 hover:text-blue-600"
+            >
+              <Bell className="h-4 w-4" />
+              {notificationCount > 0 && (
+                <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center p-0">
+                  {notificationCount > 99 ? '99+' : notificationCount}
+                </Badge>
+              )}
+              <span className="hidden sm:inline">Notificações</span>
+            </Button>
+            
             <Button
               variant="ghost"
               size="sm"
@@ -674,6 +723,19 @@ const EnhancedHeader = () => {
           </div>
         </div>
       )}
+      
+      {/* Centro de Notificações */}
+      <NotificationCenter 
+        isOpen={showNotifications}
+        onClose={() => setShowNotifications(false)}
+        onNotificationClick={(notificacao) => {
+          // Navegar para a página relacionada se houver acao_url
+          if (notificacao.acao_url) {
+            navigate(notificacao.acao_url);
+          }
+          setShowNotifications(false);
+        }}
+      />
     </div>
   );
 };
