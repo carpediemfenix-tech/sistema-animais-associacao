@@ -226,7 +226,7 @@ const DashboardFinanceiro = () => {
       .from('movimentos_financeiros_2025_12_13_06_00')
       .select(`
         valor,
-        intervencoes!inner(clinicas_veterinarias(nome))
+        intervencao_id
       `)
       .eq('tipo', 'despesa')
       .not('intervencao_id', 'is', null);
@@ -253,7 +253,7 @@ const DashboardFinanceiro = () => {
       .from('movimentos_financeiros_2025_12_13_06_00')
       .select(`
         valor,
-        intervencoes!inner(tipos_intervencoes(nome))
+        intervencao_id
       `)
       .eq('tipo', 'despesa')
       .not('intervencao_id', 'is', null);

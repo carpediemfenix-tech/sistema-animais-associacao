@@ -197,13 +197,23 @@ const Index = () => {
     },
     {
       id: 'dashboard_executivo',
-      nome: 'Dashboard Executivo',
-      descricao: 'Visão estratégica com KPIs avançados e analytics em tempo real',
+nome: 'Dashboard Executivo',
+      descrição: 'Visão estratégica com KPIs avançados e analytics em tempo real',
       icone: BarChart3,
       cor: 'bg-indigo-500',
       rota: '/dashboard-executivo',
       desenvolvido: true,
       stats: 'Novo sistema'
+    },
+    {
+      id: 'analytics',
+      nome: 'Analytics Avançado',
+      descrição: 'Sistema completo de analytics, métricas de performance e auditoria',
+      icone: BarChart3,
+      cor: 'bg-purple-500',
+      rota: '/analytics',
+      desenvolvido: true,
+      stats: 'Sistema avançado'
     }
   ];
 

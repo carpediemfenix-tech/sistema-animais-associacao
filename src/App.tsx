@@ -48,6 +48,7 @@ import GestaoLocalizacoes from "./pages/GestaoLocalizacoes";
 import GestaoCategorias from "./pages/GestaoCategorias";
 import GestaoClinicas from "./pages/GestaoClinicas";
 import GestaoResponsabilidades from "./pages/GestaoResponsabilidades";
+import PaginaAnalytics from "./pages/PaginaAnalytics";
 import HistoricoNomesAnimais from "./pages/HistoricoNomesAnimais";
 import ModuloMissoes from "./pages/ModuloMissoes";
 import ModuloAgenda from "./pages/ModuloAgenda";
@@ -154,7 +155,8 @@ const App = () => (
             <Route path="/administracao" element={<ProtectedRoute><Administracao /></ProtectedRoute>} />
             <Route path="/modulo-missoes" element={<ProtectedRoute><ModuloMissoes /></ProtectedRoute>} />
             <Route path="/modulo-agenda" element={<ProtectedRoute><ModuloAgenda /></ProtectedRoute>} />
-            <Route path="/modulo-equipamentos" element={<ProtectedRoute><ModuloEquipamentos /></ProtectedRoute>} />
+<Route path="/modulo-equipamentos" element={<ProtectedRoute><ModuloEquipamentos /></ProtectedRoute>} />
+            <Route path="/analytics" element={<ProtectedRoute><PaginaAnalytics /></ProtectedRoute>} />
             
             {/* Rota 404 */}
             <Route path="*" element={<NotFound />} />
