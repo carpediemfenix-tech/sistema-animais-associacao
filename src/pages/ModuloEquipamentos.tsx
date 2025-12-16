@@ -318,6 +318,17 @@ const ModuloEquipamentos = () => {
     observacoes_resolucao: ''
   });
 
+  // Estados para Relatórios e Dashboard
+  const [kpisDashboard, setKpisDashboard] = useState<any>(null);
+  const [relatorioVoluntarios, setRelatorioVoluntarios] = useState<any[]>([]);
+  const [relatorioFinanceiro, setRelatorioFinanceiro] = useState<any[]>([]);
+  const [analiseManutencoes, setAnaliseManutencoes] = useState<any[]>([]);
+  const [analiseAlertas, setAnaliseAlertas] = useState<any[]>([]);
+  const [analiseAtribuicoes, setAnaliseAtribuicoes] = useState<any[]>([]);
+  const [showRelatorioDialog, setShowRelatorioDialog] = useState(false);
+  const [tipoRelatorioSelecionado, setTipoRelatorioSelecionado] = useState<string>('');
+  const [loadingRelatorios, setLoadingRelatorios] = useState(false);
+
   useEffect(() => {
     loadAllData();
   }, []);
@@ -372,7 +383,8 @@ const ModuloEquipamentos = () => {
         loadEquipamentos(),
         loadAtribuicoes(),
         loadManutencoes(),
-        loadAlertas()
+        loadAlertas(),
+        loadAllRelatorios()
       ]);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
@@ -1805,6 +1817,224 @@ const ModuloEquipamentos = () => {
     }
   };
 
+  // ===== FUNÇÕES PARA RELATÓRIOS E DASHBOARD =====
+
+  const loadKpisDashboard = async () => {
+    try {
+      const { data, error } = await supabase.rpc('calcular_kpis_dashboard');
+      
+      if (error) {
+        console.error('Erro ao carregar KPIs:', error);
+        return;
+      }
+      
+      setKpisDashboard(data);
+    } catch (error: any) {
+      console.error('Erro ao carregar KPIs:', error);
+    }
+  };
+
+  const loadRelatorioVoluntarios = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('relatorio_utilizacao_voluntarios')
+        .select('*')
+        .order('total_atribuicoes', { ascending: false })
+        .limit(20);
+      
+      if (error) {
+        console.error('Erro ao carregar relatório de voluntários:', error);
+        return;
+      }
+      
+      setRelatorioVoluntarios(data || []);
+    } catch (error: any) {
+      console.error('Erro ao carregar relatório de voluntários:', error);
+    }
+  };
+
+  const loadRelatorioFinanceiro = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('relatorio_financeiro_equipamentos')
+        .select('*')
+        .order('custo_anual_total', { ascending: false })
+        .limit(20);
+      
+      if (error) {
+        console.error('Erro ao carregar relatório financeiro:', error);
+        return;
+      }
+      
+      setRelatorioFinanceiro(data || []);
+    } catch (error: any) {
+      console.error('Erro ao carregar relatório financeiro:', error);
+    }
+  };
+
+  const loadAnaliseManutencoes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('analise_manutencoes')
+        .select('*')
+        .order('mes', { ascending: false })
+        .limit(12);
+      
+      if (error) {
+        console.error('Erro ao carregar análise de manutenções:', error);
+        return;
+      }
+      
+      setAnaliseManutencoes(data || []);
+    } catch (error: any) {
+      console.error('Erro ao carregar análise de manutenções:', error);
+    }
+  };
+
+  const loadAnaliseAlertas = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('analise_alertas')
+        .select('*')
+        .order('total_alertas', { ascending: false });
+      
+      if (error) {
+        console.error('Erro ao carregar análise de alertas:', error);
+        return;
+      }
+      
+      setAnaliseAlertas(data || []);
+    } catch (error: any) {
+      console.error('Erro ao carregar análise de alertas:', error);
+    }
+  };
+
+  const loadAnaliseAtribuicoes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('analise_atribuicoes')
+        .select('*')
+        .order('mes', { ascending: false })
+        .limit(12);
+      
+      if (error) {
+        console.error('Erro ao carregar análise de atribuições:', error);
+        return;
+      }
+      
+      setAnaliseAtribuicoes(data || []);
+    } catch (error: any) {
+      console.error('Erro ao carregar análise de atribuições:', error);
+    }
+  };
+
+  const loadAllRelatorios = async () => {
+    setLoadingRelatorios(true);
+    try {
+      await Promise.all([
+        loadKpisDashboard(),
+        loadRelatorioVoluntarios(),
+        loadRelatorioFinanceiro(),
+        loadAnaliseManutencoes(),
+        loadAnaliseAlertas(),
+        loadAnaliseAtribuicoes()
+      ]);
+    } catch (error) {
+      console.error('Erro ao carregar relatórios:', error);
+    } finally {
+      setLoadingRelatorios(false);
+    }
+  };
+
+  const handleGerarRelatorio = (tipo: string) => {
+    setTipoRelatorioSelecionado(tipo);
+    setShowRelatorioDialog(true);
+  };
+
+  const handleExportarRelatorio = async (tipo: string, formato: 'excel' | 'pdf') => {
+    try {
+      let dados: any[] = [];
+      let nomeArquivo = '';
+      
+      switch (tipo) {
+        case 'voluntarios':
+          dados = relatorioVoluntarios;
+          nomeArquivo = 'relatorio_utilizacao_voluntarios';
+          break;
+        case 'financeiro':
+          dados = relatorioFinanceiro;
+          nomeArquivo = 'relatorio_financeiro_equipamentos';
+          break;
+        case 'manutencoes':
+          dados = analiseManutencoes;
+          nomeArquivo = 'analise_manutencoes';
+          break;
+        case 'alertas':
+          dados = analiseAlertas;
+          nomeArquivo = 'analise_alertas';
+          break;
+        case 'atribuicoes':
+          dados = analiseAtribuicoes;
+          nomeArquivo = 'analise_atribuicoes';
+          break;
+        default:
+          return;
+      }
+      
+      if (formato === 'excel') {
+        // Simular exportação para Excel
+        const csvContent = convertToCSV(dados);
+        downloadFile(csvContent, `${nomeArquivo}.csv`, 'text/csv');
+      } else {
+        // Simular exportação para PDF
+        toast({
+          title: 'Funcionalidade em Desenvolvimento',
+          description: 'Exportação para PDF será implementada em breve',
+        });
+      }
+      
+      toast({
+        title: 'Sucesso',
+        description: `Relatório ${tipo} exportado com sucesso`,
+      });
+    } catch (error: any) {
+      console.error('Erro ao exportar relatório:', error);
+      toast({
+        title: 'Erro',
+        description: 'Erro ao exportar relatório',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const convertToCSV = (data: any[]) => {
+    if (!data.length) return '';
+    
+    const headers = Object.keys(data[0]).join(',');
+    const rows = data.map(row => 
+      Object.values(row).map(value => 
+        typeof value === 'string' ? `"${value}"` : value
+      ).join(',')
+    );
+    
+    return [headers, ...rows].join('\n');
+  };
+
+  const downloadFile = (content: string, fileName: string, contentType: string) => {
+    const blob = new Blob([content], { type: contentType });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  };
+  const formatPercentage = (value: number) => {
+    return `${value.toFixed(1)}%`;
+  };
+
   // Funções para desativar e eliminar equipamentos
   const handleDesativarEquipamento = async (equipamento: Equipamento) => {
     if (!confirm('Tem certeza que deseja desativar o equipamento "' + equipamento.codigo_interno + '"?')) {
@@ -2976,117 +3206,357 @@ const ModuloEquipamentos = () => {
               </Card>
             </TabsContent>
 
-            {/* Relatórios Tab */}
+            {/* Dashboard e Relatórios Tab */}
             <TabsContent value="relatorios" className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <BarChart3 className="h-5 w-5 mr-2 text-blue-600" />
-                      Relatório de Inventário
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-gray-600 mb-4">
-                      Relatório completo do inventário por categoria e estado
-                    </p>
-                    <Button className="w-full">
-                      <Download className="h-4 w-4 mr-2" />
-                      Gerar Relatório
-                    </Button>
-                  </CardContent>
-                </Card>
-
-                <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <User className="h-5 w-5 mr-2 text-green-600" />
-                      Relatório de Atribuições
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-gray-600 mb-4">
-                      Equipamentos atribuídos por voluntário e período
-                    </p>
-                    <Button className="w-full">
-                      <Download className="h-4 w-4 mr-2" />
-                      Gerar Relatório
-                    </Button>
-                  </CardContent>
-                </Card>
-
-                <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <Wrench className="h-5 w-5 mr-2 text-yellow-600" />
-                      Relatório de Manutenções
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-gray-600 mb-4">
-                      Histórico de manutenções e custos associados
-                    </p>
-                    <Button className="w-full">
-                      <Download className="h-4 w-4 mr-2" />
-                      Gerar Relatório
-                    </Button>
-                  </CardContent>
-                </Card>
-
-                <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <TrendingUp className="h-5 w-5 mr-2 text-purple-600" />
-                      Análise de Custos
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-gray-600 mb-4">
-                      Análise de custos de aquisição e manutenção
-                    </p>
-                    <Button className="w-full">
-                      <Download className="h-4 w-4 mr-2" />
-                      Gerar Relatório
-                    </Button>
-                  </CardContent>
-                </Card>
-
-                <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <Activity className="h-5 w-5 mr-2 text-red-600" />
-                      Utilização de Equipamentos
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-gray-600 mb-4">
-                      Histórico de utilização e eficiência
-                    </p>
-                    <Button className="w-full">
-                      <Download className="h-4 w-4 mr-2" />
-                      Gerar Relatório
-                    </Button>
-                  </CardContent>
-                </Card>
-
-                <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <AlertTriangle className="h-5 w-5 mr-2 text-orange-600" />
-                      Alertas e Reposições
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-gray-600 mb-4">
-                      Relatório de alertas e necessidades de reposição
-                    </p>
-                    <Button className="w-full">
-                      <Download className="h-4 w-4 mr-2" />
-                      Gerar Relatório
-                    </Button>
-                  </CardContent>
-                </Card>
-              </div>
+              {loadingRelatorios ? (
+                <div className="text-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+                  <p className="text-gray-600">Carregando dashboard e relatórios...</p>
+                </div>
+              ) : (
+                <>
+                  {/* KPIs Dashboard */}
+                  {kpisDashboard && (
+                    <div className="space-y-6">
+                      <div className="flex justify-between items-center">
+                        <h3 className="text-lg font-semibold">Dashboard de KPIs</h3>
+                        <Button onClick={loadAllRelatorios} variant="outline" size="sm">
+                          <RefreshCw className="h-4 w-4 mr-2" />
+                          Atualizar
+                        </Button>
+                      </div>
+                      
+                      {/* Métricas Principais */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+                          <CardContent className="p-6">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="text-blue-100 text-sm font-medium">Total de Equipamentos</p>
+                                <p className="text-3xl font-bold">{kpisDashboard.equipamentos?.total || 0}</p>
+                              </div>
+                              <Package className="h-8 w-8 text-blue-200" />
+                            </div>
+                            <div className="mt-4">
+                              <p className="text-blue-100 text-sm">
+                                Taxa de Utilização: {formatPercentage(kpisDashboard.equipamentos?.taxa_utilizacao || 0)}
+                              </p>
+                            </div>
+                          </CardContent>
+                        </Card>
+                        
+                        <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
+                          <CardContent className="p-6">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="text-green-100 text-sm font-medium">Valor do Inventário</p>
+                                <p className="text-3xl font-bold">
+                                  {formatCurrency(kpisDashboard.financeiro?.valor_total_inventario || 0)}
+                                </p>
+                              </div>
+                              <DollarSign className="h-8 w-8 text-green-200" />
+                            </div>
+                            <div className="mt-4">
+                              <p className="text-green-100 text-sm">
+                                Custos Mês: {formatCurrency(kpisDashboard.financeiro?.custo_manutencoes_mes || 0)}
+                              </p>
+                            </div>
+                          </CardContent>
+                        </Card>
+                        
+                        <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
+                          <CardContent className="p-6">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="text-orange-100 text-sm font-medium">Alertas Ativos</p>
+                                <p className="text-3xl font-bold">{kpisDashboard.alertas?.total_ativos || 0}</p>
+                              </div>
+                              <Bell className="h-8 w-8 text-orange-200" />
+                            </div>
+                            <div className="mt-4">
+                              <p className="text-orange-100 text-sm">
+                                Críticos: {kpisDashboard.alertas?.criticos || 0} | Altos: {kpisDashboard.alertas?.altos || 0}
+                              </p>
+                            </div>
+                          </CardContent>
+                        </Card>
+                        
+                        <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
+                          <CardContent className="p-6">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="text-purple-100 text-sm font-medium">Manutenções</p>
+                                <p className="text-3xl font-bold">{kpisDashboard.manutencoes?.agendadas || 0}</p>
+                              </div>
+                              <Wrench className="h-8 w-8 text-purple-200" />
+                            </div>
+                            <div className="mt-4">
+                              <p className="text-purple-100 text-sm">
+                                Em Andamento: {kpisDashboard.manutencoes?.em_andamento || 0}
+                              </p>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
+                      
+                      {/* Distribuição de Estados */}
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="flex items-center">
+                              <PieChart className="h-5 w-5 mr-2 text-blue-600" />
+                              Distribuição por Estado
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-2">
+                                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                                  <span className="text-sm">Disponíveis</span>
+                                </div>
+                                <span className="font-medium">{kpisDashboard.equipamentos?.disponiveis || 0}</span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-2">
+                                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                                  <span className="text-sm">Em Uso</span>
+                                </div>
+                                <span className="font-medium">{kpisDashboard.equipamentos?.em_uso || 0}</span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-2">
+                                  <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                                  <span className="text-sm">Manutenção</span>
+                                </div>
+                                <span className="font-medium">{kpisDashboard.equipamentos?.manutencao || 0}</span>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                        
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="flex items-center">
+                              <TrendingUp className="h-5 w-5 mr-2 text-green-600" />
+                              Atribuições do Mês
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-gray-600">Atribuições Ativas</span>
+                                <span className="font-medium text-green-600">{kpisDashboard.atribuicoes?.ativas || 0}</span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-gray-600">Vencidas</span>
+                                <span className="font-medium text-red-600">{kpisDashboard.atribuicoes?.vencidas || 0}</span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-gray-600">Total do Mês</span>
+                                <span className="font-medium">{kpisDashboard.atribuicoes?.total_mes || 0}</span>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Relatórios Disponíveis */}
+                  <div className="space-y-6">
+                    <h3 className="text-lg font-semibold">Relatórios Disponíveis</h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+                        <CardHeader>
+                          <CardTitle className="flex items-center">
+                            <User className="h-5 w-5 mr-2 text-blue-600" />
+                            Utilização por Voluntário
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-sm text-gray-600 mb-4">
+                            Análise detalhada da utilização de equipamentos por voluntário
+                          </p>
+                          <div className="flex space-x-2">
+                            <Button 
+                              onClick={() => handleGerarRelatorio('voluntarios')} 
+                              className="flex-1"
+                              size="sm"
+                            >
+                              <Eye className="h-4 w-4 mr-2" />
+                              Ver
+                            </Button>
+                            <Button 
+                              onClick={() => handleExportarRelatorio('voluntarios', 'excel')} 
+                              variant="outline"
+                              size="sm"
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+                        <CardHeader>
+                          <CardTitle className="flex items-center">
+                            <DollarSign className="h-5 w-5 mr-2 text-green-600" />
+                            Relatório Financeiro
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-sm text-gray-600 mb-4">
+                            Análise de custos, investimentos e ROI dos equipamentos
+                          </p>
+                          <div className="flex space-x-2">
+                            <Button 
+                              onClick={() => handleGerarRelatorio('financeiro')} 
+                              className="flex-1"
+                              size="sm"
+                            >
+                              <Eye className="h-4 w-4 mr-2" />
+                              Ver
+                            </Button>
+                            <Button 
+                              onClick={() => handleExportarRelatorio('financeiro', 'excel')} 
+                              variant="outline"
+                              size="sm"
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+                        <CardHeader>
+                          <CardTitle className="flex items-center">
+                            <Wrench className="h-5 w-5 mr-2 text-yellow-600" />
+                            Análise de Manutenções
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-sm text-gray-600 mb-4">
+                            Tendências, custos e eficiência das manutenções
+                          </p>
+                          <div className="flex space-x-2">
+                            <Button 
+                              onClick={() => handleGerarRelatorio('manutencoes')} 
+                              className="flex-1"
+                              size="sm"
+                            >
+                              <Eye className="h-4 w-4 mr-2" />
+                              Ver
+                            </Button>
+                            <Button 
+                              onClick={() => handleExportarRelatorio('manutencoes', 'excel')} 
+                              variant="outline"
+                              size="sm"
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+                        <CardHeader>
+                          <CardTitle className="flex items-center">
+                            <Bell className="h-5 w-5 mr-2 text-orange-600" />
+                            Análise de Alertas
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-sm text-gray-600 mb-4">
+                            Padrões de alertas e tempo de resolução
+                          </p>
+                          <div className="flex space-x-2">
+                            <Button 
+                              onClick={() => handleGerarRelatorio('alertas')} 
+                              className="flex-1"
+                              size="sm"
+                            >
+                              <Eye className="h-4 w-4 mr-2" />
+                              Ver
+                            </Button>
+                            <Button 
+                              onClick={() => handleExportarRelatorio('alertas', 'excel')} 
+                              variant="outline"
+                              size="sm"
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+                        <CardHeader>
+                          <CardTitle className="flex items-center">
+                            <TrendingUp className="h-5 w-5 mr-2 text-purple-600" />
+                            Análise de Atribuições
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-sm text-gray-600 mb-4">
+                            Padrões de uso e eficiência das atribuições
+                          </p>
+                          <div className="flex space-x-2">
+                            <Button 
+                              onClick={() => handleGerarRelatorio('atribuicoes')} 
+                              className="flex-1"
+                              size="sm"
+                            >
+                              <Eye className="h-4 w-4 mr-2" />
+                              Ver
+                            </Button>
+                            <Button 
+                              onClick={() => handleExportarRelatorio('atribuicoes', 'excel')} 
+                              variant="outline"
+                              size="sm"
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+                        <CardHeader>
+                          <CardTitle className="flex items-center">
+                            <BarChart3 className="h-5 w-5 mr-2 text-indigo-600" />
+                            Relatório Completo
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-sm text-gray-600 mb-4">
+                            Relatório executivo com todas as métricas e análises
+                          </p>
+                          <div className="flex space-x-2">
+                            <Button 
+                              onClick={() => handleGerarRelatorio('completo')} 
+                              className="flex-1"
+                              size="sm"
+                            >
+                              <Eye className="h-4 w-4 mr-2" />
+                              Ver
+                            </Button>
+                            <Button 
+                              onClick={() => handleExportarRelatorio('completo', 'excel')} 
+                              variant="outline"
+                              size="sm"
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+                </>
+              )}
             </TabsContent>
           </Tabs>
         </div>
@@ -5052,6 +5522,362 @@ const ModuloEquipamentos = () => {
           
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowGerenciarAlertasDialog(false)}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo de Relatórios Detalhados */}
+      <Dialog open={showRelatorioDialog} onOpenChange={setShowRelatorioDialog}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <BarChart3 className="h-5 w-5 mr-2 text-blue-600" />
+              Relatório Detalhado - {tipoRelatorioSelecionado}
+            </DialogTitle>
+            <DialogDescription>
+              Análise completa e detalhada dos dados selecionados
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Relatório de Voluntários */}
+            {tipoRelatorioSelecionado === 'voluntarios' && (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h4 className="font-medium">Utilização por Voluntário</h4>
+                  <Button 
+                    onClick={() => handleExportarRelatorio('voluntarios', 'excel')} 
+                    variant="outline" 
+                    size="sm"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Exportar Excel
+                  </Button>
+                </div>
+                
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse border border-gray-300">
+                    <thead>
+                      <tr className="bg-gray-50">
+                        <th className="border border-gray-300 px-4 py-2 text-left">Voluntário</th>
+                        <th className="border border-gray-300 px-4 py-2 text-center">Total Atribuições</th>
+                        <th className="border border-gray-300 px-4 py-2 text-center">Ativas</th>
+                        <th className="border border-gray-300 px-4 py-2 text-center">Devolvidas</th>
+                        <th className="border border-gray-300 px-4 py-2 text-center">Perdidos</th>
+                        <th className="border border-gray-300 px-4 py-2 text-center">Danificados</th>
+                        <th className="border border-gray-300 px-4 py-2 text-center">Equipamentos Diferentes</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {relatorioVoluntarios.map((voluntario, index) => (
+                        <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          <td className="border border-gray-300 px-4 py-2">
+                            <div>
+                              <div className="font-medium">{voluntario.voluntario_nome}</div>
+                              <div className="text-sm text-gray-600">{voluntario.voluntario_email}</div>
+                            </div>
+                          </td>
+                          <td className="border border-gray-300 px-4 py-2 text-center font-medium">
+                            {voluntario.total_atribuicoes}
+                          </td>
+                          <td className="border border-gray-300 px-4 py-2 text-center">
+                            <Badge className="bg-green-100 text-green-800">
+                              {voluntario.atribuicoes_ativas}
+                            </Badge>
+                          </td>
+                          <td className="border border-gray-300 px-4 py-2 text-center">
+                            <Badge className="bg-blue-100 text-blue-800">
+                              {voluntario.atribuicoes_devolvidas}
+                            </Badge>
+                          </td>
+                          <td className="border border-gray-300 px-4 py-2 text-center">
+                            <Badge className="bg-red-100 text-red-800">
+                              {voluntario.equipamentos_perdidos}
+                            </Badge>
+                          </td>
+                          <td className="border border-gray-300 px-4 py-2 text-center">
+                            <Badge className="bg-orange-100 text-orange-800">
+                              {voluntario.equipamentos_danificados}
+                            </Badge>
+                          </td>
+                          <td className="border border-gray-300 px-4 py-2 text-center">
+                            {voluntario.equipamentos_diferentes_utilizados}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+            
+            {/* Relatório Financeiro */}
+            {tipoRelatorioSelecionado === 'financeiro' && (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h4 className="font-medium">Análise Financeira de Equipamentos</h4>
+                  <Button 
+                    onClick={() => handleExportarRelatorio('financeiro', 'excel')} 
+                    variant="outline" 
+                    size="sm"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Exportar Excel
+                  </Button>
+                </div>
+                
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse border border-gray-300">
+                    <thead>
+                      <tr className="bg-gray-50">
+                        <th className="border border-gray-300 px-4 py-2 text-left">Equipamento</th>
+                        <th className="border border-gray-300 px-4 py-2 text-center">Valor Aquisição</th>
+                        <th className="border border-gray-300 px-4 py-2 text-center">Custo Manutenções</th>
+                        <th className="border border-gray-300 px-4 py-2 text-center">Custo Anual</th>
+                        <th className="border border-gray-300 px-4 py-2 text-center">Idade (Anos)</th>
+                        <th className="border border-gray-300 px-4 py-2 text-center">Total Atribuições</th>
+                        <th className="border border-gray-300 px-4 py-2 text-center">Estado</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {relatorioFinanceiro.map((equipamento, index) => (
+                        <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          <td className="border border-gray-300 px-4 py-2">
+                            <div>
+                              <div className="font-medium">{equipamento.codigo_interno}</div>
+                              <div className="text-sm text-gray-600">{equipamento.tipo_equipamento}</div>
+                            </div>
+                          </td>
+                          <td className="border border-gray-300 px-4 py-2 text-center font-medium">
+                            {formatCurrency(equipamento.valor_aquisicao || 0)}
+                          </td>
+                          <td className="border border-gray-300 px-4 py-2 text-center">
+                            {formatCurrency(equipamento.custo_total_manutencoes || 0)}
+                          </td>
+                          <td className="border border-gray-300 px-4 py-2 text-center font-medium">
+                            {formatCurrency(equipamento.custo_anual_total || 0)}
+                          </td>
+                          <td className="border border-gray-300 px-4 py-2 text-center">
+                            {(equipamento.idade_anos || 0).toFixed(1)}
+                          </td>
+                          <td className="border border-gray-300 px-4 py-2 text-center">
+                            {equipamento.total_atribuicoes}
+                          </td>
+                          <td className="border border-gray-300 px-4 py-2 text-center">
+                            <Badge className={getEstadoRowBackground(equipamento.estado)}>
+                              {equipamento.estado}
+                            </Badge>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+            
+            {/* Análise de Manutenções */}
+            {tipoRelatorioSelecionado === 'manutencoes' && (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h4 className="font-medium">Análise de Manutenções por Mês</h4>
+                  <Button 
+                    onClick={() => handleExportarRelatorio('manutencoes', 'excel')} 
+                    variant="outline" 
+                    size="sm"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Exportar Excel
+                  </Button>
+                </div>
+                
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse border border-gray-300">
+                    <thead>
+                      <tr className="bg-gray-50">
+                        <th className="border border-gray-300 px-4 py-2 text-left">Mês</th>
+                        <th className="border border-gray-300 px-4 py-2 text-center">Total</th>
+                        <th className="border border-gray-300 px-4 py-2 text-center">Preventivas</th>
+                        <th className="border border-gray-300 px-4 py-2 text-center">Corretivas</th>
+                        <th className="border border-gray-300 px-4 py-2 text-center">Custo Total</th>
+                        <th className="border border-gray-300 px-4 py-2 text-center">Custo Médio</th>
+                        <th className="border border-gray-300 px-4 py-2 text-center">Concluídas</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {analiseManutencoes.map((mes, index) => (
+                        <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          <td className="border border-gray-300 px-4 py-2 font-medium">
+                            {new Date(mes.mes).toLocaleDateString('pt-PT', { year: 'numeric', month: 'long' })}
+                          </td>
+                          <td className="border border-gray-300 px-4 py-2 text-center font-medium">
+                            {mes.total_manutencoes}
+                          </td>
+                          <td className="border border-gray-300 px-4 py-2 text-center">
+                            <Badge className="bg-green-100 text-green-800">
+                              {mes.manutencoes_preventivas}
+                            </Badge>
+                          </td>
+                          <td className="border border-gray-300 px-4 py-2 text-center">
+                            <Badge className="bg-orange-100 text-orange-800">
+                              {mes.manutencoes_corretivas}
+                            </Badge>
+                          </td>
+                          <td className="border border-gray-300 px-4 py-2 text-center font-medium">
+                            {formatCurrency(mes.custo_total_mes || 0)}
+                          </td>
+                          <td className="border border-gray-300 px-4 py-2 text-center">
+                            {formatCurrency(mes.custo_medio_manutencao || 0)}
+                          </td>
+                          <td className="border border-gray-300 px-4 py-2 text-center">
+                            <Badge className="bg-blue-100 text-blue-800">
+                              {mes.manutencoes_concluidas}
+                            </Badge>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+            
+            {/* Análise de Alertas */}
+            {tipoRelatorioSelecionado === 'alertas' && (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h4 className="font-medium">Análise de Alertas por Tipo e Prioridade</h4>
+                  <Button 
+                    onClick={() => handleExportarRelatorio('alertas', 'excel')} 
+                    variant="outline" 
+                    size="sm"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Exportar Excel
+                  </Button>
+                </div>
+                
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse border border-gray-300">
+                    <thead>
+                      <tr className="bg-gray-50">
+                        <th className="border border-gray-300 px-4 py-2 text-left">Tipo de Alerta</th>
+                        <th className="border border-gray-300 px-4 py-2 text-center">Prioridade</th>
+                        <th className="border border-gray-300 px-4 py-2 text-center">Total</th>
+                        <th className="border border-gray-300 px-4 py-2 text-center">Ativos</th>
+                        <th className="border border-gray-300 px-4 py-2 text-center">Resolvidos</th>
+                        <th className="border border-gray-300 px-4 py-2 text-center">Tempo Médio Resolução</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {analiseAlertas.map((alerta, index) => (
+                        <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          <td className="border border-gray-300 px-4 py-2">
+                            <div className="flex items-center space-x-2">
+                              <span className="text-lg">{getTipoAlertaIcon(alerta.tipo_alerta)}</span>
+                              <span className="font-medium">{alerta.tipo_alerta.replace('_', ' ')}</span>
+                            </div>
+                          </td>
+                          <td className="border border-gray-300 px-4 py-2 text-center">
+                            <Badge className={getPrioridadeAlertaBadge(alerta.prioridade)}>
+                              {alerta.prioridade.toUpperCase()}
+                            </Badge>
+                          </td>
+                          <td className="border border-gray-300 px-4 py-2 text-center font-medium">
+                            {alerta.total_alertas}
+                          </td>
+                          <td className="border border-gray-300 px-4 py-2 text-center">
+                            <Badge className="bg-red-100 text-red-800">
+                              {alerta.alertas_ativos}
+                            </Badge>
+                          </td>
+                          <td className="border border-gray-300 px-4 py-2 text-center">
+                            <Badge className="bg-green-100 text-green-800">
+                              {alerta.alertas_resolvidos}
+                            </Badge>
+                          </td>
+                          <td className="border border-gray-300 px-4 py-2 text-center">
+                            {alerta.tempo_medio_resolucao_dias ? `${alerta.tempo_medio_resolucao_dias.toFixed(1)} dias` : 'N/A'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+            
+            {/* Análise de Atribuições */}
+            {tipoRelatorioSelecionado === 'atribuicoes' && (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h4 className="font-medium">Análise de Atribuições por Mês</h4>
+                  <Button 
+                    onClick={() => handleExportarRelatorio('atribuicoes', 'excel')} 
+                    variant="outline" 
+                    size="sm"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Exportar Excel
+                  </Button>
+                </div>
+                
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse border border-gray-300">
+                    <thead>
+                      <tr className="bg-gray-50">
+                        <th className="border border-gray-300 px-4 py-2 text-left">Mês</th>
+                        <th className="border border-gray-300 px-4 py-2 text-center">Total Atribuições</th>
+                        <th className="border border-gray-300 px-4 py-2 text-center">Ativas</th>
+                        <th className="border border-gray-300 px-4 py-2 text-center">Devolvidas</th>
+                        <th className="border border-gray-300 px-4 py-2 text-center">Perdidas</th>
+                        <th className="border border-gray-300 px-4 py-2 text-center">Tempo Médio Uso</th>
+                        <th className="border border-gray-300 px-4 py-2 text-center">Voluntários Únicos</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {analiseAtribuicoes.map((mes, index) => (
+                        <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          <td className="border border-gray-300 px-4 py-2 font-medium">
+                            {new Date(mes.mes).toLocaleDateString('pt-PT', { year: 'numeric', month: 'long' })}
+                          </td>
+                          <td className="border border-gray-300 px-4 py-2 text-center font-medium">
+                            {mes.total_atribuicoes}
+                          </td>
+                          <td className="border border-gray-300 px-4 py-2 text-center">
+                            <Badge className="bg-green-100 text-green-800">
+                              {mes.atribuicoes_ativas}
+                            </Badge>
+                          </td>
+                          <td className="border border-gray-300 px-4 py-2 text-center">
+                            <Badge className="bg-blue-100 text-blue-800">
+                              {mes.atribuicoes_devolvidas}
+                            </Badge>
+                          </td>
+                          <td className="border border-gray-300 px-4 py-2 text-center">
+                            <Badge className="bg-red-100 text-red-800">
+                              {mes.equipamentos_perdidos}
+                            </Badge>
+                          </td>
+                          <td className="border border-gray-300 px-4 py-2 text-center">
+                            {mes.tempo_medio_uso_dias ? `${mes.tempo_medio_uso_dias.toFixed(1)} dias` : 'N/A'}
+                          </td>
+                          <td className="border border-gray-300 px-4 py-2 text-center">
+                            {mes.voluntarios_unicos}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRelatorioDialog(false)}>
               Fechar
             </Button>
           </DialogFooter>
