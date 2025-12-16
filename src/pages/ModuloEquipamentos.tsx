@@ -214,6 +214,40 @@ const ModuloEquipamentos = () => {
     alertas: false
   });
 
+  // Estados para CRUD de Configurações
+  const [showNovaCategoriaDialog, setShowNovaCategoriaDialog] = useState(false);
+  const [showEditarCategoriaDialog, setShowEditarCategoriaDialog] = useState(false);
+  const [showNovoTipoDialog, setShowNovoTipoDialog] = useState(false);
+  const [showEditarTipoDialog, setShowEditarTipoDialog] = useState(false);
+  const [categoriaSelecionada, setCategoriaSelecionada] = useState<CategoriaEquipamento | null>(null);
+  const [tipoSelecionado, setTipoSelecionado] = useState<TipoEquipamento | null>(null);
+
+  // Formulários para CRUD
+  const [categoriaForm, setCategoriaForm] = useState({
+    nome: '',
+    descricao: '',
+    codigo: '',
+    cor: '#3B82F6',
+    icone: 'Package',
+    ordem: 0,
+    ativo: true
+  });
+
+  const [tipoForm, setTipoForm] = useState({
+    categoria_id: '',
+    nome: '',
+    descricao: '',
+    codigo: '',
+    unidade_medida: 'unidade',
+    vida_util_meses: 12,
+    requer_manutencao: false,
+    intervalo_manutencao_dias: 30,
+    valor_unitario: 0,
+    fornecedor: '',
+    observacoes: '',
+    ativo: true
+  });
+
   useEffect(() => {
     loadAllData();
   }, []);
@@ -730,6 +764,498 @@ const ModuloEquipamentos = () => {
       garantia_ate: equipamento.garantia_ate,
       observacoes: equipamento.observacoes || ''
     });
+  };
+
+  // ========== FUNÇÕES CRUD PARA CATEGORIAS ==========
+  
+  const resetCategoriaForm = () => {
+    setCategoriaForm({
+      nome: '',
+      descricao: '',
+      codigo: '',
+      cor: '#3B82F6',
+      icone: 'Package',
+      ordem: 0,
+      ativo: true
+    });
+  };
+
+  const handleNovaCategoria = () => {
+    resetCategoriaForm();
+    setCategoriaSelecionada(null);
+    setShowNovaCategoriaDialog(true);
+  };
+
+  const handleEditarCategoria = (categoria: CategoriaEquipamento) => {
+    setCategoriaForm({
+      nome: categoria.nome,
+      descricao: categoria.descricao,
+      codigo: categoria.codigo,
+      cor: categoria.cor,
+      icone: categoria.icone,
+      ordem: categoria.ordem,
+      ativo: categoria.ativo
+    });
+    setCategoriaSelecionada(categoria);
+    setShowEditarCategoriaDialog(true);
+  };
+
+  const handleCriarCategoria = async () => {
+    try {
+      // Validações
+      if (!categoriaForm.nome.trim()) {
+        toast({
+          title: "Campo obrigatório",
+          description: "O nome da categoria é obrigatório",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!categoriaForm.codigo.trim()) {
+        toast({
+          title: "Campo obrigatório",
+          description: "O código da categoria é obrigatório",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Verificar se o código já existe
+      const { data: existingCategoria } = await supabase
+        .from('categorias_equipamentos_2025_12_13_01_00')
+        .select('id')
+        .eq('codigo', categoriaForm.codigo)
+        .single();
+
+      if (existingCategoria) {
+        toast({
+          title: "Código duplicado",
+          description: "Já existe uma categoria com este código",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Obter próxima ordem se não especificada
+      if (categoriaForm.ordem === 0) {
+        const { data: maxOrdem } = await supabase
+          .from('categorias_equipamentos_2025_12_13_01_00')
+          .select('ordem')
+          .order('ordem', { ascending: false })
+          .limit(1)
+          .single();
+        
+        categoriaForm.ordem = (maxOrdem?.ordem || 0) + 1;
+      }
+
+      const { error } = await supabase
+        .from('categorias_equipamentos_2025_12_13_01_00')
+        .insert([categoriaForm]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Categoria criada",
+        description: `Categoria "${categoriaForm.nome}" criada com sucesso`,
+      });
+
+      setShowNovaCategoriaDialog(false);
+      resetCategoriaForm();
+      loadCategorias();
+    } catch (error) {
+      console.error('Erro ao criar categoria:', error);
+      toast({
+        title: "Erro ao criar categoria",
+        description: "Não foi possível criar a categoria",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAtualizarCategoria = async () => {
+    if (!categoriaSelecionada) return;
+
+    try {
+      // Validações
+      if (!categoriaForm.nome.trim()) {
+        toast({
+          title: "Campo obrigatório",
+          description: "O nome da categoria é obrigatório",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Verificar se o código já existe (exceto na categoria atual)
+      const { data: existingCategoria } = await supabase
+        .from('categorias_equipamentos_2025_12_13_01_00')
+        .select('id')
+        .eq('codigo', categoriaForm.codigo)
+        .neq('id', categoriaSelecionada.id)
+        .single();
+
+      if (existingCategoria) {
+        toast({
+          title: "Código duplicado",
+          description: "Já existe uma categoria com este código",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { error } = await supabase
+        .from('categorias_equipamentos_2025_12_13_01_00')
+        .update(categoriaForm)
+        .eq('id', categoriaSelecionada.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Categoria atualizada",
+        description: `Categoria "${categoriaForm.nome}" atualizada com sucesso`,
+      });
+
+      setShowEditarCategoriaDialog(false);
+      resetCategoriaForm();
+      setCategoriaSelecionada(null);
+      loadCategorias();
+    } catch (error) {
+      console.error('Erro ao atualizar categoria:', error);
+      toast({
+        title: "Erro ao atualizar categoria",
+        description: "Não foi possível atualizar a categoria",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDesativarCategoria = async (categoria: CategoriaEquipamento) => {
+    if (!confirm(`Tem certeza que deseja ${categoria.ativo ? 'desativar' : 'ativar'} a categoria "${categoria.nome}"?`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('categorias_equipamentos_2025_12_13_01_00')
+        .update({ ativo: !categoria.ativo })
+        .eq('id', categoria.id);
+
+      if (error) throw error;
+
+      toast({
+        title: categoria.ativo ? "Categoria desativada" : "Categoria ativada",
+        description: `Categoria "${categoria.nome}" ${categoria.ativo ? 'desativada' : 'ativada'} com sucesso`,
+      });
+
+      loadCategorias();
+    } catch (error) {
+      console.error('Erro ao alterar status da categoria:', error);
+      toast({
+        title: "Erro ao alterar status",
+        description: "Não foi possível alterar o status da categoria",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEliminarCategoria = async (categoria: CategoriaEquipamento) => {
+    // Verificar se há tipos de equipamentos associados
+    const { data: tiposAssociados } = await supabase
+      .from('tipos_equipamentos_2025_12_13_01_00')
+      .select('id')
+      .eq('categoria_id', categoria.id)
+      .limit(1);
+
+    if (tiposAssociados && tiposAssociados.length > 0) {
+      toast({
+        title: "Não é possível eliminar",
+        description: "Esta categoria possui tipos de equipamentos associados. Desative-a em vez de eliminar.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!confirm(`ATENÇÃO: Tem certeza que deseja eliminar permanentemente a categoria "${categoria.nome}"?\n\nEsta ação não pode ser desfeita!`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('categorias_equipamentos_2025_12_13_01_00')
+        .delete()
+        .eq('id', categoria.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Categoria eliminada",
+        description: `Categoria "${categoria.nome}" eliminada permanentemente`,
+      });
+
+      loadCategorias();
+    } catch (error) {
+      console.error('Erro ao eliminar categoria:', error);
+      toast({
+        title: "Erro ao eliminar categoria",
+        description: "Não foi possível eliminar a categoria",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // ========== FUNÇÕES CRUD PARA TIPOS DE EQUIPAMENTOS ==========
+  
+  const resetTipoForm = () => {
+    setTipoForm({
+      categoria_id: '',
+      nome: '',
+      descricao: '',
+      codigo: '',
+      unidade_medida: 'unidade',
+      vida_util_meses: 12,
+      requer_manutencao: false,
+      intervalo_manutencao_dias: 30,
+      valor_unitario: 0,
+      fornecedor: '',
+      observacoes: '',
+      ativo: true
+    });
+  };
+
+  const handleNovoTipo = () => {
+    resetTipoForm();
+    setTipoSelecionado(null);
+    setShowNovoTipoDialog(true);
+  };
+
+  const handleEditarTipo = (tipo: TipoEquipamento) => {
+    setTipoForm({
+      categoria_id: tipo.categoria_id,
+      nome: tipo.nome,
+      descricao: tipo.descricao,
+      codigo: tipo.codigo,
+      unidade_medida: tipo.unidade_medida,
+      vida_util_meses: tipo.vida_util_meses,
+      requer_manutencao: tipo.requer_manutencao,
+      intervalo_manutencao_dias: tipo.intervalo_manutencao_dias,
+      valor_unitario: tipo.valor_unitario,
+      fornecedor: tipo.fornecedor,
+      observacoes: tipo.observacoes,
+      ativo: tipo.ativo
+    });
+    setTipoSelecionado(tipo);
+    setShowEditarTipoDialog(true);
+  };
+
+  const handleCriarTipo = async () => {
+    try {
+      // Validações
+      if (!tipoForm.nome.trim()) {
+        toast({
+          title: "Campo obrigatório",
+          description: "O nome do tipo é obrigatório",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!tipoForm.categoria_id) {
+        toast({
+          title: "Campo obrigatório",
+          description: "Selecione uma categoria",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!tipoForm.codigo.trim()) {
+        toast({
+          title: "Campo obrigatório",
+          description: "O código do tipo é obrigatório",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Verificar se o código já existe
+      const { data: existingTipo } = await supabase
+        .from('tipos_equipamentos_2025_12_13_01_00')
+        .select('id')
+        .eq('codigo', tipoForm.codigo)
+        .single();
+
+      if (existingTipo) {
+        toast({
+          title: "Código duplicado",
+          description: "Já existe um tipo com este código",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { error } = await supabase
+        .from('tipos_equipamentos_2025_12_13_01_00')
+        .insert([tipoForm]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Tipo criado",
+        description: `Tipo "${tipoForm.nome}" criado com sucesso`,
+      });
+
+      setShowNovoTipoDialog(false);
+      resetTipoForm();
+      loadTiposEquipamentos();
+    } catch (error) {
+      console.error('Erro ao criar tipo:', error);
+      toast({
+        title: "Erro ao criar tipo",
+        description: "Não foi possível criar o tipo",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAtualizarTipo = async () => {
+    if (!tipoSelecionado) return;
+
+    try {
+      // Validações
+      if (!tipoForm.nome.trim()) {
+        toast({
+          title: "Campo obrigatório",
+          description: "O nome do tipo é obrigatório",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!tipoForm.categoria_id) {
+        toast({
+          title: "Campo obrigatório",
+          description: "Selecione uma categoria",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Verificar se o código já existe (exceto no tipo atual)
+      const { data: existingTipo } = await supabase
+        .from('tipos_equipamentos_2025_12_13_01_00')
+        .select('id')
+        .eq('codigo', tipoForm.codigo)
+        .neq('id', tipoSelecionado.id)
+        .single();
+
+      if (existingTipo) {
+        toast({
+          title: "Código duplicado",
+          description: "Já existe um tipo com este código",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { error } = await supabase
+        .from('tipos_equipamentos_2025_12_13_01_00')
+        .update(tipoForm)
+        .eq('id', tipoSelecionado.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Tipo atualizado",
+        description: `Tipo "${tipoForm.nome}" atualizado com sucesso`,
+      });
+
+      setShowEditarTipoDialog(false);
+      resetTipoForm();
+      setTipoSelecionado(null);
+      loadTiposEquipamentos();
+    } catch (error) {
+      console.error('Erro ao atualizar tipo:', error);
+      toast({
+        title: "Erro ao atualizar tipo",
+        description: "Não foi possível atualizar o tipo",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDesativarTipo = async (tipo: TipoEquipamento) => {
+    if (!confirm(`Tem certeza que deseja ${tipo.ativo ? 'desativar' : 'ativar'} o tipo "${tipo.nome}"?`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('tipos_equipamentos_2025_12_13_01_00')
+        .update({ ativo: !tipo.ativo })
+        .eq('id', tipo.id);
+
+      if (error) throw error;
+
+      toast({
+        title: tipo.ativo ? "Tipo desativado" : "Tipo ativado",
+        description: `Tipo "${tipo.nome}" ${tipo.ativo ? 'desativado' : 'ativado'} com sucesso`,
+      });
+
+      loadTiposEquipamentos();
+    } catch (error) {
+      console.error('Erro ao alterar status do tipo:', error);
+      toast({
+        title: "Erro ao alterar status",
+        description: "Não foi possível alterar o status do tipo",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEliminarTipo = async (tipo: TipoEquipamento) => {
+    // Verificar se há equipamentos associados
+    const { data: equipamentosAssociados } = await supabase
+      .from('equipamentos_2025_12_13_01_00')
+      .select('id')
+      .eq('tipo_equipamento_id', tipo.id)
+      .limit(1);
+
+    if (equipamentosAssociados && equipamentosAssociados.length > 0) {
+      toast({
+        title: "Não é possível eliminar",
+        description: "Este tipo possui equipamentos associados. Desative-o em vez de eliminar.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!confirm(`ATENÇÃO: Tem certeza que deseja eliminar permanentemente o tipo "${tipo.nome}"?\n\nEsta ação não pode ser desfeita!`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('tipos_equipamentos_2025_12_13_01_00')
+        .delete()
+        .eq('id', tipo.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Tipo eliminado",
+        description: `Tipo "${tipo.nome}" eliminado permanentemente`,
+      });
+
+      loadTiposEquipamentos();
+    } catch (error) {
+      console.error('Erro ao eliminar tipo:', error);
+      toast({
+        title: "Erro ao eliminar tipo",
+        description: "Não foi possível eliminar o tipo",
+        variant: "destructive",
+      });
+    }
   };
 
   // Funções para desativar e eliminar equipamentos
@@ -2144,7 +2670,11 @@ const ModuloEquipamentos = () => {
             <TabsContent value="categorias" className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold">Categorias de Equipamentos</h3>
-                <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                <Button 
+                  size="sm" 
+                  className="bg-green-600 hover:bg-green-700"
+                  onClick={handleNovaCategoria}
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Nova Categoria
                 </Button>
@@ -2191,10 +2721,29 @@ const ModuloEquipamentos = () => {
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end space-x-2">
-                              <Button variant="outline" size="sm">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleEditarCategoria(categoria)}
+                                className="text-blue-600 hover:text-blue-700"
+                              >
                                 <Edit className="h-4 w-4" />
                               </Button>
-                              <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleDesativarCategoria(categoria)}
+                                className={categoria.ativo ? "text-orange-600 hover:text-orange-700" : "text-green-600 hover:text-green-700"}
+                                title={categoria.ativo ? "Desativar categoria" : "Ativar categoria"}
+                              >
+                                <Power className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleEliminarCategoria(categoria)}
+                                className="text-red-600 hover:text-red-700"
+                              >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             </div>
@@ -2211,7 +2760,11 @@ const ModuloEquipamentos = () => {
             <TabsContent value="tipos" className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold">Tipos de Equipamentos</h3>
-                <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                <Button 
+                  size="sm" 
+                  className="bg-green-600 hover:bg-green-700"
+                  onClick={handleNovoTipo}
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Novo Tipo
                 </Button>
@@ -2253,10 +2806,29 @@ const ModuloEquipamentos = () => {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end space-x-2">
-                            <Button variant="outline" size="sm">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleEditarTipo(tipo)}
+                              className="text-blue-600 hover:text-blue-700"
+                            >
                               <Edit className="h-4 w-4" />
                             </Button>
-                            <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleDesativarTipo(tipo)}
+                              className={tipo.ativo ? "text-orange-600 hover:text-orange-700" : "text-green-600 hover:text-green-700"}
+                              title={tipo.ativo ? "Desativar tipo" : "Ativar tipo"}
+                            >
+                              <Power className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleEliminarTipo(tipo)}
+                              className="text-red-600 hover:text-red-700"
+                            >
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
@@ -2272,6 +2844,534 @@ const ModuloEquipamentos = () => {
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowConfiguracoesDialog(false)}>
               Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo Nova Categoria */}
+      <Dialog open={showNovaCategoriaDialog} onOpenChange={setShowNovaCategoriaDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <Plus className="h-5 w-5 mr-2 text-green-600" />
+              Nova Categoria de Equipamento
+            </DialogTitle>
+            <DialogDescription>
+              Criar uma nova categoria para organizar os equipamentos
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="categoria_nome">Nome da Categoria *</Label>
+              <Input
+                id="categoria_nome"
+                value={categoriaForm.nome}
+                onChange={(e) => setCategoriaForm({...categoriaForm, nome: e.target.value})}
+                placeholder="Ex: EPI, Material de Resgate"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="categoria_descricao">Descrição</Label>
+              <Textarea
+                id="categoria_descricao"
+                value={categoriaForm.descricao}
+                onChange={(e) => setCategoriaForm({...categoriaForm, descricao: e.target.value})}
+                placeholder="Descrição da categoria"
+                rows={3}
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="categoria_codigo">Código *</Label>
+              <Input
+                id="categoria_codigo"
+                value={categoriaForm.codigo}
+                onChange={(e) => setCategoriaForm({...categoriaForm, codigo: e.target.value.toUpperCase()})}
+                placeholder="Ex: EPI, RESGATE"
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="categoria_cor">Cor</Label>
+                <Input
+                  id="categoria_cor"
+                  type="color"
+                  value={categoriaForm.cor}
+                  onChange={(e) => setCategoriaForm({...categoriaForm, cor: e.target.value})}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="categoria_icone">Ícone</Label>
+                <Select 
+                  value={categoriaForm.icone} 
+                  onValueChange={(value) => setCategoriaForm({...categoriaForm, icone: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Package">Package</SelectItem>
+                    <SelectItem value="Shield">Shield</SelectItem>
+                    <SelectItem value="Truck">Truck</SelectItem>
+                    <SelectItem value="Heart">Heart</SelectItem>
+                    <SelectItem value="Smartphone">Smartphone</SelectItem>
+                    <SelectItem value="Shirt">Shirt</SelectItem>
+                    <SelectItem value="Wrench">Wrench</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNovaCategoriaDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleCriarCategoria} className="bg-green-600 hover:bg-green-700">
+              <Plus className="h-4 w-4 mr-2" />
+              Criar Categoria
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo Editar Categoria */}
+      <Dialog open={showEditarCategoriaDialog} onOpenChange={setShowEditarCategoriaDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <Edit className="h-5 w-5 mr-2 text-blue-600" />
+              Editar Categoria de Equipamento
+            </DialogTitle>
+            <DialogDescription>
+              Modificar os dados da categoria selecionada
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="edit_categoria_nome">Nome da Categoria *</Label>
+              <Input
+                id="edit_categoria_nome"
+                value={categoriaForm.nome}
+                onChange={(e) => setCategoriaForm({...categoriaForm, nome: e.target.value})}
+                placeholder="Ex: EPI, Material de Resgate"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="edit_categoria_descricao">Descrição</Label>
+              <Textarea
+                id="edit_categoria_descricao"
+                value={categoriaForm.descricao}
+                onChange={(e) => setCategoriaForm({...categoriaForm, descricao: e.target.value})}
+                placeholder="Descrição da categoria"
+                rows={3}
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="edit_categoria_codigo">Código *</Label>
+              <Input
+                id="edit_categoria_codigo"
+                value={categoriaForm.codigo}
+                onChange={(e) => setCategoriaForm({...categoriaForm, codigo: e.target.value.toUpperCase()})}
+                placeholder="Ex: EPI, RESGATE"
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit_categoria_cor">Cor</Label>
+                <Input
+                  id="edit_categoria_cor"
+                  type="color"
+                  value={categoriaForm.cor}
+                  onChange={(e) => setCategoriaForm({...categoriaForm, cor: e.target.value})}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="edit_categoria_icone">Ícone</Label>
+                <Select 
+                  value={categoriaForm.icone} 
+                  onValueChange={(value) => setCategoriaForm({...categoriaForm, icone: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Package">Package</SelectItem>
+                    <SelectItem value="Shield">Shield</SelectItem>
+                    <SelectItem value="Truck">Truck</SelectItem>
+                    <SelectItem value="Heart">Heart</SelectItem>
+                    <SelectItem value="Smartphone">Smartphone</SelectItem>
+                    <SelectItem value="Shirt">Shirt</SelectItem>
+                    <SelectItem value="Wrench">Wrench</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditarCategoriaDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleAtualizarCategoria} className="bg-blue-600 hover:bg-blue-700">
+              <Edit className="h-4 w-4 mr-2" />
+              Atualizar Categoria
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo Novo Tipo */}
+      <Dialog open={showNovoTipoDialog} onOpenChange={setShowNovoTipoDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <Plus className="h-5 w-5 mr-2 text-green-600" />
+              Novo Tipo de Equipamento
+            </DialogTitle>
+            <DialogDescription>
+              Criar um novo tipo de equipamento associado a uma categoria
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="tipo_categoria">Categoria *</Label>
+                <Select 
+                  value={tipoForm.categoria_id} 
+                  onValueChange={(value) => setTipoForm({...tipoForm, categoria_id: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecionar categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categorias.filter(c => c.ativo).map((categoria) => (
+                      <SelectItem key={categoria.id} value={categoria.id}>
+                        {categoria.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="tipo_nome">Nome do Tipo *</Label>
+                <Input
+                  id="tipo_nome"
+                  value={tipoForm.nome}
+                  onChange={(e) => setTipoForm({...tipoForm, nome: e.target.value})}
+                  placeholder="Ex: Luvas de Proteção"
+                />
+              </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="tipo_descricao">Descrição</Label>
+              <Textarea
+                id="tipo_descricao"
+                value={tipoForm.descricao}
+                onChange={(e) => setTipoForm({...tipoForm, descricao: e.target.value})}
+                placeholder="Descrição detalhada do tipo de equipamento"
+                rows={3}
+              />
+            </div>
+            
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="tipo_codigo">Código *</Label>
+                <Input
+                  id="tipo_codigo"
+                  value={tipoForm.codigo}
+                  onChange={(e) => setTipoForm({...tipoForm, codigo: e.target.value.toUpperCase()})}
+                  placeholder="Ex: EPI_LUVAS"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="tipo_unidade">Unidade de Medida</Label>
+                <Select 
+                  value={tipoForm.unidade_medida} 
+                  onValueChange={(value) => setTipoForm({...tipoForm, unidade_medida: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="unidade">Unidade</SelectItem>
+                    <SelectItem value="par">Par</SelectItem>
+                    <SelectItem value="conjunto">Conjunto</SelectItem>
+                    <SelectItem value="rolo">Rolo</SelectItem>
+                    <SelectItem value="caixa">Caixa</SelectItem>
+                    <SelectItem value="litro">Litro</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="tipo_vida_util">Vida Útil (meses)</Label>
+                <Input
+                  id="tipo_vida_util"
+                  type="number"
+                  value={tipoForm.vida_util_meses}
+                  onChange={(e) => setTipoForm({...tipoForm, vida_util_meses: parseInt(e.target.value) || 0})}
+                  min="1"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="tipo_valor">Valor Unitário (€)</Label>
+                <Input
+                  id="tipo_valor"
+                  type="number"
+                  step="0.01"
+                  value={tipoForm.valor_unitario}
+                  onChange={(e) => setTipoForm({...tipoForm, valor_unitario: parseFloat(e.target.value) || 0})}
+                  min="0"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="tipo_fornecedor">Fornecedor</Label>
+                <Input
+                  id="tipo_fornecedor"
+                  value={tipoForm.fornecedor}
+                  onChange={(e) => setTipoForm({...tipoForm, fornecedor: e.target.value})}
+                  placeholder="Nome do fornecedor"
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="tipo_requer_manutencao"
+                  checked={tipoForm.requer_manutencao}
+                  onChange={(e) => setTipoForm({...tipoForm, requer_manutencao: e.target.checked})}
+                  className="rounded"
+                />
+                <Label htmlFor="tipo_requer_manutencao">Requer manutenção periódica</Label>
+              </div>
+              
+              {tipoForm.requer_manutencao && (
+                <div>
+                  <Label htmlFor="tipo_intervalo">Intervalo de Manutenção (dias)</Label>
+                  <Input
+                    id="tipo_intervalo"
+                    type="number"
+                    value={tipoForm.intervalo_manutencao_dias}
+                    onChange={(e) => setTipoForm({...tipoForm, intervalo_manutencao_dias: parseInt(e.target.value) || 0})}
+                    min="1"
+                  />
+                </div>
+              )}
+            </div>
+            
+            <div>
+              <Label htmlFor="tipo_observacoes">Observações</Label>
+              <Textarea
+                id="tipo_observacoes"
+                value={tipoForm.observacoes}
+                onChange={(e) => setTipoForm({...tipoForm, observacoes: e.target.value})}
+                placeholder="Observações adicionais sobre o tipo"
+                rows={2}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNovoTipoDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleCriarTipo} className="bg-green-600 hover:bg-green-700">
+              <Plus className="h-4 w-4 mr-2" />
+              Criar Tipo
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo Editar Tipo */}
+      <Dialog open={showEditarTipoDialog} onOpenChange={setShowEditarTipoDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <Edit className="h-5 w-5 mr-2 text-blue-600" />
+              Editar Tipo de Equipamento
+            </DialogTitle>
+            <DialogDescription>
+              Modificar os dados do tipo de equipamento selecionado
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit_tipo_categoria">Categoria *</Label>
+                <Select 
+                  value={tipoForm.categoria_id} 
+                  onValueChange={(value) => setTipoForm({...tipoForm, categoria_id: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecionar categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categorias.filter(c => c.ativo).map((categoria) => (
+                      <SelectItem key={categoria.id} value={categoria.id}>
+                        {categoria.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="edit_tipo_nome">Nome do Tipo *</Label>
+                <Input
+                  id="edit_tipo_nome"
+                  value={tipoForm.nome}
+                  onChange={(e) => setTipoForm({...tipoForm, nome: e.target.value})}
+                  placeholder="Ex: Luvas de Proteção"
+                />
+              </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="edit_tipo_descricao">Descrição</Label>
+              <Textarea
+                id="edit_tipo_descricao"
+                value={tipoForm.descricao}
+                onChange={(e) => setTipoForm({...tipoForm, descricao: e.target.value})}
+                placeholder="Descrição detalhada do tipo de equipamento"
+                rows={3}
+              />
+            </div>
+            
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="edit_tipo_codigo">Código *</Label>
+                <Input
+                  id="edit_tipo_codigo"
+                  value={tipoForm.codigo}
+                  onChange={(e) => setTipoForm({...tipoForm, codigo: e.target.value.toUpperCase()})}
+                  placeholder="Ex: EPI_LUVAS"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="edit_tipo_unidade">Unidade de Medida</Label>
+                <Select 
+                  value={tipoForm.unidade_medida} 
+                  onValueChange={(value) => setTipoForm({...tipoForm, unidade_medida: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="unidade">Unidade</SelectItem>
+                    <SelectItem value="par">Par</SelectItem>
+                    <SelectItem value="conjunto">Conjunto</SelectItem>
+                    <SelectItem value="rolo">Rolo</SelectItem>
+                    <SelectItem value="caixa">Caixa</SelectItem>
+                    <SelectItem value="litro">Litro</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="edit_tipo_vida_util">Vida Útil (meses)</Label>
+                <Input
+                  id="edit_tipo_vida_util"
+                  type="number"
+                  value={tipoForm.vida_util_meses}
+                  onChange={(e) => setTipoForm({...tipoForm, vida_util_meses: parseInt(e.target.value) || 0})}
+                  min="1"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit_tipo_valor">Valor Unitário (€)</Label>
+                <Input
+                  id="edit_tipo_valor"
+                  type="number"
+                  step="0.01"
+                  value={tipoForm.valor_unitario}
+                  onChange={(e) => setTipoForm({...tipoForm, valor_unitario: parseFloat(e.target.value) || 0})}
+                  min="0"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="edit_tipo_fornecedor">Fornecedor</Label>
+                <Input
+                  id="edit_tipo_fornecedor"
+                  value={tipoForm.fornecedor}
+                  onChange={(e) => setTipoForm({...tipoForm, fornecedor: e.target.value})}
+                  placeholder="Nome do fornecedor"
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="edit_tipo_requer_manutencao"
+                  checked={tipoForm.requer_manutencao}
+                  onChange={(e) => setTipoForm({...tipoForm, requer_manutencao: e.target.checked})}
+                  className="rounded"
+                />
+                <Label htmlFor="edit_tipo_requer_manutencao">Requer manutenção periódica</Label>
+              </div>
+              
+              {tipoForm.requer_manutencao && (
+                <div>
+                  <Label htmlFor="edit_tipo_intervalo">Intervalo de Manutenção (dias)</Label>
+                  <Input
+                    id="edit_tipo_intervalo"
+                    type="number"
+                    value={tipoForm.intervalo_manutencao_dias}
+                    onChange={(e) => setTipoForm({...tipoForm, intervalo_manutencao_dias: parseInt(e.target.value) || 0})}
+                    min="1"
+                  />
+                </div>
+              )}
+            </div>
+            
+            <div>
+              <Label htmlFor="edit_tipo_observacoes">Observações</Label>
+              <Textarea
+                id="edit_tipo_observacoes"
+                value={tipoForm.observacoes}
+                onChange={(e) => setTipoForm({...tipoForm, observacoes: e.target.value})}
+                placeholder="Observações adicionais sobre o tipo"
+                rows={2}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditarTipoDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleAtualizarTipo} className="bg-blue-600 hover:bg-blue-700">
+              <Edit className="h-4 w-4 mr-2" />
+              Atualizar Tipo
             </Button>
           </DialogFooter>
         </DialogContent>
