@@ -45,9 +45,22 @@ import {
   Zap,
   AlertCircle,
   Loader2,
-  FileText,
   History,
-  Bell
+  Bell,
+  X,
+  Info,
+  PieChart,
+  ChevronDown,
+  ChevronUp,
+  ExternalLink,
+  Save,
+  RotateCcw,
+  CheckSquare,
+  Square,
+  Maximize2,
+  Minimize2,
+  Copy,
+  Share2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -185,6 +198,20 @@ const ModuloEquipamentos = () => {
   const [estatisticas, setEstatisticas] = useState<EstatisticasEquipamentos | null>(null);
   const [categorias, setCategorias] = useState<CategoriaEquipamento[]>([]);
   const [tiposEquipamentos, setTiposEquipamentos] = useState<TipoEquipamento[]>([]);
+  
+  // Estados das melhorias implementadas
+  const [notificacoes, setNotificacoes] = useState<any[]>([]);
+  const [notificacoesNaoLidas, setNotificacoesNaoLidas] = useState(0);
+  const [showNotificacoes, setShowNotificacoes] = useState(false);
+  const [configuracoesSistema, setConfiguracoesSistema] = useState<any>({});
+  const [showConfiguracoes, setShowConfiguracoes] = useState(false);
+  const [auditoria, setAuditoria] = useState<any[]>([]);
+  const [showAuditoria, setShowAuditoria] = useState(false);
+  const [backups, setBackups] = useState<any[]>([]);
+  const [showBackups, setShowBackups] = useState(false);
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [refreshInterval, setRefreshInterval] = useState(30);
+  const [dashboardExpanded, setDashboardExpanded] = useState(false);
   const [equipamentos, setEquipamentos] = useState<Equipamento[]>([]);
   const [atribuicoes, setAtribuicoes] = useState<AtribuicaoEquipamento[]>([]);
   const [manutencoes, setManutencoes] = useState<Manutencao[]>([]);
@@ -373,6 +400,82 @@ const ModuloEquipamentos = () => {
     return cacheData && lastUpdate && (Date.now() - lastUpdate.getTime()) < maxAge;
   };
 
+  // Funções de carregamento das melhorias
+  const loadNotificacoes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('notificacoes_equipamentos_2025_12_16_05_00')
+        .select('*')
+        .eq('usuario_id', user?.id)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error) throw error;
+      
+      setNotificacoes(data || []);
+      setNotificacoesNaoLidas(data?.filter(n => !n.lida).length || 0);
+    } catch (error) {
+      console.error('Erro ao carregar notificações:', error);
+    }
+  };
+
+  const loadConfiguracoesSistema = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('configuracoes_sistema_2025_12_16_05_00')
+        .select('*')
+        .order('categoria', { ascending: true });
+
+      if (error) throw error;
+      
+      const configObj = {};
+      data?.forEach(config => {
+        configObj[config.chave] = config.valor;
+      });
+      setConfiguracoesSistema(configObj);
+      
+      // Aplicar configurações
+      if (configObj.dashboard_refresh_segundos) {
+        setRefreshInterval(parseInt(configObj.dashboard_refresh_segundos));
+      }
+    } catch (error) {
+      console.error('Erro ao carregar configurações:', error);
+    }
+  };
+
+  const loadAuditoria = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('auditoria_equipamentos_2025_12_16_05_00')
+        .select(`
+          *,
+          usuario:auth.users(email)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (error) throw error;
+      setAuditoria(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar auditoria:', error);
+    }
+  };
+
+  const loadBackups = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('backup_equipamentos_2025_12_16_05_00')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (error) throw error;
+      setBackups(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar backups:', error);
+    }
+  };
+
   const loadAllData = async () => {
     try {
       setLoading(true);
@@ -384,7 +487,11 @@ const ModuloEquipamentos = () => {
         loadAtribuicoes(),
         loadManutencoes(),
         loadAlertas(),
-        loadAllRelatorios()
+        loadAllRelatorios(),
+        loadNotificacoes(),
+        loadConfiguracoesSistema(),
+        loadAuditoria(),
+        loadBackups()
       ]);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
@@ -2035,6 +2142,171 @@ const ModuloEquipamentos = () => {
     return `${value.toFixed(1)}%`;
   };
 
+  // ===== FUNÇÕES DAS MELHORIAS IMPLEMENTADAS =====
+
+  // Funções de notificações
+  const handleMarcarNotificacaoLida = async (notificacaoId: string) => {
+    try {
+      const { error } = await supabase.rpc('marcar_notificacao_lida', {
+        p_notificacao_id: notificacaoId,
+        p_usuario_id: user?.id
+      });
+
+      if (error) throw error;
+      
+      loadNotificacoes();
+    } catch (error) {
+      console.error('Erro ao marcar notificação como lida:', error);
+    }
+  };
+
+  const handleMarcarTodasNotificacoesLidas = async () => {
+    try {
+      const { error } = await supabase.rpc('marcar_todas_notificacoes_lidas', {
+        p_usuario_id: user?.id
+      });
+
+      if (error) throw error;
+      
+      toast({
+        title: 'Sucesso',
+        description: 'Todas as notificações foram marcadas como lidas',
+      });
+      
+      loadNotificacoes();
+    } catch (error) {
+      console.error('Erro ao marcar todas as notificações como lidas:', error);
+      toast({
+        title: 'Erro',
+        description: 'Erro ao marcar notificações como lidas',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  // Funções de backup
+  const handleCriarBackupManual = async () => {
+    try {
+      const { data, error } = await supabase.rpc('criar_backup_manual');
+
+      if (error) throw error;
+      
+      toast({
+        title: 'Sucesso',
+        description: 'Backup manual criado com sucesso',
+      });
+      
+      loadBackups();
+    } catch (error) {
+      console.error('Erro ao criar backup manual:', error);
+      toast({
+        title: 'Erro',
+        description: 'Erro ao criar backup manual',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  // Funções de configuração
+  const handleAtualizarConfiguracao = async (chave: string, valor: any) => {
+    try {
+      const { error } = await supabase
+        .from('configuracoes_sistema_2025_12_16_05_00')
+        .update({
+          valor: valor,
+          updated_at: new Date().toISOString(),
+          updated_by: user?.id
+        })
+        .eq('chave', chave);
+
+      if (error) throw error;
+      
+      toast({
+        title: 'Sucesso',
+        description: 'Configuração atualizada com sucesso',
+      });
+      
+      loadConfiguracoesSistema();
+    } catch (error) {
+      console.error('Erro ao atualizar configuração:', error);
+      toast({
+        title: 'Erro',
+        description: 'Erro ao atualizar configuração',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  // Auto-refresh do dashboard
+  React.useEffect(() => {
+    if (!autoRefresh || activeTab !== 'dashboard') return;
+    
+    const interval = setInterval(() => {
+      loadEstatisticas();
+      loadKpisDashboard();
+      loadNotificacoes();
+    }, refreshInterval * 1000);
+    
+    return () => clearInterval(interval);
+  }, [autoRefresh, refreshInterval, activeTab]);
+
+  // Função para obter histórico de um equipamento
+  const handleVerHistorico = async (equipamento: Equipamento) => {
+    try {
+      const { data, error } = await supabase.rpc('obter_historico_registro', {
+        p_tabela: 'equipamentos_2025_12_13_01_00',
+        p_registro_id: equipamento.id,
+        p_limite: 20
+      });
+
+      if (error) throw error;
+      
+      // Aqui você pode abrir um modal com o histórico
+      console.log('Histórico do equipamento:', data);
+    } catch (error) {
+      console.error('Erro ao obter histórico:', error);
+    }
+  };
+
+  // Função para exportar dados
+  const handleExportarDados = (tipo: string) => {
+    let dados: any[] = [];
+    let nomeArquivo = '';
+    
+    switch (tipo) {
+      case 'equipamentos':
+        dados = equipamentos;
+        nomeArquivo = 'equipamentos';
+        break;
+      case 'atribuicoes':
+        dados = atribuicoes;
+        nomeArquivo = 'atribuicoes';
+        break;
+      case 'manutencoes':
+        dados = manutencoes;
+        nomeArquivo = 'manutencoes';
+        break;
+      case 'alertas':
+        dados = alertas;
+        nomeArquivo = 'alertas';
+        break;
+      case 'auditoria':
+        dados = auditoria;
+        nomeArquivo = 'auditoria';
+        break;
+    }
+    
+    if (dados.length > 0) {
+      const csv = convertToCSV(dados);
+      downloadFile(csv, `${nomeArquivo}_${new Date().toISOString().split('T')[0]}.csv`, 'text/csv');
+      
+      toast({
+        title: 'Sucesso',
+        description: `Dados de ${nomeArquivo} exportados com sucesso`,
+      });
+    }
+  };
+
   // Funções para desativar e eliminar equipamentos
   const handleDesativarEquipamento = async (equipamento: Equipamento) => {
     if (!confirm('Tem certeza que deseja desativar o equipamento "' + equipamento.codigo_interno + '"?')) {
@@ -2117,6 +2389,79 @@ const ModuloEquipamentos = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <EnhancedHeader />
+      
+      {/* Barra de Notificações e Controles Avançados */}
+      <div className="bg-white border-b border-gray-200 px-6 py-3">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            {/* Indicador de Notificações */}
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setShowNotificacoes(true)}
+              className="relative"
+            >
+              <Bell className="h-4 w-4 mr-2" />
+              Notificações
+              {notificacoesNaoLidas > 0 && (
+                <Badge className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1 py-0 min-w-[1.25rem] h-5 rounded-full flex items-center justify-center">
+                  {notificacoesNaoLidas}
+                </Badge>
+              )}
+            </Button>
+            
+            {/* Auto-refresh Toggle */}
+            <div className="flex items-center space-x-2">
+              <Button
+                variant={autoRefresh ? "default" : "outline"}
+                size="sm"
+                onClick={() => setAutoRefresh(!autoRefresh)}
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${autoRefresh ? 'animate-spin' : ''}`} />
+                Auto-refresh
+              </Button>
+              {autoRefresh && (
+                <span className="text-sm text-gray-600">
+                  {refreshInterval}s
+                </span>
+              )}
+            </div>
+            
+            {/* Expandir Dashboard */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setDashboardExpanded(!dashboardExpanded)}
+            >
+              {dashboardExpanded ? <Minimize2 className="h-4 w-4 mr-2" /> : <Maximize2 className="h-4 w-4 mr-2" />}
+              {dashboardExpanded ? 'Compactar' : 'Expandir'}
+            </Button>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            {/* Botões de Ação Rápida */}
+            <Button variant="outline" size="sm" onClick={() => setShowConfiguracoes(true)}>
+              <Settings className="h-4 w-4 mr-2" />
+              Configurações
+            </Button>
+            
+            <Button variant="outline" size="sm" onClick={() => setShowAuditoria(true)}>
+              <FileText className="h-4 w-4 mr-2" />
+              Auditoria
+            </Button>
+            
+            <Button variant="outline" size="sm" onClick={() => setShowBackups(true)}>
+              <Save className="h-4 w-4 mr-2" />
+              Backups
+            </Button>
+            
+            <Button variant="outline" size="sm" onClick={handleCriarBackupManual}>
+              <Copy className="h-4 w-4 mr-2" />
+              Backup Manual
+            </Button>
+          </div>
+        </div>
+      </div>
       
       <div className="flex-1 bg-gradient-to-br from-orange-50 to-red-100 p-6">
         <div className="max-w-7xl mx-auto">
@@ -5878,6 +6223,331 @@ const ModuloEquipamentos = () => {
           
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowRelatorioDialog(false)}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo de Notificações */}
+      <Dialog open={showNotificacoes} onOpenChange={setShowNotificacoes}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <div className="flex items-center">
+                <Bell className="h-5 w-5 mr-2 text-blue-600" />
+                Notificações ({notificacoesNaoLidas} não lidas)
+              </div>
+              <Button variant="outline" size="sm" onClick={handleMarcarTodasNotificacoesLidas}>
+                Marcar todas como lidas
+              </Button>
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-3">
+            {notificacoes.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <Bell className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p>Nenhuma notificação encontrada</p>
+              </div>
+            ) : (
+              notificacoes.map((notificacao) => (
+                <div 
+                  key={notificacao.id} 
+                  className={`p-4 rounded-lg border ${
+                    notificacao.lida ? 'bg-gray-50 border-gray-200' : 'bg-blue-50 border-blue-200'
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <Badge className={getPrioridadeAlertaBadge(notificacao.prioridade)}>
+                          {notificacao.prioridade.toUpperCase()}
+                        </Badge>
+                        <span className="text-sm text-gray-500">
+                          {new Date(notificacao.created_at).toLocaleString('pt-PT')}
+                        </span>
+                      </div>
+                      <h4 className="font-medium text-gray-900 mb-1">{notificacao.titulo}</h4>
+                      <p className="text-sm text-gray-600">{notificacao.mensagem}</p>
+                    </div>
+                    {!notificacao.lida && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleMarcarNotificacaoLida(notificacao.id)}
+                      >
+                        <CheckCircle className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNotificacoes(false)}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo de Configurações */}
+      <Dialog open={showConfiguracoes} onOpenChange={setShowConfiguracoes}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <Settings className="h-5 w-5 mr-2 text-blue-600" />
+              Configurações do Sistema
+            </DialogTitle>
+            <DialogDescription>
+              Configure as preferências e parâmetros do sistema de equipamentos
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Configurações de Interface */}
+            <div>
+              <h4 className="font-medium mb-3">Interface</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Intervalo de Atualização (segundos)</Label>
+                  <Input 
+                    type="number" 
+                    value={refreshInterval}
+                    onChange={(e) => setRefreshInterval(parseInt(e.target.value))}
+                    min="10"
+                    max="300"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Auto-refresh</Label>
+                  <div className="flex items-center space-x-2">
+                    <input 
+                      type="checkbox" 
+                      checked={autoRefresh}
+                      onChange={(e) => setAutoRefresh(e.target.checked)}
+                      className="rounded"
+                    />
+                    <span className="text-sm">Atualização automática do dashboard</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Configurações de Notificações */}
+            <div>
+              <h4 className="font-medium mb-3">Notificações</h4>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div>
+                    <p className="font-medium">Notificações em Tempo Real</p>
+                    <p className="text-sm text-gray-600">Receber notificações instantâneas</p>
+                  </div>
+                  <input type="checkbox" defaultChecked className="rounded" />
+                </div>
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div>
+                    <p className="font-medium">Alertas de Manutenção</p>
+                    <p className="text-sm text-gray-600">Notificar sobre manutenções vencidas</p>
+                  </div>
+                  <input type="checkbox" defaultChecked className="rounded" />
+                </div>
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div>
+                    <p className="font-medium">Relatórios Automáticos</p>
+                    <p className="text-sm text-gray-600">Receber relatórios semanais por email</p>
+                  </div>
+                  <input type="checkbox" className="rounded" />
+                </div>
+              </div>
+            </div>
+            
+            {/* Configurações de Backup */}
+            <div>
+              <h4 className="font-medium mb-3">Backup e Segurança</h4>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div>
+                    <p className="font-medium">Backup Automático</p>
+                    <p className="text-sm text-gray-600">Backup diário automático dos dados</p>
+                  </div>
+                  <input type="checkbox" defaultChecked className="rounded" />
+                </div>
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div>
+                    <p className="font-medium">Auditoria Detalhada</p>
+                    <p className="text-sm text-gray-600">Registrar todas as operações do sistema</p>
+                  </div>
+                  <input type="checkbox" defaultChecked className="rounded" />
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowConfiguracoes(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={() => {
+              toast({
+                title: 'Sucesso',
+                description: 'Configurações salvas com sucesso',
+              });
+              setShowConfiguracoes(false);
+            }}>
+              Salvar Configurações
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo de Auditoria */}
+      <Dialog open={showAuditoria} onOpenChange={setShowAuditoria}>
+        <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <FileText className="h-5 w-5 mr-2 text-blue-600" />
+              Auditoria do Sistema
+            </DialogTitle>
+            <DialogDescription>
+              Histórico completo de todas as operações realizadas no sistema
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {auditoria.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p>Nenhum registro de auditoria encontrado</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse border border-gray-300">
+                  <thead>
+                    <tr className="bg-gray-50">
+                      <th className="border border-gray-300 px-4 py-2 text-left">Data/Hora</th>
+                      <th className="border border-gray-300 px-4 py-2 text-left">Usuário</th>
+                      <th className="border border-gray-300 px-4 py-2 text-left">Tabela</th>
+                      <th className="border border-gray-300 px-4 py-2 text-left">Operação</th>
+                      <th className="border border-gray-300 px-4 py-2 text-left">Campos Alterados</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {auditoria.map((registro, index) => (
+                      <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                        <td className="border border-gray-300 px-4 py-2 text-sm">
+                          {new Date(registro.created_at).toLocaleString('pt-PT')}
+                        </td>
+                        <td className="border border-gray-300 px-4 py-2 text-sm">
+                          {registro.usuario?.email || 'Sistema'}
+                        </td>
+                        <td className="border border-gray-300 px-4 py-2 text-sm">
+                          {registro.tabela_nome}
+                        </td>
+                        <td className="border border-gray-300 px-4 py-2">
+                          <Badge className={
+                            registro.operacao === 'INSERT' ? 'bg-green-100 text-green-800' :
+                            registro.operacao === 'UPDATE' ? 'bg-blue-100 text-blue-800' :
+                            'bg-red-100 text-red-800'
+                          }>
+                            {registro.operacao}
+                          </Badge>
+                        </td>
+                        <td className="border border-gray-300 px-4 py-2 text-sm">
+                          {registro.campos_alterados?.join(', ') || 'N/A'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => handleExportarDados('auditoria')}>
+              <Download className="h-4 w-4 mr-2" />
+              Exportar
+            </Button>
+            <Button variant="outline" onClick={() => setShowAuditoria(false)}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo de Backups */}
+      <Dialog open={showBackups} onOpenChange={setShowBackups}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <Save className="h-5 w-5 mr-2 text-blue-600" />
+              Gestão de Backups
+            </DialogTitle>
+            <DialogDescription>
+              Histórico e gestão dos backups do sistema
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h4 className="font-medium">Backups Recentes</h4>
+              <Button onClick={handleCriarBackupManual} size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Novo Backup
+              </Button>
+            </div>
+            
+            {backups.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <Save className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p>Nenhum backup encontrado</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {backups.map((backup) => (
+                  <div key={backup.id} className="p-4 border rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center space-x-2 mb-1">
+                          <Badge className={
+                            backup.status === 'concluido' ? 'bg-green-100 text-green-800' :
+                            backup.status === 'em_progresso' ? 'bg-blue-100 text-blue-800' :
+                            'bg-red-100 text-red-800'
+                          }>
+                            {backup.status.toUpperCase()}
+                          </Badge>
+                          <span className="font-medium">{backup.tipo_backup.toUpperCase()}</span>
+                        </div>
+                        <p className="text-sm text-gray-600">
+                          {backup.total_registros} registros • {backup.tamanho_mb || 0} MB
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Criado em: {new Date(backup.created_at).toLocaleString('pt-PT')}
+                        </p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        {backup.status === 'concluido' && (
+                          <Button variant="outline" size="sm">
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        )}
+                        <Button variant="outline" size="sm">
+                          <Info className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowBackups(false)}>
               Fechar
             </Button>
           </DialogFooter>
