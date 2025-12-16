@@ -96,6 +96,7 @@ const EquipamentosInventario: React.FC = () => {
   const [showDetalhes, setShowDetalhes] = useState(false);
   const [showEditar, setShowEditar] = useState(false);
   const [showConfirmarExclusao, setShowConfirmarExclusao] = useState(false);
+  const [showConfiguracoes, setShowConfiguracoes] = useState(false);
 
   const loadEquipamentos = async () => {
     try {
@@ -476,7 +477,11 @@ const EquipamentosInventario: React.FC = () => {
                 
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Ações</label>
-                  <Button variant="outline" className="w-full">
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => setShowConfiguracoes(true)}
+                  >
                     <Settings className="h-4 w-4 mr-2" />
                     Configurações
                   </Button>
@@ -706,6 +711,125 @@ const EquipamentosInventario: React.FC = () => {
             </Button>
             <Button variant="destructive" onClick={confirmarExclusao}>
               Desativar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Configurações */}
+      <Dialog open={showConfiguracoes} onOpenChange={setShowConfiguracoes}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Configurações do Inventário</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6">
+            {/* Configurações de Exibição */}
+            <div>
+              <h3 className="text-lg font-semibold mb-3 text-blue-600">Configurações de Exibição</h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Mostrar equipamentos inativos</Label>
+                    <p className="text-sm text-gray-600">Incluir equipamentos desativados na listagem</p>
+                  </div>
+                  <input type="checkbox" className="rounded" />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Auto-refresh</Label>
+                    <p className="text-sm text-gray-600">Atualizar automaticamente a cada 5 minutos</p>
+                  </div>
+                  <input type="checkbox" className="rounded" defaultChecked />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Densidade da tabela</Label>
+                    <p className="text-sm text-gray-600">Compacta ou espaçada</p>
+                  </div>
+                  <Select defaultValue="normal">
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="compacta">Compacta</SelectItem>
+                      <SelectItem value="normal">Normal</SelectItem>
+                      <SelectItem value="espaçada">Espaçada</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            {/* Configurações de Filtros */}
+            <div>
+              <h3 className="text-lg font-semibold mb-3 text-green-600">Filtros Padrão</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Estado padrão</Label>
+                  <Select defaultValue="todos">
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos</SelectItem>
+                      <SelectItem value="disponivel">Disponível</SelectItem>
+                      <SelectItem value="atribuido">Atribuído</SelectItem>
+                      <SelectItem value="manutencao">Manutenção</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Condição padrão</Label>
+                  <Select defaultValue="todos">
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todas</SelectItem>
+                      <SelectItem value="excelente">Excelente</SelectItem>
+                      <SelectItem value="bom">Bom</SelectItem>
+                      <SelectItem value="regular">Regular</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            {/* Configurações de Notificações */}
+            <div>
+              <h3 className="text-lg font-semibold mb-3 text-orange-600">Notificações</h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Alertas de manutenção</Label>
+                    <p className="text-sm text-gray-600">Notificar quando equipamento precisa de manutenção</p>
+                  </div>
+                  <input type="checkbox" className="rounded" defaultChecked />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Equipamentos em garantia</Label>
+                    <p className="text-sm text-gray-600">Alertar quando garantia está próxima do vencimento</p>
+                  </div>
+                  <input type="checkbox" className="rounded" defaultChecked />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Novos equipamentos</Label>
+                    <p className="text-sm text-gray-600">Notificar quando novos equipamentos são adicionados</p>
+                  </div>
+                  <input type="checkbox" className="rounded" defaultChecked />
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex justify-end space-x-2 mt-6">
+            <Button variant="outline" onClick={() => setShowConfiguracoes(false)}>
+              Cancelar
+            </Button>
+            <Button className="bg-blue-600 hover:bg-blue-700">
+              Salvar Configurações
             </Button>
           </div>
         </DialogContent>

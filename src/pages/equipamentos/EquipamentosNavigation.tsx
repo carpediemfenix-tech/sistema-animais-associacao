@@ -3,6 +3,10 @@ import { Link, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   ArrowLeft,
   BarChart3,
@@ -67,6 +71,8 @@ const NavigationCard: React.FC<NavigationCardProps> = ({
 
 const EquipamentosNavigation: React.FC = () => {
   const location = useLocation();
+  const [showNotificacoes, setShowNotificacoes] = useState(false);
+  const [showConfiguracoes, setShowConfiguracoes] = useState(false);
   
   // Mock data - em produção, estes valores viriam de uma API
   const stats = {
@@ -147,11 +153,19 @@ const EquipamentosNavigation: React.FC = () => {
           </div>
           
           <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setShowNotificacoes(true)}
+            >
               <Bell className="h-4 w-4 mr-2" />
               Notificações
             </Button>
-            <Button variant="outline" size="sm">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setShowConfiguracoes(true)}
+            >
               <Settings className="h-4 w-4 mr-2" />
               Configurações
             </Button>
@@ -270,6 +284,147 @@ const EquipamentosNavigation: React.FC = () => {
           </Card>
         </div>
       </div>
+      
+      {/* Modal de Notificações */}
+      <Dialog open={showNotificacoes} onOpenChange={setShowNotificacoes}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Central de Notificações</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-3">
+              <div className="p-3 border rounded-lg bg-blue-50">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-blue-900">Novo equipamento adicionado</p>
+                    <p className="text-sm text-blue-700">Equipamento EQ-2025-001 foi registrado no sistema</p>
+                    <p className="text-xs text-blue-600 mt-1">Há 2 horas</p>
+                  </div>
+                  <Badge className="bg-blue-100 text-blue-800">Novo</Badge>
+                </div>
+              </div>
+              
+              <div className="p-3 border rounded-lg bg-orange-50">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-orange-900">Manutenção programada</p>
+                    <p className="text-sm text-orange-700">Equipamento EQ-2024-045 precisa de manutenção</p>
+                    <p className="text-xs text-orange-600 mt-1">Há 1 dia</p>
+                  </div>
+                  <Badge className="bg-orange-100 text-orange-800">Alerta</Badge>
+                </div>
+              </div>
+              
+              <div className="p-3 border rounded-lg bg-green-50">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-green-900">Atribuição concluída</p>
+                    <p className="text-sm text-green-700">Equipamento EQ-2024-032 foi devolvido</p>
+                    <p className="text-xs text-green-600 mt-1">Há 2 dias</p>
+                  </div>
+                  <Badge className="bg-green-100 text-green-800">Sucesso</Badge>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex justify-end space-x-2 mt-6">
+            <Button variant="outline" onClick={() => setShowNotificacoes(false)}>
+              Fechar
+            </Button>
+            <Button className="bg-blue-600 hover:bg-blue-700">
+              Marcar todas como lidas
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Configurações */}
+      <Dialog open={showConfiguracoes} onOpenChange={setShowConfiguracoes}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Configurações do Sistema</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6">
+            {/* Configurações Gerais */}
+            <div>
+              <h3 className="text-lg font-semibold mb-3 text-blue-600">Configurações Gerais</h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Modo escuro</Label>
+                    <p className="text-sm text-gray-600">Ativar tema escuro do sistema</p>
+                  </div>
+                  <input type="checkbox" className="rounded" />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Notificações por email</Label>
+                    <p className="text-sm text-gray-600">Receber alertas por email</p>
+                  </div>
+                  <input type="checkbox" className="rounded" defaultChecked />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Auto-backup</Label>
+                    <p className="text-sm text-gray-600">Backup automático diário</p>
+                  </div>
+                  <input type="checkbox" className="rounded" defaultChecked />
+                </div>
+              </div>
+            </div>
+
+            {/* Configurações de Equipamentos */}
+            <div>
+              <h3 className="text-lg font-semibold mb-3 text-green-600">Equipamentos</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Período de manutenção padrão (dias)</Label>
+                  <Input type="number" defaultValue="90" />
+                </div>
+                <div>
+                  <Label>Alerta de garantia (dias antes)</Label>
+                  <Input type="number" defaultValue="30" />
+                </div>
+                <div>
+                  <Label>Estado padrão para novos equipamentos</Label>
+                  <Select defaultValue="disponivel">
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="disponivel">Disponível</SelectItem>
+                      <SelectItem value="manutencao">Manutenção</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Condição padrão</Label>
+                  <Select defaultValue="bom">
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="excelente">Excelente</SelectItem>
+                      <SelectItem value="bom">Bom</SelectItem>
+                      <SelectItem value="regular">Regular</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex justify-end space-x-2 mt-6">
+            <Button variant="outline" onClick={() => setShowConfiguracoes(false)}>
+              Cancelar
+            </Button>
+            <Button className="bg-green-600 hover:bg-green-700">
+              Salvar Configurações
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       
       <EnhancedFooter />
     </div>

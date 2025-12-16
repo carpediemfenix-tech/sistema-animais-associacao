@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { 
   ArrowLeft,
   FileText,
@@ -52,6 +54,9 @@ const EquipamentosRelatorios: React.FC = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [kpisDashboard, setKpisDashboard] = useState<KpisDashboard>({});
+  const [showRelatorio, setShowRelatorio] = useState(false);
+  const [tipoRelatorio, setTipoRelatorio] = useState('');
+  const [dadosRelatorio, setDadosRelatorio] = useState<any[]>([]);
 
   const loadKpisDashboard = async () => {
     try {
@@ -144,6 +149,94 @@ const EquipamentosRelatorios: React.FC = () => {
     });
   };
 
+  const handleVisualizarRelatorio = async (tipo: string) => {
+    try {
+      setLoading(true);
+      let dados: any[] = [];
+      
+      switch (tipo) {
+        case 'Utilização por Voluntário':
+          const { data: atribuicoes } = await supabase
+            .from('atribuicoes_equipamentos_2025_12_13_01_00')
+            .select(`
+              *,
+              equipamento:equipamentos_2025_12_13_01_00(codigo_interno, tipo_equipamento:tipos_equipamentos_2025_12_13_01_00(nome))
+            `)
+            .eq('ativo', true);
+          dados = atribuicoes || [];
+          break;
+          
+        case 'Financeiro':
+          const { data: equipamentos } = await supabase
+            .from('equipamentos_2025_12_13_01_00')
+            .select(`
+              codigo_interno,
+              valor_aquisicao,
+              data_aquisicao,
+              tipo_equipamento:tipos_equipamentos_2025_12_13_01_00(nome)
+            `)
+            .eq('ativo', true);
+          dados = equipamentos || [];
+          break;
+          
+        case 'Manutenções':
+          const { data: manutencoes } = await supabase
+            .from('manutencoes_equipamentos_2025_12_13_01_00')
+            .select(`
+              *,
+              equipamento:equipamentos_2025_12_13_01_00(codigo_interno, tipo_equipamento:tipos_equipamentos_2025_12_13_01_00(nome))
+            `);
+          dados = manutencoes || [];
+          break;
+          
+        case 'Alertas':
+          const { data: alertas } = await supabase
+            .from('alertas_equipamentos_2025_12_13_01_00')
+            .select(`
+              *,
+              equipamento:equipamentos_2025_12_13_01_00(codigo_interno, tipo_equipamento:tipos_equipamentos_2025_12_13_01_00(nome))
+            `)
+            .eq('ativo', true);
+          dados = alertas || [];
+          break;
+          
+        case 'Atribuições':
+          const { data: todasAtribuicoes } = await supabase
+            .from('atribuicoes_equipamentos_2025_12_13_01_00')
+            .select(`
+              *,
+              equipamento:equipamentos_2025_12_13_01_00(codigo_interno, tipo_equipamento:tipos_equipamentos_2025_12_13_01_00(nome))
+            `);
+          dados = todasAtribuicoes || [];
+          break;
+          
+        case 'Inventário Completo':
+          const { data: inventario } = await supabase
+            .from('equipamentos_2025_12_13_01_00')
+            .select(`
+              *,
+              tipo_equipamento:tipos_equipamentos_2025_12_13_01_00(nome)
+            `);
+          dados = inventario || [];
+          break;
+      }
+      
+      setDadosRelatorio(dados);
+      setTipoRelatorio(tipo);
+      setShowRelatorio(true);
+      
+    } catch (error) {
+      console.error('Erro ao carregar relatório:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar dados do relatório",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -169,7 +262,7 @@ const EquipamentosRelatorios: React.FC = () => {
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center space-x-4">
               <Link to="/equipamentos">
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" onClick={() => handleVisualizarRelatorio('Financeiro')}>
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Voltar
                 </Button>
@@ -262,7 +355,12 @@ const EquipamentosRelatorios: React.FC = () => {
                   Análise detalhada de utilização de equipamentos por voluntário
                 </p>
                 <div className="flex items-center justify-between">
-                  <Button variant="outline" size="sm">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleVisualizarRelatorio('Utilização por Voluntário')}
+                  >
+                    
                     <FileText className="h-4 w-4 mr-2" />
                     Visualizar
                   </Button>
@@ -290,7 +388,8 @@ const EquipamentosRelatorios: React.FC = () => {
                   Análise de custos, ROI e investimentos em equipamentos
                 </p>
                 <div className="flex items-center justify-between">
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" onClick={() => handleVisualizarRelatorio('Financeiro')}>
+                    
                     <FileText className="h-4 w-4 mr-2" />
                     Visualizar
                   </Button>
@@ -318,7 +417,8 @@ const EquipamentosRelatorios: React.FC = () => {
                   Tendências e eficiência das manutenções por período
                 </p>
                 <div className="flex items-center justify-between">
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" onClick={() => handleVisualizarRelatorio('Manutenções')}>
+                    
                     <FileText className="h-4 w-4 mr-2" />
                     Visualizar
                   </Button>
@@ -346,7 +446,8 @@ const EquipamentosRelatorios: React.FC = () => {
                   Padrões de alertas e tempo de resolução
                 </p>
                 <div className="flex items-center justify-between">
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" onClick={() => handleVisualizarRelatorio('Alertas')}>
+                    
                     <FileText className="h-4 w-4 mr-2" />
                     Visualizar
                   </Button>
@@ -374,7 +475,8 @@ const EquipamentosRelatorios: React.FC = () => {
                   Tendências de uso e padrões de atribuições
                 </p>
                 <div className="flex items-center justify-between">
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" onClick={() => handleVisualizarRelatorio('Atribuições')}>
+                    
                     <FileText className="h-4 w-4 mr-2" />
                     Visualizar
                   </Button>
@@ -402,7 +504,8 @@ const EquipamentosRelatorios: React.FC = () => {
                   Visão executiva completa com todos os KPIs
                 </p>
                 <div className="flex items-center justify-between">
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" onClick={() => handleVisualizarRelatorio('Inventário Completo')}>
+                    
                     <FileText className="h-4 w-4 mr-2" />
                     Visualizar
                   </Button>
@@ -452,6 +555,145 @@ const EquipamentosRelatorios: React.FC = () => {
           </Card>
         </div>
       </div>
+      
+      {/* Modal de Visualização de Relatório */}
+      <Dialog open={showRelatorio} onOpenChange={setShowRelatorio}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Relatório: {tipoRelatorio}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {dadosRelatorio.length > 0 ? (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      {tipoRelatorio === 'Utilização por Voluntário' && (
+                        <>
+                          <TableHead>Voluntário ID</TableHead>
+                          <TableHead>Equipamento</TableHead>
+                          <TableHead>Data Atribuição</TableHead>
+                          <TableHead>Data Devolução</TableHead>
+                          <TableHead>Estado</TableHead>
+                        </>
+                      )}
+                      {tipoRelatorio === 'Financeiro' && (
+                        <>
+                          <TableHead>Código</TableHead>
+                          <TableHead>Tipo</TableHead>
+                          <TableHead>Valor Aquisição</TableHead>
+                          <TableHead>Data Aquisição</TableHead>
+                        </>
+                      )}
+                      {tipoRelatorio === 'Manutenções' && (
+                        <>
+                          <TableHead>Equipamento</TableHead>
+                          <TableHead>Tipo Manutenção</TableHead>
+                          <TableHead>Data Agendada</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Custo</TableHead>
+                        </>
+                      )}
+                      {tipoRelatorio === 'Alertas' && (
+                        <>
+                          <TableHead>Equipamento</TableHead>
+                          <TableHead>Tipo Alerta</TableHead>
+                          <TableHead>Prioridade</TableHead>
+                          <TableHead>Data Criação</TableHead>
+                          <TableHead>Status</TableHead>
+                        </>
+                      )}
+                      {tipoRelatorio === 'Atribuições' && (
+                        <>
+                          <TableHead>Equipamento</TableHead>
+                          <TableHead>Voluntário ID</TableHead>
+                          <TableHead>Data Atribuição</TableHead>
+                          <TableHead>Data Devolução</TableHead>
+                          <TableHead>Estado</TableHead>
+                        </>
+                      )}
+                      {tipoRelatorio === 'Inventário Completo' && (
+                        <>
+                          <TableHead>Código</TableHead>
+                          <TableHead>Tipo</TableHead>
+                          <TableHead>Estado</TableHead>
+                          <TableHead>Condição</TableHead>
+                          <TableHead>Localização</TableHead>
+                          <TableHead>Valor</TableHead>
+                        </>
+                      )}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {dadosRelatorio.slice(0, 50).map((item, index) => (
+                      <TableRow key={index}>
+                        {tipoRelatorio === 'Utilização por Voluntário' && (
+                          <>
+                            <TableCell>{item.voluntario_id}</TableCell>
+                            <TableCell>{item.equipamento?.codigo_interno || 'N/A'}</TableCell>
+                            <TableCell>{new Date(item.data_atribuicao).toLocaleDateString()}</TableCell>
+                            <TableCell>{item.data_devolucao_real ? new Date(item.data_devolucao_real).toLocaleDateString() : 'Pendente'}</TableCell>
+                            <TableCell>
+                              <Badge className={item.estado === 'ativa' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+                                {item.estado}
+                              </Badge>
+                            </TableCell>
+                          </>
+                        )}
+                        {tipoRelatorio === 'Financeiro' && (
+                          <>
+                            <TableCell>{item.codigo_interno}</TableCell>
+                            <TableCell>{item.tipo_equipamento?.nome || 'N/A'}</TableCell>
+                            <TableCell>€{item.valor_aquisicao?.toFixed(2) || '0.00'}</TableCell>
+                            <TableCell>{item.data_aquisicao ? new Date(item.data_aquisicao).toLocaleDateString() : 'N/A'}</TableCell>
+                          </>
+                        )}
+                        {tipoRelatorio === 'Inventário Completo' && (
+                          <>
+                            <TableCell>{item.codigo_interno}</TableCell>
+                            <TableCell>{item.tipo_equipamento?.nome || 'N/A'}</TableCell>
+                            <TableCell>
+                              <Badge className={item.estado === 'disponivel' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'}>
+                                {item.estado}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Badge className={item.condicao === 'excelente' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'}>
+                                {item.condicao}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{item.localizacao || 'N/A'}</TableCell>
+                            <TableCell>€{item.valor_aquisicao?.toFixed(2) || '0.00'}</TableCell>
+                          </>
+                        )}
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                {dadosRelatorio.length > 50 && (
+                  <p className="text-sm text-gray-600 mt-2">
+                    Mostrando primeiros 50 registros de {dadosRelatorio.length} total.
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-500">Nenhum dado encontrado para este relatório.</p>
+              </div>
+            )}
+          </div>
+          
+          <div className="flex justify-end space-x-2 mt-6">
+            <Button variant="outline" onClick={() => setShowRelatorio(false)}>
+              Fechar
+            </Button>
+            <Button className="bg-blue-600 hover:bg-blue-700">
+              <Download className="h-4 w-4 mr-2" />
+              Exportar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       
       <EnhancedFooter />
     </div>

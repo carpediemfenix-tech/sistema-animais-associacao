@@ -3,6 +3,11 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { 
   ArrowLeft,
@@ -44,6 +49,15 @@ const EquipamentosAtribuicoes: React.FC = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [atribuicoes, setAtribuicoes] = useState<Atribuicao[]>([]);
+  const [showNovaAtribuicao, setShowNovaAtribuicao] = useState(false);
+  const [equipamentosDisponiveis, setEquipamentosDisponiveis] = useState<any[]>([]);
+  const [novaAtribuicao, setNovaAtribuicao] = useState({
+    equipamento_id: '',
+    voluntario_id: '',
+    data_atribuicao: new Date().toISOString().split('T')[0],
+    data_devolucao_prevista: '',
+    observacoes: ''
+  });
 
   const loadAtribuicoes = async () => {
     try {
@@ -74,8 +88,87 @@ const EquipamentosAtribuicoes: React.FC = () => {
     }
   };
 
+  const loadEquipamentosDisponiveis = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('equipamentos_2025_12_13_01_00')
+        .select(`
+          id,
+          codigo_interno,
+          tipo_equipamento:tipos_equipamentos_2025_12_13_01_00(nome)
+        `)
+        .eq('estado', 'disponivel')
+        .eq('ativo', true)
+        .order('codigo_interno');
+
+      if (error) throw error;
+      setEquipamentosDisponiveis(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar equipamentos:', error);
+    }
+  };
+
+  const criarAtribuicao = async () => {
+    if (!novaAtribuicao.equipamento_id || !novaAtribuicao.voluntario_id) {
+      toast({
+        title: "Erro",
+        description: "Equipamento e voluntário são obrigatórios",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('atribuicoes_equipamentos_2025_12_13_01_00')
+        .insert([
+          {
+            equipamento_id: novaAtribuicao.equipamento_id,
+            voluntario_id: novaAtribuicao.voluntario_id,
+            data_atribuicao: novaAtribuicao.data_atribuicao,
+            data_devolucao_prevista: novaAtribuicao.data_devolucao_prevista,
+            estado: 'ativa',
+            observacoes: novaAtribuicao.observacoes,
+            ativo: true
+          }
+        ]);
+
+      if (error) throw error;
+
+      // Atualizar estado do equipamento para 'atribuido'
+      await supabase
+        .from('equipamentos_2025_12_13_01_00')
+        .update({ estado: 'atribuido' })
+        .eq('id', novaAtribuicao.equipamento_id);
+
+      toast({
+        title: "Sucesso",
+        description: "Atribuição criada com sucesso!",
+      });
+
+      setNovaAtribuicao({
+        equipamento_id: '',
+        voluntario_id: '',
+        data_atribuicao: new Date().toISOString().split('T')[0],
+        data_devolucao_prevista: '',
+        observacoes: ''
+      });
+      
+      setShowNovaAtribuicao(false);
+      loadAtribuicoes();
+      
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao criar atribuição",
+        variant: "destructive",
+      });
+    }
+  };
+
   useEffect(() => {
     loadAtribuicoes();
+    loadEquipamentosDisponiveis();
   }, []);
 
   const getEstadoBadge = (estado: string) => {
@@ -128,7 +221,10 @@ const EquipamentosAtribuicoes: React.FC = () => {
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Atualizar
               </Button>
-              <Button className="bg-purple-600 hover:bg-purple-700">
+              <Button 
+                className="bg-purple-600 hover:bg-purple-700"
+                onClick={() => setShowNovaAtribuicao(true)}
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Nova Atribuição
               </Button>
@@ -248,6 +344,86 @@ const EquipamentosAtribuicoes: React.FC = () => {
           </Card>
         </div>
       </div>
+      
+      {/* Modal Nova Atribuição */}
+      <Dialog open={showNovaAtribuicao} onOpenChange={setShowNovaAtribuicao}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Nova Atribuição de Equipamento</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="equipamento">Equipamento *</Label>
+                <Select 
+                  value={novaAtribuicao.equipamento_id}
+                  onValueChange={(value) => setNovaAtribuicao({...novaAtribuicao, equipamento_id: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o equipamento" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {equipamentosDisponiveis.map((equipamento) => (
+                      <SelectItem key={equipamento.id} value={equipamento.id}>
+                        {equipamento.codigo_interno} - {equipamento.tipo_equipamento?.nome || 'N/A'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="voluntario">ID do Voluntário *</Label>
+                <Input 
+                  id="voluntario" 
+                  placeholder="ID do voluntário"
+                  value={novaAtribuicao.voluntario_id}
+                  onChange={(e) => setNovaAtribuicao({...novaAtribuicao, voluntario_id: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label htmlFor="data_atribuicao">Data de Atribuição</Label>
+                <Input 
+                  id="data_atribuicao" 
+                  type="date"
+                  value={novaAtribuicao.data_atribuicao}
+                  onChange={(e) => setNovaAtribuicao({...novaAtribuicao, data_atribuicao: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label htmlFor="data_devolucao">Data de Devolução Prevista</Label>
+                <Input 
+                  id="data_devolucao" 
+                  type="date"
+                  value={novaAtribuicao.data_devolucao_prevista}
+                  onChange={(e) => setNovaAtribuicao({...novaAtribuicao, data_devolucao_prevista: e.target.value})}
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="observacoes">Observações</Label>
+              <Textarea 
+                id="observacoes" 
+                placeholder="Observações sobre a atribuição..."
+                rows={3}
+                value={novaAtribuicao.observacoes}
+                onChange={(e) => setNovaAtribuicao({...novaAtribuicao, observacoes: e.target.value})}
+              />
+            </div>
+          </div>
+          
+          <div className="flex justify-end space-x-2 mt-6">
+            <Button variant="outline" onClick={() => setShowNovaAtribuicao(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              className="bg-purple-600 hover:bg-purple-700"
+              onClick={criarAtribuicao}
+            >
+              Criar Atribuição
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       
       <EnhancedFooter />
     </div>
