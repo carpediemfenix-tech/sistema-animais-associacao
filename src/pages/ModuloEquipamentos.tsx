@@ -128,8 +128,25 @@ interface Manutencao {
   descricao: string;
   custo: number;
   fornecedor_servico: string;
-  status: string;
+  status: 'agendada' | 'em_andamento' | 'concluida' | 'cancelada';
   observacoes: string;
+  equipamento?: Equipamento;
+}
+
+interface AlertaEquipamento {
+  id: string;
+  equipamento_id: string;
+  tipo_alerta: 'manutencao_vencida' | 'manutencao_proxima' | 'atribuicao_vencida' | 'equipamento_danificado' | 'stock_baixo' | 'garantia_vencendo' | 'vida_util_esgotada';
+  titulo: string;
+  descricao: string;
+  prioridade: 'baixa' | 'media' | 'alta' | 'critica';
+  status: 'ativo' | 'resolvido' | 'ignorado';
+  data_criacao: string;
+  data_vencimento?: string;
+  data_resolucao?: string;
+  resolvido_por?: string;
+  observacoes_resolucao?: string;
+  ativo: boolean;
   equipamento?: Equipamento;
 }
 
@@ -171,7 +188,7 @@ const ModuloEquipamentos = () => {
   const [equipamentos, setEquipamentos] = useState<Equipamento[]>([]);
   const [atribuicoes, setAtribuicoes] = useState<AtribuicaoEquipamento[]>([]);
   const [manutencoes, setManutencoes] = useState<Manutencao[]>([]);
-  const [alertas, setAlertas] = useState<AlertaReposicao[]>([]);
+  const [alertas, setAlertas] = useState<AlertaEquipamento[]>([]);
   
   // Estados de UI
   const [searchTerm, setSearchTerm] = useState("");
@@ -271,6 +288,34 @@ const ModuloEquipamentos = () => {
   const [devolucaoForm, setDevolucaoForm] = useState({
     estado: 'devolvida' as 'devolvida' | 'perdida' | 'danificada',
     observacoes_devolucao: ''
+  });
+
+  // Estados para CRUD de Manutenções
+  const [showNovaManutencaoDialog, setShowNovaManutencaoDialog] = useState(false);
+  const [showEditarManutencaoDialog, setShowEditarManutencaoDialog] = useState(false);
+  const [showConcluirManutencaoDialog, setShowConcluirManutencaoDialog] = useState(false);
+  const [manutencaoSelecionada, setManutencaoSelecionada] = useState<Manutencao | null>(null);
+
+  // Estados para CRUD de Alertas
+  const [showGerenciarAlertasDialog, setShowGerenciarAlertasDialog] = useState(false);
+  const [showResolverAlertaDialog, setShowResolverAlertaDialog] = useState(false);
+  const [alertaSelecionado, setAlertaSelecionado] = useState<AlertaEquipamento | null>(null);
+
+  // Formulário para nova manutenção
+  const [manutencaoForm, setManutencaoForm] = useState({
+    equipamento_id: '',
+    tipo_manutencao: 'Preventiva',
+    data_manutencao: new Date().toISOString().split('T')[0],
+    data_proxima_manutencao: '',
+    descricao: '',
+    custo: 0,
+    fornecedor_servico: '',
+    observacoes: ''
+  });
+
+  // Formulário para resolver alerta
+  const [resolverAlertaForm, setResolverAlertaForm] = useState({
+    observacoes_resolucao: ''
   });
 
   useEffect(() => {
@@ -551,10 +596,21 @@ const ModuloEquipamentos = () => {
   const loadAlertas = async () => {
     try {
       const { data, error } = await supabase
-        .from('alertas_reposicao_2025_12_13_01_00')
-        .select('*')
-        .eq('alerta_ativo', true)
-        .order('created_at', { ascending: false });
+        .from('alertas_equipamentos_2025_12_16_07_00')
+        .select(`
+          *,
+          equipamento:equipamentos_2025_12_13_01_00(
+            id,
+            codigo_interno,
+            tipo_equipamento:tipos_equipamentos_2025_12_13_01_00(
+              nome,
+              categoria:categorias_equipamentos_2025_12_13_01_00(nome)
+            )
+          )
+        `)
+        .eq('status', 'ativo')
+        .order('prioridade', { ascending: false })
+        .order('data_criacao', { ascending: false });
 
       if (error) {
         console.error('Erro ao carregar alertas:', error);
@@ -1476,6 +1532,279 @@ const ModuloEquipamentos = () => {
     return cores[estado as keyof typeof cores] || 'bg-gray-100 text-gray-800';
   };
 
+  // ===== FUNÇÕES CRUD PARA MANUTENÇÕES =====
+
+  const resetManutencaoForm = () => {
+    setManutencaoForm({
+      equipamento_id: '',
+      tipo_manutencao: 'Preventiva',
+      data_manutencao: new Date().toISOString().split('T')[0],
+      data_proxima_manutencao: '',
+      descricao: '',
+      custo: 0,
+      fornecedor_servico: '',
+      observacoes: ''
+    });
+  };
+
+  const handleNovaManutencao = (equipamento?: Equipamento) => {
+    resetManutencaoForm();
+    if (equipamento) {
+      setManutencaoForm(prev => ({ ...prev, equipamento_id: equipamento.id }));
+    }
+    setShowNovaManutencaoDialog(true);
+  };
+
+  const handleEditarManutencao = (manutencao: Manutencao) => {
+    setManutencaoSelecionada(manutencao);
+    setManutencaoForm({
+      equipamento_id: manutencao.equipamento_id,
+      tipo_manutencao: manutencao.tipo_manutencao,
+      data_manutencao: manutencao.data_manutencao,
+      data_proxima_manutencao: manutencao.data_proxima_manutencao,
+      descricao: manutencao.descricao,
+      custo: manutencao.custo,
+      fornecedor_servico: manutencao.fornecedor_servico,
+      observacoes: manutencao.observacoes
+    });
+    setShowEditarManutencaoDialog(true);
+  };
+
+  const handleCriarManutencao = async () => {
+    try {
+      // Validações
+      if (!manutencaoForm.equipamento_id || !manutencaoForm.descricao || !manutencaoForm.data_manutencao) {
+        toast({
+          title: 'Erro de Validação',
+          description: 'Equipamento, descrição e data são obrigatórios',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const { error } = await supabase
+        .from('manutencoes_equipamentos_2025_12_13_01_00')
+        .insert({
+          equipamento_id: manutencaoForm.equipamento_id,
+          tipo_manutencao: manutencaoForm.tipo_manutencao,
+          data_manutencao: manutencaoForm.data_manutencao,
+          data_proxima_manutencao: manutencaoForm.data_proxima_manutencao || null,
+          descricao: manutencaoForm.descricao,
+          custo: manutencaoForm.custo,
+          fornecedor_servico: manutencaoForm.fornecedor_servico,
+          status: 'agendada',
+          observacoes: manutencaoForm.observacoes
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Sucesso',
+        description: 'Manutenção agendada com sucesso',
+      });
+
+      setShowNovaManutencaoDialog(false);
+      resetManutencaoForm();
+      loadManutencoes();
+    } catch (error: any) {
+      console.error('Erro ao criar manutenção:', error);
+      toast({
+        title: 'Erro',
+        description: error.message || 'Erro ao agendar manutenção',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleAtualizarManutencao = async () => {
+    if (!manutencaoSelecionada) return;
+
+    try {
+      const { error } = await supabase
+        .from('manutencoes_equipamentos_2025_12_13_01_00')
+        .update({
+          tipo_manutencao: manutencaoForm.tipo_manutencao,
+          data_manutencao: manutencaoForm.data_manutencao,
+          data_proxima_manutencao: manutencaoForm.data_proxima_manutencao || null,
+          descricao: manutencaoForm.descricao,
+          custo: manutencaoForm.custo,
+          fornecedor_servico: manutencaoForm.fornecedor_servico,
+          observacoes: manutencaoForm.observacoes,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', manutencaoSelecionada.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Sucesso',
+        description: 'Manutenção atualizada com sucesso',
+      });
+
+      setShowEditarManutencaoDialog(false);
+      setManutencaoSelecionada(null);
+      resetManutencaoForm();
+      loadManutencoes();
+    } catch (error: any) {
+      console.error('Erro ao atualizar manutenção:', error);
+      toast({
+        title: 'Erro',
+        description: error.message || 'Erro ao atualizar manutenção',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleConcluirManutencao = (manutencao: Manutencao) => {
+    setManutencaoSelecionada(manutencao);
+    setShowConcluirManutencaoDialog(true);
+  };
+
+  const handleConfirmarConclusao = async () => {
+    if (!manutencaoSelecionada) return;
+
+    try {
+      const { error } = await supabase
+        .from('manutencoes_equipamentos_2025_12_13_01_00')
+        .update({
+          status: 'concluida',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', manutencaoSelecionada.id);
+
+      if (error) throw error;
+
+      // Se equipamento estava em manutenção, voltar para disponível
+      if (manutencaoSelecionada.equipamento?.estado === 'manutencao') {
+        await supabase
+          .from('equipamentos_2025_12_13_01_00')
+          .update({ estado: 'disponivel' })
+          .eq('id', manutencaoSelecionada.equipamento_id);
+      }
+
+      toast({
+        title: 'Sucesso',
+        description: 'Manutenção concluída com sucesso',
+      });
+
+      setShowConcluirManutencaoDialog(false);
+      setManutencaoSelecionada(null);
+      loadManutencoes();
+      loadEquipamentos();
+    } catch (error: any) {
+      console.error('Erro ao concluir manutenção:', error);
+      toast({
+        title: 'Erro',
+        description: error.message || 'Erro ao concluir manutenção',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  // ===== FUNÇÕES CRUD PARA ALERTAS =====
+
+  const handleGerenciarAlertas = () => {
+    setShowGerenciarAlertasDialog(true);
+  };
+
+  const handleResolverAlerta = (alerta: AlertaEquipamento) => {
+    setAlertaSelecionado(alerta);
+    setResolverAlertaForm({ observacoes_resolucao: '' });
+    setShowResolverAlertaDialog(true);
+  };
+
+  const handleConfirmarResolucaoAlerta = async () => {
+    if (!alertaSelecionado) return;
+
+    try {
+      const { error } = await supabase
+        .from('alertas_equipamentos_2025_12_16_07_00')
+        .update({
+          status: 'resolvido',
+          data_resolucao: new Date().toISOString(),
+          observacoes_resolucao: resolverAlertaForm.observacoes_resolucao,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', alertaSelecionado.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Sucesso',
+        description: 'Alerta resolvido com sucesso',
+      });
+
+      setShowResolverAlertaDialog(false);
+      setAlertaSelecionado(null);
+      loadAlertas();
+    } catch (error: any) {
+      console.error('Erro ao resolver alerta:', error);
+      toast({
+        title: 'Erro',
+        description: error.message || 'Erro ao resolver alerta',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleIgnorarAlerta = async (alerta: AlertaEquipamento) => {
+    try {
+      const { error } = await supabase
+        .from('alertas_equipamentos_2025_12_16_07_00')
+        .update({
+          status: 'ignorado',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', alerta.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Sucesso',
+        description: 'Alerta ignorado',
+      });
+
+      loadAlertas();
+    } catch (error: any) {
+      console.error('Erro ao ignorar alerta:', error);
+      toast({
+        title: 'Erro',
+        description: error.message || 'Erro ao ignorar alerta',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const getPrioridadeAlertaBadge = (prioridade: string) => {
+    const cores = {
+      'baixa': 'bg-gray-100 text-gray-800',
+      'media': 'bg-yellow-100 text-yellow-800',
+      'alta': 'bg-orange-100 text-orange-800',
+      'critica': 'bg-red-100 text-red-800'
+    };
+    return cores[prioridade as keyof typeof cores] || 'bg-gray-100 text-gray-800';
+  };
+
+  const getTipoAlertaIcon = (tipo: string) => {
+    switch (tipo) {
+      case 'manutencao_vencida':
+      case 'manutencao_proxima':
+        return '🔧';
+      case 'atribuicao_vencida':
+        return '⏰';
+      case 'equipamento_danificado':
+        return '⚠️';
+      case 'garantia_vencendo':
+        return '📋';
+      case 'stock_baixo':
+        return '📦';
+      case 'vida_util_esgotada':
+        return '🔄';
+      default:
+        return '🔔';
+    }
+  };
+
   // Funções para desativar e eliminar equipamentos
   const handleDesativarEquipamento = async (equipamento: Equipamento) => {
     if (!confirm('Tem certeza que deseja desativar o equipamento "' + equipamento.codigo_interno + '"?')) {
@@ -2298,97 +2627,351 @@ const ModuloEquipamentos = () => {
 
             {/* Manutenções Tab */}
             <TabsContent value="manutencoes" className="space-y-6">
+              {/* Ações Rápidas */}
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold">Gestão de Manutenções</h3>
+                <div className="flex space-x-2">
+                  <Button onClick={() => handleNovaManutencao()} className="bg-blue-600 hover:bg-blue-700">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Nova Manutenção
+                  </Button>
+                </div>
+              </div>
+
+              {/* Manutenções Agendadas */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center">
-                    <Wrench className="h-5 w-5 mr-2" />
-                    Histórico de Manutenções
+                    <Calendar className="h-5 w-5 mr-2 text-blue-600" />
+                    Manutenções Agendadas
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {manutencoes.map((manutencao) => (
-                      <div key={manutencao.id} className="flex items-center justify-between p-4 rounded-lg border bg-white">
-                        <div className="flex items-center space-x-4">
-                          <div className="p-2 bg-yellow-100 rounded-full">
-                            <Wrench className="h-4 w-4 text-yellow-600" />
+                  {manutencoes.filter(m => m.status === 'agendada').length === 0 ? (
+                    <div className="text-center py-8">
+                      <Calendar className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-500">Nenhuma manutenção agendada</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {manutencoes.filter(m => m.status === 'agendada').map((manutencao) => (
+                        <div key={manutencao.id} className="flex items-center justify-between p-4 rounded-lg border bg-blue-50">
+                          <div className="flex items-center space-x-4">
+                            <div className="p-2 bg-blue-100 rounded-full">
+                              <Calendar className="h-4 w-4 text-blue-600" />
+                            </div>
+                            <div>
+                              <div className="font-medium">
+                                {manutencao.equipamento?.codigo_interno} - {manutencao.tipo_manutencao}
+                              </div>
+                              <div className="text-sm text-gray-600">
+                                {manutencao.descricao}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                Agendada para: {new Date(manutencao.data_manutencao).toLocaleDateString('pt-PT')}
+                                {manutencao.custo > 0 && ` • ${manutencao.custo.toFixed(2)}€`}
+                              </div>
+                            </div>
                           </div>
-                          <div>
-                            <div className="font-medium">
-                              {manutencao.equipamento?.codigo_interno} - {manutencao.tipo_manutencao}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              {manutencao.descricao}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              {formatDate(manutencao.data_manutencao)}
-                              {manutencao.custo > 0 && ` • ${formatCurrency(manutencao.custo)}`}
-                            </div>
+                          <div className="flex items-center space-x-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleEditarManutencao(manutencao)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleConcluirManutencao(manutencao)}
+                              className="text-green-600 hover:text-green-700"
+                            >
+                              <CheckCircle className="h-4 w-4" />
+                            </Button>
                           </div>
                         </div>
-                        <Badge className={
-                          manutencao.status === 'concluida' ? 'bg-green-100 text-green-800' :
-                          manutencao.status === 'em_andamento' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-blue-100 text-blue-800'
-                        }>
-                          {manutencao.status}
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Manutenções em Andamento */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Wrench className="h-5 w-5 mr-2 text-yellow-600" />
+                    Em Andamento
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {manutencoes.filter(m => m.status === 'em_andamento').length === 0 ? (
+                    <div className="text-center py-4">
+                      <p className="text-gray-500">Nenhuma manutenção em andamento</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {manutencoes.filter(m => m.status === 'em_andamento').map((manutencao) => (
+                        <div key={manutencao.id} className="flex items-center justify-between p-4 rounded-lg border bg-yellow-50">
+                          <div className="flex items-center space-x-4">
+                            <div className="p-2 bg-yellow-100 rounded-full">
+                              <Wrench className="h-4 w-4 text-yellow-600" />
+                            </div>
+                            <div>
+                              <div className="font-medium">
+                                {manutencao.equipamento?.codigo_interno} - {manutencao.tipo_manutencao}
+                              </div>
+                              <div className="text-sm text-gray-600">
+                                {manutencao.descricao}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                Iniciada em: {new Date(manutencao.data_manutencao).toLocaleDateString('pt-PT')}
+                                {manutencao.fornecedor_servico && ` • ${manutencao.fornecedor_servico}`}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Badge className="bg-yellow-100 text-yellow-800">
+                              Em Andamento
+                            </Badge>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleConcluirManutencao(manutencao)}
+                              className="text-green-600 hover:text-green-700"
+                            >
+                              <CheckCircle className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Histórico de Manutenções */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <History className="h-5 w-5 mr-2 text-green-600" />
+                    Histórico (Concluídas)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {manutencoes.filter(m => m.status === 'concluida').length === 0 ? (
+                    <div className="text-center py-4">
+                      <p className="text-gray-500">Nenhuma manutenção concluída</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {manutencoes.filter(m => m.status === 'concluida').slice(0, 5).map((manutencao) => (
+                        <div key={manutencao.id} className="flex items-center justify-between p-4 rounded-lg border bg-green-50">
+                          <div className="flex items-center space-x-4">
+                            <div className="p-2 bg-green-100 rounded-full">
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                            </div>
+                            <div>
+                              <div className="font-medium">
+                                {manutencao.equipamento?.codigo_interno} - {manutencao.tipo_manutencao}
+                              </div>
+                              <div className="text-sm text-gray-600">
+                                {manutencao.descricao}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                Concluída em: {new Date(manutencao.data_manutencao).toLocaleDateString('pt-PT')}
+                                {manutencao.custo > 0 && ` • ${manutencao.custo.toFixed(2)}€`}
+                              </div>
+                            </div>
+                          </div>
+                          <Badge className="bg-green-100 text-green-800">
+                            Concluída
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
 
             {/* Alertas Tab */}
             <TabsContent value="alertas" className="space-y-6">
+              {/* Ações Rápidas */}
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold">Sistema de Alertas Inteligente</h3>
+                <div className="flex space-x-2">
+                  <Button onClick={handleGerenciarAlertas} variant="outline">
+                    <Settings className="h-4 w-4 mr-2" />
+                    Configurar Alertas
+                  </Button>
+                </div>
+              </div>
+
+              {/* Alertas Críticos */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center">
-                    <Bell className="h-5 w-5 mr-2" />
-                    Alertas de Reposição
+                    <AlertTriangle className="h-5 w-5 mr-2 text-red-600" />
+                    Alertas Críticos
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {alertas.map((alerta) => {
-                      const isUrgente = alerta.quantidade_atual <= alerta.quantidade_minima;
-                      
-                      return (
-                        <div key={alerta.id} className={`flex items-center justify-between p-4 rounded-lg border ${
-                          isUrgente ? 'bg-red-50 border-red-200' : 'bg-white'
-                        }`}>
+                  {alertas.filter(a => a.prioridade === 'critica').length === 0 ? (
+                    <div className="text-center py-4">
+                      <CheckCircle className="h-16 w-16 text-green-400 mx-auto mb-4" />
+                      <p className="text-gray-500">Nenhum alerta crítico</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {alertas.filter(a => a.prioridade === 'critica').map((alerta) => (
+                        <div key={alerta.id} className="flex items-center justify-between p-4 rounded-lg border bg-red-50 border-red-200">
                           <div className="flex items-center space-x-4">
-                            <div className={`p-2 rounded-full ${
-                              isUrgente ? 'bg-red-100' : 'bg-orange-100'
-                            }`}>
-                              <AlertTriangle className={`h-4 w-4 ${
-                                isUrgente ? 'text-red-600' : 'text-orange-600'
-                              }`} />
-                            </div>
+                            <div className="text-2xl">{getTipoAlertaIcon(alerta.tipo_alerta)}</div>
                             <div>
-                              <div className="font-medium">{alerta.tipo_equipamento?.nome}</div>
+                              <div className="font-medium text-red-800">{alerta.titulo}</div>
+                              <div className="text-sm text-red-600">{alerta.descricao}</div>
                               <div className="text-sm text-gray-500">
-                                {alerta.tipo_equipamento?.categoria?.nome}
-                              </div>
-                              <div className="text-sm text-gray-500">
-                                Atual: {alerta.quantidade_atual} | Mínimo: {alerta.quantidade_minima} | Recomendado: {alerta.quantidade_recomendada}
+                                {alerta.equipamento?.codigo_interno} • {new Date(alerta.data_criacao).toLocaleDateString('pt-PT')}
                               </div>
                             </div>
                           </div>
                           <div className="flex items-center space-x-2">
-                            <Badge variant={isUrgente ? "destructive" : "secondary"}>
-                              {isUrgente ? 'Urgente' : 'Atenção'}
+                            <Badge className={getPrioridadeAlertaBadge(alerta.prioridade)}>
+                              {alerta.prioridade.toUpperCase()}
                             </Badge>
-                            <Button variant="outline" size="sm">
-                              <Plus className="h-4 w-4 mr-1" />
-                              Repor
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleResolverAlerta(alerta)}
+                              className="text-green-600 hover:text-green-700"
+                            >
+                              <CheckCircle className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleIgnorarAlerta(alerta)}
+                              className="text-gray-600 hover:text-gray-700"
+                            >
+                              <X className="h-4 w-4" />
                             </Button>
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Alertas de Alta Prioridade */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Bell className="h-5 w-5 mr-2 text-orange-600" />
+                    Alertas de Alta Prioridade
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {alertas.filter(a => a.prioridade === 'alta').length === 0 ? (
+                    <div className="text-center py-4">
+                      <p className="text-gray-500">Nenhum alerta de alta prioridade</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {alertas.filter(a => a.prioridade === 'alta').map((alerta) => (
+                        <div key={alerta.id} className="flex items-center justify-between p-4 rounded-lg border bg-orange-50">
+                          <div className="flex items-center space-x-4">
+                            <div className="text-2xl">{getTipoAlertaIcon(alerta.tipo_alerta)}</div>
+                            <div>
+                              <div className="font-medium">{alerta.titulo}</div>
+                              <div className="text-sm text-gray-600">{alerta.descricao}</div>
+                              <div className="text-sm text-gray-500">
+                                {alerta.equipamento?.codigo_interno} • {new Date(alerta.data_criacao).toLocaleDateString('pt-PT')}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Badge className={getPrioridadeAlertaBadge(alerta.prioridade)}>
+                              {alerta.prioridade.toUpperCase()}
+                            </Badge>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleResolverAlerta(alerta)}
+                              className="text-green-600 hover:text-green-700"
+                            >
+                              <CheckCircle className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleIgnorarAlerta(alerta)}
+                              className="text-gray-600 hover:text-gray-700"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Outros Alertas */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Info className="h-5 w-5 mr-2 text-blue-600" />
+                    Outros Alertas
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {alertas.filter(a => a.prioridade === 'media' || a.prioridade === 'baixa').length === 0 ? (
+                    <div className="text-center py-4">
+                      <p className="text-gray-500">Nenhum outro alerta</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {alertas.filter(a => a.prioridade === 'media' || a.prioridade === 'baixa').slice(0, 5).map((alerta) => (
+                        <div key={alerta.id} className="flex items-center justify-between p-4 rounded-lg border">
+                          <div className="flex items-center space-x-4">
+                            <div className="text-xl">{getTipoAlertaIcon(alerta.tipo_alerta)}</div>
+                            <div>
+                              <div className="font-medium">{alerta.titulo}</div>
+                              <div className="text-sm text-gray-600">{alerta.descricao}</div>
+                              <div className="text-sm text-gray-500">
+                                {alerta.equipamento?.codigo_interno} • {new Date(alerta.data_criacao).toLocaleDateString('pt-PT')}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Badge className={getPrioridadeAlertaBadge(alerta.prioridade)}>
+                              {alerta.prioridade.toUpperCase()}
+                            </Badge>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleResolverAlerta(alerta)}
+                              className="text-green-600 hover:text-green-700"
+                            >
+                              <CheckCircle className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleIgnorarAlerta(alerta)}
+                              className="text-gray-600 hover:text-gray-700"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -4020,6 +4603,455 @@ const ModuloEquipamentos = () => {
           
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowHistoricoAtribuicoesDialog(false)}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo Nova Manutenção */}
+      <Dialog open={showNovaManutencaoDialog} onOpenChange={setShowNovaManutencaoDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <Wrench className="h-5 w-5 mr-2 text-blue-600" />
+              Nova Manutenção
+            </DialogTitle>
+            <DialogDescription>
+              Agendar nova manutenção para equipamento
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="manutencao_equipamento">Equipamento *</Label>
+                <Select 
+                  value={manutencaoForm.equipamento_id} 
+                  onValueChange={(value) => setManutencaoForm({...manutencaoForm, equipamento_id: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecionar equipamento" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {equipamentos.filter(e => e.ativo).map((equipamento) => (
+                      <SelectItem key={equipamento.id} value={equipamento.id}>
+                        {equipamento.codigo_interno} - {equipamento.tipo_equipamento?.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="manutencao_tipo">Tipo de Manutenção *</Label>
+                <Select 
+                  value={manutencaoForm.tipo_manutencao} 
+                  onValueChange={(value) => setManutencaoForm({...manutencaoForm, tipo_manutencao: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Preventiva">Preventiva</SelectItem>
+                    <SelectItem value="Corretiva">Corretiva</SelectItem>
+                    <SelectItem value="Preditiva">Preditiva</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="manutencao_data">Data da Manutenção *</Label>
+                <Input
+                  id="manutencao_data"
+                  type="date"
+                  value={manutencaoForm.data_manutencao}
+                  onChange={(e) => setManutencaoForm({...manutencaoForm, data_manutencao: e.target.value})}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="manutencao_proxima">Próxima Manutenção</Label>
+                <Input
+                  id="manutencao_proxima"
+                  type="date"
+                  value={manutencaoForm.data_proxima_manutencao}
+                  onChange={(e) => setManutencaoForm({...manutencaoForm, data_proxima_manutencao: e.target.value})}
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="manutencao_custo">Custo Estimado (€)</Label>
+                <Input
+                  id="manutencao_custo"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={manutencaoForm.custo}
+                  onChange={(e) => setManutencaoForm({...manutencaoForm, custo: parseFloat(e.target.value) || 0})}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="manutencao_fornecedor">Fornecedor/Técnico</Label>
+                <Input
+                  id="manutencao_fornecedor"
+                  value={manutencaoForm.fornecedor_servico}
+                  onChange={(e) => setManutencaoForm({...manutencaoForm, fornecedor_servico: e.target.value})}
+                  placeholder="Nome do fornecedor ou técnico"
+                />
+              </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="manutencao_descricao">Descrição *</Label>
+              <Textarea
+                id="manutencao_descricao"
+                value={manutencaoForm.descricao}
+                onChange={(e) => setManutencaoForm({...manutencaoForm, descricao: e.target.value})}
+                placeholder="Descreva o tipo de manutenção a ser realizada"
+                rows={3}
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="manutencao_observacoes">Observações</Label>
+              <Textarea
+                id="manutencao_observacoes"
+                value={manutencaoForm.observacoes}
+                onChange={(e) => setManutencaoForm({...manutencaoForm, observacoes: e.target.value})}
+                placeholder="Observações adicionais, instruções especiais, etc."
+                rows={2}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNovaManutencaoDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleCriarManutencao} className="bg-blue-600 hover:bg-blue-700">
+              <Wrench className="h-4 w-4 mr-2" />
+              Agendar Manutenção
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo Editar Manutenção */}
+      <Dialog open={showEditarManutencaoDialog} onOpenChange={setShowEditarManutencaoDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <Edit className="h-5 w-5 mr-2 text-blue-600" />
+              Editar Manutenção
+            </DialogTitle>
+            <DialogDescription>
+              Editar informações da manutenção agendada
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit_manutencao_equipamento">Equipamento *</Label>
+                <Select 
+                  value={manutencaoForm.equipamento_id} 
+                  onValueChange={(value) => setManutencaoForm({...manutencaoForm, equipamento_id: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecionar equipamento" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {equipamentos.filter(e => e.ativo).map((equipamento) => (
+                      <SelectItem key={equipamento.id} value={equipamento.id}>
+                        {equipamento.codigo_interno} - {equipamento.tipo_equipamento?.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="edit_manutencao_tipo">Tipo de Manutenção *</Label>
+                <Select 
+                  value={manutencaoForm.tipo_manutencao} 
+                  onValueChange={(value) => setManutencaoForm({...manutencaoForm, tipo_manutencao: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Preventiva">Preventiva</SelectItem>
+                    <SelectItem value="Corretiva">Corretiva</SelectItem>
+                    <SelectItem value="Preditiva">Preditiva</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit_manutencao_data">Data da Manutenção *</Label>
+                <Input
+                  id="edit_manutencao_data"
+                  type="date"
+                  value={manutencaoForm.data_manutencao}
+                  onChange={(e) => setManutencaoForm({...manutencaoForm, data_manutencao: e.target.value})}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="edit_manutencao_proxima">Próxima Manutenção</Label>
+                <Input
+                  id="edit_manutencao_proxima"
+                  type="date"
+                  value={manutencaoForm.data_proxima_manutencao}
+                  onChange={(e) => setManutencaoForm({...manutencaoForm, data_proxima_manutencao: e.target.value})}
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit_manutencao_custo">Custo Estimado (€)</Label>
+                <Input
+                  id="edit_manutencao_custo"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={manutencaoForm.custo}
+                  onChange={(e) => setManutencaoForm({...manutencaoForm, custo: parseFloat(e.target.value) || 0})}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="edit_manutencao_fornecedor">Fornecedor/Técnico</Label>
+                <Input
+                  id="edit_manutencao_fornecedor"
+                  value={manutencaoForm.fornecedor_servico}
+                  onChange={(e) => setManutencaoForm({...manutencaoForm, fornecedor_servico: e.target.value})}
+                  placeholder="Nome do fornecedor ou técnico"
+                />
+              </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="edit_manutencao_descricao">Descrição *</Label>
+              <Textarea
+                id="edit_manutencao_descricao"
+                value={manutencaoForm.descricao}
+                onChange={(e) => setManutencaoForm({...manutencaoForm, descricao: e.target.value})}
+                placeholder="Descreva o tipo de manutenção a ser realizada"
+                rows={3}
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="edit_manutencao_observacoes">Observações</Label>
+              <Textarea
+                id="edit_manutencao_observacoes"
+                value={manutencaoForm.observacoes}
+                onChange={(e) => setManutencaoForm({...manutencaoForm, observacoes: e.target.value})}
+                placeholder="Observações adicionais, instruções especiais, etc."
+                rows={2}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditarManutencaoDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleAtualizarManutencao} className="bg-blue-600 hover:bg-blue-700">
+              <Edit className="h-4 w-4 mr-2" />
+              Atualizar Manutenção
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo Concluir Manutenção */}
+      <Dialog open={showConcluirManutencaoDialog} onOpenChange={setShowConcluirManutencaoDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <CheckCircle className="h-5 w-5 mr-2 text-green-600" />
+              Concluir Manutenção
+            </DialogTitle>
+            <DialogDescription>
+              Marcar manutenção como concluída
+            </DialogDescription>
+          </DialogHeader>
+          
+          {manutencaoSelecionada && (
+            <div className="space-y-4">
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <div className="font-medium">
+                  {manutencaoSelecionada.equipamento?.codigo_interno} - {manutencaoSelecionada.tipo_manutencao}
+                </div>
+                <div className="text-sm text-gray-600">
+                  {manutencaoSelecionada.descricao}
+                </div>
+                <div className="text-sm text-gray-500">
+                  Agendada para: {new Date(manutencaoSelecionada.data_manutencao).toLocaleDateString('pt-PT')}
+                </div>
+              </div>
+              
+              <div className="text-sm text-gray-600">
+                Tem certeza que deseja marcar esta manutenção como concluída?
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowConcluirManutencaoDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleConfirmarConclusao} className="bg-green-600 hover:bg-green-700">
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Concluir Manutenção
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo Resolver Alerta */}
+      <Dialog open={showResolverAlertaDialog} onOpenChange={setShowResolverAlertaDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <CheckCircle className="h-5 w-5 mr-2 text-green-600" />
+              Resolver Alerta
+            </DialogTitle>
+            <DialogDescription>
+              Marcar alerta como resolvido
+            </DialogDescription>
+          </DialogHeader>
+          
+          {alertaSelecionado && (
+            <div className="space-y-4">
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center space-x-2 mb-2">
+                  <div className="text-xl">{getTipoAlertaIcon(alertaSelecionado.tipo_alerta)}</div>
+                  <div className="font-medium">{alertaSelecionado.titulo}</div>
+                </div>
+                <div className="text-sm text-gray-600">
+                  {alertaSelecionado.descricao}
+                </div>
+                <div className="text-sm text-gray-500">
+                  Equipamento: {alertaSelecionado.equipamento?.codigo_interno}
+                </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="resolucao_observacoes">Observações da Resolução</Label>
+                <Textarea
+                  id="resolucao_observacoes"
+                  value={resolverAlertaForm.observacoes_resolucao}
+                  onChange={(e) => setResolverAlertaForm({...resolverAlertaForm, observacoes_resolucao: e.target.value})}
+                  placeholder="Descreva como o problema foi resolvido"
+                  rows={3}
+                />
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowResolverAlertaDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleConfirmarResolucaoAlerta} className="bg-green-600 hover:bg-green-700">
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Resolver Alerta
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo Gerenciar Alertas */}
+      <Dialog open={showGerenciarAlertasDialog} onOpenChange={setShowGerenciarAlertasDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <Settings className="h-5 w-5 mr-2 text-blue-600" />
+              Gerenciar Alertas
+            </DialogTitle>
+            <DialogDescription>
+              Configurar e visualizar todos os alertas do sistema
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Resumo de Alertas */}
+            <div className="grid grid-cols-4 gap-4">
+              <div className="p-4 bg-red-50 rounded-lg text-center">
+                <div className="text-2xl font-bold text-red-600">
+                  {alertas.filter(a => a.prioridade === 'critica').length}
+                </div>
+                <div className="text-sm text-red-600">Críticos</div>
+              </div>
+              <div className="p-4 bg-orange-50 rounded-lg text-center">
+                <div className="text-2xl font-bold text-orange-600">
+                  {alertas.filter(a => a.prioridade === 'alta').length}
+                </div>
+                <div className="text-sm text-orange-600">Alta Prioridade</div>
+              </div>
+              <div className="p-4 bg-yellow-50 rounded-lg text-center">
+                <div className="text-2xl font-bold text-yellow-600">
+                  {alertas.filter(a => a.prioridade === 'media').length}
+                </div>
+                <div className="text-sm text-yellow-600">Média Prioridade</div>
+              </div>
+              <div className="p-4 bg-blue-50 rounded-lg text-center">
+                <div className="text-2xl font-bold text-blue-600">
+                  {alertas.filter(a => a.prioridade === 'baixa').length}
+                </div>
+                <div className="text-sm text-blue-600">Baixa Prioridade</div>
+              </div>
+            </div>
+            
+            {/* Lista de Todos os Alertas */}
+            <div>
+              <h4 className="font-medium mb-3">Todos os Alertas Ativos</h4>
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {alertas.map((alerta) => (
+                  <div key={alerta.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <div className="text-lg">{getTipoAlertaIcon(alerta.tipo_alerta)}</div>
+                      <div>
+                        <div className="font-medium text-sm">{alerta.titulo}</div>
+                        <div className="text-xs text-gray-600">{alerta.equipamento?.codigo_interno}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Badge className={getPrioridadeAlertaBadge(alerta.prioridade)} size="sm">
+                        {alerta.prioridade}
+                      </Badge>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          setShowGerenciarAlertasDialog(false);
+                          handleResolverAlerta(alerta);
+                        }}
+                        className="text-green-600 hover:text-green-700"
+                      >
+                        <CheckCircle className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowGerenciarAlertasDialog(false)}>
               Fechar
             </Button>
           </DialogFooter>
