@@ -216,7 +216,7 @@ const GestaoResponsabilidades = () => {
   };
 
   const handleRemoverTipo = async (tipo: TipoResponsabilidade) => {
-    if (!confirm(`Tem certeza que deseja remover o tipo "${tipo.nome}"? Esta ação não pode ser desfeita.`)) {
+    if (!confirm(`Tem certeza que deseja remover o tipo '${tipo.nome}'? Esta ação não pode ser desfeita.`)) {
       return;
     }
 

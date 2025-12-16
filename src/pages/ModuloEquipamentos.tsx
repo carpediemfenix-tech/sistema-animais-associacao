@@ -106,15 +106,17 @@ interface AtribuicaoEquipamento {
   equipamento_id: string;
   voluntario_id: string;
   data_atribuicao: string;
-  data_devolucao: string;
-  motivo_atribuicao: string;
-  estado_entrega: string;
-  estado_devolucao: string;
-  observacoes_entrega: string;
-  observacoes_devolucao: string;
+  data_devolucao?: string;
+  data_devolucao_prevista?: string;
+  estado: 'ativa' | 'devolvida' | 'perdida' | 'danificada';
+  observacoes?: string;
+  observacoes_devolucao?: string;
+  devolvido_por?: string;
   ativo: boolean;
+  created_at: string;
+  updated_at: string;
   equipamento?: Equipamento;
-  voluntario?: { nome: string; email: string };
+  voluntario?: { id: string; nome: string; email: string };
 }
 
 interface Manutencao {
@@ -246,6 +248,29 @@ const ModuloEquipamentos = () => {
     fornecedor: '',
     observacoes: '',
     ativo: true
+  });
+
+  // Estados para CRUD de Atribuições
+  const [showNovaAtribuicaoDialog, setShowNovaAtribuicaoDialog] = useState(false);
+  const [showDevolverEquipamentoDialog, setShowDevolverEquipamentoDialog] = useState(false);
+  const [showHistoricoAtribuicoesDialog, setShowHistoricoAtribuicoesDialog] = useState(false);
+  const [atribuicaoSelecionada, setAtribuicaoSelecionada] = useState<AtribuicaoEquipamento | null>(null);
+  const [equipamentoParaAtribuir, setEquipamentoParaAtribuir] = useState<Equipamento | null>(null);
+  const [voluntarios, setVoluntarios] = useState<any[]>([]);
+
+  // Formulário para nova atribuição
+  const [atribuicaoForm, setAtribuicaoForm] = useState({
+    equipamento_id: '',
+    voluntario_id: '',
+    data_atribuicao: new Date().toISOString().split('T')[0],
+    data_devolucao_prevista: '',
+    observacoes: ''
+  });
+
+  // Formulário para devolução
+  const [devolucaoForm, setDevolucaoForm] = useState({
+    estado: 'devolvida' as 'devolvida' | 'perdida' | 'danificada',
+    observacoes_devolucao: ''
   });
 
   useEffect(() => {
@@ -857,7 +882,7 @@ const ModuloEquipamentos = () => {
 
       toast({
         title: "Categoria criada",
-        description: `Categoria "${categoriaForm.nome}" criada com sucesso`,
+        description: `Categoria '${categoriaForm.nome}' criada com sucesso`,
       });
 
       setShowNovaCategoriaDialog(false);
@@ -913,7 +938,7 @@ const ModuloEquipamentos = () => {
 
       toast({
         title: "Categoria atualizada",
-        description: `Categoria "${categoriaForm.nome}" atualizada com sucesso`,
+        description: `Categoria '${categoriaForm.nome}' atualizada com sucesso`,
       });
 
       setShowEditarCategoriaDialog(false);
@@ -931,7 +956,7 @@ const ModuloEquipamentos = () => {
   };
 
   const handleDesativarCategoria = async (categoria: CategoriaEquipamento) => {
-    if (!confirm(`Tem certeza que deseja ${categoria.ativo ? 'desativar' : 'ativar'} a categoria "${categoria.nome}"?`)) {
+    if (!confirm(`Tem certeza que deseja ${categoria.ativo ? 'desativar' : 'ativar'} a categoria '${categoria.nome}'?`)) {
       return;
     }
 
@@ -945,7 +970,7 @@ const ModuloEquipamentos = () => {
 
       toast({
         title: categoria.ativo ? "Categoria desativada" : "Categoria ativada",
-        description: `Categoria "${categoria.nome}" ${categoria.ativo ? 'desativada' : 'ativada'} com sucesso`,
+        description: `Categoria '${categoria.nome}' ${categoria.ativo ? 'desativada' : 'ativada'} com sucesso`,
       });
 
       loadCategorias();
@@ -976,7 +1001,7 @@ const ModuloEquipamentos = () => {
       return;
     }
 
-    if (!confirm(`ATENÇÃO: Tem certeza que deseja eliminar permanentemente a categoria "${categoria.nome}"?\n\nEsta ação não pode ser desfeita!`)) {
+    if (!confirm(`ATENÇÃO: Tem certeza que deseja eliminar permanentemente a categoria '${categoria.nome}'?\n\nEsta ação não pode ser desfeita!`)) {
       return;
     }
 
@@ -990,7 +1015,7 @@ const ModuloEquipamentos = () => {
 
       toast({
         title: "Categoria eliminada",
-        description: `Categoria "${categoria.nome}" eliminada permanentemente`,
+        description: `Categoria '${categoria.nome}' eliminada permanentemente`,
       });
 
       loadCategorias();
@@ -1102,7 +1127,7 @@ const ModuloEquipamentos = () => {
 
       toast({
         title: "Tipo criado",
-        description: `Tipo "${tipoForm.nome}" criado com sucesso`,
+        description: `Tipo '${tipoForm.nome}' criado com sucesso`,
       });
 
       setShowNovoTipoDialog(false);
@@ -1167,7 +1192,7 @@ const ModuloEquipamentos = () => {
 
       toast({
         title: "Tipo atualizado",
-        description: `Tipo "${tipoForm.nome}" atualizado com sucesso`,
+        description: `Tipo '${tipoForm.nome}' atualizado com sucesso`,
       });
 
       setShowEditarTipoDialog(false);
@@ -1185,7 +1210,7 @@ const ModuloEquipamentos = () => {
   };
 
   const handleDesativarTipo = async (tipo: TipoEquipamento) => {
-    if (!confirm(`Tem certeza que deseja ${tipo.ativo ? 'desativar' : 'ativar'} o tipo "${tipo.nome}"?`)) {
+    if (!confirm(`Tem certeza que deseja ${tipo.ativo ? 'desativar' : 'ativar'} o tipo '${tipo.nome}'?`)) {
       return;
     }
 
@@ -1199,7 +1224,7 @@ const ModuloEquipamentos = () => {
 
       toast({
         title: tipo.ativo ? "Tipo desativado" : "Tipo ativado",
-        description: `Tipo "${tipo.nome}" ${tipo.ativo ? 'desativado' : 'ativado'} com sucesso`,
+        description: `Tipo '${tipo.nome}' ${tipo.ativo ? 'desativado' : 'ativado'} com sucesso`,
       });
 
       loadTiposEquipamentos();
@@ -1230,7 +1255,7 @@ const ModuloEquipamentos = () => {
       return;
     }
 
-    if (!confirm(`ATENÇÃO: Tem certeza que deseja eliminar permanentemente o tipo "${tipo.nome}"?\n\nEsta ação não pode ser desfeita!`)) {
+    if (!confirm(`ATENÇÃO: Tem certeza que deseja eliminar permanentemente o tipo '${tipo.nome}'?\n\nEsta ação não pode ser desfeita!`)) {
       return;
     }
 
@@ -1244,7 +1269,7 @@ const ModuloEquipamentos = () => {
 
       toast({
         title: "Tipo eliminado",
-        description: `Tipo "${tipo.nome}" eliminado permanentemente`,
+        description: `Tipo '${tipo.nome}' eliminado permanentemente`,
       });
 
       loadTiposEquipamentos();
@@ -1258,9 +1283,202 @@ const ModuloEquipamentos = () => {
     }
   };
 
+  // ========== FUNÇÕES CRUD PARA ATRIBUIÇÕES ==========
+  
+  const loadVoluntarios = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('voluntarios')
+        .select('id, nome, email')
+        .eq('ativo', true)
+        .order('nome');
+
+      if (error) throw error;
+      setVoluntarios(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar voluntários:', error);
+    }
+  };
+
+  const resetAtribuicaoForm = () => {
+    setAtribuicaoForm({
+      equipamento_id: '',
+      voluntario_id: '',
+      data_atribuicao: new Date().toISOString().split('T')[0],
+      data_devolucao_prevista: '',
+      observacoes: ''
+    });
+  };
+
+  const resetDevolucaoForm = () => {
+    setDevolucaoForm({
+      estado: 'devolvida',
+      observacoes_devolucao: ''
+    });
+  };
+
+  const handleNovaAtribuicao = (equipamento?: Equipamento) => {
+    resetAtribuicaoForm();
+    if (equipamento) {
+      setEquipamentoParaAtribuir(equipamento);
+      setAtribuicaoForm(prev => ({ ...prev, equipamento_id: equipamento.id }));
+    }
+    loadVoluntarios();
+    setShowNovaAtribuicaoDialog(true);
+  };
+
+  const handleCriarAtribuicao = async () => {
+    try {
+      // Validações
+      if (!atribuicaoForm.equipamento_id) {
+        toast({
+          title: "Campo obrigatório",
+          description: "Selecione um equipamento",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!atribuicaoForm.voluntario_id) {
+        toast({
+          title: "Campo obrigatório",
+          description: "Selecione um voluntário",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Verificar se o equipamento já está atribuído
+      const { data: atribuicaoExistente } = await supabase
+        .from('atribuicoes_equipamentos_2025_12_13_01_00')
+        .select('id')
+        .eq('equipamento_id', atribuicaoForm.equipamento_id)
+        .eq('estado', 'ativa')
+        .single();
+
+      if (atribuicaoExistente) {
+        toast({
+          title: "Equipamento já atribuído",
+          description: "Este equipamento já está atribuído a outro voluntário",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { error } = await supabase
+        .from('atribuicoes_equipamentos_2025_12_13_01_00')
+        .insert([{
+          ...atribuicaoForm,
+          estado: 'ativa',
+          ativo: true
+        }]);
+
+      if (error) throw error;
+
+      // Atualizar estado do equipamento para 'em_uso'
+      await supabase
+        .from('equipamentos_2025_12_13_01_00')
+        .update({ estado: 'em_uso' })
+        .eq('id', atribuicaoForm.equipamento_id);
+
+      toast({
+        title: "Atribuição criada",
+        description: "Equipamento atribuído com sucesso",
+      });
+
+      setShowNovaAtribuicaoDialog(false);
+      resetAtribuicaoForm();
+      setEquipamentoParaAtribuir(null);
+      loadAtribuicoes();
+      loadEquipamentos();
+    } catch (error) {
+      console.error('Erro ao criar atribuição:', error);
+      toast({
+        title: "Erro ao criar atribuição",
+        description: "Não foi possível criar a atribuição",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDevolverEquipamento = (atribuicao: AtribuicaoEquipamento) => {
+    setAtribuicaoSelecionada(atribuicao);
+    resetDevolucaoForm();
+    setShowDevolverEquipamentoDialog(true);
+  };
+
+  const handleConfirmarDevolucao = async () => {
+    if (!atribuicaoSelecionada) return;
+
+    try {
+      // Atualizar atribuição
+      const { error: atribuicaoError } = await supabase
+        .from('atribuicoes_equipamentos_2025_12_13_01_00')
+        .update({
+          estado: devolucaoForm.estado,
+          data_devolucao: new Date().toISOString().split('T')[0],
+          observacoes_devolucao: devolucaoForm.observacoes_devolucao
+        })
+        .eq('id', atribuicaoSelecionada.id);
+
+      if (atribuicaoError) throw atribuicaoError;
+
+      // Atualizar estado do equipamento
+      let novoEstadoEquipamento = 'disponivel';
+      if (devolucaoForm.estado === 'perdida') {
+        novoEstadoEquipamento = 'perdido';
+      } else if (devolucaoForm.estado === 'danificada') {
+        novoEstadoEquipamento = 'danificado';
+      }
+
+      await supabase
+        .from('equipamentos_2025_12_13_01_00')
+        .update({ estado: novoEstadoEquipamento })
+        .eq('id', atribuicaoSelecionada.equipamento_id);
+
+      toast({
+        title: "Devolução registada",
+        description: `Equipamento devolvido como '${devolucaoForm.estado}'`,
+      });
+
+      setShowDevolverEquipamentoDialog(false);
+      resetDevolucaoForm();
+      setAtribuicaoSelecionada(null);
+      loadAtribuicoes();
+      loadEquipamentos();
+    } catch (error) {
+      console.error('Erro ao registar devolução:', error);
+      toast({
+        title: "Erro ao registar devolução",
+        description: "Não foi possível registar a devolução",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleVerHistoricoAtribuicoes = (equipamento: Equipamento) => {
+    setEquipamentoParaAtribuir(equipamento);
+    setShowHistoricoAtribuicoesDialog(true);
+  };
+
+  const getAtribuicoesEquipamento = (equipamentoId: string) => {
+    return atribuicoes.filter(a => a.equipamento_id === equipamentoId)
+      .sort((a, b) => new Date(b.data_atribuicao).getTime() - new Date(a.data_atribuicao).getTime());
+  };
+
+  const getEstadoAtribuicaoBadge = (estado: string) => {
+    const cores = {
+      'ativa': 'bg-green-100 text-green-800',
+      'devolvida': 'bg-blue-100 text-blue-800',
+      'perdida': 'bg-red-100 text-red-800',
+      'danificada': 'bg-orange-100 text-orange-800'
+    };
+    return cores[estado as keyof typeof cores] || 'bg-gray-100 text-gray-800';
+  };
+
   // Funções para desativar e eliminar equipamentos
   const handleDesativarEquipamento = async (equipamento: Equipamento) => {
-    if (!confirm(`Tem certeza que deseja desativar o equipamento "${equipamento.codigo_interno}"?`)) {
+    if (!confirm('Tem certeza que deseja desativar o equipamento "' + equipamento.codigo_interno + '"?')) {
       return;
     }
 
@@ -1274,7 +1492,7 @@ const ModuloEquipamentos = () => {
 
       toast({
         title: "Equipamento desativado",
-        description: `Equipamento "${equipamento.codigo_interno}" foi desativado com sucesso`,
+        description: 'Equipamento "' + equipamento.codigo_interno + '" foi desativado com sucesso',
       });
 
       loadEquipamentos();
@@ -1289,7 +1507,7 @@ const ModuloEquipamentos = () => {
   };
 
   const handleEliminarEquipamento = async (equipamento: Equipamento) => {
-    if (!confirm(`ATENÇÃO: Tem certeza que deseja eliminar permanentemente o equipamento "${equipamento.codigo_interno}"?\n\nEsta ação não pode ser desfeita!`)) {
+    if (!confirm(`ATENÇÃO: Tem certeza que deseja eliminar permanentemente o equipamento '${equipamento.codigo_interno}'?\n\nEsta ação não pode ser desfeita!`)) {
       return;
     }
 
@@ -1303,7 +1521,7 @@ const ModuloEquipamentos = () => {
 
       toast({
         title: "Equipamento eliminado",
-        description: `Equipamento "${equipamento.codigo_interno}" foi eliminado permanentemente`,
+        description: `Equipamento '${equipamento.codigo_interno}' foi eliminado permanentemente`,
       });
 
       loadEquipamentos();
@@ -1836,6 +2054,30 @@ const ModuloEquipamentos = () => {
                                     >
                                       <Edit className="h-4 w-4" />
                                     </Button>
+                                    
+                                    {/* Botões de Atribuição */}
+                                    {equipamento.estado === 'disponivel' && equipamento.ativo ? (
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm"
+                                        onClick={() => handleNovaAtribuicao(equipamento)}
+                                        className="text-purple-600 hover:text-purple-700"
+                                        title="Atribuir equipamento"
+                                      >
+                                        <User className="h-4 w-4" />
+                                      </Button>
+                                    ) : equipamento.estado === 'em_uso' ? (
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm"
+                                        onClick={() => handleVerHistoricoAtribuicoes(equipamento)}
+                                        className="text-indigo-600 hover:text-indigo-700"
+                                        title="Ver histórico de atribuições"
+                                      >
+                                        <History className="h-4 w-4" />
+                                      </Button>
+                                    ) : null}
+                                    
                                     {equipamento.ativo ? (
                                       <Button 
                                         variant="outline" 
@@ -1875,43 +2117,181 @@ const ModuloEquipamentos = () => {
 
             {/* Atribuições Tab */}
             <TabsContent value="atribuicoes" className="space-y-6">
+              {/* Ações Rápidas */}
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Gestão de Atribuições</h3>
+                <Button 
+                  onClick={() => handleNovaAtribuicao()}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nova Atribuição
+                </Button>
+              </div>
+
+              {/* Atribuições Ativas */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center">
                     <User className="h-5 w-5 mr-2" />
-                    Atribuições Ativas ({atribuicoes.length})
+                    Atribuições Ativas ({atribuicoes.filter(a => a.estado === 'ativa').length})
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {atribuicoes.map((atribuicao) => (
-                      <div key={atribuicao.id} className="flex items-center justify-between p-4 rounded-lg border bg-white">
-                        <div className="flex items-center space-x-4">
-                          <div className="p-2 bg-blue-100 rounded-full">
-                            <User className="h-4 w-4 text-blue-600" />
-                          </div>
-                          <div>
-                            <div className="font-medium">{atribuicao.voluntario?.nome}</div>
-                            <div className="text-sm text-gray-500">
-                              {atribuicao.equipamento?.codigo_interno} - {atribuicao.equipamento?.tipo_equipamento?.nome}
+                  {atribuicoes.filter(a => a.estado === 'ativa').length === 0 ? (
+                    <div className="text-center py-8">
+                      <User className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-500 text-lg">Nenhuma atribuição ativa</p>
+                      <p className="text-gray-400">Clique em "Nova Atribuição" para começar</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Equipamento</TableHead>
+                            <TableHead>Voluntário</TableHead>
+                            <TableHead>Data Atribuição</TableHead>
+                            <TableHead>Devolução Prevista</TableHead>
+                            <TableHead>Estado</TableHead>
+                            <TableHead className="text-right">Ações</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {atribuicoes.filter(a => a.estado === 'ativa').map((atribuicao) => {
+                            const diasRestantes = atribuicao.data_devolucao_prevista 
+                              ? Math.ceil((new Date(atribuicao.data_devolucao_prevista).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+                              : null;
+                            
+                            return (
+                              <TableRow key={atribuicao.id}>
+                                <TableCell>
+                                  <div>
+                                    <div className="font-medium">
+                                      {atribuicao.equipamento?.codigo_interno || 'N/A'}
+                                    </div>
+                                    <div className="text-sm text-gray-500">
+                                      {atribuicao.equipamento?.tipo_equipamento?.nome || 'Tipo não definido'}
+                                    </div>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <div>
+                                    <div className="font-medium">
+                                      {atribuicao.voluntario?.nome || 'N/A'}
+                                    </div>
+                                    <div className="text-sm text-gray-500">
+                                      {atribuicao.voluntario?.email || ''}
+                                    </div>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  {new Date(atribuicao.data_atribuicao).toLocaleDateString('pt-PT')}
+                                </TableCell>
+                                <TableCell>
+                                  {atribuicao.data_devolucao_prevista ? (
+                                    <div>
+                                      <div>{new Date(atribuicao.data_devolucao_prevista).toLocaleDateString('pt-PT')}</div>
+                                      {diasRestantes !== null && (
+                                        <div className={`text-sm ${
+                                          diasRestantes < 0 ? 'text-red-600' : 
+                                          diasRestantes <= 7 ? 'text-orange-600' : 
+                                          'text-gray-500'
+                                        }`}>
+                                          {diasRestantes < 0 ? `${Math.abs(diasRestantes)} dias em atraso` :
+                                           diasRestantes === 0 ? 'Vence hoje' :
+                                           `${diasRestantes} dias restantes`}
+                                        </div>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <span className="text-gray-400">Não definida</span>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  <Badge className={getEstadoAtribuicaoBadge(atribuicao.estado)}>
+                                    {atribuicao.estado === 'ativa' ? 'Ativa' : atribuicao.estado}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <div className="flex items-center justify-end space-x-2">
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm"
+                                      onClick={() => handleVerHistoricoAtribuicoes(atribuicao.equipamento!)}
+                                      className="text-blue-600 hover:text-blue-700"
+                                    >
+                                      <History className="h-4 w-4" />
+                                    </Button>
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm"
+                                      onClick={() => handleDevolverEquipamento(atribuicao)}
+                                      className="text-green-600 hover:text-green-700"
+                                    >
+                                      <CheckCircle className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Histórico de Atribuições */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <History className="h-5 w-5 mr-2" />
+                    Histórico de Atribuições ({atribuicoes.filter(a => a.estado !== 'ativa').length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {atribuicoes.filter(a => a.estado !== 'ativa').length === 0 ? (
+                    <div className="text-center py-4">
+                      <p className="text-gray-500">Nenhuma atribuição no histórico</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {atribuicoes.filter(a => a.estado !== 'ativa').slice(0, 5).map((atribuicao) => (
+                        <div key={atribuicao.id} className="flex items-center justify-between p-3 rounded-lg border bg-gray-50">
+                          <div className="flex items-center space-x-3">
+                            <div className={`p-2 rounded-full ${
+                              atribuicao.estado === 'devolvida' ? 'bg-blue-100' :
+                              atribuicao.estado === 'perdida' ? 'bg-red-100' :
+                              'bg-orange-100'
+                            }`}>
+                              {atribuicao.estado === 'devolvida' ? (
+                                <CheckCircle className="h-4 w-4 text-blue-600" />
+                              ) : atribuicao.estado === 'perdida' ? (
+                                <AlertTriangle className="h-4 w-4 text-red-600" />
+                              ) : (
+                                <Wrench className="h-4 w-4 text-orange-600" />
+                              )}
                             </div>
-                            <div className="text-sm text-gray-500">
-                              Atribuído em: {formatDate(atribuicao.data_atribuicao)}
+                            <div>
+                              <div className="font-medium">
+                                {atribuicao.equipamento?.codigo_interno} - {atribuicao.voluntario?.nome}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {new Date(atribuicao.data_atribuicao).toLocaleDateString('pt-PT')} - 
+                                {atribuicao.data_devolucao ? new Date(atribuicao.data_devolucao).toLocaleDateString('pt-PT') : 'Em aberto'}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Badge className={getEstadoBadge(atribuicao.estado_entrega)}>
-                            {atribuicao.estado_entrega}
+                          <Badge className={getEstadoAtribuicaoBadge(atribuicao.estado)}>
+                            {atribuicao.estado === 'devolvida' ? 'Devolvida' :
+                             atribuicao.estado === 'perdida' ? 'Perdida' : 'Danificada'}
                           </Badge>
-                          <Button variant="outline" size="sm">
-                            <Eye className="h-4 w-4 mr-1" />
-                            Detalhes
-                          </Button>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -3372,6 +3752,275 @@ const ModuloEquipamentos = () => {
             <Button onClick={handleAtualizarTipo} className="bg-blue-600 hover:bg-blue-700">
               <Edit className="h-4 w-4 mr-2" />
               Atualizar Tipo
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo Nova Atribuição */}
+      <Dialog open={showNovaAtribuicaoDialog} onOpenChange={setShowNovaAtribuicaoDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <User className="h-5 w-5 mr-2 text-purple-600" />
+              Nova Atribuição de Equipamento
+            </DialogTitle>
+            <DialogDescription>
+              Atribuir equipamento a um voluntário
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="atribuicao_equipamento">Equipamento *</Label>
+              <Select 
+                value={atribuicaoForm.equipamento_id} 
+                onValueChange={(value) => setAtribuicaoForm({...atribuicaoForm, equipamento_id: value})}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecionar equipamento" />
+                </SelectTrigger>
+                <SelectContent>
+                  {equipamentos.filter(e => e.estado === 'disponivel' && e.ativo).map((equipamento) => (
+                    <SelectItem key={equipamento.id} value={equipamento.id}>
+                      {equipamento.codigo_interno} - {equipamento.tipo_equipamento?.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="atribuicao_voluntario">Voluntário *</Label>
+              <Select 
+                value={atribuicaoForm.voluntario_id} 
+                onValueChange={(value) => setAtribuicaoForm({...atribuicaoForm, voluntario_id: value})}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecionar voluntário" />
+                </SelectTrigger>
+                <SelectContent>
+                  {voluntarios.map((voluntario) => (
+                    <SelectItem key={voluntario.id} value={voluntario.id}>
+                      {voluntario.nome} - {voluntario.email}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="atribuicao_data">Data de Atribuição *</Label>
+                <Input
+                  id="atribuicao_data"
+                  type="date"
+                  value={atribuicaoForm.data_atribuicao}
+                  onChange={(e) => setAtribuicaoForm({...atribuicaoForm, data_atribuicao: e.target.value})}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="atribuicao_devolucao_prevista">Devolução Prevista</Label>
+                <Input
+                  id="atribuicao_devolucao_prevista"
+                  type="date"
+                  value={atribuicaoForm.data_devolucao_prevista}
+                  onChange={(e) => setAtribuicaoForm({...atribuicaoForm, data_devolucao_prevista: e.target.value})}
+                />
+              </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="atribuicao_observacoes">Observações</Label>
+              <Textarea
+                id="atribuicao_observacoes"
+                value={atribuicaoForm.observacoes}
+                onChange={(e) => setAtribuicaoForm({...atribuicaoForm, observacoes: e.target.value})}
+                placeholder="Motivo da atribuição, instruções especiais, etc."
+                rows={3}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNovaAtribuicaoDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleCriarAtribuicao} className="bg-purple-600 hover:bg-purple-700">
+              <User className="h-4 w-4 mr-2" />
+              Atribuir Equipamento
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo Devolver Equipamento */}
+      <Dialog open={showDevolverEquipamentoDialog} onOpenChange={setShowDevolverEquipamentoDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <CheckCircle className="h-5 w-5 mr-2 text-green-600" />
+              Devolver Equipamento
+            </DialogTitle>
+            <DialogDescription>
+              Registar a devolução do equipamento
+            </DialogDescription>
+          </DialogHeader>
+          
+          {atribuicaoSelecionada && (
+            <div className="space-y-4">
+              {/* Informações da Atribuição */}
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <div className="font-medium">
+                  {atribuicaoSelecionada.equipamento?.codigo_interno} - {atribuicaoSelecionada.equipamento?.tipo_equipamento?.nome}
+                </div>
+                <div className="text-sm text-gray-600">
+                  Atribuído a: {atribuicaoSelecionada.voluntario?.nome}
+                </div>
+                <div className="text-sm text-gray-600">
+                  Desde: {new Date(atribuicaoSelecionada.data_atribuicao).toLocaleDateString('pt-PT')}
+                </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="devolucao_estado">Estado da Devolução *</Label>
+                <Select 
+                  value={devolucaoForm.estado} 
+                  onValueChange={(value: 'devolvida' | 'perdida' | 'danificada') => 
+                    setDevolucaoForm({...devolucaoForm, estado: value})
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="devolvida">Devolvida (Bom Estado)</SelectItem>
+                    <SelectItem value="danificada">Devolvida (Danificada)</SelectItem>
+                    <SelectItem value="perdida">Perdida</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="devolucao_observacoes">Observações da Devolução</Label>
+                <Textarea
+                  id="devolucao_observacoes"
+                  value={devolucaoForm.observacoes_devolucao}
+                  onChange={(e) => setDevolucaoForm({...devolucaoForm, observacoes_devolucao: e.target.value})}
+                  placeholder="Estado do equipamento, danos encontrados, etc."
+                  rows={3}
+                />
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDevolverEquipamentoDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleConfirmarDevolucao} className="bg-green-600 hover:bg-green-700">
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Confirmar Devolução
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo Histórico de Atribuições */}
+      <Dialog open={showHistoricoAtribuicoesDialog} onOpenChange={setShowHistoricoAtribuicoesDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <History className="h-5 w-5 mr-2 text-indigo-600" />
+              Histórico de Atribuições
+            </DialogTitle>
+            <DialogDescription>
+              {equipamentoParaAtribuir && (
+                `Histórico completo do equipamento ${equipamentoParaAtribuir.codigo_interno}`
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {equipamentoParaAtribuir && (
+            <div className="space-y-4">
+              {/* Informações do Equipamento */}
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <div className="font-medium">{equipamentoParaAtribuir.codigo_interno}</div>
+                    <div className="text-sm text-gray-600">{equipamentoParaAtribuir.tipo_equipamento?.nome}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-600">Estado Atual</div>
+                    <Badge className={getEstadoRowBackground(equipamentoParaAtribuir.estado)}>
+                      {equipamentoParaAtribuir.estado}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Lista de Atribuições */}
+              <div>
+                <h4 className="font-medium mb-3">Histórico de Atribuições</h4>
+                {getAtribuicoesEquipamento(equipamentoParaAtribuir.id).length === 0 ? (
+                  <div className="text-center py-8">
+                    <History className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500">Nenhuma atribuição registada</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {getAtribuicoesEquipamento(equipamentoParaAtribuir.id).map((atribuicao, index) => (
+                      <div key={atribuicao.id} className="p-4 border rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center space-x-3">
+                            <div className={`w-3 h-3 rounded-full ${
+                              index === 0 ? 'bg-green-500' : 'bg-gray-300'
+                            }`}></div>
+                            <div>
+                              <div className="font-medium">{atribuicao.voluntario?.nome}</div>
+                              <div className="text-sm text-gray-600">{atribuicao.voluntario?.email}</div>
+                            </div>
+                          </div>
+                          <Badge className={getEstadoAtribuicaoBadge(atribuicao.estado)}>
+                            {atribuicao.estado === 'ativa' ? 'Ativa' :
+                             atribuicao.estado === 'devolvida' ? 'Devolvida' :
+                             atribuicao.estado === 'perdida' ? 'Perdida' : 'Danificada'}
+                          </Badge>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <span className="text-gray-600">Atribuição:</span> {new Date(atribuicao.data_atribuicao).toLocaleDateString('pt-PT')}
+                          </div>
+                          <div>
+                            <span className="text-gray-600">Devolução:</span> 
+                            {atribuicao.data_devolucao ? new Date(atribuicao.data_devolucao).toLocaleDateString('pt-PT') : 'Em aberto'}
+                          </div>
+                        </div>
+                        
+                        {atribuicao.observacoes && (
+                          <div className="mt-2 text-sm">
+                            <span className="text-gray-600">Observações:</span> {atribuicao.observacoes}
+                          </div>
+                        )}
+                        
+                        {atribuicao.observacoes_devolucao && (
+                          <div className="mt-2 text-sm">
+                            <span className="text-gray-600">Observações da Devolução:</span> {atribuicao.observacoes_devolucao}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowHistoricoAtribuicoesDialog(false)}>
+              Fechar
             </Button>
           </DialogFooter>
         </DialogContent>

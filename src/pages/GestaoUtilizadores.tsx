@@ -424,7 +424,7 @@ const GestaoUtilizadores = () => {
 
   // Eliminar utilizador
   const handleDeleteUser = async (userToDelete: User) => {
-    if (!confirm(`Tem certeza que deseja eliminar o utilizador "${userToDelete.nome_completo}"?\n\nEsta ação não pode ser desfeita.`)) {
+    if (!confirm(`Tem certeza que deseja eliminar o utilizador '${userToDelete.nome_completo}'?\n\nEsta ação não pode ser desfeita.`)) {
       return;
     }
 

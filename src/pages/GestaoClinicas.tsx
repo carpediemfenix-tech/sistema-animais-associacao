@@ -488,7 +488,7 @@ const GestaoClinicas = () => {
   };
 
   const handleRemoverClinica = async (clinica: ClinicaVeterinaria) => {
-    if (!confirm(`Tem certeza que deseja remover a clínica "${clinica.nome}"? Esta ação não pode ser desfeita.`)) {
+    if (!confirm(`Tem certeza que deseja remover a clínica '${clinica.nome}'? Esta ação não pode ser desfeita.`)) {
       return;
     }
 
@@ -516,7 +516,7 @@ const GestaoClinicas = () => {
   };
 
   const handleRemoverContacto = async (contacto: ContactoClinica) => {
-    if (!confirm(`Tem certeza que deseja remover o contacto "${contacto.nome}"?`)) {
+    if (!confirm(`Tem certeza que deseja remover o contacto '${contacto.nome}'?`)) {
       return;
     }
 
