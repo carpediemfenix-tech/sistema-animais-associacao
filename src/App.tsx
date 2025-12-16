@@ -51,8 +51,15 @@ import HistoricoNomesAnimais from "./pages/HistoricoNomesAnimais";
 import ModuloMissoes from "./pages/ModuloMissoes";
 import ModuloAgenda from "./pages/ModuloAgenda";
 import ModuloEquipamentos from "./pages/ModuloEquipamentos";
-import ModuloAnimais from "./pages/ModuloAnimais";
-import ModuloEquipamentos from "./pages/ModuloEquipamentos";
+import ModuloClinicas from "./pages/ModuloClinicas";
+// Páginas de Equipamentos
+import EquipamentosNavigation from "./pages/equipamentos/EquipamentosNavigation";
+import EquipamentosDashboard from "./pages/equipamentos/EquipamentosDashboard";
+import EquipamentosInventario from "./pages/equipamentos/EquipamentosInventario";
+import EquipamentosAtribuicoes from "./pages/equipamentos/EquipamentosAtribuicoes";
+import EquipamentosManutencoes from "./pages/equipamentos/EquipamentosManutencoes";
+import EquipamentosAlertas from "./pages/equipamentos/EquipamentosAlertas";
+import EquipamentosRelatorios from "./pages/equipamentos/EquipamentosRelatorios";
 import ModuloClinicas from "./pages/ModuloClinicas";
 import ModuloMissoes from "./pages/ModuloMissoes";
 import ModuloAgenda from "./pages/ModuloAgenda";
@@ -108,6 +115,14 @@ const App = () => (
             <Route path="/modulo-voluntarios" element={<ProtectedRoute><ModuloVoluntarios /></ProtectedRoute>} />
             <Route path="/modulo-formacao" element={<ProtectedRoute><ModuloFormacao /></ProtectedRoute>} />
             <Route path="/modulo-equipamentos" element={<ProtectedRoute><ModuloEquipamentos /></ProtectedRoute>} />
+            {/* Rotas do Módulo Equipamentos */}
+            <Route path="/equipamentos" element={<ProtectedRoute><EquipamentosNavigation /></ProtectedRoute>} />
+            <Route path="/equipamentos/dashboard" element={<ProtectedRoute><EquipamentosDashboard /></ProtectedRoute>} />
+            <Route path="/equipamentos/inventario" element={<ProtectedRoute><EquipamentosInventario /></ProtectedRoute>} />
+            <Route path="/equipamentos/atribuicoes" element={<ProtectedRoute><EquipamentosAtribuicoes /></ProtectedRoute>} />
+            <Route path="/equipamentos/manutencoes" element={<ProtectedRoute><EquipamentosManutencoes /></ProtectedRoute>} />
+            <Route path="/equipamentos/alertas" element={<ProtectedRoute><EquipamentosAlertas /></ProtectedRoute>} />
+            <Route path="/equipamentos/relatorios" element={<ProtectedRoute><EquipamentosRelatorios /></ProtectedRoute>} />
             <Route path="/modulo-clinicas" element={<ProtectedRoute><ModuloClinicas /></ProtectedRoute>} />
             <Route path="/modulo-missoes" element={<ProtectedRoute><ModuloMissoes /></ProtectedRoute>} />
             <Route path="/modulo-agenda" element={<ProtectedRoute><ModuloAgenda /></ProtectedRoute>} />

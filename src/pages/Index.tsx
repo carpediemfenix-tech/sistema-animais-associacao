@@ -181,7 +181,7 @@ const Index = () => {
       descricao: 'Sistema de gestão de equipamentos e materiais',
       icone: Package,
       cor: 'bg-orange-500',
-      rota: '/modulo-equipamentos',
+      rota: '/equipamentos',
       desenvolvido: true,
       stats: 'Sistema ativo'
     },

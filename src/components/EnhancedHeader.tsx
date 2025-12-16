@@ -338,12 +338,68 @@ const EnhancedHeader = () => {
         { label: 'Nova Missão', path: '/modulo-missoes', icon: <Plus className="h-4 w-4" /> }
       ]
     },
-    '/modulo-equipamentos': {
+    '/equipamentos': {
       id: 'J03',
       title: 'Módulo Equipamentos',
       navigationButtons: [
         { label: 'Dashboard', path: '/', icon: <Home className="h-4 w-4" /> },
-        { label: 'Inventário', path: '/modulo-equipamentos', icon: <Package className="h-4 w-4" /> }
+        { label: 'Navegação', path: '/equipamentos', icon: <Package className="h-4 w-4" /> },
+        { label: 'Dashboard', path: '/equipamentos/dashboard', icon: <BarChart3 className="h-4 w-4" /> },
+        { label: 'Inventário', path: '/equipamentos/inventario', icon: <Package className="h-4 w-4" /> }
+      ]
+    },
+    '/equipamentos/dashboard': {
+      id: 'J03-1',
+      title: 'Dashboard Equipamentos',
+      navigationButtons: [
+        { label: 'Voltar', path: '/equipamentos', icon: <ArrowLeft className="h-4 w-4" /> },
+        { label: 'Inventário', path: '/equipamentos/inventario', icon: <Package className="h-4 w-4" /> },
+        { label: 'Atribuições', path: '/equipamentos/atribuicoes', icon: <Users className="h-4 w-4" /> }
+      ]
+    },
+    '/equipamentos/inventario': {
+      id: 'J03-2',
+      title: 'Inventário de Equipamentos',
+      navigationButtons: [
+        { label: 'Voltar', path: '/equipamentos', icon: <ArrowLeft className="h-4 w-4" /> },
+        { label: 'Dashboard', path: '/equipamentos/dashboard', icon: <BarChart3 className="h-4 w-4" /> },
+        { label: 'Novo', path: '/equipamentos/inventario', icon: <Plus className="h-4 w-4" /> }
+      ]
+    },
+    '/equipamentos/atribuicoes': {
+      id: 'J03-3',
+      title: 'Atribuições de Equipamentos',
+      navigationButtons: [
+        { label: 'Voltar', path: '/equipamentos', icon: <ArrowLeft className="h-4 w-4" /> },
+        { label: 'Dashboard', path: '/equipamentos/dashboard', icon: <BarChart3 className="h-4 w-4" /> },
+        { label: 'Nova', path: '/equipamentos/atribuicoes', icon: <Plus className="h-4 w-4" /> }
+      ]
+    },
+    '/equipamentos/manutencoes': {
+      id: 'J03-4',
+      title: 'Manutenções de Equipamentos',
+      navigationButtons: [
+        { label: 'Voltar', path: '/equipamentos', icon: <ArrowLeft className="h-4 w-4" /> },
+        { label: 'Dashboard', path: '/equipamentos/dashboard', icon: <BarChart3 className="h-4 w-4" /> },
+        { label: 'Agendar', path: '/equipamentos/manutencoes', icon: <Plus className="h-4 w-4" /> }
+      ]
+    },
+    '/equipamentos/alertas': {
+      id: 'J03-5',
+      title: 'Alertas de Equipamentos',
+      navigationButtons: [
+        { label: 'Voltar', path: '/equipamentos', icon: <ArrowLeft className="h-4 w-4" /> },
+        { label: 'Dashboard', path: '/equipamentos/dashboard', icon: <BarChart3 className="h-4 w-4" /> },
+        { label: 'Configurar', path: '/equipamentos/alertas', icon: <Settings className="h-4 w-4" /> }
+      ]
+    },
+    '/equipamentos/relatorios': {
+      id: 'J03-6',
+      title: 'Relatórios de Equipamentos',
+      navigationButtons: [
+        { label: 'Voltar', path: '/equipamentos', icon: <ArrowLeft className="h-4 w-4" /> },
+        { label: 'Dashboard', path: '/equipamentos/dashboard', icon: <BarChart3 className="h-4 w-4" /> },
+        { label: 'Exportar', path: '/equipamentos/relatorios', icon: <FileText className="h-4 w-4" /> }
       ]
     },
 
