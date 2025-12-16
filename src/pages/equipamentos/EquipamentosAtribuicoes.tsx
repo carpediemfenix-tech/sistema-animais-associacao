@@ -55,8 +55,7 @@ const EquipamentosAtribuicoes: React.FC = () => {
           equipamento:equipamentos_2025_12_13_01_00(
             codigo_interno,
             tipo_equipamento:tipos_equipamentos_2025_12_13_01_00(nome)
-          ),
-          voluntario:voluntarios(nome, email)
+          )
         `)
         .eq('ativo', true)
         .order('data_atribuicao', { ascending: false });
@@ -206,8 +205,8 @@ const EquipamentosAtribuicoes: React.FC = () => {
                         </TableCell>
                         <TableCell>
                           <div>
-                            <div className="font-medium">{atribuicao.voluntario?.nome || 'N/A'}</div>
-                            <div className="text-sm text-gray-600">{atribuicao.voluntario?.email || 'N/A'}</div>
+                            <div className="font-medium">Voluntário ID: {atribuicao.voluntario_id}</div>
+                            <div className="text-sm text-gray-600">Dados do voluntário</div>
                           </div>
                         </TableCell>
                         <TableCell>

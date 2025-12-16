@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import EnhancedHeader from "@/components/EnhancedHeader";
 import EnhancedFooter from "@/components/EnhancedFooter";
-import ExecutiveDashboard from "@/components/ExecutiveDashboard";
+import ExecutiveDashboardSimple from "@/components/ExecutiveDashboardSimple";
 
 const DashboardExecutivoPage: React.FC = () => {
   return (
@@ -31,7 +31,7 @@ const DashboardExecutivoPage: React.FC = () => {
         </div>
         
         {/* Conteúdo Principal */}
-        <ExecutiveDashboard />
+        <ExecutiveDashboardSimple />
       </div>
       
       <EnhancedFooter />

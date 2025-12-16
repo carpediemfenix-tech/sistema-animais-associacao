@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { 
   ArrowLeft,
@@ -56,6 +58,7 @@ const EquipamentosInventario: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [estadoFilter, setEstadoFilter] = useState('todos');
   const [condicaoFilter, setCondicaoFilter] = useState('todos');
+  const [showNovoEquipamento, setShowNovoEquipamento] = useState(false);
 
   const loadEquipamentos = async () => {
     try {
@@ -187,7 +190,10 @@ const EquipamentosInventario: React.FC = () => {
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Atualizar
               </Button>
-              <Button className="bg-green-600 hover:bg-green-700">
+              <Button 
+                className="bg-green-600 hover:bg-green-700"
+                onClick={() => setShowNovoEquipamento(true)}
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Novo Equipamento
               </Button>
@@ -377,6 +383,59 @@ const EquipamentosInventario: React.FC = () => {
           </Card>
         </div>
       </div>
+      
+      {/* Modal Novo Equipamento */}
+      <Dialog open={showNovoEquipamento} onOpenChange={setShowNovoEquipamento}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Novo Equipamento</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="codigo">Código Interno</Label>
+              <Input id="codigo" placeholder="Ex: EQ001" />
+            </div>
+            <div>
+              <Label htmlFor="serie">Número de Série</Label>
+              <Input id="serie" placeholder="Ex: ABC123" />
+            </div>
+            <div>
+              <Label htmlFor="tipo">Tipo de Equipamento</Label>
+              <Select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="computador">Computador</SelectItem>
+                  <SelectItem value="impressora">Impressora</SelectItem>
+                  <SelectItem value="telefone">Telefone</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="localizacao">Localização</Label>
+              <Input id="localizacao" placeholder="Ex: Sala 1" />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setShowNovoEquipamento(false)}>
+                Cancelar
+              </Button>
+              <Button 
+                className="bg-green-600 hover:bg-green-700"
+                onClick={() => {
+                  toast({
+                    title: "Funcionalidade em desenvolvimento",
+                    description: "A criação de equipamentos será implementada em breve",
+                  });
+                  setShowNovoEquipamento(false);
+                }}
+              >
+                Criar Equipamento
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
       
       <EnhancedFooter />
     </div>
