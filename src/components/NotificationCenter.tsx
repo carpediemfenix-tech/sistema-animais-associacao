@@ -57,7 +57,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('notificacoes_sistema_2025_12_16_05_00')
+        .from('notificacoes_2025_12_16_06_00')
         .select('*')
         .eq('usuario_id', user.id)
         .order('data_criacao', { ascending: false })
@@ -147,7 +147,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'notificacoes_sistema_2025_12_16_05_00',
+          table: 'notificacoes_2025_12_16_06_00',
           filter: `usuario_id=eq.${user.id}`
         },
         (payload) => {

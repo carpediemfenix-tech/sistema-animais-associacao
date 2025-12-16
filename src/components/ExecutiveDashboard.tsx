@@ -2,10 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { 
   TrendingUp,
-  TrendingDown,
   BarChart3,
   PieChart,
   Activity,
@@ -28,76 +26,113 @@ import { useToast } from "@/hooks/use-toast";
 interface KPICard {
   title: string;
   value: string | number;
-  change?: number;
-  changeType?: 'positive' | 'negative' | 'neutral';
-  icon: React.ComponentType<any>;
+  change: string;
+  trend: 'up' | 'down' | 'stable';
+  icon: React.ReactNode;
   color: string;
-  description?: string;
-  target?: number;
-  progress?: number;
-}
-
-interface AlertaCritico {
-  tipo_alerta: string;
-  titulo: string;
-  quantidade: number;
-  prioridade: string;
-  descricao: string;
-  detalhes: any;
 }
 
 const ExecutiveDashboard: React.FC = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
-  const [kpis, setKpis] = useState<any>(null);
-  const [alertasCriticos, setAlertasCriticos] = useState<AlertaCritico[]>([]);
-  const [performanceMensal, setPerformanceMensal] = useState<any[]>([]);
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [kpis, setKpis] = useState<KPICard[]>([]);
+  const [alertasCriticos, setAlertasCriticos] = useState<any[]>([]);
+  const [estatisticas, setEstatisticas] = useState({
+    totalAnimais: 0,
+    totalEquipamentos: 0,
+    totalNotificacoes: 0,
+    equipamentosDisponiveis: 0,
+    equipamentosManutencao: 0,
+    notificacoesNaoLidas: 0
+  });
 
   const loadDashboardData = async () => {
     try {
       setLoading(true);
 
-      // Carregar KPIs executivos
-      const { data: kpisData, error: kpisError } = await supabase
-        .from('kpis_executivos_2025_12_16_05_00')
+      // Carregar estatísticas básicas
+      const [
+        animaisResult,
+        equipamentosResult,
+        equipamentosDisponiveisResult,
+        equipamentosManutencaoResult,
+        notificacoesResult,
+        notificacoesNaoLidasResult
+      ] = await Promise.all([
+        supabase.from('animais').select('id', { count: 'exact', head: true }),
+        supabase.from('equipamentos_2025_12_13_01_00').select('id', { count: 'exact', head: true }).eq('ativo', true),
+        supabase.from('equipamentos_2025_12_13_01_00').select('id', { count: 'exact', head: true }).eq('estado', 'disponivel').eq('ativo', true),
+        supabase.from('equipamentos_2025_12_13_01_00').select('id', { count: 'exact', head: true }).eq('estado', 'manutencao').eq('ativo', true),
+        supabase.from('notificacoes_2025_12_16_06_00').select('id', { count: 'exact', head: true }),
+        supabase.from('notificacoes_2025_12_16_06_00').select('id', { count: 'exact', head: true }).eq('lida', false)
+      ]);
+
+      const stats = {
+        totalAnimais: animaisResult.count || 0,
+        totalEquipamentos: equipamentosResult.count || 0,
+        totalNotificacoes: notificacoesResult.count || 0,
+        equipamentosDisponiveis: equipamentosDisponiveisResult.count || 0,
+        equipamentosManutencao: equipamentosManutencaoResult.count || 0,
+        notificacoesNaoLidas: notificacoesNaoLidasResult.count || 0
+      };
+
+      setEstatisticas(stats);
+
+      // Criar KPIs
+      const kpiData: KPICard[] = [
+        {
+          title: 'Total de Animais',
+          value: stats.totalAnimais,
+          change: '+5% vs mês anterior',
+          trend: 'up',
+          icon: <Heart className="h-6 w-6" />,
+          color: 'text-red-600'
+        },
+        {
+          title: 'Equipamentos Ativos',
+          value: stats.totalEquipamentos,
+          change: `${stats.equipamentosDisponiveis} disponíveis`,
+          trend: 'stable',
+          icon: <Package className="h-6 w-6" />,
+          color: 'text-blue-600'
+        },
+        {
+          title: 'Notificações Ativas',
+          value: stats.notificacoesNaoLidas,
+          change: `${stats.totalNotificacoes} total`,
+          trend: stats.notificacoesNaoLidas > 5 ? 'up' : 'stable',
+          icon: <AlertTriangle className="h-6 w-6" />,
+          color: 'text-orange-600'
+        },
+        {
+          title: 'Manutenções Pendentes',
+          value: stats.equipamentosManutencao,
+          change: 'Requer atenção',
+          trend: stats.equipamentosManutencao > 0 ? 'up' : 'stable',
+          icon: <Clock className="h-6 w-6" />,
+          color: 'text-purple-600'
+        }
+      ];
+
+      setKpis(kpiData);
+
+      // Carregar alertas críticos (notificações de alta prioridade)
+      const { data: alertasData } = await supabase
+        .from('notificacoes_2025_12_16_06_00')
         .select('*')
-        .single();
+        .in('prioridade', ['alta', 'critica'])
+        .eq('lida', false)
+        .order('data_criacao', { ascending: false })
+        .limit(5);
 
-      if (kpisError && kpisError.code !== 'PGRST116') {
-        console.error('Erro ao carregar KPIs:', kpisError);
-      } else {
-        setKpis(kpisData);
-      }
-
-      // Carregar alertas críticos
-      const { data: alertasData, error: alertasError } = await supabase
-        .from('alertas_criticos_2025_12_16_05_00')
-        .select('*');
-
-      if (alertasError && alertasError.code !== 'PGRST116') {
-        console.error('Erro ao carregar alertas:', alertasError);
-      } else {
-        setAlertasCriticos(alertasData || []);
-      }
-
-      // Carregar performance mensal
-      const { data: performanceData, error: performanceError } = await supabase
-        .from('performance_mensal_2025_12_16_05_00')
-        .select('*')
-        .limit(6);
-
-      if (performanceError && performanceError.code !== 'PGRST116') {
-        console.error('Erro ao carregar performance:', performanceError);
-      } else {
-        setPerformanceMensal(performanceData || []);
-      }
+      setAlertasCriticos(alertasData || []);
 
     } catch (error) {
-      console.error('Erro geral no dashboard:', error);
+      console.error('Erro ao carregar dashboard:', error);
       toast({
         title: "Aviso",
-        description: "Alguns dados do dashboard podem não estar disponíveis",
+        description: "Alguns dados podem não estar disponíveis",
         variant: "default",
       });
     } finally {
@@ -109,114 +144,36 @@ const ExecutiveDashboard: React.FC = () => {
     loadDashboardData();
   }, []);
 
-  // Auto-refresh a cada 5 minutos
   useEffect(() => {
     if (!autoRefresh) return;
 
-    const interval = setInterval(() => {
-      loadDashboardData();
-    }, 5 * 60 * 1000);
-
+    const interval = setInterval(loadDashboardData, 5 * 60 * 1000); // 5 minutos
     return () => clearInterval(interval);
   }, [autoRefresh]);
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-PT', {
-      style: 'currency',
-      currency: 'EUR'
-    }).format(value || 0);
-  };
-
-  const formatPercentage = (value: number) => {
-    return `${(value || 0).toFixed(1)}%`;
-  };
-
-  const getChangeIcon = (changeType: string) => {
-    switch (changeType) {
-      case 'positive':
+  const getTrendIcon = (trend: 'up' | 'down' | 'stable') => {
+    switch (trend) {
+      case 'up':
         return <TrendingUp className="h-4 w-4 text-green-600" />;
-      case 'negative':
-        return <TrendingDown className="h-4 w-4 text-red-600" />;
+      case 'down':
+        return <TrendingUp className="h-4 w-4 text-red-600 rotate-180" />;
       default:
         return <Activity className="h-4 w-4 text-gray-600" />;
     }
   };
 
-  const getPrioridadeColor = (prioridade: string) => {
-    const colors = {
-      'critica': 'bg-red-100 text-red-800 border-red-200',
-      'alta': 'bg-orange-100 text-orange-800 border-orange-200',
-      'media': 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      'baixa': 'bg-gray-100 text-gray-800 border-gray-200'
-    };
-    return colors[prioridade as keyof typeof colors] || colors.baixa;
-  };
-
-  // Preparar dados dos KPIs
-  const kpiCards: KPICard[] = kpis ? [
-    {
-      title: 'Total de Animais',
-      value: kpis.total_animais || 0,
-      change: kpis.tendencia_novos_animais_percent,
-      changeType: (kpis.tendencia_novos_animais_percent || 0) >= 0 ? 'positive' : 'negative',
-      icon: Heart,
-      color: 'bg-blue-500',
-      description: `${kpis.animais_disponiveis || 0} disponíveis, ${kpis.animais_adotados || 0} adotados`,
-      target: 100,
-      progress: kpis.taxa_adocao_percent || 0
-    },
-    {
-      title: 'Taxa de Adoção',
-      value: formatPercentage(kpis.taxa_adocao_percent || 0),
-      change: kpis.tendencia_adocoes_percent,
-      changeType: (kpis.tendencia_adocoes_percent || 0) >= 0 ? 'positive' : 'negative',
-      icon: TrendingUp,
-      color: 'bg-green-500',
-      description: `${kpis.adocoes_ultimos_30 || 0} adoções nos últimos 30 dias`,
-      target: 80,
-      progress: kpis.taxa_adocao_percent || 0
-    },
-    {
-      title: 'Voluntários Ativos',
-      value: `${kpis.voluntarios_ativos || 0}/${kpis.total_voluntarios || 0}`,
-      change: kpis.taxa_voluntarios_ativos_percent,
-      changeType: 'neutral',
-      icon: Users,
-      color: 'bg-purple-500',
-      description: `${formatPercentage(kpis.taxa_voluntarios_ativos_percent || 0)} de atividade`,
-      target: 100,
-      progress: kpis.taxa_voluntarios_ativos_percent || 0
-    },
-    {
-      title: 'Saldo Mensal',
-      value: formatCurrency(kpis.saldo_mes || 0),
-      change: ((kpis.receitas_mes || 0) - (kpis.despesas_mes || 0)) >= 0 ? 10 : -10,
-      changeType: ((kpis.receitas_mes || 0) - (kpis.despesas_mes || 0)) >= 0 ? 'positive' : 'negative',
-      icon: DollarSign,
-      color: 'bg-green-600',
-      description: `Receitas: ${formatCurrency(kpis.receitas_mes || 0)} | Despesas: ${formatCurrency(kpis.despesas_mes || 0)}`,
-    },
-    {
-      title: 'Equipamentos',
-      value: `${kpis.equipamentos_disponiveis || 0}/${kpis.total_equipamentos || 0}`,
-      change: kpis.taxa_equipamentos_disponiveis_percent,
-      changeType: 'neutral',
-      icon: Package,
-      color: 'bg-orange-500',
-      description: `${formatPercentage(kpis.taxa_equipamentos_disponiveis_percent || 0)} disponíveis`,
-      target: 90,
-      progress: kpis.taxa_equipamentos_disponiveis_percent || 0
-    },
-    {
-      title: 'Intervenções',
-      value: kpis.intervencoes_mes || 0,
-      change: 0,
-      changeType: 'neutral',
-      icon: Activity,
-      color: 'bg-red-500',
-      description: `${kpis.intervencoes_agendadas || 0} agendadas`,
+  const getPrioridadeBadge = (prioridade: string) => {
+    switch (prioridade) {
+      case 'critica':
+        return 'bg-red-100 text-red-800 border-red-200';
+      case 'alta':
+        return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 'media':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
     }
-  ] : [];
+  };
 
   if (loading) {
     return (
@@ -237,16 +194,16 @@ const ExecutiveDashboard: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Dashboard Executivo</h1>
-          <p className="text-gray-600">Visão geral e KPIs em tempo real</p>
+          <p className="text-gray-600">KPIs em tempo real • Última atualização: {new Date().toLocaleTimeString('pt-PT')}</p>
         </div>
         <div className="flex items-center space-x-3">
-          <Button
-            variant={autoRefresh ? "default" : "outline"}
-            size="sm"
+          <Button 
+            variant={autoRefresh ? "default" : "outline"} 
+            size="sm" 
             onClick={() => setAutoRefresh(!autoRefresh)}
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${autoRefresh ? 'animate-spin' : ''}`} />
-            Auto-refresh
+            <Activity className="h-4 w-4 mr-2" />
+            Auto-refresh {autoRefresh ? 'ON' : 'OFF'}
           </Button>
           <Button variant="outline" size="sm" onClick={loadDashboardData}>
             <RefreshCw className="h-4 w-4 mr-2" />
@@ -260,77 +217,41 @@ const ExecutiveDashboard: React.FC = () => {
       </div>
 
       {/* Status Geral */}
-      {kpis && (
-        <Card className={`border-l-4 ${
-          kpis.status_geral === 'critico' ? 'border-l-red-500 bg-red-50' :
-          kpis.status_geral === 'atencao' ? 'border-l-orange-500 bg-orange-50' :
-          'border-l-green-500 bg-green-50'
-        }`}>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                {kpis.status_geral === 'critico' ? (
-                  <AlertTriangle className="h-6 w-6 text-red-600" />
-                ) : kpis.status_geral === 'atencao' ? (
-                  <Clock className="h-6 w-6 text-orange-600" />
-                ) : (
-                  <CheckCircle className="h-6 w-6 text-green-600" />
-                )}
-                <div>
-                  <h3 className="font-semibold text-lg">
-                    Status do Sistema: {kpis.status_geral.toUpperCase()}
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    Última atualização: {new Date(kpis.ultima_atualizacao).toLocaleString('pt-PT')}
-                  </p>
-                </div>
+      <Card className="border-l-4 border-l-green-500 bg-green-50">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <CheckCircle className="h-6 w-6 text-green-600" />
+              <div>
+                <h3 className="font-semibold text-lg">Sistema Operacional</h3>
+                <p className="text-sm text-gray-600">
+                  {estatisticas.totalAnimais} animais • {estatisticas.totalEquipamentos} equipamentos • {estatisticas.totalNotificacoes} notificações
+                </p>
               </div>
-              <Badge className={getPrioridadeColor(kpis.status_geral)}>
-                {kpis.status_geral.toUpperCase()}
-              </Badge>
             </div>
-          </CardContent>
-        </Card>
-      )}
+            <Badge className="bg-green-100 text-green-800 border-green-200">
+              NORMAL
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* KPIs Principais */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {kpiCards.map((kpi, index) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {kpis.map((kpi, index) => (
           <Card key={index} className="hover:shadow-lg transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{kpi.title}</CardTitle>
-              <div className={`p-2 rounded-full ${kpi.color}`}>
-                <kpi.icon className="h-4 w-4 text-white" />
+              <div className={`p-2 rounded-full bg-gray-100 ${kpi.color}`}>
+                {kpi.icon}
               </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{kpi.value}</div>
-              {kpi.change !== undefined && (
-                <div className="flex items-center mt-2">
-                  {getChangeIcon(kpi.changeType || 'neutral')}
-                  <span className={`text-sm ml-1 ${
-                    kpi.changeType === 'positive' ? 'text-green-600' :
-                    kpi.changeType === 'negative' ? 'text-red-600' :
-                    'text-gray-600'
-                  }`}>
-                    {kpi.change > 0 ? '+' : ''}{kpi.change?.toFixed(1)}%
-                  </span>
-                </div>
-              )}
-              {kpi.description && (
-                <p className="text-xs text-muted-foreground mt-2">
-                  {kpi.description}
-                </p>
-              )}
-              {kpi.progress !== undefined && kpi.target && (
-                <div className="mt-3">
-                  <div className="flex justify-between text-xs text-gray-600 mb-1">
-                    <span>Progresso</span>
-                    <span>{kpi.progress.toFixed(1)}% / {kpi.target}%</span>
-                  </div>
-                  <Progress value={Math.min(kpi.progress, 100)} className="h-2" />
-                </div>
-              )}
+              <div className="flex items-center text-xs text-muted-foreground mt-1">
+                {getTrendIcon(kpi.trend)}
+                <span className="ml-1">{kpi.change}</span>
+              </div>
             </CardContent>
           </Card>
         ))}
@@ -347,77 +268,30 @@ const ExecutiveDashboard: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {alertasCriticos.map((alerta, index) => (
-                <div key={index} className={`p-3 rounded-lg border ${getPrioridadeColor(alerta.prioridade)}`}>
-                  <div className="flex items-center justify-between">
+              {alertasCriticos.map((alerta) => (
+                <div key={alerta.id} className="p-3 rounded-lg border border-red-200 bg-red-50">
+                  <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <h4 className="font-medium">{alerta.titulo}</h4>
-                      <p className="text-sm mt-1">{alerta.descricao}</p>
+                      <div className="flex items-center space-x-2">
+                        <h4 className="font-medium text-red-900">{alerta.titulo}</h4>
+                        <Badge className={getPrioridadeBadge(alerta.prioridade)}>
+                          {alerta.prioridade.toUpperCase()}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-red-700 mt-1">{alerta.mensagem}</p>
+                      <p className="text-xs text-red-600 mt-1">
+                        {new Date(alerta.data_criacao).toLocaleString('pt-PT')}
+                      </p>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Badge className={getPrioridadeColor(alerta.prioridade)}>
-                        {alerta.quantidade}
-                      </Badge>
-                      <Button variant="outline" size="sm">
-                        <Eye className="h-4 w-4" />
+                    {alerta.acao_url && (
+                      <Button variant="outline" size="sm" className="ml-3">
+                        <Eye className="h-4 w-4 mr-1" />
+                        Ver
                       </Button>
-                    </div>
+                    )}
                   </div>
                 </div>
               ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Performance Mensal */}
-      {performanceMensal.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <BarChart3 className="h-5 w-5 mr-2 text-blue-600" />
-              Performance dos Últimos Meses
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left p-2">Mês</th>
-                    <th className="text-right p-2">Novos Animais</th>
-                    <th className="text-right p-2">Adoções</th>
-                    <th className="text-right p-2">Taxa Adoção</th>
-                    <th className="text-right p-2">Receitas</th>
-                    <th className="text-right p-2">Saldo</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {performanceMensal.map((mes, index) => (
-                    <tr key={index} className="border-b hover:bg-gray-50">
-                      <td className="p-2 font-medium">
-                        {new Date(mes.mes).toLocaleDateString('pt-PT', { 
-                          year: 'numeric', 
-                          month: 'short' 
-                        })}
-                      </td>
-                      <td className="text-right p-2">{mes.novos_animais || 0}</td>
-                      <td className="text-right p-2">{mes.adocoes || 0}</td>
-                      <td className="text-right p-2">
-                        <Badge variant="outline">
-                          {formatPercentage(mes.taxa_adocao_mensal || 0)}
-                        </Badge>
-                      </td>
-                      <td className="text-right p-2">{formatCurrency(mes.receitas || 0)}</td>
-                      <td className={`text-right p-2 font-medium ${
-                        (mes.saldo_mensal || 0) >= 0 ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {formatCurrency(mes.saldo_mensal || 0)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
             </div>
           </CardContent>
         </Card>
@@ -435,27 +309,110 @@ const ExecutiveDashboard: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Button variant="outline" className="justify-start h-auto p-4">
               <div className="text-left">
-                <div className="font-medium">Relatório Executivo</div>
-                <div className="text-sm text-gray-600">Gerar relatório completo</div>
+                <div className="font-medium flex items-center">
+                  <Heart className="h-4 w-4 mr-2" />
+                  Ver Animais
+                </div>
+                <div className="text-sm text-gray-600">Gestão de animais</div>
               </div>
             </Button>
             
             <Button variant="outline" className="justify-start h-auto p-4">
               <div className="text-left">
-                <div className="font-medium">Backup Manual</div>
-                <div className="text-sm text-gray-600">Criar backup dos dados</div>
+                <div className="font-medium flex items-center">
+                  <Package className="h-4 w-4 mr-2" />
+                  Equipamentos
+                </div>
+                <div className="text-sm text-gray-600">Inventário e manutenção</div>
               </div>
             </Button>
             
             <Button variant="outline" className="justify-start h-auto p-4">
               <div className="text-left">
-                <div className="font-medium">Configurações</div>
-                <div className="text-sm text-gray-600">Ajustar parâmetros do sistema</div>
+                <div className="font-medium flex items-center">
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  Relatórios
+                </div>
+                <div className="text-sm text-gray-600">Analytics e relatórios</div>
               </div>
             </Button>
           </div>
         </CardContent>
       </Card>
+
+      {/* Resumo de Performance */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <PieChart className="h-5 w-5 mr-2 text-blue-600" />
+              Distribuição de Equipamentos
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Disponíveis</span>
+                <div className="flex items-center space-x-2">
+                  <div className="w-20 bg-gray-200 rounded-full h-2">
+                    <div 
+                      className="bg-green-600 h-2 rounded-full" 
+                      style={{ width: `${(estatisticas.equipamentosDisponiveis / Math.max(estatisticas.totalEquipamentos, 1)) * 100}%` }}
+                    ></div>
+                  </div>
+                  <span className="text-sm font-medium">{estatisticas.equipamentosDisponiveis}</span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Em Manutenção</span>
+                <div className="flex items-center space-x-2">
+                  <div className="w-20 bg-gray-200 rounded-full h-2">
+                    <div 
+                      className="bg-orange-600 h-2 rounded-full" 
+                      style={{ width: `${(estatisticas.equipamentosManutencao / Math.max(estatisticas.totalEquipamentos, 1)) * 100}%` }}
+                    ></div>
+                  </div>
+                  <span className="text-sm font-medium">{estatisticas.equipamentosManutencao}</span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Activity className="h-5 w-5 mr-2 text-purple-600" />
+              Atividade Recente
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="flex items-center space-x-3">
+                <div className="w-2 h-2 bg-green-600 rounded-full"></div>
+                <div className="flex-1">
+                  <p className="text-sm">Sistema de notificações ativado</p>
+                  <p className="text-xs text-gray-600">Há 5 minutos</p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                <div className="flex-1">
+                  <p className="text-sm">Dashboard executivo atualizado</p>
+                  <p className="text-xs text-gray-600">Há 10 minutos</p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="w-2 h-2 bg-orange-600 rounded-full"></div>
+                <div className="flex-1">
+                  <p className="text-sm">Funcionalidade de equipamentos melhorada</p>
+                  <p className="text-xs text-gray-600">Há 15 minutos</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

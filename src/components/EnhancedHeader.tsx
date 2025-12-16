@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import NotificationCenter from "./NotificationCenter";
 
 interface NavigationButton {
   label: string;
@@ -78,10 +79,32 @@ const EnhancedHeader = () => {
     return () => clearInterval(connectionTimer);
   }, []);
 
-  // Carregar contador de notificações (temporariamente desabilitado)
+  // Carregar contador de notificações
   useEffect(() => {
-    // Sistema de notificações será implementado posteriormente
-    setNotificationCount(0);
+    const loadNotificationCount = async () => {
+      if (!user) return;
+      
+      try {
+        const { count, error } = await supabase
+          .from('notificacoes_2025_12_16_06_00')
+          .select('*', { count: 'exact', head: true })
+          .eq('usuario_id', user.id)
+          .eq('lida', false);
+
+        if (!error) {
+          setNotificationCount(count || 0);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar notificações:', error);
+      }
+    };
+
+    loadNotificationCount();
+    
+    // Atualizar contador a cada 2 minutos
+    const notificationTimer = setInterval(loadNotificationCount, 2 * 60 * 1000);
+    
+    return () => clearInterval(notificationTimer);
   }, [user]);
 
   // Mapeamento completo de páginas com IDs únicos
@@ -701,16 +724,18 @@ const EnhancedHeader = () => {
         </div>
       )}
       
-      {/* Centro de Notificações - Temporariamente desabilitado */}
-      {showNotifications && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-lg shadow-xl">
-            <h3 className="text-lg font-semibold mb-4">Notificações</h3>
-            <p className="text-gray-600 mb-4">Sistema de notificações em desenvolvimento</p>
-            <Button onClick={() => setShowNotifications(false)}>Fechar</Button>
-          </div>
-        </div>
-      )}
+      {/* Centro de Notificações */}
+      <NotificationCenter 
+        isOpen={showNotifications}
+        onClose={() => setShowNotifications(false)}
+        onNotificationClick={(notificacao) => {
+          // Navegar para a página relacionada se houver acao_url
+          if (notificacao.acao_url) {
+            navigate(notificacao.acao_url);
+          }
+          setShowNotifications(false);
+        }}
+      />
     </div>
   );
 };

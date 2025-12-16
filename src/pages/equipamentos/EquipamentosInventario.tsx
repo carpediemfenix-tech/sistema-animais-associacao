@@ -59,6 +59,19 @@ const EquipamentosInventario: React.FC = () => {
   const [estadoFilter, setEstadoFilter] = useState('todos');
   const [condicaoFilter, setCondicaoFilter] = useState('todos');
   const [showNovoEquipamento, setShowNovoEquipamento] = useState(false);
+  const [criandoEquipamento, setCriandoEquipamento] = useState(false);
+  const [novoEquipamento, setNovoEquipamento] = useState({
+    codigo_interno: '',
+    numero_serie: '',
+    tipo_equipamento_id: '',
+    localizacao: '',
+    estado: 'disponivel',
+    condicao: 'bom',
+    valor_aquisicao: 0,
+    data_aquisicao: new Date().toISOString().split('T')[0],
+    observacoes: ''
+  });
+  const [tiposEquipamentos, setTiposEquipamentos] = useState<any[]>([]);
 
   const loadEquipamentos = async () => {
     try {
@@ -91,8 +104,90 @@ const EquipamentosInventario: React.FC = () => {
     }
   };
 
+  const loadTiposEquipamentos = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('tipos_equipamentos_2025_12_13_01_00')
+        .select('*')
+        .eq('ativo', true)
+        .order('nome');
+
+      if (error) throw error;
+      setTiposEquipamentos(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar tipos de equipamentos:', error);
+    }
+  };
+
+  const criarEquipamento = async () => {
+    if (!novoEquipamento.codigo_interno || !novoEquipamento.tipo_equipamento_id) {
+      toast({
+        title: "Erro",
+        description: "Código interno e tipo de equipamento são obrigatórios",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setCriandoEquipamento(true);
+      
+      const { data, error } = await supabase
+        .from('equipamentos_2025_12_13_01_00')
+        .insert([
+          {
+            codigo_interno: novoEquipamento.codigo_interno,
+            numero_serie: novoEquipamento.numero_serie,
+            tipo_equipamento_id: novoEquipamento.tipo_equipamento_id,
+            localizacao: novoEquipamento.localizacao,
+            estado: novoEquipamento.estado,
+            condicao: novoEquipamento.condicao,
+            valor_aquisicao: novoEquipamento.valor_aquisicao,
+            data_aquisicao: novoEquipamento.data_aquisicao,
+            observacoes: novoEquipamento.observacoes,
+            ativo: true
+          }
+        ])
+        .select();
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Equipamento criado com sucesso!",
+      });
+
+      // Reset form
+      setNovoEquipamento({
+        codigo_interno: '',
+        numero_serie: '',
+        tipo_equipamento_id: '',
+        localizacao: '',
+        estado: 'disponivel',
+        condicao: 'bom',
+        valor_aquisicao: 0,
+        data_aquisicao: new Date().toISOString().split('T')[0],
+        observacoes: ''
+      });
+      
+      setShowNovoEquipamento(false);
+      loadEquipamentos(); // Recarregar lista
+      
+    } catch (error: any) {
+      console.error('Erro ao criar equipamento:', error);
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao criar equipamento",
+        variant: "destructive",
+      });
+    } finally {
+      setCriandoEquipamento(false);
+    }
+  };
+
   useEffect(() => {
     loadEquipamentos();
+    loadTiposEquipamentos();
   }, []);
 
   useEffect(() => {
@@ -386,53 +481,138 @@ const EquipamentosInventario: React.FC = () => {
       
       {/* Modal Novo Equipamento */}
       <Dialog open={showNovoEquipamento} onOpenChange={setShowNovoEquipamento}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Novo Equipamento</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="codigo">Código Interno</Label>
-              <Input id="codigo" placeholder="Ex: EQ001" />
+              <Label htmlFor="codigo">Código Interno *</Label>
+              <Input 
+                id="codigo" 
+                placeholder="Ex: EQ001"
+                value={novoEquipamento.codigo_interno}
+                onChange={(e) => setNovoEquipamento({...novoEquipamento, codigo_interno: e.target.value})}
+              />
             </div>
             <div>
               <Label htmlFor="serie">Número de Série</Label>
-              <Input id="serie" placeholder="Ex: ABC123" />
+              <Input 
+                id="serie" 
+                placeholder="Ex: ABC123"
+                value={novoEquipamento.numero_serie}
+                onChange={(e) => setNovoEquipamento({...novoEquipamento, numero_serie: e.target.value})}
+              />
             </div>
             <div>
-              <Label htmlFor="tipo">Tipo de Equipamento</Label>
-              <Select>
+              <Label htmlFor="tipo">Tipo de Equipamento *</Label>
+              <Select 
+                value={novoEquipamento.tipo_equipamento_id}
+                onValueChange={(value) => setNovoEquipamento({...novoEquipamento, tipo_equipamento_id: value})}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione o tipo" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="computador">Computador</SelectItem>
-                  <SelectItem value="impressora">Impressora</SelectItem>
-                  <SelectItem value="telefone">Telefone</SelectItem>
+                  {tiposEquipamentos.map((tipo) => (
+                    <SelectItem key={tipo.id} value={tipo.id}>
+                      {tipo.nome}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
             <div>
               <Label htmlFor="localizacao">Localização</Label>
-              <Input id="localizacao" placeholder="Ex: Sala 1" />
+              <Input 
+                id="localizacao" 
+                placeholder="Ex: Sala 1"
+                value={novoEquipamento.localizacao}
+                onChange={(e) => setNovoEquipamento({...novoEquipamento, localizacao: e.target.value})}
+              />
             </div>
-            <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={() => setShowNovoEquipamento(false)}>
-                Cancelar
-              </Button>
-              <Button 
-                className="bg-green-600 hover:bg-green-700"
-                onClick={() => {
-                  toast({
-                    title: "Funcionalidade em desenvolvimento",
-                    description: "A criação de equipamentos será implementada em breve",
-                  });
-                  setShowNovoEquipamento(false);
-                }}
+            <div>
+              <Label htmlFor="estado">Estado</Label>
+              <Select 
+                value={novoEquipamento.estado}
+                onValueChange={(value) => setNovoEquipamento({...novoEquipamento, estado: value})}
               >
-                Criar Equipamento
-              </Button>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="disponivel">Disponível</SelectItem>
+                  <SelectItem value="atribuido">Atribuído</SelectItem>
+                  <SelectItem value="manutencao">Em Manutenção</SelectItem>
+                  <SelectItem value="danificado">Danificado</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+            <div>
+              <Label htmlFor="condicao">Condição</Label>
+              <Select 
+                value={novoEquipamento.condicao}
+                onValueChange={(value) => setNovoEquipamento({...novoEquipamento, condicao: value})}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="excelente">Excelente</SelectItem>
+                  <SelectItem value="bom">Bom</SelectItem>
+                  <SelectItem value="regular">Regular</SelectItem>
+                  <SelectItem value="ruim">Ruim</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="valor">Valor de Aquisição (€)</Label>
+              <Input 
+                id="valor" 
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                value={novoEquipamento.valor_aquisicao}
+                onChange={(e) => setNovoEquipamento({...novoEquipamento, valor_aquisicao: parseFloat(e.target.value) || 0})}
+              />
+            </div>
+            <div>
+              <Label htmlFor="data_aquisicao">Data de Aquisição</Label>
+              <Input 
+                id="data_aquisicao" 
+                type="date"
+                value={novoEquipamento.data_aquisicao}
+                onChange={(e) => setNovoEquipamento({...novoEquipamento, data_aquisicao: e.target.value})}
+              />
+            </div>
+            <div className="md:col-span-2">
+              <Label htmlFor="observacoes">Observações</Label>
+              <Input 
+                id="observacoes" 
+                placeholder="Observações adicionais..."
+                value={novoEquipamento.observacoes}
+                onChange={(e) => setNovoEquipamento({...novoEquipamento, observacoes: e.target.value})}
+              />
+            </div>
+          </div>
+          <div className="flex justify-end space-x-2 mt-6">
+            <Button variant="outline" onClick={() => setShowNovoEquipamento(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              className="bg-green-600 hover:bg-green-700"
+              onClick={criarEquipamento}
+              disabled={criandoEquipamento}
+            >
+              {criandoEquipamento ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Criando...
+                </>
+              ) : (
+                'Criar Equipamento'
+              )}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
