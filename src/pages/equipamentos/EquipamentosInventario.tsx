@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import NovoEquipamentoModal from "@/components/NovoEquipamentoModal";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { 
   ArrowLeft,
@@ -19,7 +21,9 @@ import {
   Filter,
   RefreshCw,
   Loader2,
-  Settings
+  Settings,
+  Power,
+  PowerOff
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -69,9 +73,29 @@ const EquipamentosInventario: React.FC = () => {
     condicao: 'bom',
     valor_aquisicao: 0,
     data_aquisicao: new Date().toISOString().split('T')[0],
+    data_validade: '',
+    garantia_ate: '',
+    fornecedor: '',
+    modelo: '',
+    marca: '',
+    cor: '',
+    peso: 0,
+    dimensoes: '',
+    manual_url: '',
+    foto_url: '',
+    qr_code: '',
+    responsavel_id: '',
+    centro_custo: '',
+    categoria_fiscal: '',
+    depreciacao_anual: 0,
+    vida_util_anos: 5,
     observacoes: ''
   });
   const [tiposEquipamentos, setTiposEquipamentos] = useState<any[]>([]);
+  const [equipamentoSelecionado, setEquipamentoSelecionado] = useState<any>(null);
+  const [showDetalhes, setShowDetalhes] = useState(false);
+  const [showEditar, setShowEditar] = useState(false);
+  const [showConfirmarExclusao, setShowConfirmarExclusao] = useState(false);
 
   const loadEquipamentos = async () => {
     try {
@@ -144,6 +168,22 @@ const EquipamentosInventario: React.FC = () => {
             condicao: novoEquipamento.condicao,
             valor_aquisicao: novoEquipamento.valor_aquisicao,
             data_aquisicao: novoEquipamento.data_aquisicao,
+            data_validade: novoEquipamento.data_validade || null,
+            garantia_ate: novoEquipamento.garantia_ate || null,
+            fornecedor: novoEquipamento.fornecedor,
+            modelo: novoEquipamento.modelo,
+            marca: novoEquipamento.marca,
+            cor: novoEquipamento.cor,
+            peso: novoEquipamento.peso || null,
+            dimensoes: novoEquipamento.dimensoes,
+            manual_url: novoEquipamento.manual_url,
+            foto_url: novoEquipamento.foto_url,
+            qr_code: novoEquipamento.qr_code,
+            responsavel_id: novoEquipamento.responsavel_id || null,
+            centro_custo: novoEquipamento.centro_custo,
+            categoria_fiscal: novoEquipamento.categoria_fiscal,
+            depreciacao_anual: novoEquipamento.depreciacao_anual || 0,
+            vida_util_anos: novoEquipamento.vida_util_anos || 5,
             observacoes: novoEquipamento.observacoes,
             ativo: true
           }
@@ -167,6 +207,22 @@ const EquipamentosInventario: React.FC = () => {
         condicao: 'bom',
         valor_aquisicao: 0,
         data_aquisicao: new Date().toISOString().split('T')[0],
+        data_validade: '',
+        garantia_ate: '',
+        fornecedor: '',
+        modelo: '',
+        marca: '',
+        cor: '',
+        peso: 0,
+        dimensoes: '',
+        manual_url: '',
+        foto_url: '',
+        qr_code: '',
+        responsavel_id: '',
+        centro_custo: '',
+        categoria_fiscal: '',
+        depreciacao_anual: 0,
+        vida_util_anos: 5,
         observacoes: ''
       });
       
@@ -182,6 +238,73 @@ const EquipamentosInventario: React.FC = () => {
       });
     } finally {
       setCriandoEquipamento(false);
+    }
+  };
+
+  const handleVerEquipamento = (equipamento: any) => {
+    setEquipamentoSelecionado(equipamento);
+    setShowDetalhes(true);
+  };
+
+  const handleEditarEquipamento = (equipamento: any) => {
+    setEquipamentoSelecionado(equipamento);
+    setShowEditar(true);
+  };
+
+  const handleExcluirEquipamento = (equipamento: any) => {
+    setEquipamentoSelecionado(equipamento);
+    setShowConfirmarExclusao(true);
+  };
+
+  const confirmarExclusao = async () => {
+    if (!equipamentoSelecionado) return;
+
+    try {
+      const { error } = await supabase
+        .from('equipamentos_2025_12_13_01_00')
+        .update({ ativo: false })
+        .eq('id', equipamentoSelecionado.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Equipamento desativado com sucesso!",
+      });
+
+      setShowConfirmarExclusao(false);
+      setEquipamentoSelecionado(null);
+      loadEquipamentos();
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao desativar equipamento",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const toggleAtivoEquipamento = async (equipamento: any) => {
+    try {
+      const { error } = await supabase
+        .from('equipamentos_2025_12_13_01_00')
+        .update({ ativo: !equipamento.ativo })
+        .eq('id', equipamento.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: `Equipamento ${equipamento.ativo ? 'desativado' : 'ativado'} com sucesso!`,
+      });
+
+      loadEquipamentos();
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao alterar status do equipamento",
+        variant: "destructive",
+      });
     }
   };
 
@@ -450,14 +573,39 @@ const EquipamentosInventario: React.FC = () => {
                         <TableCell>{equipamento.localizacao}</TableCell>
                         <TableCell>{formatCurrency(equipamento.valor_aquisicao || 0)}</TableCell>
                         <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <Button variant="outline" size="sm">
+                          <div className="flex items-center space-x-1">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleVerEquipamento(equipamento)}
+                              title="Ver detalhes"
+                            >
                               <Eye className="h-4 w-4" />
                             </Button>
-                            <Button variant="outline" size="sm">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleEditarEquipamento(equipamento)}
+                              title="Editar"
+                            >
                               <Edit className="h-4 w-4" />
                             </Button>
-                            <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => toggleAtivoEquipamento(equipamento)}
+                              className={equipamento.ativo ? "text-orange-600 hover:text-orange-700" : "text-green-600 hover:text-green-700"}
+                              title={equipamento.ativo ? "Desativar" : "Ativar"}
+                            >
+                              {equipamento.ativo ? <PowerOff className="h-4 w-4" /> : <Power className="h-4 w-4" />}
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="text-red-600 hover:text-red-700"
+                              onClick={() => handleExcluirEquipamento(equipamento)}
+                              title="Excluir"
+                            >
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
@@ -480,138 +628,84 @@ const EquipamentosInventario: React.FC = () => {
       </div>
       
       {/* Modal Novo Equipamento */}
-      <Dialog open={showNovoEquipamento} onOpenChange={setShowNovoEquipamento}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <NovoEquipamentoModal
+        isOpen={showNovoEquipamento}
+        onClose={() => setShowNovoEquipamento(false)}
+        novoEquipamento={novoEquipamento}
+        setNovoEquipamento={setNovoEquipamento}
+        tiposEquipamentos={tiposEquipamentos}
+        onSubmit={criarEquipamento}
+        isLoading={criandoEquipamento}
+      />
+      
+      {/* Modal de Detalhes */}
+      <Dialog open={showDetalhes} onOpenChange={setShowDetalhes}>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Novo Equipamento</DialogTitle>
+            <DialogTitle>Detalhes do Equipamento</DialogTitle>
           </DialogHeader>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="codigo">Código Interno *</Label>
-              <Input 
-                id="codigo" 
-                placeholder="Ex: EQ001"
-                value={novoEquipamento.codigo_interno}
-                onChange={(e) => setNovoEquipamento({...novoEquipamento, codigo_interno: e.target.value})}
-              />
+          {equipamentoSelecionado && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Código Interno</Label>
+                  <p className="font-medium">{equipamentoSelecionado.codigo_interno}</p>
+                </div>
+                <div>
+                  <Label>Número de Série</Label>
+                  <p className="font-medium">{equipamentoSelecionado.numero_serie || 'N/A'}</p>
+                </div>
+                <div>
+                  <Label>Estado</Label>
+                  <Badge className={getEstadoBadge(equipamentoSelecionado.estado)}>
+                    {equipamentoSelecionado.estado}
+                  </Badge>
+                </div>
+                <div>
+                  <Label>Condição</Label>
+                  <Badge className={getCondicaoBadge(equipamentoSelecionado.condicao)}>
+                    {equipamentoSelecionado.condicao}
+                  </Badge>
+                </div>
+                <div>
+                  <Label>Localização</Label>
+                  <p className="font-medium">{equipamentoSelecionado.localizacao || 'N/A'}</p>
+                </div>
+                <div>
+                  <Label>Valor de Aquisição</Label>
+                  <p className="font-medium">{formatCurrency(equipamentoSelecionado.valor_aquisicao || 0)}</p>
+                </div>
+              </div>
+              {equipamentoSelecionado.observacoes && (
+                <div>
+                  <Label>Observações</Label>
+                  <p className="text-sm text-gray-600">{equipamentoSelecionado.observacoes}</p>
+                </div>
+              )}
             </div>
-            <div>
-              <Label htmlFor="serie">Número de Série</Label>
-              <Input 
-                id="serie" 
-                placeholder="Ex: ABC123"
-                value={novoEquipamento.numero_serie}
-                onChange={(e) => setNovoEquipamento({...novoEquipamento, numero_serie: e.target.value})}
-              />
-            </div>
-            <div>
-              <Label htmlFor="tipo">Tipo de Equipamento *</Label>
-              <Select 
-                value={novoEquipamento.tipo_equipamento_id}
-                onValueChange={(value) => setNovoEquipamento({...novoEquipamento, tipo_equipamento_id: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {tiposEquipamentos.map((tipo) => (
-                    <SelectItem key={tipo.id} value={tipo.id}>
-                      {tipo.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="localizacao">Localização</Label>
-              <Input 
-                id="localizacao" 
-                placeholder="Ex: Sala 1"
-                value={novoEquipamento.localizacao}
-                onChange={(e) => setNovoEquipamento({...novoEquipamento, localizacao: e.target.value})}
-              />
-            </div>
-            <div>
-              <Label htmlFor="estado">Estado</Label>
-              <Select 
-                value={novoEquipamento.estado}
-                onValueChange={(value) => setNovoEquipamento({...novoEquipamento, estado: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="disponivel">Disponível</SelectItem>
-                  <SelectItem value="atribuido">Atribuído</SelectItem>
-                  <SelectItem value="manutencao">Em Manutenção</SelectItem>
-                  <SelectItem value="danificado">Danificado</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="condicao">Condição</Label>
-              <Select 
-                value={novoEquipamento.condicao}
-                onValueChange={(value) => setNovoEquipamento({...novoEquipamento, condicao: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="excelente">Excelente</SelectItem>
-                  <SelectItem value="bom">Bom</SelectItem>
-                  <SelectItem value="regular">Regular</SelectItem>
-                  <SelectItem value="ruim">Ruim</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="valor">Valor de Aquisição (€)</Label>
-              <Input 
-                id="valor" 
-                type="number"
-                step="0.01"
-                placeholder="0.00"
-                value={novoEquipamento.valor_aquisicao}
-                onChange={(e) => setNovoEquipamento({...novoEquipamento, valor_aquisicao: parseFloat(e.target.value) || 0})}
-              />
-            </div>
-            <div>
-              <Label htmlFor="data_aquisicao">Data de Aquisição</Label>
-              <Input 
-                id="data_aquisicao" 
-                type="date"
-                value={novoEquipamento.data_aquisicao}
-                onChange={(e) => setNovoEquipamento({...novoEquipamento, data_aquisicao: e.target.value})}
-              />
-            </div>
-            <div className="md:col-span-2">
-              <Label htmlFor="observacoes">Observações</Label>
-              <Input 
-                id="observacoes" 
-                placeholder="Observações adicionais..."
-                value={novoEquipamento.observacoes}
-                onChange={(e) => setNovoEquipamento({...novoEquipamento, observacoes: e.target.value})}
-              />
-            </div>
+          )}
+          <div className="flex justify-end">
+            <Button onClick={() => setShowDetalhes(false)}>Fechar</Button>
           </div>
-          <div className="flex justify-end space-x-2 mt-6">
-            <Button variant="outline" onClick={() => setShowNovoEquipamento(false)}>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Confirmação de Exclusão */}
+      <Dialog open={showConfirmarExclusao} onOpenChange={setShowConfirmarExclusao}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirmar Exclusão</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p>Tem certeza que deseja desativar o equipamento <strong>{equipamentoSelecionado?.codigo_interno}</strong>?</p>
+            <p className="text-sm text-gray-600">Esta ação pode ser revertida posteriormente.</p>
+          </div>
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={() => setShowConfirmarExclusao(false)}>
               Cancelar
             </Button>
-            <Button 
-              className="bg-green-600 hover:bg-green-700"
-              onClick={criarEquipamento}
-              disabled={criandoEquipamento}
-            >
-              {criandoEquipamento ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Criando...
-                </>
-              ) : (
-                'Criar Equipamento'
-              )}
+            <Button variant="destructive" onClick={confirmarExclusao}>
+              Desativar
             </Button>
           </div>
         </DialogContent>

@@ -53,7 +53,6 @@ const EquipamentosManutencoes: React.FC = () => {
             tipo_equipamento:tipos_equipamentos_2025_12_13_01_00(nome)
           )
         `)
-        .eq('ativo', true)
         .order('data_agendada', { ascending: false });
 
       if (error) throw error;
