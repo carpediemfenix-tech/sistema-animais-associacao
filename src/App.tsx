@@ -51,6 +51,8 @@ import GestaoResponsabilidades from "./pages/GestaoResponsabilidades";
 import PaginaAnalytics from "./pages/PaginaAnalytics";
 import PaginaMonitoramento from "./pages/PaginaMonitoramento";
 import TesteVoluntarios from "./pages/TesteVoluntarios";
+import PaginaRelatorios from "./pages/PaginaRelatorios";
+import PaginaWorkflow from "./pages/PaginaWorkflow";
 import HistoricoNomesAnimais from "./pages/HistoricoNomesAnimais";
 import ModuloMissoes from "./pages/ModuloMissoes";
 import ModuloAgenda from "./pages/ModuloAgenda";
@@ -160,7 +162,9 @@ const App = () => (
 <Route path="/modulo-equipamentos" element={<ProtectedRoute><ModuloEquipamentos /></ProtectedRoute>} />
 <Route path="/analytics" element={<ProtectedRoute><PaginaAnalytics /></ProtectedRoute>} />
 <Route path="/monitoramento" element={<ProtectedRoute><PaginaMonitoramento /></ProtectedRoute>} />
-            <Route path="/teste-voluntarios" element={<ProtectedRoute><TesteVoluntarios /></ProtectedRoute>} />
+<Route path="/teste-voluntarios" element={<ProtectedRoute><TesteVoluntarios /></ProtectedRoute>} />
+            <Route path="/relatorios" element={<ProtectedRoute><PaginaRelatorios /></ProtectedRoute>} />
+            <Route path="/workflow" element={<ProtectedRoute><PaginaWorkflow /></ProtectedRoute>} />
             
             {/* Rota 404 */}
             <Route path="*" element={<NotFound />} />

@@ -36,7 +36,9 @@ import {
   UserPlus,
   Stethoscope,
   ClipboardList,
-  ExternalLink
+ExternalLink,
+  FileText,
+  GitBranch
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -232,8 +234,28 @@ desenvolvido: true,
       icone: Users,
       cor: 'bg-teal-500',
       rota: '/teste-voluntarios',
-      desenvolvido: true,
+desenvolvido: true,
       stats: 'Sistema de nomes'
+    },
+    {
+      id: 'relatorios',
+      nome: 'Relatórios Avançados',
+      descrição: 'Sistema de relatórios personalizados e dashboards executivos',
+      icone: FileText,
+      cor: 'bg-indigo-500',
+      rota: '/relatorios',
+      desenvolvido: true,
+      stats: 'Relatórios personalizados'
+    },
+    {
+      id: 'workflow',
+      nome: 'Workflow e Aprovações',
+      descrição: 'Sistema de processos organizacionais e aprovações',
+      icone: GitBranch,
+      cor: 'bg-pink-500',
+      rota: '/workflow',
+      desenvolvido: true,
+      stats: 'Processos organizacionais'
     }
   ];
 
