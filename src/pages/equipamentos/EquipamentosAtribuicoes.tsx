@@ -140,6 +140,10 @@ if (error) throw error;
         description: "Atribuição criada com sucesso!",
       });
 
+// Fechar modal primeiro
+      setShowNovaAtribuicao(false);
+      
+      // Limpar formulário
       setNovaAtribuicao({
         equipamento_id: '',
         voluntario_id: '',
@@ -148,8 +152,8 @@ if (error) throw error;
         observacoes: ''
       });
       
-      setShowNovaAtribuicao(false);
-      loadAtribuicoes();
+      // Recarregar dados
+      await loadAtribuicoes();
       
     } catch (error: any) {
       toast({
