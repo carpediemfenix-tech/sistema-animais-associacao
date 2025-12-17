@@ -120,10 +120,11 @@ const [showNovaAtribuicao, setShowNovaAtribuicao] = useState(false);
     try {
       const { data, error } = await supabase
         .from('equipamentos_2025_12_13_01_00')
-.select('id, codigo_interno, ativo')
-        .eq('ativo', true);
+.select('id, codigo_interno')
+        .limit(100);
 
-      if (error) throw error;
+if (error) throw error;
+      console.log('Equipamentos carregados:', data?.length || 0);
       setEquipamentos(data || []);
     } catch (error) {
       console.error('Erro ao carregar equipamentos:', error);
@@ -219,10 +220,7 @@ if (error) throw error;
     try {
       const { error } = await supabase
         .from('atribuicoes_equipamentos_2025_12_13_01_00')
-        .update({ 
-          estado: 'devolvida',
-          data_devolucao_real: new Date().toISOString()
-        })
+.update({ estado: 'devolvida' })
         .eq('id', atribuicao.id);
 
       if (error) throw error;
@@ -380,10 +378,10 @@ useEffect(() => {
                           <TableCell>
                             <div>
                               <div className="font-medium">
-{equipamento?.codigo_interno || `Equipamento ${atribuicao.equipamento_id?.substring(0, 8) || 'N/A'}`}
+{equipamento?.codigo_interno || `ID: ${atribuicao.equipamento_id?.substring(0, 8) || 'N/A'}`}
                               </div>
                               <div className="text-sm text-gray-600">
-                                {equipamento ? 'Código interno' : 'ID do equipamento'}
+                                {equipamento ? 'Código do equipamento' : 'Identificador'}
                               </div>
                             </div>
                           </TableCell>
