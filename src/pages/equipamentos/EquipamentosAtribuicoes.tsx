@@ -62,7 +62,9 @@ interface Voluntario {
 const EquipamentosAtribuicoes: React.FC = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
-  const [atribuicoes, setAtribuicoes] = useState<Atribuicao[]>([]);
+const [atribuicoes, setAtribuicoes] = useState<Atribuicao[]>([]);
+  const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
+  const [equipamentos, setEquipamentos] = useState<any[]>([]);
   const [showNovaAtribuicao, setShowNovaAtribuicao] = useState(false);
   const [equipamentosDisponiveis, setEquipamentosDisponiveis] = useState<any[]>([]);
   const [novaAtribuicao, setNovaAtribuicao] = useState({
@@ -93,6 +95,41 @@ const EquipamentosAtribuicoes: React.FC = () => {
       });
     } finally {
       setLoading(false);
+    }
+};
+
+  // Carregar dados dos voluntários
+  const loadVoluntarios = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('voluntarios')
+        .select('id, full_name, nickname, short_name, display_name, email, ativo')
+        .eq('ativo', true);
+
+      if (error) throw error;
+      setVoluntarios(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar voluntários:', error);
+    }
+  };
+
+  // Carregar dados dos equipamentos
+  const loadEquipamentos = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('equipamentos_2025_12_13_01_00')
+        .select(`
+          id,
+          codigo_interno,
+          ativo,
+          tipo_equipamento:tipos_equipamento_2025_12_13_01_00(nome)
+        `)
+        .eq('ativo', true);
+
+      if (error) throw error;
+      setEquipamentos(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar equipamentos:', error);
     }
   };
 
@@ -162,11 +199,29 @@ if (error) throw error;
         variant: "destructive",
       });
     }
+};
+
+  // Função para obter dados do voluntário por ID
+  const getVoluntarioById = (id: string) => {
+    return voluntarios.find(v => v.id === id);
   };
 
-  useEffect(() => {
-    loadAtribuicoes();
-    loadEquipamentosDisponiveis();
+  // Função para obter dados do equipamento por ID
+  const getEquipamentoById = (id: string) => {
+    return equipamentos.find(e => e.id === id);
+  };
+
+useEffect(() => {
+    const loadAllData = async () => {
+      await Promise.all([
+        loadAtribuicoes(),
+        loadVoluntarios(),
+        loadEquipamentos(),
+        loadEquipamentosDisponiveis()
+      ]);
+    };
+    
+    loadAllData();
   }, []);
 
   const getEstadoBadge = (estado: string) => {
@@ -285,28 +340,32 @@ if (error) throw error;
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {atribuicoes.map((atribuicao) => (
-                      <TableRow key={atribuicao.id}>
-<TableCell>
-                          <div>
-                            <div className="font-medium">
-                              Equipamento: {atribuicao.equipamento_id}
+{atribuicoes.map((atribuicao) => {
+                      const voluntario = getVoluntarioById(atribuicao.voluntario_id);
+                      const equipamento = getEquipamentoById(atribuicao.equipamento_id);
+                      
+                      return (
+                        <TableRow key={atribuicao.id}>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium">
+                                {equipamento?.codigo_interno || `ID: ${atribuicao.equipamento_id.substring(0, 8)}...`}
+                              </div>
+                              <div className="text-sm text-gray-600">
+                                {equipamento?.tipo_equipamento?.nome || 'Tipo não disponível'}
+                              </div>
                             </div>
-                            <div className="text-sm text-gray-600">
-                              Código interno
+                          </TableCell>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium">
+                                {voluntario?.display_name || voluntario?.full_name || `ID: ${atribuicao.voluntario_id.substring(0, 8)}...`}
+                              </div>
+                              <div className="text-sm text-gray-600">
+                                {voluntario?.email || 'Email não disponível'}
+                              </div>
                             </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">
-                              Voluntário: {atribuicao.voluntario_id}
-                            </div>
-                            <div className="text-sm text-gray-600">
-                              ID do voluntário
-                            </div>
-                          </div>
-                        </TableCell>
+                          </TableCell>
                         <TableCell>
                           {new Date(atribuicao.data_atribuicao).toLocaleDateString('pt-PT')}
                         </TableCell>
@@ -330,8 +389,9 @@ if (error) throw error;
                             )}
                           </div>
                         </TableCell>
-                      </TableRow>
-                    ))}
+</TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>
