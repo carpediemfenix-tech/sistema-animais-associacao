@@ -122,18 +122,16 @@ const EquipamentosAtribuicoes: React.FC = () => {
     }
 
     try {
-      const { error } = await supabase
+const { error } = await supabase
         .from('atribuicoes_equipamentos_2025_12_13_01_00')
-        .insert([
-{
-            equipamento_id: novaAtribuicao.equipamento_id,
-            voluntario_id: novaAtribuicao.voluntario_id,
-            data_atribuicao: novaAtribuicao.data_atribuicao,
-            data_devolucao_prevista: novaAtribuicao.data_devolucao_prevista,
-            estado: 'ativa',
-            observacoes: novaAtribuicao.observacoes
-          }
-        ]);
+        .insert({
+          equipamento_id: novaAtribuicao.equipamento_id,
+          voluntario_id: novaAtribuicao.voluntario_id,
+          data_atribuicao: new Date().toISOString(),
+          data_devolucao_prevista: novaAtribuicao.data_devolucao_prevista,
+          estado: 'ativa',
+          observacoes: novaAtribuicao.observacoes || ''
+        });
 
 if (error) throw error;
 
