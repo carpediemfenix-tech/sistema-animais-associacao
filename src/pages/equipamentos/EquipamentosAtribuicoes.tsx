@@ -78,20 +78,9 @@ const EquipamentosAtribuicoes: React.FC = () => {
       setLoading(true);
       const { data, error } = await supabase
 .from('atribuicoes_equipamentos_2025_12_13_01_00')
-        .select(`
-          *,
-          equipamento:equipamentos_2025_12_13_01_00!inner(
-            codigo_interno,
-            tipo_equipamento:tipos_equipamento_2025_12_13_01_00(nome)
-          ),
-          voluntario:voluntarios!inner(
-            nome,
-            email,
-            display_name,
-            full_name
-          )
-        `)
+        .select('*')
         .order('data_atribuicao', { ascending: false })
+        .limit(50)
 
       if (error) throw error;
       setAtribuicoes(data || []);
@@ -110,14 +99,10 @@ const EquipamentosAtribuicoes: React.FC = () => {
   const loadEquipamentosDisponiveis = async () => {
     try {
       const { data, error } = await supabase
-        .from('equipamentos_2025_12_13_01_00')
-.select(`
-          id,
-          codigo_interno,
-          tipo_equipamento:tipos_equipamento_2025_12_13_01_00(nome)
-        `)
-        .eq('ativo', true)
-        .order('codigo_interno');
+.from('equipamentos_2025_12_13_01_00')
+        .select('id, codigo_interno')
+        .order('codigo_interno')
+        .limit(50);
 
       if (error) throw error;
       setEquipamentosDisponiveis(data || []);
@@ -311,12 +296,22 @@ if (error) throw error;
                           </div>
                         </TableCell>
 <TableCell>
-                          <div>
+<div>
                             <div className="font-medium">
-                              {atribuicao.voluntario?.display_name || atribuicao.voluntario?.nome || 'Voluntário não encontrado'}
+                              Equipamento: {atribuicao.equipamento_id}
                             </div>
                             <div className="text-sm text-gray-600">
-                              {atribuicao.voluntario?.email || 'Email não disponível'}
+                              Código interno
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">
+                              Voluntário: {atribuicao.voluntario_id}
+                            </div>
+                            <div className="text-sm text-gray-600">
+                              ID do voluntário
                             </div>
                           </div>
                         </TableCell>
@@ -380,7 +375,7 @@ if (error) throw error;
                   <SelectContent>
                     {equipamentosDisponiveis.map((equipamento) => (
                       <SelectItem key={equipamento.id} value={equipamento.id}>
-                        {equipamento.codigo_interno} - {equipamento.tipo_equipamento?.nome || 'N/A'}
+{equipamento.codigo_interno}
                       </SelectItem>
                     ))}
                   </SelectContent>
