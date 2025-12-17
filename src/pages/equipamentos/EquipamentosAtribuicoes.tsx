@@ -77,22 +77,21 @@ const EquipamentosAtribuicoes: React.FC = () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('atribuicoes_equipamentos_2025_12_13_01_00')
-.select(`
+.from('atribuicoes_equipamentos_2025_12_13_01_00')
+        .select(`
           *,
-          equipamento:equipamentos_2025_12_13_01_00(
+          equipamento:equipamentos_2025_12_13_01_00!inner(
             codigo_interno,
             tipo_equipamento:tipos_equipamento_2025_12_13_01_00(nome)
           ),
-          voluntario:voluntarios(
+          voluntario:voluntarios!inner(
             nome,
             email,
             display_name,
             full_name
           )
         `)
-        .eq('ativo', true)
-        .order('data_atribuicao', { ascending: false });
+        .order('data_atribuicao', { ascending: false })
 
       if (error) throw error;
       setAtribuicoes(data || []);
@@ -112,12 +111,11 @@ const EquipamentosAtribuicoes: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('equipamentos_2025_12_13_01_00')
-        .select(`
+.select(`
           id,
           codigo_interno,
-          tipo_equipamento:tipos_equipamentos_2025_12_13_01_00(nome)
+          tipo_equipamento:tipos_equipamento_2025_12_13_01_00(nome)
         `)
-        .eq('estado', 'disponivel')
         .eq('ativo', true)
         .order('codigo_interno');
 
@@ -142,24 +140,17 @@ const EquipamentosAtribuicoes: React.FC = () => {
       const { error } = await supabase
         .from('atribuicoes_equipamentos_2025_12_13_01_00')
         .insert([
-          {
+{
             equipamento_id: novaAtribuicao.equipamento_id,
             voluntario_id: novaAtribuicao.voluntario_id,
             data_atribuicao: novaAtribuicao.data_atribuicao,
             data_devolucao_prevista: novaAtribuicao.data_devolucao_prevista,
             estado: 'ativa',
-            observacoes: novaAtribuicao.observacoes,
-            ativo: true
+            observacoes: novaAtribuicao.observacoes
           }
         ]);
 
-      if (error) throw error;
-
-      // Atualizar estado do equipamento para 'atribuido'
-      await supabase
-        .from('equipamentos_2025_12_13_01_00')
-        .update({ estado: 'atribuido' })
-        .eq('id', novaAtribuicao.equipamento_id);
+if (error) throw error;
 
       toast({
         title: "Sucesso",
