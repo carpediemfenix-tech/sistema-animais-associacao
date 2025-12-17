@@ -16,6 +16,8 @@ interface VoluntarioData {
   id: string;
   nome: string;
   nickname: string;
+  display_name: string;
+  full_name: string;
   email: string;
   telefone: string;
   morada: string;
@@ -77,8 +79,14 @@ const EditarVoluntario = () => {
       setSaving(true);
 
       // Preparar dados para atualização (apenas campos que existem na tabela)
+const nickname = voluntario.nickname?.trim() || null;
+      const nome = voluntario.nome?.trim() || '';
+      
       const updateData = {
-        nome: voluntario.nome?.trim() || '',
+        nome: nome,
+        nickname: nickname,
+        display_name: nickname || nome, // REGRA: nickname tem prioridade
+        full_name: nome, // Nome completo sempre preservado
         email: voluntario.email?.trim() || '',
         telefone: voluntario.telefone?.trim() || null,
         morada: voluntario.morada?.trim() || null,
@@ -219,9 +227,12 @@ const EditarVoluntario = () => {
                 <Input
                   id="nickname"
                   value={voluntario.nickname || ''}
-                  onChange={(e) => handleInputChange('nickname', e.target.value)}
+onChange={(e) => handleInputChange('nickname', e.target.value)}
                   placeholder="Como gosta de ser chamado"
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  💡 <strong>Display Name:</strong> Se preenchido, este será o nome exibido no sistema
+                </p>
               </div>
               
               <div>

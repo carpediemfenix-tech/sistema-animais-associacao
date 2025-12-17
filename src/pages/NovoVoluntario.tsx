@@ -167,9 +167,15 @@ const [formData, setFormData] = useState<VoluntarioFormData>({
     try {
       setSubmitting(true);
 
-      // Preparar dados do voluntário
+// Preparar dados do voluntário
+      const nickname = formData.nickname.trim();
+      const nome = formData.nome.trim();
+      
       const voluntarioData = {
-        nome: formData.nome.trim(),
+        nome: nome,
+        nickname: nickname || null,
+        display_name: nickname || nome, // REGRA: nickname tem prioridade
+        full_name: nome, // Nome completo sempre preservado
         email: formData.email.trim().toLowerCase(),
         telefone: formData.telefone.trim(),
         morada: formData.morada.trim() || null,
@@ -309,8 +315,8 @@ setFormData({
                     onChange={(e) => handleInputChange('nickname', e.target.value)}
                     placeholder="Como gosta de ser chamado (opcional)"
                   />
-                  <p className="text-xs text-gray-500">
-                    💡 Este nome aparecerá no sistema como preferência
+<p className="text-xs text-gray-500">
+                    💡 <strong>Display Name:</strong> Se preenchido, este será o nome exibido no sistema em vez do nome completo
                   </p>
                 </div>
 

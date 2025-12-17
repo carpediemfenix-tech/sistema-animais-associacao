@@ -9,6 +9,8 @@ export interface VoluntarioValentao {
   id: string;
   nome: string;
   nickname?: string;
+  display_name?: string;
+  full_name?: string;
   email: string;
   telefone?: string;
   nif?: string;
