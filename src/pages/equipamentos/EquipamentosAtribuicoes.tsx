@@ -124,7 +124,6 @@ const [showNovaAtribuicao, setShowNovaAtribuicao] = useState(false);
         .limit(100);
 
 if (error) throw error;
-      console.log('Equipamentos carregados:', data?.length || 0);
       setEquipamentos(data || []);
     } catch (error) {
       console.error('Erro ao carregar equipamentos:', error);
