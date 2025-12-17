@@ -29,6 +29,7 @@ import { Animal, ResponsabilidadeVoluntario, Voluntario } from "@/types/animal";
 import { useToast } from "@/hooks/use-toast";
 import EnhancedHeader from "@/components/EnhancedHeader";
 import EnhancedFooter from "@/components/EnhancedFooter";
+import VoluntarioSelector from "@/components/VoluntarioSelector";
 
 
 // Tipos de responsabilidades predefinidos
@@ -116,7 +117,7 @@ const AnimalResponsabilidades = () => {
         .select(`
           *,
           
-          voluntarios(id, nome, email, telefone)
+voluntarios(id, nome, email, telefone, display_name, full_name)
         `)
         .eq('animal_id', id)
         .order('data_inicio', { ascending: false });
@@ -486,10 +487,10 @@ const AnimalResponsabilidades = () => {
                             </div>
                             <div className="flex-1">
                               <h3 className="font-semibold text-gray-900 mb-1">{tipoInfo.nome}</h3>
-                              {responsabilidade.voluntarios?.nome && (
+{responsabilidade.voluntarios && (
                                 <div className="flex items-center text-sm text-gray-600 mb-2">
                                   <User className="h-4 w-4 mr-1" />
-                                  {responsabilidade.voluntarios.nome}
+                                  {responsabilidade.voluntarios.display_name || responsabilidade.voluntarios.nome}
                                 </div>
                               )}
                               <div className="flex items-center text-xs text-gray-500">
@@ -597,10 +598,10 @@ const AnimalResponsabilidades = () => {
                                     </div>
                                   </div>
                                   
-                                  {responsabilidade.voluntarios?.nome && (
+{responsabilidade.voluntarios && (
                                     <div className="flex items-center text-sm text-gray-600 mb-2">
                                       <User className="h-4 w-4 mr-1" />
-                                      {responsabilidade.voluntarios.nome}
+                                      {responsabilidade.voluntarios.display_name || responsabilidade.voluntarios.nome}
                                     </div>
                                   )}
                                   
@@ -711,26 +712,18 @@ const AnimalResponsabilidades = () => {
               />
             </div>
             
-            <div>
-              <Label htmlFor="voluntario_id" className="text-green-700 font-medium">
-                Voluntário Responsável
-              </Label>
-              <Select 
-                value={responsabilidadeForm.voluntario_id} 
-                onValueChange={(value) => setResponsabilidadeForm({ ...responsabilidadeForm, voluntario_id: value === "none" ? "" : value })}
-              >
-                <SelectTrigger className="border-green-200 focus:border-green-400">
-                  <SelectValue placeholder="Selecionar voluntário (opcional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Nenhum voluntário</SelectItem>
-                  {voluntarios.map((voluntario) => (
-                    <SelectItem key={voluntario.id} value={voluntario.id}>
-                      {voluntario.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+<div>
+              <VoluntarioSelector
+                value={responsabilidadeForm.voluntario_id}
+                onValueChange={(voluntarioId, voluntario) => {
+                  setResponsabilidadeForm({ ...responsabilidadeForm, voluntario_id: voluntarioId });
+                }}
+                label="Voluntário Responsável"
+                placeholder="Selecionar voluntário (opcional)..."
+                showFullName={true}
+                required={false}
+                className="border-green-200 focus:border-green-400"
+              />
             </div>
             
             <div>

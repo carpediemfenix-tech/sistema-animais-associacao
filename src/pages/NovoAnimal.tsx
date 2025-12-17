@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import EnhancedHeader from "@/components/EnhancedHeader";
 import EnhancedFooter from "@/components/EnhancedFooter";
+import VoluntarioSelector from "@/components/VoluntarioSelector";
 
 const NovoAnimal = () => {
   const navigate = useNavigate();
@@ -670,28 +671,18 @@ const NovoAnimal = () => {
               </div>
 
               {/* Voluntário Responsável - CORRIGIDO */}
-              <div>
-                <Label htmlFor="voluntario_responsavel">Voluntário Responsável *</Label>
-                <Select 
-                  value={formData.voluntario_responsavel} 
-                  onValueChange={(value) => handleInputChange("voluntario_responsavel", value)}
-                >
-                  <SelectTrigger className={errors.voluntario_responsavel ? "border-red-500" : ""}>
-                    <SelectValue placeholder="Selecionar voluntário responsável" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {voluntarios.map((voluntario) => (
-                      <SelectItem key={voluntario.id} value={voluntario.id}>
-                        <div className="flex items-center">
-                          <span className="font-medium">{voluntario.nome}</span>
-                          {voluntario.email && (
-                            <span className="text-sm text-gray-500 ml-2">({voluntario.email})</span>
-                          )}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+<div>
+                <VoluntarioSelector
+                  value={formData.voluntario_responsavel}
+                  onValueChange={(voluntarioId, voluntario) => {
+                    handleInputChange("voluntario_responsavel", voluntarioId);
+                  }}
+                  label="Voluntário Responsável *"
+                  placeholder="Selecionar voluntário responsável..."
+                  showFullName={true}
+                  required={true}
+                  className={errors.voluntario_responsavel ? "border-red-500" : ""}
+                />
                 {errors.voluntario_responsavel && (
                   <p className="text-sm text-red-500 mt-1 flex items-center">
                     <AlertCircle className="h-4 w-4 mr-1" />
