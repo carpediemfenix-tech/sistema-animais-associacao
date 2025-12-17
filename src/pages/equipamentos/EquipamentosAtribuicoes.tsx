@@ -65,7 +65,9 @@ const EquipamentosAtribuicoes: React.FC = () => {
 const [atribuicoes, setAtribuicoes] = useState<Atribuicao[]>([]);
   const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
   const [equipamentos, setEquipamentos] = useState<any[]>([]);
-  const [showNovaAtribuicao, setShowNovaAtribuicao] = useState(false);
+const [showNovaAtribuicao, setShowNovaAtribuicao] = useState(false);
+  const [showDetalhes, setShowDetalhes] = useState(false);
+  const [atribuicaoSelecionada, setAtribuicaoSelecionada] = useState<Atribuicao | null>(null);
   const [equipamentosDisponiveis, setEquipamentosDisponiveis] = useState<any[]>([]);
   const [novaAtribuicao, setNovaAtribuicao] = useState({
     equipamento_id: '',
@@ -204,6 +206,40 @@ if (error) throw error;
   // Função para obter dados do equipamento por ID
   const getEquipamentoById = (id: string) => {
     return equipamentos.find(e => e.id === id);
+};
+
+  // Função para ver detalhes da atribuição
+  const handleVerDetalhes = (atribuicao: Atribuicao) => {
+    setAtribuicaoSelecionada(atribuicao);
+    setShowDetalhes(true);
+  };
+
+  // Função para devolver equipamento
+  const handleDevolverEquipamento = async (atribuicao: Atribuicao) => {
+    try {
+      const { error } = await supabase
+        .from('atribuicoes_equipamentos_2025_12_13_01_00')
+        .update({ 
+          estado: 'devolvida',
+          data_devolucao_real: new Date().toISOString()
+        })
+        .eq('id', atribuicao.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Equipamento devolvido com sucesso!",
+      });
+
+      await loadAtribuicoes();
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao devolver equipamento",
+        variant: "destructive",
+      });
+    }
   };
 
 useEffect(() => {
@@ -344,10 +380,10 @@ useEffect(() => {
                           <TableCell>
                             <div>
                               <div className="font-medium">
-{equipamento?.codigo_interno || `ID: ${atribuicao.equipamento_id?.substring(0, 8) || 'N/A'}...`}
+{equipamento?.codigo_interno || `Equipamento ${atribuicao.equipamento_id?.substring(0, 8) || 'N/A'}`}
                               </div>
                               <div className="text-sm text-gray-600">
-'Equipamento'
+                                {equipamento ? 'Código interno' : 'ID do equipamento'}
                               </div>
                             </div>
                           </TableCell>
@@ -374,11 +410,20 @@ useEffect(() => {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-2">
-                            <Button variant="outline" size="sm">
+<Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleVerDetalhes(atribuicao)}
+                            >
                               <Eye className="h-4 w-4" />
                             </Button>
                             {atribuicao.estado === 'ativa' && (
-                              <Button variant="outline" size="sm" className="text-green-600">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="text-green-600"
+                                onClick={() => handleDevolverEquipamento(atribuicao)}
+                              >
                                 <CheckCircle className="h-4 w-4" />
                               </Button>
                             )}
@@ -480,6 +525,81 @@ useEffect(() => {
               onClick={criarAtribuicao}
             >
               Criar Atribuição
+            </Button>
+          </div>
+        </DialogContent>
+</Dialog>
+
+      {/* Modal de Detalhes */}
+      <Dialog open={showDetalhes} onOpenChange={setShowDetalhes}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Detalhes da Atribuição</DialogTitle>
+          </DialogHeader>
+          
+          {atribuicaoSelecionada && (
+            <div className="space-y-4">
+              <div>
+                <Label className="text-sm font-medium text-gray-700">Equipamento</Label>
+                <p className="text-sm mt-1">
+                  {getEquipamentoById(atribuicaoSelecionada.equipamento_id)?.codigo_interno || 
+                   `Equipamento ${atribuicaoSelecionada.equipamento_id?.substring(0, 8)}`}
+                </p>
+              </div>
+              
+              <div>
+                <Label className="text-sm font-medium text-gray-700">Voluntário</Label>
+                <p className="text-sm mt-1">
+                  {getVoluntarioById(atribuicaoSelecionada.voluntario_id)?.display_name || 
+                   getVoluntarioById(atribuicaoSelecionada.voluntario_id)?.full_name ||
+                   `Voluntário ${atribuicaoSelecionada.voluntario_id?.substring(0, 8)}`}
+                </p>
+              </div>
+              
+              <div>
+                <Label className="text-sm font-medium text-gray-700">Estado</Label>
+                <div className="mt-1">
+                  <Badge className={getEstadoBadge(atribuicaoSelecionada.estado)}>
+                    {atribuicaoSelecionada.estado}
+                  </Badge>
+                </div>
+              </div>
+              
+              <div>
+                <Label className="text-sm font-medium text-gray-700">Data de Atribuição</Label>
+                <p className="text-sm mt-1">
+                  {new Date(atribuicaoSelecionada.data_atribuicao).toLocaleDateString('pt-PT')}
+                </p>
+              </div>
+              
+              <div>
+                <Label className="text-sm font-medium text-gray-700">Devolução Prevista</Label>
+                <p className="text-sm mt-1">
+                  {new Date(atribuicaoSelecionada.data_devolucao_prevista).toLocaleDateString('pt-PT')}
+                </p>
+              </div>
+              
+              {atribuicaoSelecionada.data_devolucao_real && (
+                <div>
+                  <Label className="text-sm font-medium text-gray-700">Data de Devolução Real</Label>
+                  <p className="text-sm mt-1">
+                    {new Date(atribuicaoSelecionada.data_devolucao_real).toLocaleDateString('pt-PT')}
+                  </p>
+                </div>
+              )}
+              
+              {atribuicaoSelecionada.observacoes && (
+                <div>
+                  <Label className="text-sm font-medium text-gray-700">Observações</Label>
+                  <p className="text-sm mt-1">{atribuicaoSelecionada.observacoes}</p>
+                </div>
+              )}
+            </div>
+          )}
+          
+          <div className="flex justify-end mt-6">
+            <Button variant="outline" onClick={() => setShowDetalhes(false)}>
+              Fechar
             </Button>
           </div>
         </DialogContent>
