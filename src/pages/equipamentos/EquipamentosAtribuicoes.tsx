@@ -23,6 +23,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import EnhancedHeader from "@/components/EnhancedHeader";
 import EnhancedFooter from "@/components/EnhancedFooter";
+import VoluntarioSelector from "@/components/VoluntarioSelector";
 
 interface Atribuicao {
   id: string;
@@ -39,10 +40,23 @@ interface Atribuicao {
       nome: string;
     };
   };
-  voluntario?: {
+voluntario?: {
     nome: string;
     email: string;
+    display_name?: string;
+    full_name?: string;
   };
+}
+
+interface Voluntario {
+  id: string;
+  full_name: string;
+  nickname?: string;
+  short_name: string;
+  display_name: string;
+  email: string;
+  telefone?: string;
+  ativo: boolean;
 }
 
 const EquipamentosAtribuicoes: React.FC = () => {
@@ -64,11 +78,17 @@ const EquipamentosAtribuicoes: React.FC = () => {
       setLoading(true);
       const { data, error } = await supabase
         .from('atribuicoes_equipamentos_2025_12_13_01_00')
-        .select(`
+.select(`
           *,
           equipamento:equipamentos_2025_12_13_01_00(
             codigo_interno,
-            tipo_equipamento:tipos_equipamentos_2025_12_13_01_00(nome)
+            tipo_equipamento:tipos_equipamento_2025_12_13_01_00(nome)
+          ),
+          voluntario:voluntarios(
+            nome,
+            email,
+            display_name,
+            full_name
           )
         `)
         .eq('ativo', true)
@@ -299,10 +319,14 @@ const EquipamentosAtribuicoes: React.FC = () => {
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell>
+<TableCell>
                           <div>
-                            <div className="font-medium">Voluntário ID: {atribuicao.voluntario_id}</div>
-                            <div className="text-sm text-gray-600">Dados do voluntário</div>
+                            <div className="font-medium">
+                              {atribuicao.voluntario?.display_name || atribuicao.voluntario?.nome || 'Voluntário não encontrado'}
+                            </div>
+                            <div className="text-sm text-gray-600">
+                              {atribuicao.voluntario?.email || 'Email não disponível'}
+                            </div>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -371,13 +395,16 @@ const EquipamentosAtribuicoes: React.FC = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label htmlFor="voluntario">ID do Voluntário *</Label>
-                <Input 
-                  id="voluntario" 
-                  placeholder="ID do voluntário"
+<div>
+                <VoluntarioSelector
                   value={novaAtribuicao.voluntario_id}
-                  onChange={(e) => setNovaAtribuicao({...novaAtribuicao, voluntario_id: e.target.value})}
+                  onValueChange={(voluntarioId, voluntario) => {
+                    setNovaAtribuicao({...novaAtribuicao, voluntario_id: voluntarioId});
+                  }}
+                  label="Voluntário"
+                  placeholder="Selecione o voluntário..."
+                  showFullName={true}
+                  required
                 />
               </div>
               <div>

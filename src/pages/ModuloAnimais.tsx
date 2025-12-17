@@ -21,6 +21,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import EnhancedHeader from "@/components/EnhancedHeader";
 import EnhancedFooter from "@/components/EnhancedFooter";
+import VoluntarioSelector from "@/components/VoluntarioSelector";
 
 interface EstatisticasAnimais {
   totalAnimais: number;
