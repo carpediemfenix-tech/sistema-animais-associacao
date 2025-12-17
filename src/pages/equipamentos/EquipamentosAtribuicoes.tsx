@@ -118,12 +118,7 @@ const [atribuicoes, setAtribuicoes] = useState<Atribuicao[]>([]);
     try {
       const { data, error } = await supabase
         .from('equipamentos_2025_12_13_01_00')
-        .select(`
-          id,
-          codigo_interno,
-          ativo,
-          tipo_equipamento:tipos_equipamento_2025_12_13_01_00(nome)
-        `)
+.select('id, codigo_interno, ativo')
         .eq('ativo', true);
 
       if (error) throw error;
@@ -349,17 +344,17 @@ useEffect(() => {
                           <TableCell>
                             <div>
                               <div className="font-medium">
-                                {equipamento?.codigo_interno || `ID: ${atribuicao.equipamento_id.substring(0, 8)}...`}
+{equipamento?.codigo_interno || `ID: ${atribuicao.equipamento_id?.substring(0, 8) || 'N/A'}...`}
                               </div>
                               <div className="text-sm text-gray-600">
-                                {equipamento?.tipo_equipamento?.nome || 'Tipo não disponível'}
+'Equipamento'
                               </div>
                             </div>
                           </TableCell>
                           <TableCell>
                             <div>
                               <div className="font-medium">
-                                {voluntario?.display_name || voluntario?.full_name || `ID: ${atribuicao.voluntario_id.substring(0, 8)}...`}
+{voluntario?.display_name || voluntario?.full_name || `ID: ${atribuicao.voluntario_id?.substring(0, 8) || 'N/A'}...`}
                               </div>
                               <div className="text-sm text-gray-600">
                                 {voluntario?.email || 'Email não disponível'}
