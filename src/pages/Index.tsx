@@ -207,13 +207,23 @@ nome: 'Dashboard Executivo',
     },
     {
       id: 'analytics',
-      nome: 'Analytics Avançado',
+nome: 'Analytics Avançado',
       descrição: 'Sistema completo de analytics, métricas de performance e auditoria',
       icone: BarChart3,
       cor: 'bg-purple-500',
       rota: '/analytics',
       desenvolvido: true,
       stats: 'Sistema avançado'
+    },
+    {
+      id: 'monitoramento',
+      nome: 'Monitoramento do Sistema',
+      descrição: 'Dashboard de logs, métricas de performance e monitoramento em tempo real',
+      icone: Activity,
+      cor: 'bg-red-500',
+      rota: '/monitoramento',
+      desenvolvido: true,
+      stats: 'Sistema de logs'
     }
   ];
 
