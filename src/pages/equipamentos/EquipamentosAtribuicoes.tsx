@@ -287,18 +287,8 @@ if (error) throw error;
                   <TableBody>
                     {atribuicoes.map((atribuicao) => (
                       <TableRow key={atribuicao.id}>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">
-                              {atribuicao.equipamento?.codigo_interno || 'N/A'}
-                            </div>
-                            <div className="text-sm text-gray-600">
-                              {atribuicao.equipamento?.tipo_equipamento?.nome || 'N/A'}
-                            </div>
-                          </div>
-                        </TableCell>
 <TableCell>
-<div>
+                          <div>
                             <div className="font-medium">
                               Equipamento: {atribuicao.equipamento_id}
                             </div>
