@@ -222,8 +222,18 @@ nome: 'Analytics Avançado',
       icone: Activity,
       cor: 'bg-red-500',
       rota: '/monitoramento',
-      desenvolvido: true,
+desenvolvido: true,
       stats: 'Sistema de logs'
+    },
+    {
+      id: 'teste-voluntarios',
+      nome: 'Sistema de Nomes de Voluntários',
+      descrição: 'Teste e demonstração do novo sistema de nomes com display_name',
+      icone: Users,
+      cor: 'bg-teal-500',
+      rota: '/teste-voluntarios',
+      desenvolvido: true,
+      stats: 'Sistema de nomes'
     }
   ];
 

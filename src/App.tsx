@@ -50,6 +50,7 @@ import GestaoClinicas from "./pages/GestaoClinicas";
 import GestaoResponsabilidades from "./pages/GestaoResponsabilidades";
 import PaginaAnalytics from "./pages/PaginaAnalytics";
 import PaginaMonitoramento from "./pages/PaginaMonitoramento";
+import TesteVoluntarios from "./pages/TesteVoluntarios";
 import HistoricoNomesAnimais from "./pages/HistoricoNomesAnimais";
 import ModuloMissoes from "./pages/ModuloMissoes";
 import ModuloAgenda from "./pages/ModuloAgenda";
@@ -158,7 +159,8 @@ const App = () => (
             <Route path="/modulo-agenda" element={<ProtectedRoute><ModuloAgenda /></ProtectedRoute>} />
 <Route path="/modulo-equipamentos" element={<ProtectedRoute><ModuloEquipamentos /></ProtectedRoute>} />
 <Route path="/analytics" element={<ProtectedRoute><PaginaAnalytics /></ProtectedRoute>} />
-            <Route path="/monitoramento" element={<ProtectedRoute><PaginaMonitoramento /></ProtectedRoute>} />
+<Route path="/monitoramento" element={<ProtectedRoute><PaginaMonitoramento /></ProtectedRoute>} />
+            <Route path="/teste-voluntarios" element={<ProtectedRoute><TesteVoluntarios /></ProtectedRoute>} />
             
             {/* Rota 404 */}
             <Route path="*" element={<NotFound />} />
