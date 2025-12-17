@@ -8,6 +8,7 @@
 export interface VoluntarioValentao {
   id: string;
   nome: string;
+  nickname?: string;
   email: string;
   telefone?: string;
   nif?: string;
@@ -35,6 +36,7 @@ export type Voluntario = VoluntarioValentao;
 // ============================================================================
 export interface VoluntarioFormData {
   nome: string;
+  nickname: string;
   email: string;
   telefone: string;
   nif: string;

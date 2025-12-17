@@ -15,6 +15,7 @@ import UserHeader from "@/components/UserHeader";
 interface VoluntarioData {
   id: string;
   nome: string;
+  nickname: string;
   email: string;
   telefone: string;
   morada: string;
@@ -210,6 +211,16 @@ const EditarVoluntario = () => {
                   id="nome"
                   value={voluntario.nome}
                   onChange={(e) => handleInputChange('nome', e.target.value)}
+                />
+</div>
+              
+              <div>
+                <Label htmlFor="nickname">Nickname/Apelido</Label>
+                <Input
+                  id="nickname"
+                  value={voluntario.nickname || ''}
+                  onChange={(e) => handleInputChange('nickname', e.target.value)}
+                  placeholder="Como gosta de ser chamado"
                 />
               </div>
               

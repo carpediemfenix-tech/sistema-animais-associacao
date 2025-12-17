@@ -43,8 +43,9 @@ import {
 } from "@/types/voluntarios";
 
 const NovoVoluntario = () => {
-  const [formData, setFormData] = useState<VoluntarioFormData>({
+const [formData, setFormData] = useState<VoluntarioFormData>({
     nome: '',
+    nickname: '',
     email: '',
     telefone: '',
     morada: '',
@@ -211,8 +212,9 @@ const NovoVoluntario = () => {
   };
 
   const resetForm = () => {
-    setFormData({
+setFormData({
       nome: '',
+      nickname: '',
       email: '',
       telefone: '',
       morada: '',
@@ -296,6 +298,20 @@ const NovoVoluntario = () => {
                   {errors.nome && (
                     <p className="text-sm text-red-600">{errors.nome}</p>
                   )}
+</div>
+
+                {/* Nickname */}
+                <div className="space-y-2">
+                  <Label htmlFor="nickname">Nickname/Apelido</Label>
+                  <Input
+                    id="nickname"
+                    value={formData.nickname}
+                    onChange={(e) => handleInputChange('nickname', e.target.value)}
+                    placeholder="Como gosta de ser chamado (opcional)"
+                  />
+                  <p className="text-xs text-gray-500">
+                    💡 Este nome aparecerá no sistema como preferência
+                  </p>
                 </div>
 
                 {/* Email */}
