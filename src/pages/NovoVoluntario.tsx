@@ -42,6 +42,18 @@ import {
   getNivelCor
 } from "@/types/voluntarios";
 
+// Função helper para extrair primeiro e último nome
+const getDisplayNameFromFullName = (fullName: string): string => {
+  const names = fullName.trim().split(' ').filter(name => name.length > 0);
+  
+  if (names.length === 0) return '';
+  if (names.length === 1) return names[0]; // Apenas um nome
+  if (names.length === 2) return `${names[0]} ${names[1]}`; // Primeiro e segundo
+  
+  // Mais de 2 nomes: primeiro + último
+  return `${names[0]} ${names[names.length - 1]}`;
+};
+
 const NovoVoluntario = () => {
 const [formData, setFormData] = useState<VoluntarioFormData>({
     nome: '',
@@ -174,7 +186,7 @@ const [formData, setFormData] = useState<VoluntarioFormData>({
       const voluntarioData = {
         nome: nome,
         nickname: nickname || null,
-        display_name: nickname || nome, // REGRA: nickname tem prioridade
+display_name: nickname || getDisplayNameFromFullName(nome), // REGRA: nickname ou primeiro+último nome
         full_name: nome, // Nome completo sempre preservado
         email: formData.email.trim().toLowerCase(),
         telefone: formData.telefone.trim(),
@@ -316,7 +328,7 @@ setFormData({
                     placeholder="Como gosta de ser chamado (opcional)"
                   />
 <p className="text-xs text-gray-500">
-                    💡 <strong>Display Name:</strong> Se preenchido, este será o nome exibido no sistema em vez do nome completo
+                    💡 <strong>Display Name:</strong> Se preenchido, este será o nome exibido. Caso contrário, usará "Primeiro Último"
                   </p>
                 </div>
 

@@ -12,6 +12,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import UserHeader from "@/components/UserHeader";
 
+// Função helper para extrair primeiro e último nome
+const getDisplayNameFromFullName = (fullName: string): string => {
+  const names = fullName.trim().split(' ').filter(name => name.length > 0);
+  
+  if (names.length === 0) return '';
+  if (names.length === 1) return names[0]; // Apenas um nome
+  if (names.length === 2) return `${names[0]} ${names[1]}`; // Primeiro e segundo
+  
+  // Mais de 2 nomes: primeiro + último
+  return `${names[0]} ${names[names.length - 1]}`;
+};
+
 interface VoluntarioData {
   id: string;
   nome: string;
@@ -85,7 +97,7 @@ const nickname = voluntario.nickname?.trim() || null;
       const updateData = {
         nome: nome,
         nickname: nickname,
-        display_name: nickname || nome, // REGRA: nickname tem prioridade
+display_name: nickname || getDisplayNameFromFullName(nome), // REGRA: nickname ou primeiro+último nome
         full_name: nome, // Nome completo sempre preservado
         email: voluntario.email?.trim() || '',
         telefone: voluntario.telefone?.trim() || null,
@@ -230,8 +242,8 @@ const nickname = voluntario.nickname?.trim() || null;
 onChange={(e) => handleInputChange('nickname', e.target.value)}
                   placeholder="Como gosta de ser chamado"
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  💡 <strong>Display Name:</strong> Se preenchido, este será o nome exibido no sistema
+<p className="text-xs text-gray-500 mt-1">
+                  💡 <strong>Display Name:</strong> Se preenchido, este será o nome exibido. Caso contrário, usará "Primeiro Último"
                 </p>
               </div>
               
