@@ -191,25 +191,51 @@ categorias_financeiras_2025_12_13_06_00(nome, icone, cor)
         setCategorias(categoriasData || []);
       }
 
-// Carregar intervenções com custos incluindo relacionamentos
-      const { data: intervencoesData, error: intervencoesError } = await supabase
-        .from('intervencoes')
-        .select(`
-          *,
-          clinicas_veterinarias(nome, tem_protocolo),
-          tipos_intervencoes(nome)
-        `)
-        .eq('animal_id', id)
-        .not('custo_final', 'is', null)
-        .order('data_intervencao', { ascending: false });
+// Carregar intervenções com custos - com fallback
+      let intervencoesData = null;
+      let intervencoesError = null;
+      
+      // Tentar primeiro com relacionamentos
+      try {
+        const result = await supabase
+          .from('intervencoes')
+          .select(`
+            *,
+            clinicas_veterinarias(nome, tem_protocolo),
+            tipos_intervencoes(nome)
+          `)
+          .eq('animal_id', id)
+          .not('custo_final', 'is', null)
+          .order('data_intervencao', { ascending: false });
+          
+        if (result.error) {
+          throw result.error;
+        }
+        
+        intervencoesData = result.data;
+      } catch (error) {
+        console.warn('Erro na query com relacionamentos, tentando query simples:', error);
+        
+        // Fallback: query simples sem relacionamentos
+        const fallbackResult = await supabase
+          .from('intervencoes')
+          .select('*')
+          .eq('animal_id', id)
+          .not('custo_final', 'is', null)
+          .order('data_intervencao', { ascending: false });
+          
+        intervencoesData = fallbackResult.data;
+        intervencoesError = fallbackResult.error;
+      }
 
-if (intervencoesError) {
+      if (intervencoesError) {
         console.error('Erro ao carregar intervenções:', intervencoesError);
       } else {
         console.log('Dados das intervenções carregados:', intervencoesData);
         console.log('Primeira intervenção (exemplo):', intervencoesData?.[0]);
         console.log('Campos disponíveis:', intervencoesData?.[0] ? Object.keys(intervencoesData[0]) : 'Nenhuma intervenção');
-        setIntervencoes(intervencoesData || []);
+setIntervencoes(intervencoesData || []);
+        console.log('✅ Intervenções definidas no estado:', intervencoesData?.length || 0);
       }
 
     } catch (error) {
@@ -578,6 +604,7 @@ if (!confirm('Tem certeza que deseja excluir este movimento?')) return;
         </Card>
 
 {/* Custos das Intervenções */}
+        {console.log('🔍 Verificando renderização - intervencoes.length:', intervencoes.length)}
         {intervencoes.length > 0 && (
           <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100">
             <CardHeader>
