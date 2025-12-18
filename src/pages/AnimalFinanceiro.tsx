@@ -482,7 +482,7 @@ if (!confirm('Tem certeza que deseja excluir este movimento?')) return;
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <UserHeader 
+      <EnhancedHeader 
         title={`${animal.nome} - Gestão Financeira`}
         subtitle={`${animal.especie} • ${animal.sexo} • ${animal.estado}`}
         backTo={`/animal/${id}`}
