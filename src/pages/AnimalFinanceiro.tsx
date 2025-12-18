@@ -251,9 +251,11 @@ if (intervencoesError) {
     e.preventDefault();
     
     try {
-      // Usar exatamente a mesma estrutura da GestaoFinanceira.tsx
+      // Gerar dados completos com campos obrigatórios
       const movimentoData = {
-        categoria_id: movimentoForm.categoria_id,
+        numero_movimento: `MOV-${new Date().getFullYear()}-${Date.now()}`, // Gerar número único
+        escopo: 'animal', // Sempre 'animal' para movimentos de animais
+        categoria_id: movimentoForm.categoria_id || null, // Pode ser null
         tipo: movimentoForm.tipo,
         descricao: movimentoForm.descricao.trim(),
         valor: parseFloat(movimentoForm.valor),
@@ -278,9 +280,10 @@ if (intervencoesError) {
 
       if (error) {
         console.error('Erro ao salvar movimento:', error);
+        console.error('Dados enviados:', movimentoData);
         toast({
           title: "Erro",
-          description: "Erro ao salvar movimento financeiro",
+          description: `Erro ao salvar movimento: ${error.message || 'Erro desconhecido'}`,
           variant: "destructive",
         });
         return;
