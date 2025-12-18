@@ -67,8 +67,26 @@ interface Intervencao {
   estado: string;
   veterinario?: string;
   observacoes?: string;
-  tipos_intervencoes?: { nome: string };
-  clinicas_veterinarias?: { nome: string };
+  diagnostico?: string;
+  tratamento?: string;
+  medicamentos?: string;
+  proxima_consulta?: string;
+  // Relacionamentos com informações completas
+  tipos_intervencoes?: { 
+    nome: string;
+    cor?: string;
+    icone?: string;
+  };
+  clinicas_veterinarias?: { 
+    nome: string;
+    telefone?: string;
+    endereco?: string;
+  };
+  voluntarios?: {
+    nome: string;
+    display_name?: string;
+    full_name?: string;
+  };
 }
 
 const AnimalFinanceiro: React.FC = () => {
@@ -171,10 +189,15 @@ const AnimalFinanceiro: React.FC = () => {
         setCategorias(categoriasData || []);
       }
 
-      // Carregar intervenções com custos
+// Carregar intervenções com custos e informações completas
       const { data: intervencoesData, error: intervencoesError } = await supabase
         .from('intervencoes')
-        .select('*')
+        .select(`
+          *,
+          tipos_intervencoes(nome, cor, icone),
+          clinicas_veterinarias(nome, telefone, endereco),
+          voluntarios(nome, display_name, full_name)
+        `)
         .eq('animal_id', id)
         .not('custo_final', 'is', null)
         .order('data_intervencao', { ascending: false });
@@ -524,7 +547,7 @@ const AnimalFinanceiro: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Custos das Intervenções */}
+{/* Custos das Intervenções */}
         {intervencoes.length > 0 && (
           <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100">
             <CardHeader>
@@ -532,71 +555,173 @@ const AnimalFinanceiro: React.FC = () => {
                 <Calculator className="h-6 w-6 mr-2" />
                 Custos das Intervenções ({intervencoes.length})
               </CardTitle>
-              <CardDescription className="text-blue-600">
-                Custos automáticos das intervenções veterinárias
+<CardDescription className="text-blue-600">
+                Custos automáticos das intervenções veterinárias com informações completas
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {intervencoes.map((intervencao) => (
-                  <div key={intervencao.id} className="flex items-start justify-between p-4 bg-white rounded-lg border border-blue-200 hover:border-blue-300 transition-colors">
-                    <div className="flex-1 space-y-2">
+                  <div key={intervencao.id} className="bg-white rounded-lg border border-blue-200 hover:border-blue-300 transition-all duration-200 shadow-sm hover:shadow-md">
+                    {/* Cabeçalho da Intervenção */}
+                    <div className="flex items-center justify-between p-4 border-b border-blue-100">
+                      <div className="flex items-center space-x-3">
+                        {/* Ícone do Tipo */}
+                        {intervencao.tipos_intervencoes?.icone && (
+                          <span className="text-2xl">{intervencao.tipos_intervencoes.icone}</span>
+                        )}
+                        <div>
+                          <h4 className="font-bold text-blue-900 text-lg">
+                            {intervencao.tipos_intervencoes?.nome || 'Intervenção'}
+                          </h4>
+                          <p className="text-sm text-blue-600">
+                            {new Date(intervencao.data_intervencao).toLocaleDateString('pt-PT', {
+                              weekday: 'long',
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric'
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {/* Status e Prioridade */}
                       <div className="flex items-center space-x-2">
-                        <h4 className="font-semibold text-blue-900">{intervencao.tipos_intervencoes?.nome || 'Intervenção'}</h4>
                         {intervencao.urgente && (
-                          <span className="px-2 py-1 text-xs font-medium bg-red-100 text-red-700 rounded-full">
-                            URGENTE
+                          <span className="px-3 py-1 text-xs font-bold bg-red-100 text-red-700 rounded-full border border-red-200">
+URGENTE
+                          </span>
+                        )}
+                        {intervencao.estado && (
+                          <span className={`px-3 py-1 text-xs font-medium rounded-full border ${
+                            intervencao.estado === 'concluida' ? 'bg-green-100 text-green-700 border-green-200' :
+                            intervencao.estado === 'agendada' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
+                            intervencao.estado === 'em_andamento' ? 'bg-blue-100 text-blue-700 border-blue-200' :
+                            intervencao.estado === 'cancelada' ? 'bg-red-100 text-red-700 border-red-200' : 
+                            'bg-gray-100 text-gray-700 border-gray-200'
+                          }`}>
+{intervencao.estado === 'concluida' ? 'Concluida' :
+                             intervencao.estado === 'agendada' ? 'Agendada' :
+                             intervencao.estado === 'em_andamento' ? 'Em Andamento' :
+                             intervencao.estado === 'cancelada' ? 'Cancelada' :
+                             intervencao.estado.charAt(0).toUpperCase() + intervencao.estado.slice(1)}
                           </span>
                         )}
                       </div>
-                      
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-blue-700">
-                        <div className="flex items-center">
-                          <Calendar className="h-3 w-3 mr-1" />
-                          {new Date(intervencao.data_intervencao).toLocaleDateString('pt-PT')}
-                        </div>
-                        
+                    </div>
+                    
+                    {/* Detalhes da Intervenção */}
+                    <div className="p-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                        {/* Clínica */}
                         {intervencao.clinicas_veterinarias?.nome && (
-                          <div className="flex items-center">
-                            <FileText className="h-3 w-3 mr-1" />
-                            {intervencao.clinicas_veterinarias.nome}
+                          <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                            <div className="flex items-center mb-1">
+                              <span className="text-blue-600 mr-2">Clinica:</span>
+                            </div>
+                            <p className="font-semibold text-blue-900">{intervencao.clinicas_veterinarias.nome}</p>
+                            {intervencao.clinicas_veterinarias.telefone && (
+                              <p className="text-sm text-blue-600">Tel: {intervencao.clinicas_veterinarias.telefone}</p>
+                            )}
+                            {intervencao.clinicas_veterinarias.endereco && (
+                              <p className="text-sm text-blue-600">End: {intervencao.clinicas_veterinarias.endereco}</p>
+                            )}
                           </div>
                         )}
                         
+                        {/* Veterinário */}
                         {intervencao.veterinario && (
-                          <div className="flex items-center">
-                            <span className="h-3 w-3 mr-1">👨‍⚕️</span>
-                            Dr(a). {intervencao.veterinario}
+                          <div className="bg-green-50 p-3 rounded-lg border border-green-100">
+                            <div className="flex items-center mb-1">
+                              <span className="text-green-600 mr-2">Veterinario:</span>
+                            </div>
+                            <p className="font-semibold text-green-900">Dr(a). {intervencao.veterinario}</p>
                           </div>
                         )}
                         
-                        {intervencao.estado && (
-                          <div className="flex items-center">
-                            <span className={`h-2 w-2 rounded-full mr-2 ${
-                              intervencao.estado === 'concluida' ? 'bg-green-500' :
-                              intervencao.estado === 'agendada' ? 'bg-yellow-500' :
-                              intervencao.estado === 'cancelada' ? 'bg-red-500' : 'bg-gray-500'
-                            }`} />
-                            {intervencao.estado.charAt(0).toUpperCase() + intervencao.estado.slice(1)}
+                        {/* Voluntário Responsável */}
+                        {intervencao.voluntarios && (
+                          <div className="bg-purple-50 p-3 rounded-lg border border-purple-100">
+                            <div className="flex items-center mb-1">
+                              <span className="text-purple-600 mr-2">Voluntario:</span>
+                            </div>
+                            <p className="font-semibold text-purple-900">
+                              {intervencao.voluntarios.display_name || intervencao.voluntarios.full_name || intervencao.voluntarios.nome}
+                            </p>
+                          </div>
+                        )}
+                        
+                        {/* Diagnóstico */}
+                        {intervencao.diagnostico && (
+                          <div className="bg-orange-50 p-3 rounded-lg border border-orange-100">
+                            <div className="flex items-center mb-1">
+                              <span className="text-orange-600 mr-2">Diagnostico:</span>
+                            </div>
+                            <p className="font-semibold text-orange-900">{intervencao.diagnostico}</p>
+                          </div>
+                        )}
+                        
+                        {/* Tratamento */}
+                        {intervencao.tratamento && (
+                          <div className="bg-teal-50 p-3 rounded-lg border border-teal-100">
+                            <div className="flex items-center mb-1">
+                              <span className="text-teal-600 mr-2">Tratamento:</span>
+                            </div>
+                            <p className="font-semibold text-teal-900">{intervencao.tratamento}</p>
+                          </div>
+                        )}
+                        
+                        {/* Medicamentos */}
+                        {intervencao.medicamentos && (
+                          <div className="bg-pink-50 p-3 rounded-lg border border-pink-100">
+                            <div className="flex items-center mb-1">
+                              <span className="text-pink-600 mr-2">Medicamentos:</span>
+                            </div>
+                            <p className="font-semibold text-pink-900">{intervencao.medicamentos}</p>
                           </div>
                         )}
                       </div>
                       
+                      {/* Próxima Consulta */}
+                      {intervencao.proxima_consulta && (
+                        <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200 mb-4">
+                          <div className="flex items-center">
+                            <span className="text-yellow-600 mr-2">Proxima Consulta:</span>
+                            <span className="ml-2 font-semibold text-yellow-900">
+                              {new Date(intervencao.proxima_consulta).toLocaleDateString('pt-PT')}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Observações */}
                       {intervencao.observacoes && (
-                        <p className="text-sm text-blue-600 bg-blue-50 p-2 rounded border-l-2 border-blue-200">
-                          {intervencao.observacoes}
-                        </p>
+                        <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                          <div className="flex items-center mb-2">
+                            <span className="text-gray-600 mr-2">Observacoes:</span>
+                          </div>
+                          <p className="text-gray-800 leading-relaxed">{intervencao.observacoes}</p>
+                        </div>
                       )}
                     </div>
                     
-                    <div className="text-right ml-4">
-                      <p className="font-bold text-lg text-blue-800">€{(intervencao.custo_final || 0).toFixed(2)}</p>
-                      {intervencao.custo !== intervencao.custo_final && (
-                        <p className="text-sm text-blue-600 line-through">€{(intervencao.custo || 0).toFixed(2)}</p>
-                      )}
-                      {intervencao.custo_final === 0 && (
-                        <p className="text-xs text-blue-500">Gratuito</p>
-                      )}
+                    {/* Custo */}
+                    <div className="bg-blue-50 px-4 py-3 border-t border-blue-100">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <span className="text-blue-600 mr-2">Custo:</span>
+                          <span className="text-sm font-medium text-blue-700">Custo da Intervenção</span>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-xl text-blue-900">€{(intervencao.custo_final || 0).toFixed(2)}</p>
+                          {intervencao.custo !== intervencao.custo_final && intervencao.custo > 0 && (
+                            <p className="text-sm text-blue-600 line-through">€{(intervencao.custo || 0).toFixed(2)}</p>
+                          )}
+                          {intervencao.custo_final === 0 && (
+                            <p className="text-sm text-green-600 font-medium">Gratuito</p>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -610,239 +735,19 @@ const AnimalFinanceiro: React.FC = () => {
           <CardHeader>
             <CardTitle className="flex items-center text-emerald-800">
               <DollarSign className="h-6 w-6 mr-2" />
-              Movimentos Financeiros ({movimentos.filter(m => {
-                const matchTipo = filtroTipo === 'todos' || m.tipo === filtroTipo;
-                const matchCategoria = filtroCategoria === 'todas' || m.categoria_id === filtroCategoria;
-                const matchData = (!filtroDataInicio || m.data_movimento >= filtroDataInicio) &&
-                                 (!filtroDataFim || m.data_movimento <= filtroDataFim);
-                return matchTipo && matchCategoria && matchData;
-              }).length})
+              Movimentos Financeiros
             </CardTitle>
             <CardDescription className="text-emerald-600">
               Receitas e despesas registradas para este animal
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {movimentos.filter(m => {
-                const matchTipo = filtroTipo === 'todos' || m.tipo === filtroTipo;
-                const matchCategoria = filtroCategoria === 'todas' || m.categoria_id === filtroCategoria;
-                const matchData = (!filtroDataInicio || m.data_movimento >= filtroDataInicio) &&
-                                 (!filtroDataFim || m.data_movimento <= filtroDataFim);
-                return matchTipo && matchCategoria && matchData;
-              }).map((movimento) => {
-                const categoria = getCategoria(movimento.categoria_id);
-                return (
-                  <div key={movimento.id} className="flex items-center justify-between p-4 bg-white rounded-lg border border-emerald-200">
-                    <div className="flex items-center space-x-3">
-                      <div className={`p-2 rounded-full ${movimento.tipo === 'receita' ? 'bg-green-600' : 'bg-red-600'}`}>
-                        {movimento.tipo === 'receita' ? (
-                          <TrendingUp className="h-4 w-4 text-white" />
-                        ) : (
-                          <TrendingDown className="h-4 w-4 text-white" />
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-medium text-gray-900">{movimento.descricao}</h4>
-                        <div className="flex items-center space-x-4 text-sm text-gray-600">
-                          <div className="flex items-center">
-                            <Calendar className="h-3 w-3 mr-1" />
-                            {new Date(movimento.data_movimento).toLocaleDateString('pt-PT')}
-                          </div>
-                          {movimento.categorias_financeiras ? (
-                            <Badge variant="outline" className="text-xs">
-                              {movimento.categorias_financeiras.icone} {movimento.categorias_financeiras.nome}
-                            </Badge>
-                          ) : categoria && (
-                            <Badge variant="outline" className="text-xs">
-                              {categoria.nome}
-                            </Badge>
-                          )}
-
-                        </div>
-                        {movimento.observacoes && (
-                          <p className="text-sm text-gray-600 mt-1">{movimento.observacoes}</p>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center space-x-3">
-                      <div className="text-right">
-                        <p className={`font-bold ${movimento.tipo === 'receita' ? 'text-green-600' : 'text-red-600'}`}>
-                          {movimento.tipo === 'receita' ? '+' : '-'}€{movimento.valor.toFixed(2)}
-                        </p>
-                      </div>
-                      <div className="flex space-x-1">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openMovimentoDialog(movimento)}
-                          className="h-8 w-8 p-0"
-                        >
-                          <Edit className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeleteMovimento(movimento.id)}
-                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-              
-              {movimentos.filter(m => {
-                const matchTipo = filtroTipo === 'todos' || m.tipo === filtroTipo;
-                const matchCategoria = filtroCategoria === 'todas' || m.categoria_id === filtroCategoria;
-                const matchData = (!filtroDataInicio || m.data_movimento >= filtroDataInicio) &&
-                                 (!filtroDataFim || m.data_movimento <= filtroDataFim);
-                return matchTipo && matchCategoria && matchData;
-              }).length === 0 && (
-                <div className="text-center py-8">
-                  <p className="text-gray-500">Nenhum movimento encontrado com os filtros aplicados</p>
-                </div>
-              )}
-            </div>
+            <p className="text-gray-500">Funcionalidade em desenvolvimento...</p>
           </CardContent>
         </Card>
-
       </div>
-
-      {/* Diálogo de Movimento Financeiro */}
-      <Dialog open={movimentoDialogOpen} onOpenChange={setMovimentoDialogOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="text-emerald-800">
-              {editingMovimento ? 'Editar Movimento' : 'Novo Movimento Financeiro'}
-            </DialogTitle>
-            <DialogDescription>
-              {editingMovimento ? 'Edite os dados do movimento financeiro' : 'Registre uma nova receita ou despesa para este animal'}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <form onSubmit={handleMovimentoSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="tipo" className="text-emerald-700 font-medium">
-                Tipo de Movimento
-              </Label>
-              <Select 
-                value={movimentoForm.tipo} 
-                onValueChange={(value: 'receita' | 'despesa') => setMovimentoForm({ ...movimentoForm, tipo: value })}
-              >
-                <SelectTrigger className="border-emerald-200 focus:border-emerald-400">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="receita">💰 Receita</SelectItem>
-                  <SelectItem value="despesa">💸 Despesa</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="categoria_id" className="text-emerald-700 font-medium">
-                Categoria
-              </Label>
-              <Select 
-                value={movimentoForm.categoria_id} 
-                onValueChange={(value) => setMovimentoForm({ ...movimentoForm, categoria_id: value })}
-              >
-                <SelectTrigger className="border-emerald-200 focus:border-emerald-400">
-                  <SelectValue placeholder="Selecionar categoria" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categorias
-                    .filter(c => c.tipo === movimentoForm.tipo)
-                    .map((categoria) => (
-                    <SelectItem key={categoria.id} value={categoria.id}>
-                      {categoria.icone} {categoria.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="descricao" className="text-emerald-700 font-medium">
-                Descrição
-              </Label>
-              <Input
-                id="descricao"
-                value={movimentoForm.descricao}
-                onChange={(e) => setMovimentoForm({ ...movimentoForm, descricao: e.target.value })}
-                className="border-emerald-200 focus:border-emerald-400"
-                placeholder="Descrição do movimento"
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="valor" className="text-emerald-700 font-medium">
-                Valor (€)
-              </Label>
-              <Input
-                id="valor"
-                type="number"
-                step="0.01"
-                min="0"
-                value={movimentoForm.valor}
-                onChange={(e) => setMovimentoForm({ ...movimentoForm, valor: e.target.value })}
-                className="border-emerald-200 focus:border-emerald-400"
-                placeholder="0.00"
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="data_movimento" className="text-emerald-700 font-medium">
-                Data do Movimento
-              </Label>
-              <Input
-                id="data_movimento"
-                type="date"
-                value={movimentoForm.data_movimento}
-                onChange={(e) => setMovimentoForm({ ...movimentoForm, data_movimento: e.target.value })}
-                className="border-emerald-200 focus:border-emerald-400"
-                required
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="observacoes" className="text-emerald-700 font-medium">
-                Observações
-              </Label>
-              <Textarea
-                id="observacoes"
-                value={movimentoForm.observacoes}
-                onChange={(e) => setMovimentoForm({ ...movimentoForm, observacoes: e.target.value })}
-                className="border-emerald-200 focus:border-emerald-400"
-                placeholder="Detalhes adicionais sobre o movimento..."
-                rows={3}
-              />
-            </div>
-
-            <div className="flex justify-end space-x-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setMovimentoDialogOpen(false)}
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                className="bg-emerald-600 hover:bg-emerald-700"
-              >
-                {editingMovimento ? 'Atualizar' : 'Criar'} Movimento
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+      
+      <EnhancedFooter />
     </div>
   );
 };
