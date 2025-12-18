@@ -142,21 +142,38 @@ const IntervencoesAutoridades = () => {
     }
   }, [id]);
 
-  const fetchAnimalData = async () => {
+const fetchAnimalData = async () => {
     try {
+      console.log('Carregando animal com ID:', id);
+      
+      if (!id) {
+        throw new Error('ID do animal não fornecido');
+      }
+      
       const { data, error } = await supabase
         .from('animais')
         .select('id, nome, especie')
         .eq('id', id)
         .single();
 
-      if (error) throw error;
+      console.log('Resposta da query animal:', { data, error });
+      
+      if (error) {
+        console.error('Erro na query do animal:', error);
+        throw error;
+      }
+      
+      if (!data) {
+        throw new Error('Animal não encontrado');
+      }
+      
       setAnimal(data);
-    } catch (error) {
+      console.log('Animal carregado com sucesso:', data);
+    } catch (error: any) {
       console.error('Erro ao carregar animal:', error);
       toast({
         title: "Erro",
-        description: "Erro ao carregar dados do animal",
+        description: error.message || "Erro ao carregar dados do animal",
         variant: "destructive",
       });
     }

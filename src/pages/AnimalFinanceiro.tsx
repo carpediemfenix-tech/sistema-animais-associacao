@@ -568,9 +568,14 @@ const AnimalFinanceiro: React.FC = () => {
                           <span className="text-2xl">{intervencao.tipos_intervencoes.icone}</span>
                         )}
                         <div>
-                          <h4 className="font-bold text-blue-900 text-lg">
-Intervenção Veterinária
+<h4 className="font-bold text-blue-900 text-lg">
+                            {intervencao.tipo || intervencao.descricao || 'Intervenção Veterinária'}
                           </h4>
+                          {intervencao.urgente && (
+                            <span className="inline-block px-2 py-1 text-xs font-bold bg-red-100 text-red-700 rounded-full mt-1">
+                              URGENTE
+                            </span>
+                          )}
                           <p className="text-sm text-blue-600">
                             {new Date(intervencao.data_intervencao).toLocaleDateString('pt-PT', {
                               weekday: 'long',
@@ -647,6 +652,48 @@ URGENTE
                               <span className="text-pink-600 mr-2">Medicamentos:</span>
                             </div>
                             <p className="font-semibold text-pink-900">{intervencao.medicamentos}</p>
+</div>
+                        )}
+                        
+                        {/* Estado da Intervenção */}
+                        {intervencao.estado && (
+                          <div className="bg-indigo-50 p-3 rounded-lg border border-indigo-100">
+                            <div className="flex items-center mb-1">
+                              <span className="text-indigo-600 mr-2">Estado:</span>
+                            </div>
+                            <p className="font-semibold text-indigo-900">
+                              {intervencao.estado.charAt(0).toUpperCase() + intervencao.estado.slice(1)}
+                            </p>
+                          </div>
+                        )}
+                        
+                        {/* Tipo de Intervenção */}
+                        {intervencao.tipo && (
+                          <div className="bg-cyan-50 p-3 rounded-lg border border-cyan-100">
+                            <div className="flex items-center mb-1">
+                              <span className="text-cyan-600 mr-2">Tipo:</span>
+                            </div>
+                            <p className="font-semibold text-cyan-900">{intervencao.tipo}</p>
+                          </div>
+                        )}
+                        
+                        {/* Clínica/Local */}
+                        {intervencao.clinica && (
+                          <div className="bg-emerald-50 p-3 rounded-lg border border-emerald-100">
+                            <div className="flex items-center mb-1">
+                              <span className="text-emerald-600 mr-2">Clínica:</span>
+                            </div>
+                            <p className="font-semibold text-emerald-900">{intervencao.clinica}</p>
+                          </div>
+                        )}
+                        
+                        {/* Descrição */}
+                        {intervencao.descricao && (
+                          <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                            <div className="flex items-center mb-1">
+                              <span className="text-slate-600 mr-2">Descrição:</span>
+                            </div>
+                            <p className="font-semibold text-slate-900">{intervencao.descricao}</p>
                           </div>
                         )}
 
