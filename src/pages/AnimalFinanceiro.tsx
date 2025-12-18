@@ -628,6 +628,48 @@ URGENTE
                           </div>
                         )}
                         
+                        {/* Clínica */}
+                        {intervencao.clinica && (
+                          <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                            <div className="flex items-center mb-1">
+                              <span className="text-blue-600 mr-2">Clínica:</span>
+                            </div>
+                            <p className="font-semibold text-blue-900">{intervencao.clinica}</p>
+                          </div>
+                        )}
+                        
+                        {/* Status (Concluída) */}
+                        <div className="bg-indigo-50 p-3 rounded-lg border border-indigo-100">
+                          <div className="flex items-center mb-1">
+                            <span className="text-indigo-600 mr-2">Status:</span>
+                          </div>
+                          <p className="font-semibold text-indigo-900">
+                            {intervencao.concluida ? '✓ Concluída' : '⏳ Em Andamento'}
+                          </p>
+                        </div>
+                        
+                        {/* Próxima Data */}
+                        {intervencao.proxima_data && (
+                          <div className="bg-purple-50 p-3 rounded-lg border border-purple-100">
+                            <div className="flex items-center mb-1">
+                              <span className="text-purple-600 mr-2">Próxima Consulta:</span>
+                            </div>
+                            <p className="font-semibold text-purple-900">
+                              {new Date(intervencao.proxima_data).toLocaleDateString('pt-PT')}
+                            </p>
+                          </div>
+                        )}
+                        
+                        {/* Desconto de Protocolo */}
+                        {intervencao.desconto_protocolo && intervencao.desconto_protocolo > 0 && (
+                          <div className="bg-emerald-50 p-3 rounded-lg border border-emerald-100">
+                            <div className="flex items-center mb-1">
+                              <span className="text-emerald-600 mr-2">Desconto Protocolo:</span>
+                            </div>
+                            <p className="font-semibold text-emerald-900">{intervencao.desconto_protocolo}%</p>
+                          </div>
+                        )}
+                        
                         {/* Diagnóstico */}
                         {intervencao.diagnostico && (
                           <div className="bg-orange-50 p-3 rounded-lg border border-orange-100">
@@ -793,7 +835,16 @@ URGENTE
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-gray-500">Funcionalidade em desenvolvimento...</p>
+<div className="flex items-center justify-between mb-4">
+              <p className="text-gray-500">Funcionalidade em desenvolvimento...</p>
+              <Button 
+                onClick={() => openMovimentoDialog()}
+                className="bg-emerald-600 hover:bg-emerald-700"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Novo Movimento
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
