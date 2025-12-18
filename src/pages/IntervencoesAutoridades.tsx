@@ -340,11 +340,21 @@ await loadIntervencoes();
       if (intervencoes.length <= 1) {
         await fetchAnimalData();
       }
-    } catch (error: any) {
+} catch (error: any) {
       console.error('Erro ao excluir intervenção:', error);
+      
+      let errorMessage = "Erro ao excluir intervenção";
+      
+      // Tratar erro específico de foreign key constraint
+      if (error.code === '23503') {
+        errorMessage = "Esta intervenção possui movimentos financeiros associados. Os movimentos serão eliminados automaticamente.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Erro",
-        description: error.message || "Erro ao excluir intervenção",
+        description: errorMessage,
         variant: "destructive",
       });
     }
