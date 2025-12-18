@@ -847,7 +847,94 @@ URGENTE
             </div>
           </CardContent>
         </Card>
-      </div>
+</div>
+      
+      {/* Modal de Novo Movimento */}
+      <Dialog open={movimentoDialogOpen} onOpenChange={setMovimentoDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {editingMovimento ? 'Editar Movimento' : 'Novo Movimento Financeiro'}
+            </DialogTitle>
+            <DialogDescription>
+              {animal && `Registar movimento para ${animal.nome}`}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleMovimentoSubmit} className="space-y-4">
+            <div>
+              <Label htmlFor="tipo">Tipo *</Label>
+              <Select 
+                value={movimentoForm.tipo} 
+                onValueChange={(value: 'receita' | 'despesa') => setMovimentoForm({ ...movimentoForm, tipo: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecionar tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="receita">Receita</SelectItem>
+                  <SelectItem value="despesa">Despesa</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="descricao">Descrição *</Label>
+              <Input
+                id="descricao"
+                value={movimentoForm.descricao}
+                onChange={(e) => setMovimentoForm({ ...movimentoForm, descricao: e.target.value })}
+                placeholder="Descrição do movimento"
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="valor">Valor (€) *</Label>
+              <Input
+                id="valor"
+                type="number"
+                step="0.01"
+                value={movimentoForm.valor}
+                onChange={(e) => setMovimentoForm({ ...movimentoForm, valor: e.target.value })}
+                placeholder="0.00"
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="data_movimento">Data *</Label>
+              <Input
+                id="data_movimento"
+                type="date"
+                value={movimentoForm.data_movimento}
+                onChange={(e) => setMovimentoForm({ ...movimentoForm, data_movimento: e.target.value })}
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="observacoes">Observações</Label>
+              <Textarea
+                id="observacoes"
+                value={movimentoForm.observacoes}
+                onChange={(e) => setMovimentoForm({ ...movimentoForm, observacoes: e.target.value })}
+                placeholder="Observações adicionais (opcional)"
+                rows={3}
+              />
+            </div>
+
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="outline" onClick={() => setMovimentoDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700">
+                {editingMovimento ? 'Atualizar' : 'Criar'} Movimento
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
       
       <EnhancedFooter />
     </div>
