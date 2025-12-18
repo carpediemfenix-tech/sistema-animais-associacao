@@ -18,7 +18,8 @@ import {
   Edit,
   Archive,
   Clock,
-  User
+User,
+  Shield
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Animal } from "@/types/animal";
@@ -271,11 +272,18 @@ const AnimalDetail = () => {
         
         {/* Informações Básicas do Animal */}
         <Card className="border-orange-200 bg-gradient-to-br from-orange-50 to-red-50">
-          <CardHeader>
-            <CardTitle className="flex items-center text-orange-800">
-              <PawPrint className="h-6 w-6 mr-2" />
-              Informações Básicas
-            </CardTitle>
+<CardHeader>
+            <div className="text-center mb-4">
+              <h1 className="text-4xl font-bold text-orange-900 mb-2">
+                {animal.nome}
+                <span className="text-orange-600 mx-3">-</span>
+                <span className="text-orange-700">{animal.especie}</span>
+              </h1>
+              <div className="flex items-center justify-center text-orange-600">
+                <PawPrint className="h-5 w-5 mr-2" />
+                <span className="text-lg font-medium">Informações Básicas</span>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             {/* Estado e Localização em Grande Destaque */}
@@ -589,6 +597,24 @@ const AnimalDetail = () => {
                         <p className="text-sm text-indigo-600">Alterações de nomes do animal</p>
                       </div>
                       <ExternalLink className="h-4 w-4 text-indigo-600" />
+                    </div>
+                  </CardContent>
+                </Card>
+</Link>
+              
+              {/* Intervenções das Autoridades */}
+              <Link to={`/animal/${id}/intervencoes-autoridades`}>
+                <Card className="hover:shadow-lg transition-shadow cursor-pointer border-red-200 bg-gradient-to-br from-red-50 to-red-100">
+                  <CardContent className="p-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="bg-red-600 p-2 rounded-full">
+                        <Shield className="h-5 w-5 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-red-800">Intervenções das Autoridades</h3>
+                        <p className="text-sm text-red-600">Denúncias, resgates e processos legais</p>
+                      </div>
+                      <ExternalLink className="h-4 w-4 text-red-600" />
                     </div>
                   </CardContent>
                 </Card>
