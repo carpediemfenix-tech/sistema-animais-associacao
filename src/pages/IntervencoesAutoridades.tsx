@@ -232,8 +232,18 @@ const IntervencoesAutoridades = () => {
     setShowNovaIntervencao(true);
   };
 
-  const handleIntervencaoSubmit = async (e: React.FormEvent) => {
+const handleIntervencaoSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validação de campos obrigatórios
+    if (!intervencaoForm.data_intervencao || !intervencaoForm.tipo_intervencao || !intervencaoForm.autoridade) {
+      toast({
+        title: "Erro de Validação",
+        description: "Por favor, preencha todos os campos obrigatórios (Data, Tipo e Autoridade)",
+        variant: "destructive",
+      });
+      return;
+    }
     
     try {
       const intervencaoData = {
