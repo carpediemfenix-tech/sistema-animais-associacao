@@ -222,10 +222,40 @@ categorias_financeiras_2025_12_13_06_00(nome, icone, cor)
           .select('*')
           .eq('animal_id', id)
           .not('custo_final', 'is', null)
-          .order('data_intervencao', { ascending: false });
+.order('data_intervencao', { ascending: false });
           
         intervencoesData = fallbackResult.data;
         intervencoesError = fallbackResult.error;
+        
+        // Se temos intervenções mas sem clínicas, tentar carregar clínicas separadamente
+        if (intervencoesData && intervencoesData.length > 0) {
+          try {
+            const clinicaIds = intervencoesData
+              .map(i => i.clinica_id)
+              .filter(id => id);
+              
+            if (clinicaIds.length > 0) {
+              const { data: clinicasData } = await supabase
+                .from('clinicas_veterinarias')
+                .select('id, nome, tem_protocolo')
+                .in('id', clinicaIds);
+                
+              // Associar clínicas às intervenções
+              if (clinicasData) {
+                intervencoesData = intervencoesData.map(intervencao => {
+                  const clinica = clinicasData.find(c => c.id === intervencao.clinica_id);
+                  return {
+                    ...intervencao,
+                    clinicas_veterinarias: clinica || null
+                  };
+                });
+                console.log('🏥 Clínicas carregadas separadamente e associadas');
+              }
+            }
+          } catch (clinicaError) {
+            console.warn('Erro ao carregar clínicas separadamente:', clinicaError);
+          }
+        }
       }
 
       if (intervencoesError) {
@@ -233,8 +263,16 @@ categorias_financeiras_2025_12_13_06_00(nome, icone, cor)
       } else {
         console.log('Dados das intervenções carregados:', intervencoesData);
         console.log('Primeira intervenção (exemplo):', intervencoesData?.[0]);
-        console.log('Campos disponíveis:', intervencoesData?.[0] ? Object.keys(intervencoesData[0]) : 'Nenhuma intervenção');
-setIntervencoes(intervencoesData || []);
+console.log('Campos disponíveis:', intervencoesData?.[0] ? Object.keys(intervencoesData[0]) : 'Nenhuma intervenção');
+        
+        // Debug específico para clínica
+        if (intervencoesData?.[0]) {
+          console.log('🏥 Debug clínica - Campo clinica:', intervencoesData[0].clinica);
+          console.log('🏥 Debug clínica - Campo clinica_id:', intervencoesData[0].clinica_id);
+          console.log('🏥 Debug clínica - Relacionamento clinicas_veterinarias:', intervencoesData[0].clinicas_veterinarias);
+        }
+        
+        setIntervencoes(intervencoesData || []);
         console.log('✅ Intervenções definidas no estado:', intervencoesData?.length || 0);
       }
 
@@ -685,15 +723,17 @@ URGENTE
                           </div>
                         )}
                         
-                        {/* Clínica */}
-{intervencao.clinicas_veterinarias?.nome && (
+{/* Clínica - com fallback para campo simples */}
+                        {(intervencao.clinicas_veterinarias?.nome || intervencao.clinica) && (
                           <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
                             <div className="flex items-center mb-1">
                               <span className="text-blue-600 mr-2">Clínica:</span>
                             </div>
                             <div className="flex items-center space-x-2">
-                              <p className="font-semibold text-blue-900">{intervencao.clinicas_veterinarias.nome}</p>
-                              {intervencao.clinicas_veterinarias.tem_protocolo && (
+                              <p className="font-semibold text-blue-900">
+                                {intervencao.clinicas_veterinarias?.nome || intervencao.clinica}
+                              </p>
+                              {intervencao.clinicas_veterinarias?.tem_protocolo && (
                                 <span className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded-full border border-green-200">
                                   PROTOCOLO
                                 </span>
