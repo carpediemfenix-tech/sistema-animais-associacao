@@ -315,8 +315,10 @@ if (intervencoesError) {
 
   const handleDeleteMovimento = async (movimentoId: string) => {
     try {
+if (!confirm('Tem certeza que deseja excluir este movimento?')) return;
+      
       const { error } = await supabase
-        .from('movimentos_financeiros')
+        .from('movimentos_financeiros_2025_12_13_06_00')
         .delete()
         .eq('id', movimentoId);
 
@@ -362,6 +364,23 @@ if (intervencoesError) {
       custosIntervencoes
     };
   };
+
+// Aplicar filtros aos movimentos
+  const movimentosFiltrados = movimentos.filter(movimento => {
+    // Filtro por tipo
+    if (filtroTipo !== 'todos' && movimento.tipo !== filtroTipo) return false;
+    
+    // Filtro por categoria
+    if (filtroCategoria !== 'todas' && movimento.categoria_id !== filtroCategoria) return false;
+    
+    // Filtro por data de início
+    if (filtroDataInicio && movimento.data_movimento < filtroDataInicio) return false;
+    
+    // Filtro por data de fim
+    if (filtroDataFim && movimento.data_movimento > filtroDataFim) return false;
+    
+    return true;
+  });
 
   const totais = calcularTotais();
 
@@ -860,7 +879,7 @@ URGENTE
             ) : (
               <div className="space-y-3">
                 <div className="flex items-center justify-between mb-4">
-                  <p className="text-emerald-700 font-medium">{movimentos.length} movimento(s) registado(s)</p>
+<p className="text-emerald-700 font-medium">{movimentosFiltrados.length} de {movimentos.length} movimento(s)</p>
                   <Button 
                     onClick={() => openMovimentoDialog()}
                     className="bg-emerald-600 hover:bg-emerald-700"
@@ -870,7 +889,7 @@ URGENTE
                   </Button>
                 </div>
                 
-                {movimentos.map((movimento) => (
+{movimentosFiltrados.map((movimento) => (
                   <div key={movimento.id} className="flex items-center justify-between p-4 bg-white rounded-lg border border-emerald-200 hover:border-emerald-300 transition-colors">
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-1">
@@ -886,12 +905,32 @@ URGENTE
                         <p className="text-sm text-gray-600 mt-1">{movimento.observacoes}</p>
                       )}
                     </div>
-                    <div className="text-right ml-4">
-                      <p className={`font-bold text-lg ${
+<div className="flex items-center space-x-2">
+                      <div className="text-right">
+                        <p className={`font-bold text-lg ${
                         movimento.tipo === 'receita' ? 'text-green-600' : 'text-red-600'
                       }`}>
                         {movimento.tipo === 'receita' ? '+' : '-'}€{movimento.valor.toFixed(2)}
-                      </p>
+</p>
+                      </div>
+                      <div className="flex flex-col space-y-1">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => openMovimentoDialog(movimento)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Edit className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleDeleteMovimento(movimento.id)}
+                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}

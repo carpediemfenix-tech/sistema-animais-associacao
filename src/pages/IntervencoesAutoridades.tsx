@@ -334,7 +334,12 @@ const handleIntervencaoSubmit = async (e: React.FormEvent) => {
         description: "Intervenção excluída com sucesso!",
       });
 
-      await loadIntervencoes();
+await loadIntervencoes();
+      
+      // Se não há mais intervenções, recarregar dados do animal
+      if (intervencoes.length <= 1) {
+        await fetchAnimalData();
+      }
     } catch (error: any) {
       console.error('Erro ao excluir intervenção:', error);
       toast({
