@@ -251,9 +251,13 @@ if (intervencoesError) {
     e.preventDefault();
     
     try {
+      // Gerar número único mais curto (máximo 20 caracteres)
+      const timestamp = Date.now().toString().slice(-6); // Últimos 6 dígitos
+      const numeroMovimento = `MOV-${timestamp}`;
+      
       // Gerar dados completos com campos obrigatórios
       const movimentoData = {
-        numero_movimento: `MOV-${new Date().getFullYear()}-${Date.now()}`, // Gerar número único
+        numero_movimento: numeroMovimento,
         escopo: 'animal', // Sempre 'animal' para movimentos de animais
         categoria_id: movimentoForm.categoria_id || null, // Pode ser null
         tipo: movimentoForm.tipo,
