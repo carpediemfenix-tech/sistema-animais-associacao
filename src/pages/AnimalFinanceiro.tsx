@@ -507,57 +507,57 @@ if (!confirm('Tem certeza que deseja excluir este movimento?')) return;
 
         {/* Resumo Financeiro */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="border-green-200 bg-gradient-to-br from-green-50 to-green-100">
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-green-600 rounded-full">
-                  <TrendingUp className="h-5 w-5 text-white" />
+<Card className="border-emerald-200 bg-gradient-to-br from-emerald-50 via-green-50 to-emerald-100 shadow-lg hover:shadow-xl transition-all duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-4">
+                <div className="p-3 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl shadow-md">
+                  <TrendingUp className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-green-700">Receitas</p>
-                  <p className="text-2xl font-bold text-green-800">€{totais.receitas.toFixed(2)}</p>
+                  <p className="text-sm font-semibold text-emerald-700 uppercase tracking-wide">Receitas</p>
+                  <p className="text-3xl font-bold text-emerald-800 bg-gradient-to-r from-emerald-700 to-green-700 bg-clip-text text-transparent">€{totais.receitas.toFixed(2)}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-red-200 bg-gradient-to-br from-red-50 to-red-100">
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-red-600 rounded-full">
-                  <TrendingDown className="h-5 w-5 text-white" />
+<Card className="border-rose-200 bg-gradient-to-br from-rose-50 via-red-50 to-rose-100 shadow-lg hover:shadow-xl transition-all duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-4">
+                <div className="p-3 bg-gradient-to-br from-rose-500 to-red-600 rounded-xl shadow-md">
+                  <TrendingDown className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-red-700">Despesas</p>
-                  <p className="text-2xl font-bold text-red-800">€{totais.despesas.toFixed(2)}</p>
+                  <p className="text-sm font-semibold text-rose-700 uppercase tracking-wide">Despesas</p>
+                  <p className="text-3xl font-bold text-rose-800 bg-gradient-to-r from-rose-700 to-red-700 bg-clip-text text-transparent">€{totais.despesas.toFixed(2)}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100">
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-blue-600 rounded-full">
-                  <Calculator className="h-5 w-5 text-white" />
+<Card className="border-blue-200 bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-100 shadow-lg hover:shadow-xl transition-all duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-4">
+<div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-md">
+                  <Calculator className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-blue-700">Intervenções</p>
-                  <p className="text-2xl font-bold text-blue-800">€{totais.custosIntervencoes.toFixed(2)}</p>
+                  <p className="text-sm font-semibold text-blue-700 uppercase tracking-wide">Intervenções</p>
+                  <p className="text-3xl font-bold text-blue-800 bg-gradient-to-r from-blue-700 to-indigo-700 bg-clip-text text-transparent">€{totais.custosIntervencoes.toFixed(2)}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className={`border-gray-200 ${totais.saldo >= 0 ? 'bg-gradient-to-br from-emerald-50 to-emerald-100' : 'bg-gradient-to-br from-orange-50 to-orange-100'}`}>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-3">
-                <div className={`p-2 rounded-full ${totais.saldo >= 0 ? 'bg-emerald-600' : 'bg-orange-600'}`}>
-                  <Euro className="h-5 w-5 text-white" />
+<Card className={`shadow-lg hover:shadow-xl transition-all duration-300 ${totais.saldo >= 0 ? 'border-emerald-200 bg-gradient-to-br from-emerald-50 via-green-50 to-emerald-100' : 'border-amber-200 bg-gradient-to-br from-amber-50 via-orange-50 to-amber-100'}`}>
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-4">
+                <div className={`p-3 rounded-xl shadow-md ${totais.saldo >= 0 ? 'bg-gradient-to-br from-emerald-500 to-green-600' : 'bg-gradient-to-br from-amber-500 to-orange-600'}`}>
+                  <Euro className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <p className={`text-sm font-medium ${totais.saldo >= 0 ? 'text-emerald-700' : 'text-orange-700'}`}>Saldo</p>
-                  <p className={`text-2xl font-bold ${totais.saldo >= 0 ? 'text-emerald-800' : 'text-orange-800'}`}>€{totais.saldo.toFixed(2)}</p>
+                  <p className={`text-sm font-semibold uppercase tracking-wide ${totais.saldo >= 0 ? 'text-emerald-700' : 'text-amber-700'}`}>Saldo</p>
+                  <p className={`text-3xl font-bold bg-gradient-to-r bg-clip-text text-transparent ${totais.saldo >= 0 ? 'from-emerald-700 to-green-700' : 'from-amber-700 to-orange-700'}`}>€{totais.saldo.toFixed(2)}</p>
                 </div>
               </div>
             </CardContent>
@@ -565,9 +565,9 @@ if (!confirm('Tem certeza que deseja excluir este movimento?')) return;
         </div>
 
         {/* Filtros */}
-        <Card className="border-gray-200">
+<Card className="border-slate-200 bg-gradient-to-br from-slate-50 to-gray-100 shadow-lg">
           <CardHeader>
-            <CardTitle className="flex items-center text-gray-800">
+            <CardTitle className="flex items-center text-slate-800">
               <PieChart className="h-5 w-5 mr-2" />
               Filtros
             </CardTitle>
@@ -644,20 +644,22 @@ if (!confirm('Tem certeza que deseja excluir este movimento?')) return;
 {/* Custos das Intervenções */}
         {console.log('🔍 Verificando renderização - intervencoes.length:', intervencoes.length)}
         {intervencoes.length > 0 && (
-          <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100">
-            <CardHeader>
-              <CardTitle className="flex items-center text-blue-800">
-                <Calculator className="h-6 w-6 mr-2" />
+<Card className="border-blue-200 bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-100 shadow-xl">
+            <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-lg">
+              <CardTitle className="flex items-center text-white">
+                <div className="p-2 bg-white/20 rounded-lg mr-3">
+                  <Calculator className="h-6 w-6" />
+                </div>
                 Custos das Intervenções ({intervencoes.length})
               </CardTitle>
-<CardDescription className="text-blue-600">
+              <CardDescription className="text-blue-100">
                 Custos automáticos das intervenções veterinárias com informações completas
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {intervencoes.map((intervencao) => (
-                  <div key={intervencao.id} className="bg-white rounded-lg border border-blue-200 hover:border-blue-300 transition-all duration-200 shadow-sm hover:shadow-md">
+<div key={intervencao.id} className="bg-white rounded-xl border border-blue-200 hover:border-blue-400 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
                     {/* Cabeçalho da Intervenção */}
                     <div className="flex items-center justify-between p-4 border-b border-blue-100">
                       <div className="flex items-center space-x-3">
@@ -941,13 +943,15 @@ URGENTE
         )}
 
         {/* Lista de Movimentos */}
-        <Card className="border-emerald-200 bg-gradient-to-br from-emerald-50 to-emerald-100">
-          <CardHeader>
-            <CardTitle className="flex items-center text-emerald-800">
-              <DollarSign className="h-6 w-6 mr-2" />
+<Card className="border-emerald-200 bg-gradient-to-br from-emerald-50 via-green-50 to-emerald-100 shadow-xl">
+          <CardHeader className="bg-gradient-to-r from-emerald-600 to-green-600 text-white rounded-t-lg">
+            <CardTitle className="flex items-center text-white">
+              <div className="p-2 bg-white/20 rounded-lg mr-3">
+                <DollarSign className="h-6 w-6" />
+              </div>
               Movimentos Financeiros
             </CardTitle>
-            <CardDescription className="text-emerald-600">
+            <CardDescription className="text-emerald-100">
               Receitas e despesas registradas para este animal
             </CardDescription>
           </CardHeader>
@@ -981,7 +985,7 @@ URGENTE
                 </div>
                 
 {movimentosFiltrados.map((movimento) => (
-                  <div key={movimento.id} className="flex items-center justify-between p-4 bg-white rounded-lg border border-emerald-200 hover:border-emerald-300 transition-colors">
+<div key={movimento.id} className="flex items-center justify-between p-6 bg-white rounded-xl border border-emerald-200 hover:border-emerald-400 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-1">
                         <h4 className="font-semibold text-emerald-900">{movimento.descricao}</h4>
