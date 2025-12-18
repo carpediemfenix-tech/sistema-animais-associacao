@@ -20,7 +20,15 @@ import {
   Clock,
   AlertCircle,
   CheckCircle,
-  Users
+  Users,
+  Target,
+  Star,
+  Award,
+  Shield,
+  Megaphone,
+  Clipboard,
+  PlayCircle,
+  XCircle
 } from "lucide-react";
 import UserHeader from "@/components/UserHeader";
 import { useAuth } from "@/contexts/AuthContext";
@@ -69,12 +77,36 @@ interface ResponsabilidadeHistorico {
   animal_especie: string;
 }
 
+interface ParticipacaoMissao {
+  id: string;
+  missao_id: string;
+  funcao: string;
+  status_participacao: string;
+  data_participacao: string;
+  horas_dedicadas: number;
+  pontos_atribuidos: number;
+  avaliacao?: number;
+  missoes_2025_12_18_14_15?: {
+    titulo: string;
+    codigo: string;
+    status: string;
+    data_inicio: string;
+    data_fim?: string;
+    tipos_missoes_2025_12_18_14_15?: {
+      nome: string;
+      categoria: string;
+      cor: string;
+    };
+  };
+}
+
 const VoluntarioDetail = () => {
   const { id } = useParams();
   const [voluntario, setVoluntario] = useState<Voluntario | null>(null);
   const [responsabilidadesAtivas, setResponsabilidadesAtivas] = useState<ResponsabilidadeAtiva[]>([]);
   const [intervencoes, setIntervencoes] = useState<IntervencaoHistorico[]>([]);
   const [responsabilidadesHistorico, setResponsabilidadesHistorico] = useState<ResponsabilidadeHistorico[]>([]);
+  const [participacoesMissoes, setParticipacoesMissoes] = useState<ParticipacaoMissao[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -199,6 +231,33 @@ const VoluntarioDetail = () => {
           animal_especie: resp.animais.especie
         }));
         setResponsabilidadesHistorico(historicoFormatado);
+      }
+
+      // Buscar participações em missões
+      const { data: participacoesData, error: participacoesError } = await supabase
+        .from('participacoes_missoes_2025_12_18_14_15')
+        .select(`
+          *,
+          missoes_2025_12_18_14_15(
+            titulo,
+            codigo,
+            status,
+            data_inicio,
+            data_fim,
+            tipos_missoes_2025_12_18_14_15(
+              nome,
+              categoria,
+              cor
+            )
+          )
+        `)
+        .eq('voluntario_id', id)
+        .order('created_at', { ascending: false });
+
+      if (participacoesError) {
+        console.error('Erro ao buscar participações em missões:', participacoesError);
+      } else {
+        setParticipacoesMissoes(participacoesData || []);
       }
 
     } catch (error: any) {
@@ -521,6 +580,156 @@ const VoluntarioDetail = () => {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Seção de Missões */}
+        <Card className="mission-card">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2 text-indigo-800">
+              <Target className="h-5 w-5 text-indigo-500" />
+              <span>Participações em Missões</span>
+            </CardTitle>
+            <CardDescription>
+              Histórico de participações em missões e eventos da associação
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {participacoesMissoes.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <Target className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p>Nenhuma participação em missões registada</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {/* Estatísticas das Missões */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <div className="p-4 bg-indigo-50 rounded-lg border border-indigo-200">
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 bg-indigo-100 rounded-lg">
+                        <Target className="h-4 w-4 text-indigo-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-indigo-700">Total de Missões</p>
+                        <p className="text-2xl font-bold text-indigo-900">{participacoesMissoes.length}</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 bg-yellow-100 rounded-lg">
+                        <Star className="h-4 w-4 text-yellow-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-yellow-700">Pontos Acumulados</p>
+                        <p className="text-2xl font-bold text-yellow-900">
+                          {participacoesMissoes.reduce((sum, p) => sum + (p.pontos_atribuidos || 0), 0)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 bg-green-100 rounded-lg">
+                        <Clock className="h-4 w-4 text-green-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-green-700">Horas Dedicadas</p>
+                        <p className="text-2xl font-bold text-green-900">
+                          {participacoesMissoes.reduce((sum, p) => sum + (p.horas_dedicadas || 0), 0).toFixed(1)}h
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Lista de Participações */}
+                <div className="space-y-3">
+                  {participacoesMissoes.map((participacao) => {
+                    const getStatusBadge = (status: string) => {
+                      const statusConfig = {
+                        'pendente': { color: 'bg-yellow-100 text-yellow-800', icon: Clock, label: 'Pendente' },
+                        'em_curso': { color: 'bg-blue-100 text-blue-800', icon: PlayCircle, label: 'Em Curso' },
+                        'concluida': { color: 'bg-green-100 text-green-800', icon: CheckCircle, label: 'Concluída' },
+                        'cancelada': { color: 'bg-red-100 text-red-800', icon: XCircle, label: 'Cancelada' }
+                      };
+                      const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pendente;
+                      const Icon = config.icon;
+                      return (
+                        <Badge className={`${config.color} flex items-center space-x-1`}>
+                          <Icon className="h-3 w-3" />
+                          <span>{config.label}</span>
+                        </Badge>
+                      );
+                    };
+
+                    const getIconeCategoria = (categoria: string) => {
+                      const iconesConfig = {
+                        'evento': Heart,
+                        'resgate': Shield,
+                        'campanha': Megaphone,
+                        'representacao': Users,
+                        'tarefa': Clipboard
+                      };
+                      return iconesConfig[categoria as keyof typeof iconesConfig] || Target;
+                    };
+
+                    const IconeCategoria = getIconeCategoria(participacao.missoes_2025_12_18_14_15?.tipos_missoes_2025_12_18_14_15?.categoria || 'evento');
+
+                    return (
+                      <div key={participacao.id} className="flex items-center justify-between p-4 bg-indigo-50 rounded-lg border border-indigo-200 hover:bg-indigo-100 transition-colors">
+                        <div className="flex items-center space-x-4">
+                          <div className="p-2 bg-indigo-100 rounded-lg">
+                            <IconeCategoria className="h-4 w-4 text-indigo-600" />
+                          </div>
+                          <div>
+                            <div className="font-medium text-indigo-900">
+                              {participacao.missoes_2025_12_18_14_15?.titulo || 'Missão N/A'}
+                            </div>
+                            <div className="text-sm text-indigo-600">
+                              {participacao.missoes_2025_12_18_14_15?.codigo} • {participacao.funcao}
+                            </div>
+                            <div className="text-xs text-indigo-500 mt-1">
+                              {new Date(participacao.data_participacao).toLocaleDateString('pt-PT')}
+                              {participacao.missoes_2025_12_18_14_15?.tipos_missoes_2025_12_18_14_15?.nome && (
+                                <> • {participacao.missoes_2025_12_18_14_15.tipos_missoes_2025_12_18_14_15.nome}</>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right space-y-2">
+                          {participacao.missoes_2025_12_18_14_15?.status && 
+                            getStatusBadge(participacao.missoes_2025_12_18_14_15.status)
+                          }
+                          <div className="flex items-center space-x-4 text-sm">
+                            {participacao.horas_dedicadas > 0 && (
+                              <div className="flex items-center space-x-1 text-green-600">
+                                <Clock className="h-3 w-3" />
+                                <span>{participacao.horas_dedicadas}h</span>
+                              </div>
+                            )}
+                            {participacao.pontos_atribuidos > 0 && (
+                              <div className="flex items-center space-x-1 text-yellow-600">
+                                <Star className="h-3 w-3" />
+                                <span>{participacao.pontos_atribuidos}</span>
+                              </div>
+                            )}
+                            {participacao.avaliacao && (
+                              <div className="flex items-center space-x-1 text-purple-600">
+                                <Award className="h-3 w-3" />
+                                <span>{participacao.avaliacao}/5</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </CardContent>
