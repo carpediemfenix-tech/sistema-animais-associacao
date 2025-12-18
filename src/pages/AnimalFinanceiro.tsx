@@ -163,10 +163,10 @@ const AnimalFinanceiro: React.FC = () => {
     try {
       // Carregar movimentos financeiros do animal
       const { data: movimentosData, error: movimentosError } = await supabase
-        .from('movimentos_financeiros')
+.from('movimentos_financeiros_2025_12_13_06_00')
         .select(`
           *,
-          categorias_financeiras(nome, icone, cor)
+categorias_financeiras_2025_12_13_06_00(nome, icone, cor)
         `)
         .eq('animal_id', id)
         .order('data_movimento', { ascending: false });
@@ -179,7 +179,7 @@ const AnimalFinanceiro: React.FC = () => {
 
       // Carregar categorias financeiras
       const { data: categoriasData, error: categoriasError } = await supabase
-        .from('categorias_financeiras')
+.from('categorias_financeiras_2025_12_13_06_00')
         .select('*')
         .in('escopo', ['animal', 'ambos'])
         .eq('ativo', true)
@@ -265,13 +265,13 @@ if (intervencoesError) {
       let error;
       if (editingMovimento) {
         const { error: updateError } = await supabase
-          .from('movimentos_financeiros')
+.from('movimentos_financeiros_2025_12_13_06_00')
           .update(movimentoData)
           .eq('id', editingMovimento.id);
         error = updateError;
       } else {
         const { error: insertError } = await supabase
-          .from('movimentos_financeiros')
+.from('movimentos_financeiros_2025_12_13_06_00')
           .insert([movimentoData]);
         error = insertError;
       }
