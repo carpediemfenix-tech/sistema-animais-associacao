@@ -10,6 +10,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import UserHeader from "@/components/UserHeader";
+import EnhancedHeader from "@/components/EnhancedHeader";
+import EnhancedFooter from "@/components/EnhancedFooter";
 import {
   ArrowLeft,
   Plus,
@@ -189,15 +191,10 @@ const AnimalFinanceiro: React.FC = () => {
         setCategorias(categoriasData || []);
       }
 
-// Carregar intervenções com custos e informações completas
+// Carregar intervenções com custos (query simplificada para evitar erro 400)
       const { data: intervencoesData, error: intervencoesError } = await supabase
         .from('intervencoes')
-        .select(`
-          *,
-          tipos_intervencoes(nome, cor, icone),
-          clinicas_veterinarias(nome, telefone, endereco),
-          voluntarios(nome, display_name, full_name)
-        `)
+        .select('*')
         .eq('animal_id', id)
         .not('custo_final', 'is', null)
         .order('data_intervencao', { ascending: false });
@@ -572,7 +569,7 @@ const AnimalFinanceiro: React.FC = () => {
                         )}
                         <div>
                           <h4 className="font-bold text-blue-900 text-lg">
-                            {intervencao.tipos_intervencoes?.nome || 'Intervenção'}
+Intervenção Veterinária
                           </h4>
                           <p className="text-sm text-blue-600">
                             {new Date(intervencao.data_intervencao).toLocaleDateString('pt-PT', {
@@ -610,46 +607,49 @@ URGENTE
                       </div>
                     </div>
                     
-                    {/* Detalhes da Intervenção */}
+{/* Detalhes da Intervenção */}
                     <div className="p-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-                        {/* Clínica */}
-                        {intervencao.clinicas_veterinarias?.nome && (
-                          <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
-                            <div className="flex items-center mb-1">
-                              <span className="text-blue-600 mr-2">Clinica:</span>
-                            </div>
-                            <p className="font-semibold text-blue-900">{intervencao.clinicas_veterinarias.nome}</p>
-                            {intervencao.clinicas_veterinarias.telefone && (
-                              <p className="text-sm text-blue-600">Tel: {intervencao.clinicas_veterinarias.telefone}</p>
-                            )}
-                            {intervencao.clinicas_veterinarias.endereco && (
-                              <p className="text-sm text-blue-600">End: {intervencao.clinicas_veterinarias.endereco}</p>
-                            )}
-                          </div>
-                        )}
-                        
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         {/* Veterinário */}
                         {intervencao.veterinario && (
                           <div className="bg-green-50 p-3 rounded-lg border border-green-100">
                             <div className="flex items-center mb-1">
-                              <span className="text-green-600 mr-2">Veterinario:</span>
+                              <span className="text-green-600 mr-2">Veterinário:</span>
                             </div>
                             <p className="font-semibold text-green-900">Dr(a). {intervencao.veterinario}</p>
                           </div>
                         )}
                         
-                        {/* Voluntário Responsável */}
-                        {intervencao.voluntarios && (
-                          <div className="bg-purple-50 p-3 rounded-lg border border-purple-100">
+                        {/* Diagnóstico */}
+                        {intervencao.diagnostico && (
+                          <div className="bg-orange-50 p-3 rounded-lg border border-orange-100">
                             <div className="flex items-center mb-1">
-                              <span className="text-purple-600 mr-2">Voluntario:</span>
+                              <span className="text-orange-600 mr-2">Diagnóstico:</span>
                             </div>
-                            <p className="font-semibold text-purple-900">
-                              {intervencao.voluntarios.display_name || intervencao.voluntarios.full_name || intervencao.voluntarios.nome}
-                            </p>
+                            <p className="font-semibold text-orange-900">{intervencao.diagnostico}</p>
                           </div>
                         )}
+                        
+                        {/* Tratamento */}
+                        {intervencao.tratamento && (
+                          <div className="bg-teal-50 p-3 rounded-lg border border-teal-100">
+                            <div className="flex items-center mb-1">
+                              <span className="text-teal-600 mr-2">Tratamento:</span>
+                            </div>
+                            <p className="font-semibold text-teal-900">{intervencao.tratamento}</p>
+                          </div>
+                        )}
+                        
+                        {/* Medicamentos */}
+                        {intervencao.medicamentos && (
+                          <div className="bg-pink-50 p-3 rounded-lg border border-pink-100">
+                            <div className="flex items-center mb-1">
+                              <span className="text-pink-600 mr-2">Medicamentos:</span>
+                            </div>
+                            <p className="font-semibold text-pink-900">{intervencao.medicamentos}</p>
+                          </div>
+                        )}
+
                         
                         {/* Diagnóstico */}
                         {intervencao.diagnostico && (
