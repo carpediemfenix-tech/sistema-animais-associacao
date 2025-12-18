@@ -199,9 +199,12 @@ const AnimalFinanceiro: React.FC = () => {
         .not('custo_final', 'is', null)
         .order('data_intervencao', { ascending: false });
 
-      if (intervencoesError) {
+if (intervencoesError) {
         console.error('Erro ao carregar intervenções:', intervencoesError);
       } else {
+        console.log('Dados das intervenções carregados:', intervencoesData);
+        console.log('Primeira intervenção (exemplo):', intervencoesData?.[0]);
+        console.log('Campos disponíveis:', intervencoesData?.[0] ? Object.keys(intervencoesData[0]) : 'Nenhuma intervenção');
         setIntervencoes(intervencoesData || []);
       }
 
@@ -645,6 +648,47 @@ URGENTE
                           </div>
                         )}
                         
+                        {/* Observações */}
+                        {intervencao.observacoes && (
+                          <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                            <div className="flex items-center mb-1">
+                              <span className="text-gray-600 mr-2">Observações:</span>
+                            </div>
+                            <p className="font-semibold text-gray-900">{intervencao.observacoes}</p>
+                          </div>
+                        )}
+                        
+                        {/* Data da Intervenção */}
+                        <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                          <div className="flex items-center mb-1">
+                            <span className="text-blue-600 mr-2">Data:</span>
+                          </div>
+                          <p className="font-semibold text-blue-900">
+                            {new Date(intervencao.data_intervencao).toLocaleDateString('pt-PT')}
+                          </p>
+                        </div>
+                        
+                        {/* Custo Original vs Final */}
+                        {intervencao.custo && intervencao.custo !== intervencao.custo_final && (
+                          <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-100">
+                            <div className="flex items-center mb-1">
+                              <span className="text-yellow-600 mr-2">Custo Original:</span>
+                            </div>
+                            <p className="font-semibold text-yellow-900">€{(intervencao.custo || 0).toFixed(2)}</p>
+                            <p className="text-sm text-yellow-600">Desconto aplicado</p>
+                          </div>
+                        )}
+                        
+                        {/* Urgente */}
+                        {intervencao.urgente && (
+                          <div className="bg-red-50 p-3 rounded-lg border border-red-100">
+                            <div className="flex items-center mb-1">
+                              <span className="text-red-600 mr-2">Prioridade:</span>
+                            </div>
+                            <p className="font-semibold text-red-900">URGENTE</p>
+                          </div>
+                        )}
+                        
                         {/* Medicamentos */}
                         {intervencao.medicamentos && (
                           <div className="bg-pink-50 p-3 rounded-lg border border-pink-100">
@@ -655,47 +699,7 @@ URGENTE
 </div>
                         )}
                         
-                        {/* Estado da Intervenção */}
-                        {intervencao.estado && (
-                          <div className="bg-indigo-50 p-3 rounded-lg border border-indigo-100">
-                            <div className="flex items-center mb-1">
-                              <span className="text-indigo-600 mr-2">Estado:</span>
-                            </div>
-                            <p className="font-semibold text-indigo-900">
-                              {intervencao.estado.charAt(0).toUpperCase() + intervencao.estado.slice(1)}
-                            </p>
-                          </div>
-                        )}
-                        
-                        {/* Tipo de Intervenção */}
-                        {intervencao.tipo && (
-                          <div className="bg-cyan-50 p-3 rounded-lg border border-cyan-100">
-                            <div className="flex items-center mb-1">
-                              <span className="text-cyan-600 mr-2">Tipo:</span>
-                            </div>
-                            <p className="font-semibold text-cyan-900">{intervencao.tipo}</p>
-                          </div>
-                        )}
-                        
-                        {/* Clínica/Local */}
-                        {intervencao.clinica && (
-                          <div className="bg-emerald-50 p-3 rounded-lg border border-emerald-100">
-                            <div className="flex items-center mb-1">
-                              <span className="text-emerald-600 mr-2">Clínica:</span>
-                            </div>
-                            <p className="font-semibold text-emerald-900">{intervencao.clinica}</p>
-                          </div>
-                        )}
-                        
-                        {/* Descrição */}
-                        {intervencao.descricao && (
-                          <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                            <div className="flex items-center mb-1">
-                              <span className="text-slate-600 mr-2">Descrição:</span>
-                            </div>
-                            <p className="font-semibold text-slate-900">{intervencao.descricao}</p>
-                          </div>
-                        )}
+
 
                         
                         {/* Diagnóstico */}
