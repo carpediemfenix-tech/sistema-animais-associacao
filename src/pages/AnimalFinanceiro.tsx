@@ -191,10 +191,14 @@ categorias_financeiras_2025_12_13_06_00(nome, icone, cor)
         setCategorias(categoriasData || []);
       }
 
-// Carregar intervenções com custos (query simplificada para evitar erro 400)
+// Carregar intervenções com custos incluindo relacionamentos
       const { data: intervencoesData, error: intervencoesError } = await supabase
         .from('intervencoes')
-        .select('*')
+        .select(`
+          *,
+          clinicas_veterinarias(nome, tem_protocolo),
+          tipos_intervencoes(nome)
+        `)
         .eq('animal_id', id)
         .not('custo_final', 'is', null)
         .order('data_intervencao', { ascending: false });
@@ -655,22 +659,42 @@ URGENTE
                         )}
                         
                         {/* Clínica */}
-                        {intervencao.clinica && (
+{intervencao.clinicas_veterinarias?.nome && (
                           <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
                             <div className="flex items-center mb-1">
                               <span className="text-blue-600 mr-2">Clínica:</span>
                             </div>
-                            <p className="font-semibold text-blue-900">{intervencao.clinica}</p>
+                            <div className="flex items-center space-x-2">
+                              <p className="font-semibold text-blue-900">{intervencao.clinicas_veterinarias.nome}</p>
+                              {intervencao.clinicas_veterinarias.tem_protocolo && (
+                                <span className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded-full border border-green-200">
+                                  PROTOCOLO
+                                </span>
+                              )}
+                            </div>
                           </div>
                         )}
                         
-                        {/* Status (Concluída) */}
+{/* Status baseado na data (igual à página de intervenções) */}
                         <div className="bg-indigo-50 p-3 rounded-lg border border-indigo-100">
                           <div className="flex items-center mb-1">
                             <span className="text-indigo-600 mr-2">Status:</span>
                           </div>
                           <p className="font-semibold text-indigo-900">
-                            {intervencao.concluida ? '✓ Concluída' : '⏳ Em Andamento'}
+                            {(() => {
+                              const hoje = new Date();
+                              hoje.setHours(0, 0, 0, 0);
+                              const dataInterv = new Date(intervencao.data_intervencao);
+                              dataInterv.setHours(0, 0, 0, 0);
+                              
+                              if (dataInterv.getTime() === hoje.getTime()) {
+                                return '🔥 Hoje';
+                              } else if (dataInterv > hoje) {
+                                return '📅 Agendada';
+                              } else {
+                                return '✅ Concluída';
+                              }
+                            })()} 
                           </p>
                         </div>
                         
