@@ -842,19 +842,64 @@ URGENTE
             </CardDescription>
           </CardHeader>
           <CardContent>
-<div className="flex items-center justify-between mb-4">
-              <p className="text-gray-500">Funcionalidade em desenvolvimento...</p>
-              <Button 
-                onClick={() => openMovimentoDialog()}
-                className="bg-emerald-600 hover:bg-emerald-700"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Novo Movimento
-              </Button>
-            </div>
+            {movimentos.length === 0 ? (
+              <div className="text-center py-8">
+                <DollarSign className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum movimento registado</h3>
+                <p className="text-gray-500 mb-4">
+                  Este animal ainda não possui movimentos financeiros registados.
+                </p>
+                <Button 
+                  onClick={() => openMovimentoDialog()}
+                  className="bg-emerald-600 hover:bg-emerald-700"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Registar Primeiro Movimento
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-emerald-700 font-medium">{movimentos.length} movimento(s) registado(s)</p>
+                  <Button 
+                    onClick={() => openMovimentoDialog()}
+                    className="bg-emerald-600 hover:bg-emerald-700"
+                  >
+<Plus className="h-4 w-4 mr-2" />
+                    Novo Movimento
+                  </Button>
+                </div>
+                
+                {movimentos.map((movimento) => (
+                  <div key={movimento.id} className="flex items-center justify-between p-4 bg-white rounded-lg border border-emerald-200 hover:border-emerald-300 transition-colors">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2 mb-1">
+                        <h4 className="font-semibold text-emerald-900">{movimento.descricao}</h4>
+                        <Badge className={movimento.tipo === 'receita' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                          {movimento.tipo === 'receita' ? 'Receita' : 'Despesa'}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-emerald-600">
+                        {new Date(movimento.data_movimento).toLocaleDateString('pt-PT')} • {movimento.numero_movimento}
+                      </p>
+                      {movimento.observacoes && (
+                        <p className="text-sm text-gray-600 mt-1">{movimento.observacoes}</p>
+                      )}
+                    </div>
+                    <div className="text-right ml-4">
+                      <p className={`font-bold text-lg ${
+                        movimento.tipo === 'receita' ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                        {movimento.tipo === 'receita' ? '+' : '-'}€{movimento.valor.toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
-</div>
+      </div>
       
       {/* Modal de Novo Movimento */}
       <Dialog open={movimentoDialogOpen} onOpenChange={setMovimentoDialogOpen}>
