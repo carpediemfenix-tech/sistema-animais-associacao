@@ -96,7 +96,7 @@ const ModuloMissoes = () => {
 
   // Estados para filtros
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('');
+  const [filterStatus, setFilterStatus] = useState('todos');
 
   // Estados para diálogos
   const [missaoDialogOpen, setMissaoDialogOpen] = useState(false);
@@ -155,24 +155,8 @@ const ModuloMissoes = () => {
     try {
       console.log('📋 Carregando tipos de missões...');
       
-      // Primeiro, verificar se a tabela existe
-      const { data: tabelas } = await supabase
-        .from('information_schema.tables')
-        .select('table_name')
-        .eq('table_schema', 'public')
-        .like('table_name', '%tipos_missoes%');
-      
-      console.log('📊 Tabelas encontradas:', tabelas);
-
-      if (!tabelas || tabelas.length === 0) {
-        console.log('⚠️ Tabela de tipos de missões não encontrada, criando dados mock...');
-        setTiposMissoes([
-          { id: '1', codigo: 'EVT001', nome: 'Evento de Adoção', categoria: 'evento', cor: '#10B981', pontos_base: 15 },
-          { id: '2', codigo: 'RES001', nome: 'Missão de Resgate', categoria: 'resgate', cor: '#EF4444', pontos_base: 25 },
-          { id: '3', codigo: 'CAM001', nome: 'Campanha de Sensibilização', categoria: 'campanha', cor: '#8B5CF6', pontos_base: 20 }
-        ]);
-        return;
-      }
+      // Tentar carregar diretamente da tabela
+      console.log('🔍 Tentando carregar da tabela tipos_missoes_2025_12_18_14_15...');
 
       const { data, error } = await supabase
         .from('tipos_missoes_2025_12_18_14_15')
@@ -419,7 +403,7 @@ const ModuloMissoes = () => {
       missao.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
       missao.codigo.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesStatus = !filterStatus || missao.status === filterStatus;
+    const matchesStatus = filterStatus === 'todos' || missao.status === filterStatus;
 
     return matchesSearch && matchesStatus;
   });
@@ -681,7 +665,7 @@ const ModuloMissoes = () => {
                         <SelectValue placeholder="Todos os status" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Todos os status</SelectItem>
+                        <SelectItem value="todos">Todos os status</SelectItem>
                         <SelectItem value="pendente">Pendente</SelectItem>
                         <SelectItem value="em_curso">Em Curso</SelectItem>
                         <SelectItem value="concluida">Concluída</SelectItem>
@@ -695,7 +679,7 @@ const ModuloMissoes = () => {
                       variant="outline" 
                       onClick={() => {
                         setSearchTerm('');
-                        setFilterStatus('');
+                        setFilterStatus('todos');
                       }}
                       className="w-full"
                     >
