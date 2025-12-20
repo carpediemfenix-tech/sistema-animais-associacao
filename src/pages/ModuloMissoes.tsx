@@ -36,7 +36,8 @@ import {
   Award,
   BarChart3,
   Euro,
-  UserPlus
+  UserPlus,
+  User
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -112,7 +113,7 @@ const ModuloMissoes = () => {
     data_inicio: '',
     data_fim: '',
     local_principal: '',
-    animal_id: '',
+    animal_id: 'nenhum',
     prioridade: 'media',
     orcamento_previsto: '0'
   });
@@ -494,7 +495,7 @@ const ModuloMissoes = () => {
       data_inicio: '',
       data_fim: '',
       local_principal: '',
-      animal_id: '',
+      animal_id: 'nenhum',
       prioridade: 'media',
       orcamento_previsto: '0'
     });
@@ -510,7 +511,7 @@ const ModuloMissoes = () => {
         data_inicio: missao.data_inicio,
         data_fim: missao.data_fim || '',
         local_principal: missao.local_principal,
-        animal_id: missao.animal_id || '',
+        animal_id: missao.animal_id || 'nenhum',
         prioridade: missao.prioridade,
         orcamento_previsto: missao.orcamento_previsto.toString()
       });
@@ -997,12 +998,71 @@ const ModuloMissoes = () => {
                     </p>
                   </div>
                 ) : (
-                  <div className="text-center py-12">
-                    <Users className="h-16 w-16 text-blue-500 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">{participacoes.length} Participações Registadas</h3>
-                    <p className="text-gray-600">
-                      Funcionalidade de gestão de participações em desenvolvimento
-                    </p>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {participacoes.map((participacao) => {
+                        const missao = missoes.find(m => m.id === participacao.missao_id);
+                        const voluntario = voluntarios.find(v => v.id === participacao.voluntario_id);
+                        
+                        return (
+                          <Card key={participacao.id} className="border border-gray-200 hover:shadow-lg transition-shadow">
+                            <CardContent className="p-4">
+                              <div className="flex items-start justify-between mb-3">
+                                <div className="flex-1">
+                                  <h4 className="font-semibold text-gray-900 mb-1">
+                                    {missao?.titulo || 'Missão não encontrada'}
+                                  </h4>
+                                  <p className="text-sm text-gray-600">
+                                    {missao?.codigo || 'Código não disponível'}
+                                  </p>
+                                </div>
+                                <Badge 
+                                  variant="outline" 
+                                  className="text-xs"
+                                >
+                                  {participacao.funcao}
+                                </Badge>
+                              </div>
+                              
+                              <div className="space-y-2">
+                                <div className="flex items-center text-sm text-gray-600">
+                                  <User className="h-4 w-4 mr-2" />
+                                  <span>{voluntario?.display_name || voluntario?.nome || 'Voluntário não encontrado'}</span>
+                                </div>
+                                
+                                <div className="flex items-center text-sm text-gray-600">
+                                  <Calendar className="h-4 w-4 mr-2" />
+                                  <span>{new Date(participacao.data_participacao).toLocaleDateString('pt-PT')}</span>
+                                </div>
+                                
+                                {participacao.horas_dedicadas > 0 && (
+                                  <div className="flex items-center text-sm text-gray-600">
+                                    <Clock className="h-4 w-4 mr-2" />
+                                    <span>{participacao.horas_dedicadas}h dedicadas</span>
+                                  </div>
+                                )}
+                                
+                                {participacao.pontos_atribuidos > 0 && (
+                                  <div className="flex items-center text-sm text-green-600">
+                                    <Star className="h-4 w-4 mr-2" />
+                                    <span>{participacao.pontos_atribuidos} pontos</span>
+                                  </div>
+                                )}
+                              </div>
+                              
+                              <div className="mt-3 pt-3 border-t border-gray-100">
+                                <Badge 
+                                  variant={participacao.status_participacao === 'confirmada' ? 'default' : 'secondary'}
+                                  className="text-xs"
+                                >
+                                  {participacao.status_participacao === 'confirmada' ? 'Confirmada' : participacao.status_participacao}
+                                </Badge>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
               </CardContent>
@@ -1150,14 +1210,14 @@ const ModuloMissoes = () => {
             <div>
               <Label htmlFor="animal_id">Animal Associado (opcional)</Label>
               <Select 
-                value={missaoForm.animal_id} 
-                onValueChange={(value) => setMissaoForm(prev => ({ ...prev, animal_id: value }))}
+                value={missaoForm.animal_id || 'nenhum'}
+                onValueChange={(value) => setMissaoForm(prev => ({ ...prev, animal_id: value === 'nenhum' ? '' : value }))}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecionar animal" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhum animal</SelectItem>
+                  <SelectItem value="nenhum">Nenhum animal</SelectItem>
                   {animais.map((animal) => (
                     <SelectItem key={animal.id} value={animal.id}>
                       {animal.nome} ({animal.especie}) - {animal.numero_processo}
