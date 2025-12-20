@@ -93,6 +93,7 @@ const ModuloMissoes = () => {
   const [tiposMissoes, setTiposMissoes] = useState<TipoMissao[]>([]);
   const [participacoes, setParticipacoes] = useState<ParticipacaoMissao[]>([]);
   const [voluntarios, setVoluntarios] = useState<any[]>([]);
+  const [animais, setAnimais] = useState<any[]>([]);
 
   // Estados para filtros
   const [searchTerm, setSearchTerm] = useState('');
@@ -111,6 +112,7 @@ const ModuloMissoes = () => {
     data_inicio: '',
     data_fim: '',
     local_principal: '',
+    animal_id: '',
     prioridade: 'media',
     orcamento_previsto: '0'
   });
@@ -135,7 +137,8 @@ const ModuloMissoes = () => {
         loadTiposMissoes(),
         loadMissoes(),
         loadParticipacoes(),
-        loadVoluntarios()
+        loadVoluntarios(),
+        loadAnimais()
       ]);
       
       console.log('✅ Dados carregados com sucesso');
@@ -259,11 +262,66 @@ const ModuloMissoes = () => {
     }
   };
 
+  const loadAnimais = async () => {
+    try {
+      console.log('🐶 Carregando animais...');
+      
+      const { data, error } = await supabase
+        .from('animais')
+        .select('id, nome, especie, numero_processo')
+        .eq('arquivado', false)
+        .order('nome');
+
+      if (error) {
+        console.error('❌ Erro ao carregar animais:', error);
+        throw error;
+      }
+      
+      console.log('✅ Animais carregados:', data?.length || 0);
+      setAnimais(data || []);
+    } catch (error) {
+      console.error('❌ Erro em loadAnimais:', error);
+      setAnimais([]);
+    }
+  };
+
+  const generateMissionCode = async () => {
+    try {
+      const currentYear = new Date().getFullYear().toString().slice(-2); // Últimos 2 dígitos do ano
+      
+      // Buscar o último código do ano atual
+      const { data: lastMission } = await supabase
+        .from('missoes_2025_12_18_14_15')
+        .select('codigo')
+        .like('codigo', `MIS${currentYear}%`)
+        .order('codigo', { ascending: false })
+        .limit(1);
+      
+      let nextNumber = 1;
+      if (lastMission && lastMission.length > 0) {
+        const lastCode = lastMission[0].codigo;
+        const lastNumber = parseInt(lastCode.slice(-3)); // Últimos 3 dígitos
+        nextNumber = lastNumber + 1;
+      }
+      
+      // Formatar com zeros à esquerda (001, 002, etc.)
+      const formattedNumber = nextNumber.toString().padStart(3, '0');
+      return `MIS${currentYear}${formattedNumber}`;
+    } catch (error) {
+      console.error('Erro ao gerar código da missão:', error);
+      // Fallback para código baseado em timestamp
+      const currentYear = new Date().getFullYear().toString().slice(-2);
+      const timestamp = Date.now().toString().slice(-3);
+      return `MIS${currentYear}${timestamp}`;
+    }
+  };
+
   const handleCreateMissao = async () => {
     try {
       console.log('➕ Criando nova missão...');
       
-      const codigo = `MIS-${Date.now().toString().slice(-6)}`;
+      const codigo = await generateMissionCode();
+      console.log('🏷️ Código gerado:', codigo);
       const tipoMissao = tiposMissoes.find(t => t.id === missaoForm.tipo_missao_id);
       const pontos_totais = tipoMissao?.pontos_base || 10;
 
@@ -275,6 +333,7 @@ const ModuloMissoes = () => {
         data_inicio: missaoForm.data_inicio,
         data_fim: missaoForm.data_fim || null,
         local_principal: missaoForm.local_principal,
+        animal_id: missaoForm.animal_id || null,
         prioridade: missaoForm.prioridade,
         orcamento_previsto: parseFloat(missaoForm.orcamento_previsto) || 0,
         pontos_totais,
@@ -308,6 +367,51 @@ const ModuloMissoes = () => {
     }
   };
 
+  const handleUpdateMissao = async () => {
+    if (!editingMissao) return;
+
+    try {
+      console.log('✏️ Atualizando missão:', editingMissao.id);
+      
+      const missaoData = {
+        tipo_missao_id: missaoForm.tipo_missao_id,
+        titulo: missaoForm.titulo,
+        descricao: missaoForm.descricao,
+        data_inicio: missaoForm.data_inicio,
+        data_fim: missaoForm.data_fim || null,
+        local_principal: missaoForm.local_principal,
+        animal_id: missaoForm.animal_id || null,
+        prioridade: missaoForm.prioridade,
+        orcamento_previsto: parseFloat(missaoForm.orcamento_previsto) || 0,
+        updated_at: new Date().toISOString()
+      };
+
+      const { error } = await supabase
+        .from('missoes_2025_12_18_14_15')
+        .update(missaoData)
+        .eq('id', editingMissao.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Missão atualizada",
+        description: "Missão atualizada com sucesso!",
+      });
+
+      setMissaoDialogOpen(false);
+      setEditingMissao(null);
+      resetMissaoForm();
+      await loadMissoes();
+    } catch (error: any) {
+      console.error('❌ Erro ao atualizar missão:', error);
+      toast({
+        title: "Erro ao atualizar missão",
+        description: error.message || "Erro inesperado",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleDeleteMissao = async (missaoId: string) => {
     if (!confirm('Tem certeza que deseja eliminar esta missão?')) return;
 
@@ -335,6 +439,53 @@ const ModuloMissoes = () => {
     }
   };
 
+  const handleAddParticipacao = async () => {
+    try {
+      console.log('👥 Adicionando participação...');
+      
+      const participacaoData = {
+        missao_id: participacaoForm.missao_id,
+        voluntario_id: participacaoForm.voluntario_id,
+        funcao: participacaoForm.funcao,
+        data_participacao: participacaoForm.data_participacao,
+        status_participacao: 'confirmada',
+        horas_dedicadas: 0,
+        pontos_atribuidos: 0
+      };
+
+      const { error } = await supabase
+        .from('participacoes_missoes_2025_12_18_14_15')
+        .insert(participacaoData);
+
+      if (error) throw error;
+
+      toast({
+        title: "Participação adicionada",
+        description: "Voluntário adicionado à missão com sucesso!",
+      });
+
+      setParticipacaoDialogOpen(false);
+      resetParticipacaoForm();
+      await loadParticipacoes();
+    } catch (error: any) {
+      console.error('❌ Erro ao adicionar participação:', error);
+      toast({
+        title: "Erro ao adicionar participação",
+        description: error.message || "Erro inesperado",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const resetParticipacaoForm = () => {
+    setParticipacaoForm({
+      missao_id: '',
+      voluntario_id: '',
+      funcao: 'participante',
+      data_participacao: ''
+    });
+  };
+
   const resetMissaoForm = () => {
     setMissaoForm({
       tipo_missao_id: '',
@@ -343,6 +494,7 @@ const ModuloMissoes = () => {
       data_inicio: '',
       data_fim: '',
       local_principal: '',
+      animal_id: '',
       prioridade: 'media',
       orcamento_previsto: '0'
     });
@@ -358,6 +510,7 @@ const ModuloMissoes = () => {
         data_inicio: missao.data_inicio,
         data_fim: missao.data_fim || '',
         local_principal: missao.local_principal,
+        animal_id: missao.animal_id || '',
         prioridade: missao.prioridade,
         orcamento_previsto: missao.orcamento_previsto.toString()
       });
@@ -783,8 +936,21 @@ const ModuloMissoes = () => {
                                     variant="outline"
                                     onClick={() => openMissaoDialog(missao)}
                                     className="h-8 w-8 p-0"
+                                    title="Editar missão"
                                   >
                                     <Edit className="h-3 w-3" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => {
+                                      setParticipacaoForm(prev => ({ ...prev, missao_id: missao.id }));
+                                      setParticipacaoDialogOpen(true);
+                                    }}
+                                    className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700"
+                                    title="Adicionar participante"
+                                  >
+                                    <UserPlus className="h-3 w-3" />
                                   </Button>
                                   <Button
                                     size="sm"
@@ -898,7 +1064,7 @@ const ModuloMissoes = () => {
 
           <form onSubmit={(e) => {
             e.preventDefault();
-            handleCreateMissao();
+            editingMissao ? handleUpdateMissao() : handleCreateMissao();
           }} className="space-y-4">
             <div>
               <Label htmlFor="tipo_missao_id">Tipo de Missão *</Label>
@@ -981,6 +1147,26 @@ const ModuloMissoes = () => {
               />
             </div>
 
+            <div>
+              <Label htmlFor="animal_id">Animal Associado (opcional)</Label>
+              <Select 
+                value={missaoForm.animal_id} 
+                onValueChange={(value) => setMissaoForm(prev => ({ ...prev, animal_id: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecionar animal" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Nenhum animal</SelectItem>
+                  {animais.map((animal) => (
+                    <SelectItem key={animal.id} value={animal.id}>
+                      {animal.nome} ({animal.especie}) - {animal.numero_processo}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="prioridade">Prioridade</Label>
@@ -1028,6 +1214,103 @@ const ModuloMissoes = () => {
               </Button>
               <Button type="submit" className="bg-indigo-600 hover:bg-indigo-700">
                 {editingMissao ? 'Atualizar Missão' : 'Criar Missão'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para Adicionar Participação */}
+      <Dialog open={participacaoDialogOpen} onOpenChange={setParticipacaoDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <UserPlus className="h-5 w-5 text-blue-600" />
+              <span>Adicionar Participação</span>
+            </DialogTitle>
+            <DialogDescription>
+              Adicione um voluntário a uma missão
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            handleAddParticipacao();
+          }} className="space-y-4">
+            <div>
+              <Label htmlFor="missao_participacao">Missão *</Label>
+              <Select 
+                value={participacaoForm.missao_id} 
+                onValueChange={(value) => setParticipacaoForm(prev => ({ ...prev, missao_id: value }))}
+                required
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecionar missão" />
+                </SelectTrigger>
+                <SelectContent>
+                  {missoes.filter(m => m.status !== 'concluida' && m.status !== 'cancelada').map((missao) => (
+                    <SelectItem key={missao.id} value={missao.id}>
+                      {missao.titulo} ({missao.codigo})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="voluntario_participacao">Voluntário *</Label>
+              <VoluntarioSelector
+                value={participacaoForm.voluntario_id}
+                onValueChange={(value) => setParticipacaoForm(prev => ({ ...prev, voluntario_id: value }))}
+                placeholder="Selecionar voluntário"
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="funcao_participacao">Função</Label>
+                <Select 
+                  value={participacaoForm.funcao} 
+                  onValueChange={(value) => setParticipacaoForm(prev => ({ ...prev, funcao: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="coordenador">Coordenador</SelectItem>
+                    <SelectItem value="participante">Participante</SelectItem>
+                    <SelectItem value="apoio">Apoio</SelectItem>
+                    <SelectItem value="especialista">Especialista</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="data_participacao">Data de Participação *</Label>
+                <Input
+                  id="data_participacao"
+                  type="date"
+                  value={participacaoForm.data_participacao}
+                  onChange={(e) => setParticipacaoForm(prev => ({ ...prev, data_participacao: e.target.value }))}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => {
+                  setParticipacaoDialogOpen(false);
+                  resetParticipacaoForm();
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+                Adicionar Participação
               </Button>
             </div>
           </form>
