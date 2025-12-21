@@ -53,7 +53,8 @@ import {
   Grid,
   List,
   SortAsc,
-  SortDesc
+  SortDesc,
+  Trophy
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -286,12 +287,12 @@ const ModuloMissoesOtimizado = () => {
   // Obter badge de status
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      'rascunho': { color: 'bg-gray-100 text-gray-800', icon: Edit, label: 'Rascunho' },
-      'planejada': { color: 'bg-blue-100 text-blue-800', icon: Calendar, label: 'Planejada' },
-      'ativa': { color: 'bg-green-100 text-green-800', icon: PlayCircle, label: 'Ativa' },
-      'pausada': { color: 'bg-yellow-100 text-yellow-800', icon: Clock, label: 'Pausada' },
-      'concluida': { color: 'bg-emerald-100 text-emerald-800', icon: CheckCircle, label: 'Concluída' },
-      'cancelada': { color: 'bg-red-100 text-red-800', icon: XCircle, label: 'Cancelada' }
+      'rascunho': { color: 'bg-slate-100 text-slate-700 border-slate-200', icon: Edit, label: 'Rascunho' },
+      'planejada': { color: 'bg-blue-50 text-blue-700 border-blue-200', icon: Calendar, label: 'Planejada' },
+      'ativa': { color: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: PlayCircle, label: 'Ativa' },
+      'pausada': { color: 'bg-amber-50 text-amber-700 border-amber-200', icon: Clock, label: 'Pausada' },
+      'concluida': { color: 'bg-green-50 text-green-700 border-green-200', icon: CheckCircle, label: 'Concluída' },
+      'cancelada': { color: 'bg-red-50 text-red-700 border-red-200', icon: XCircle, label: 'Cancelada' }
     };
 
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.rascunho;
@@ -375,6 +376,10 @@ const ModuloMissoesOtimizado = () => {
             </p>
           </div>
           <div className="flex space-x-3">
+            <Button variant="outline" onClick={() => navigate('/dashboard-pontos')}>
+              <Trophy className="h-4 w-4 mr-2" />
+              Sistema de Pontos
+            </Button>
             <Button variant="outline" onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}>
               {viewMode === 'grid' ? <List className="h-4 w-4" /> : <Grid className="h-4 w-4" />}
             </Button>

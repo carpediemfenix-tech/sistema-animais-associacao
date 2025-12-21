@@ -63,6 +63,7 @@ import MissaoParticipacoes from "./pages/MissaoParticipacoes";
 import MissaoAnimais from "./pages/MissaoAnimais";
 import MissaoFinanceiro from "./pages/MissaoFinanceiro";
 import MissaoEquipamentos from "./pages/MissaoEquipamentos";
+import DashboardPontos from "./pages/DashboardPontos";
 import ModuloAgenda from "./pages/ModuloAgenda";
 import ModuloEquipamentos from "./pages/ModuloEquipamentos";
 import ModuloClinicas from "./pages/ModuloClinicas";
@@ -137,14 +138,15 @@ const App = () => (
             <Route path="/equipamentos/alertas" element={<ProtectedRoute><EquipamentosAlertas /></ProtectedRoute>} />
             <Route path="/equipamentos/relatorios" element={<ProtectedRoute><EquipamentosRelatorios /></ProtectedRoute>} />
             <Route path="/modulo-clinicas" element={<ProtectedRoute><ModuloClinicas /></ProtectedRoute>} />
-            <Route path="/modulo-missoes" element={<ProtectedRoute><ModuloMissoes /></ProtectedRoute>} />
-            <Route path="/modulo-missoes-otimizado" element={<ProtectedRoute><ModuloMissoesOtimizado /></ProtectedRoute>} />
-            <Route path="/missao/:id" element={<ProtectedRoute><MissaoDetail /></ProtectedRoute>} />
-            <Route path="/missao-otimizada/:id" element={<ProtectedRoute><MissaoDetailOtimizada /></ProtectedRoute>} />
+            <Route path="/modulo-missoes" element={<ProtectedRoute><ModuloMissoesOtimizado /></ProtectedRoute>} />
+            <Route path="/modulo-missoes-original" element={<ProtectedRoute><ModuloMissoes /></ProtectedRoute>} />
+            <Route path="/missao/:id" element={<ProtectedRoute><MissaoDetailOtimizada /></ProtectedRoute>} />
+            <Route path="/missao-original/:id" element={<ProtectedRoute><MissaoDetail /></ProtectedRoute>} />
             <Route path="/missao/:id/participacoes" element={<ProtectedRoute><MissaoParticipacoes /></ProtectedRoute>} />
             <Route path="/missao/:id/animais" element={<ProtectedRoute><MissaoAnimais /></ProtectedRoute>} />
             <Route path="/missao/:id/financeiro" element={<ProtectedRoute><MissaoFinanceiro /></ProtectedRoute>} />
             <Route path="/missao/:id/equipamentos" element={<ProtectedRoute><MissaoEquipamentos /></ProtectedRoute>} />
+            <Route path="/dashboard-pontos" element={<ProtectedRoute><DashboardPontos /></ProtectedRoute>} />
             <Route path="/modulo-agenda" element={<ProtectedRoute><ModuloAgenda /></ProtectedRoute>} />
             <Route path="/estatisticas-avancadas" element={<ProtectedRoute><EstatisticasAvancadas /></ProtectedRoute>} />
             <Route path="/dashboard-executivo" element={<ProtectedRoute><DashboardExecutivo /></ProtectedRoute>} />

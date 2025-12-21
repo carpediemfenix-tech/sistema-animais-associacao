@@ -156,6 +156,16 @@ const MissaoParticipacoes = () => {
   // Criar participação
   const handleCreateParticipacao = async () => {
     try {
+      // Calcular pontos baseado na função
+      const pontosBase = {
+        'coordenador': 25,
+        'participante': 10,
+        'apoio': 8,
+        'especialista': 15
+      };
+      
+      const pontosAtribuidos = pontosBase[participacaoForm.funcao as keyof typeof pontosBase] || 10;
+      
       const participacaoData = {
         missao_id: id,
         voluntario_id: participacaoForm.voluntario_id,
@@ -163,20 +173,36 @@ const MissaoParticipacoes = () => {
         data_participacao: participacaoForm.data_participacao,
         data_fim: participacaoForm.data_fim || null,
         horas_dedicadas: parseFloat(participacaoForm.horas_dedicadas) || 0,
-        pontos_atribuidos: 0,
+        pontos_atribuidos: pontosAtribuidos,
         status_participacao: 'ativa',
         observacoes: participacaoForm.observacoes || null
       };
 
-      const { error } = await supabase
+      const { data: participacaoResult, error } = await supabase
         .from('participacoes_missoes_2025_12_21_20_00')
-        .insert(participacaoData);
+        .insert(participacaoData)
+        .select()
+        .single();
 
       if (error) throw error;
 
+      // Atualizar pontuação do voluntário usando a função SQL
+      const { error: pontosError } = await supabase.rpc('atualizar_pontuacao_voluntario', {
+        p_voluntario_id: participacaoForm.voluntario_id,
+        p_pontos_ganhos: pontosAtribuidos,
+        p_missao_id: id,
+        p_participacao_id: participacaoResult.id,
+        p_tipo_acao: participacaoForm.funcao === 'coordenador' ? 'coordenacao' : 'participacao',
+        p_descricao: `Participação como ${participacaoForm.funcao} na missão`
+      });
+
+      if (pontosError) {
+        console.warn('⚠️ Erro ao atualizar pontos:', pontosError);
+      }
+
       toast({
         title: "Participação adicionada",
-        description: "Voluntário adicionado à missão com sucesso!",
+        description: `Voluntário adicionado com ${pontosAtribuidos} pontos!`,
       });
 
       setParticipacaoDialogOpen(false);
@@ -363,7 +389,7 @@ const MissaoParticipacoes = () => {
         {/* Header com navegação */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center space-x-4">
-            <Link to={`/missao/${id}`}>
+            <Link to={'/missao/' + id}>
               <Button variant="outline" size="sm">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Voltar à Missão
