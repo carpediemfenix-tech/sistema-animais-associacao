@@ -502,8 +502,7 @@ const ModuloMissoes = () => {
     missoes_pendentes: missoes.filter(m => m.status === 'pendente').length,
     missoes_concluidas: missoes.filter(m => m.status === 'concluida_sucesso').length,
     total_participacoes: participacoes.length,
-    voluntarios_ativos: voluntarios.length,
-    animais_disponiveis: animais.length
+    voluntarios_ativos: voluntarios.length
   };
 
   if (loading) {
