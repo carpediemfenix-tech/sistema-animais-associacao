@@ -90,8 +90,13 @@ const MissaoParticipacoes = () => {
 
   // Carregar dados
   useEffect(() => {
+    console.log('🎯 ID da missão capturado:', id);
     if (id) {
       loadData();
+    } else {
+      console.error('❌ ID da missão não encontrado');
+      setError('ID da missão não encontrado');
+      setLoading(false);
     }
   }, [id]);
 
@@ -114,6 +119,7 @@ const MissaoParticipacoes = () => {
   };
 
   const loadMissao = async () => {
+    console.log('🎯 Carregando missão com ID:', id);
     const { data, error } = await supabase
       .from('missoes_2025_12_21_19_00')
       .select('id, codigo, titulo, data_inicio, data_fim, status')
@@ -125,6 +131,7 @@ const MissaoParticipacoes = () => {
   };
 
   const loadParticipacoes = async () => {
+    console.log('👥 Carregando participações para missão ID:', id);
     const { data, error } = await supabase
       .from('participacoes_missoes_2025_12_21_20_00')
       .select('*')

@@ -75,8 +75,13 @@ const MissaoFinanceiro = () => {
 
   // Carregar dados
   useEffect(() => {
+    console.log('🎯 ID da missão capturado (Financeiro):', id);
     if (id) {
       loadData();
+    } else {
+      console.error('❌ ID da missão não encontrado');
+      setError('ID da missão não encontrado');
+      setLoading(false);
     }
   }, [id]);
 
