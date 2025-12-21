@@ -105,7 +105,6 @@ const ModuloMissoes = () => {
   const [tiposMissoes, setTiposMissoes] = useState<TipoMissao[]>([]);
   const [participacoes, setParticipacoes] = useState<ParticipacaoMissao[]>([]);
   const [voluntarios, setVoluntarios] = useState<any[]>([]);
-  const [animais, setAnimais] = useState<any[]>([]);
 
   // Estados para filtros
   const [searchTerm, setSearchTerm] = useState('');
@@ -124,7 +123,6 @@ const ModuloMissoes = () => {
     data_inicio: '',
     data_fim: '',
     local_principal: '',
-    animal_id: 'nenhum',
     prioridade: 'media',
     orcamento_previsto: '0'
   });
@@ -143,8 +141,7 @@ const ModuloMissoes = () => {
         loadTiposMissoes(),
         loadMissoes(),
         loadParticipacoes(),
-        loadVoluntarios(),
-        loadAnimais()
+        loadVoluntarios()
       ]);
       
       console.log('✅ Todos os dados carregados');
@@ -258,29 +255,6 @@ const ModuloMissoes = () => {
     }
   };
 
-  const loadAnimais = async () => {
-    try {
-      console.log('🐶 Carregando animais...');
-      
-      const { data, error } = await supabase
-        .from('animais')
-        .select('id, nome, especie, numero_processo')
-        .eq('arquivado', false)
-        .order('nome');
-
-      if (error) {
-        console.error('❌ Erro ao carregar animais:', error);
-        throw error;
-      }
-      
-      console.log('✅ Animais carregados:', data?.length || 0);
-      setAnimais(data || []);
-    } catch (error) {
-      console.error('❌ Erro em loadAnimais:', error);
-      setAnimais([]);
-    }
-  };
-
   // Gerar código sequencial
   const generateMissionCode = async () => {
     try {
@@ -328,7 +302,6 @@ const ModuloMissoes = () => {
         data_inicio: missaoForm.data_inicio,
         data_fim: missaoForm.data_fim,
         local_principal: missaoForm.local_principal,
-        animal_id: missaoForm.animal_id === 'nenhum' ? null : missaoForm.animal_id,
         prioridade: missaoForm.prioridade,
         orcamento_previsto: parseFloat(missaoForm.orcamento_previsto) || 0,
         pontos_totais,
@@ -378,7 +351,6 @@ const ModuloMissoes = () => {
         data_inicio: missaoForm.data_inicio,
         data_fim: missaoForm.data_fim,
         local_principal: missaoForm.local_principal,
-        animal_id: missaoForm.animal_id === 'nenhum' ? null : missaoForm.animal_id,
         prioridade: missaoForm.prioridade,
         orcamento_previsto: parseFloat(missaoForm.orcamento_previsto) || 0,
         updated_at: new Date().toISOString()
@@ -447,7 +419,6 @@ const ModuloMissoes = () => {
       data_inicio: '',
       data_fim: '',
       local_principal: '',
-      animal_id: 'nenhum',
       prioridade: 'media',
       orcamento_previsto: '0'
     });
@@ -464,7 +435,6 @@ const ModuloMissoes = () => {
         data_inicio: missao.data_inicio,
         data_fim: missao.data_fim || '',
         local_principal: missao.local_principal,
-        animal_id: missao.animal_id || 'nenhum',
         prioridade: missao.prioridade,
         orcamento_previsto: missao.orcamento_previsto.toString()
       });
@@ -926,26 +896,6 @@ const ModuloMissoes = () => {
                 placeholder="Ex: Parque Central, Rua das Flores, 123"
                 required
               />
-            </div>
-
-            <div>
-              <Label htmlFor="animal_id">Animal Associado (opcional)</Label>
-              <Select 
-                value={missaoForm.animal_id || 'nenhum'} 
-                onValueChange={(value) => setMissaoForm(prev => ({ ...prev, animal_id: value === 'nenhum' ? '' : value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecionar animal" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="nenhum">Nenhum animal</SelectItem>
-                  {animais.map((animal) => (
-                    <SelectItem key={animal.id} value={animal.id}>
-                      {animal.nome} ({animal.especie}) - {animal.numero_processo}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
