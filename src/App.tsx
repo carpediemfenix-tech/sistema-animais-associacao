@@ -56,7 +56,9 @@ import PaginaWorkflow from "./pages/PaginaWorkflow";
 import HistoricoNomesAnimais from "./pages/HistoricoNomesAnimais";
 import IntervencoesAutoridades from "./pages/IntervencoesAutoridades";
 import ModuloMissoes from "./pages/ModuloMissoes";
+import ModuloMissoesOtimizado from "./pages/ModuloMissoesOtimizado";
 import MissaoDetail from "./pages/MissaoDetail";
+import MissaoDetailOtimizada from "./pages/MissaoDetailOtimizada";
 import MissaoParticipacoes from "./pages/MissaoParticipacoes";
 import MissaoAnimais from "./pages/MissaoAnimais";
 import MissaoFinanceiro from "./pages/MissaoFinanceiro";
@@ -136,7 +138,9 @@ const App = () => (
             <Route path="/equipamentos/relatorios" element={<ProtectedRoute><EquipamentosRelatorios /></ProtectedRoute>} />
             <Route path="/modulo-clinicas" element={<ProtectedRoute><ModuloClinicas /></ProtectedRoute>} />
             <Route path="/modulo-missoes" element={<ProtectedRoute><ModuloMissoes /></ProtectedRoute>} />
+            <Route path="/modulo-missoes-otimizado" element={<ProtectedRoute><ModuloMissoesOtimizado /></ProtectedRoute>} />
             <Route path="/missao/:id" element={<ProtectedRoute><MissaoDetail /></ProtectedRoute>} />
+            <Route path="/missao-otimizada/:id" element={<ProtectedRoute><MissaoDetailOtimizada /></ProtectedRoute>} />
             <Route path="/missao/:id/participacoes" element={<ProtectedRoute><MissaoParticipacoes /></ProtectedRoute>} />
             <Route path="/missao/:id/animais" element={<ProtectedRoute><MissaoAnimais /></ProtectedRoute>} />
             <Route path="/missao/:id/financeiro" element={<ProtectedRoute><MissaoFinanceiro /></ProtectedRoute>} />
