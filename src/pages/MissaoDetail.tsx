@@ -96,7 +96,7 @@ const MissaoDetail = () => {
 
       // Carregar dados da missão
       const { data: missaoData, error: missaoError } = await supabase
-        .from('missoes_2025_12_18_14_15')
+        .from('missoes_2025_12_21_19_00')
         .select('*')
         .eq('id', id)
         .single();
@@ -215,16 +215,16 @@ const MissaoDetail = () => {
       const novoStatus = !missao.ativo;
       
       const { error } = await supabase
-        .from('missoes_2025_12_18_14_15')
-        .update({ 
-          ativo: novoStatus,
+        .from('missoes_2025_12_21_19_00')
+        .update({
+          status: novoStatus ? 'em_curso' : 'pendente',
           updated_at: new Date().toISOString()
         })
         .eq('id', missao.id);
 
       if (error) throw error;
 
-      setMissao(prev => prev ? { ...prev, ativo: novoStatus } : null);
+      setMissao(prev => prev ? { ...prev, status: novoStatus ? 'em_curso' : 'pendente' } : null);
       
       toast({
         title: novoStatus ? "Missão ativada" : "Missão desativada",
@@ -247,9 +247,9 @@ const MissaoDetail = () => {
 
     try {
       const { error } = await supabase
-        .from('missoes_2025_12_18_14_15')
+        .from('missoes_2025_12_21_19_00')
         .update({ 
-          arquivado: true,
+          status: 'arquivada',
           updated_at: new Date().toISOString()
         })
         .eq('id', missao.id);
@@ -279,7 +279,7 @@ const MissaoDetail = () => {
 
     try {
       const { error } = await supabase
-        .from('missoes_2025_12_18_14_15')
+        .from('missoes_2025_12_21_19_00')
         .delete()
         .eq('id', missao.id);
 

@@ -115,7 +115,7 @@ const MissaoParticipacoes = () => {
 
   const loadMissao = async () => {
     const { data, error } = await supabase
-      .from('missoes_2025_12_18_14_15')
+      .from('missoes_2025_12_21_19_00')
       .select('id, codigo, titulo, data_inicio, data_fim, status')
       .eq('id', id)
       .single();
