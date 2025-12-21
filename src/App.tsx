@@ -56,6 +56,7 @@ import PaginaWorkflow from "./pages/PaginaWorkflow";
 import HistoricoNomesAnimais from "./pages/HistoricoNomesAnimais";
 import IntervencoesAutoridades from "./pages/IntervencoesAutoridades";
 import ModuloMissoes from "./pages/ModuloMissoes";
+import MissaoDetail from "./pages/MissaoDetail";
 import ModuloAgenda from "./pages/ModuloAgenda";
 import ModuloEquipamentos from "./pages/ModuloEquipamentos";
 import ModuloClinicas from "./pages/ModuloClinicas";
@@ -131,6 +132,7 @@ const App = () => (
             <Route path="/equipamentos/relatorios" element={<ProtectedRoute><EquipamentosRelatorios /></ProtectedRoute>} />
             <Route path="/modulo-clinicas" element={<ProtectedRoute><ModuloClinicas /></ProtectedRoute>} />
             <Route path="/modulo-missoes" element={<ProtectedRoute><ModuloMissoes /></ProtectedRoute>} />
+            <Route path="/missao/:id" element={<ProtectedRoute><MissaoDetail /></ProtectedRoute>} />
             <Route path="/modulo-agenda" element={<ProtectedRoute><ModuloAgenda /></ProtectedRoute>} />
             <Route path="/estatisticas-avancadas" element={<ProtectedRoute><EstatisticasAvancadas /></ProtectedRoute>} />
             <Route path="/dashboard-executivo" element={<ProtectedRoute><DashboardExecutivo /></ProtectedRoute>} />

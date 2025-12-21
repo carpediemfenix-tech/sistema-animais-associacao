@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -88,6 +89,7 @@ const ModuloMissoes = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   // Estados para dados
   const [missoes, setMissoes] = useState<Missao[]>([]);
@@ -935,6 +937,15 @@ const ModuloMissoes = () => {
                                   <Button
                                     size="sm"
                                     variant="outline"
+                                    onClick={() => navigate(`/missao/${missao.id}`)}
+                                    className="h-8 w-8 p-0 text-green-600 hover:text-green-700"
+                                    title="Ver detalhes"
+                                  >
+                                    <Eye className="h-3 w-3" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
                                     onClick={() => openMissaoDialog(missao)}
                                     className="h-8 w-8 p-0"
                                     title="Editar missão"
@@ -1186,12 +1197,13 @@ const ModuloMissoes = () => {
               </div>
 
               <div>
-                <Label htmlFor="data_fim">Data de Fim</Label>
+                <Label htmlFor="data_fim">Data de Fim *</Label>
                 <Input
                   id="data_fim"
                   type="date"
                   value={missaoForm.data_fim}
                   onChange={(e) => setMissaoForm(prev => ({ ...prev, data_fim: e.target.value }))}
+                  required
                 />
               </div>
             </div>
