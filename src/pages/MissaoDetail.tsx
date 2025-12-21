@@ -26,7 +26,8 @@ import {
   PlayCircle,
   XCircle,
   Eye,
-  Trash2
+  Trash2,
+  PawPrint
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -483,7 +484,7 @@ const MissaoDetail = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
               {/* Participações de Voluntários */}
               <Link to={`/missao/${missao.id}/participacoes`}>
                 <Card className="border-2 border-blue-200 hover:border-blue-400 transition-colors cursor-pointer h-full">
@@ -491,6 +492,17 @@ const MissaoDetail = () => {
                     <Users className="h-8 w-8 text-blue-600 mx-auto mb-2" />
                     <h3 className="font-semibold text-blue-800">Participações</h3>
                     <p className="text-sm text-blue-600">Voluntários vinculados</p>
+                  </CardContent>
+                </Card>
+              </Link>
+
+              {/* Animais da Missão */}
+              <Link to={`/missao/${missao.id}/animais`}>
+                <Card className="border-2 border-pink-200 hover:border-pink-400 transition-colors cursor-pointer h-full">
+                  <CardContent className="p-4 text-center">
+                    <PawPrint className="h-8 w-8 text-pink-600 mx-auto mb-2" />
+                    <h3 className="font-semibold text-pink-800">Animais</h3>
+                    <p className="text-sm text-pink-600">Animais vinculados</p>
                   </CardContent>
                 </Card>
               </Link>

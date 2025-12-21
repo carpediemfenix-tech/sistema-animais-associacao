@@ -57,6 +57,8 @@ import HistoricoNomesAnimais from "./pages/HistoricoNomesAnimais";
 import IntervencoesAutoridades from "./pages/IntervencoesAutoridades";
 import ModuloMissoes from "./pages/ModuloMissoes";
 import MissaoDetail from "./pages/MissaoDetail";
+import MissaoParticipacoes from "./pages/MissaoParticipacoes";
+import MissaoAnimais from "./pages/MissaoAnimais";
 import ModuloAgenda from "./pages/ModuloAgenda";
 import ModuloEquipamentos from "./pages/ModuloEquipamentos";
 import ModuloClinicas from "./pages/ModuloClinicas";
@@ -133,6 +135,8 @@ const App = () => (
             <Route path="/modulo-clinicas" element={<ProtectedRoute><ModuloClinicas /></ProtectedRoute>} />
             <Route path="/modulo-missoes" element={<ProtectedRoute><ModuloMissoes /></ProtectedRoute>} />
             <Route path="/missao/:id" element={<ProtectedRoute><MissaoDetail /></ProtectedRoute>} />
+            <Route path="/missao/:id/participacoes" element={<ProtectedRoute><MissaoParticipacoes /></ProtectedRoute>} />
+            <Route path="/missao/:id/animais" element={<ProtectedRoute><MissaoAnimais /></ProtectedRoute>} />
             <Route path="/modulo-agenda" element={<ProtectedRoute><ModuloAgenda /></ProtectedRoute>} />
             <Route path="/estatisticas-avancadas" element={<ProtectedRoute><EstatisticasAvancadas /></ProtectedRoute>} />
             <Route path="/dashboard-executivo" element={<ProtectedRoute><DashboardExecutivo /></ProtectedRoute>} />
