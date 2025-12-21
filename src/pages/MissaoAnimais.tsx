@@ -118,7 +118,7 @@ const MissaoAnimais = () => {
 
   const loadMissoesAnimais = async () => {
     const { data, error } = await supabase
-      .from('missoes_animais_2025_12_18_14_15')
+      .from('missoes_animais_2025_12_21_20_00')
       .select('*')
       .eq('missao_id', id)
       .order('data_vinculacao', { ascending: false });
@@ -152,7 +152,7 @@ const MissaoAnimais = () => {
       };
 
       const { error } = await supabase
-        .from('missoes_animais_2025_12_18_14_15')
+        .from('missoes_animais_2025_12_21_20_00')
         .insert(missaoAnimalData);
 
       if (error) throw error;
@@ -189,7 +189,7 @@ const MissaoAnimais = () => {
       };
 
       const { error } = await supabase
-        .from('missoes_animais_2025_12_18_14_15')
+        .from('missoes_animais_2025_12_21_20_00')
         .update(missaoAnimalData)
         .eq('id', editingMissaoAnimal.id);
 
@@ -220,7 +220,7 @@ const MissaoAnimais = () => {
 
     try {
       const { error } = await supabase
-        .from('missoes_animais_2025_12_18_14_15')
+        .from('missoes_animais_2025_12_21_20_00')
         .delete()
         .eq('id', missaoAnimalId);
 

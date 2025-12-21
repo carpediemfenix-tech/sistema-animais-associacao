@@ -213,7 +213,7 @@ const ModuloMissoes = () => {
       console.log('👥 Carregando participações...');
       
       const { data, error } = await supabase
-        .from('participacoes_missoes_2025_12_18_14_15')
+        .from('participacoes_missoes_2025_12_21_20_00')
         .select('*')
         .order('data_participacao', { ascending: false })
         .limit(100);

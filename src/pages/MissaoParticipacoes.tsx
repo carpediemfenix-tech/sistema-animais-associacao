@@ -126,7 +126,7 @@ const MissaoParticipacoes = () => {
 
   const loadParticipacoes = async () => {
     const { data, error } = await supabase
-      .from('participacoes_missoes_2025_12_18_14_15')
+      .from('participacoes_missoes_2025_12_21_20_00')
       .select('*')
       .eq('missao_id', id)
       .order('data_participacao', { ascending: false });
@@ -162,7 +162,7 @@ const MissaoParticipacoes = () => {
       };
 
       const { error } = await supabase
-        .from('participacoes_missoes_2025_12_18_14_15')
+        .from('participacoes_missoes_2025_12_21_20_00')
         .insert(participacaoData);
 
       if (error) throw error;
@@ -200,7 +200,7 @@ const MissaoParticipacoes = () => {
       };
 
       const { error } = await supabase
-        .from('participacoes_missoes_2025_12_18_14_15')
+        .from('participacoes_missoes_2025_12_21_20_00')
         .update(participacaoData)
         .eq('id', editingParticipacao.id);
 
@@ -231,7 +231,7 @@ const MissaoParticipacoes = () => {
 
     try {
       const { error } = await supabase
-        .from('participacoes_missoes_2025_12_18_14_15')
+        .from('participacoes_missoes_2025_12_21_20_00')
         .delete()
         .eq('id', participacaoId);
 
