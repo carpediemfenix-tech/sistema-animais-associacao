@@ -91,11 +91,11 @@ const MissaoParticipacoes = () => {
   // Carregar dados
   useEffect(() => {
     console.log('🎯 ID da missão capturado:', id);
-    if (id) {
+    if (id && id !== '[ID_REAL]' && id !== '[ID]') {
       loadData();
     } else {
-      console.error('❌ ID da missão não encontrado');
-      setError('ID da missão não encontrado');
+      console.error('❌ ID da missão inválido ou não encontrado:', id);
+      setError(`ID da missão inválido: ${id}. Use um ID real de uma missão existente.`);
       setLoading(false);
     }
   }, [id]);
