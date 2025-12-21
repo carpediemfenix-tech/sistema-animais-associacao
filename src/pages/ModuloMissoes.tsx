@@ -190,9 +190,8 @@ const ModuloMissoes = () => {
       console.log('🎯 Carregando missões...');
       
       const { data, error } = await supabase
-        .from('missoes_2025_12_18_14_15')
+        .from('missoes_2025_12_21_19_00')
         .select('*')
-        .eq('arquivado', false)
         .order('created_at', { ascending: false })
         .limit(50);
 
@@ -261,7 +260,7 @@ const ModuloMissoes = () => {
       const currentYear = new Date().getFullYear().toString().slice(-2);
       
       const { data: lastMission } = await supabase
-        .from('missoes_2025_12_18_14_15')
+        .from('missoes_2025_12_21_19_00')
         .select('codigo')
         .like('codigo', `MIS${currentYear}%`)
         .order('codigo', { ascending: false })
@@ -298,26 +297,26 @@ const ModuloMissoes = () => {
         codigo,
         tipo_missao_id: missaoForm.tipo_missao_id,
         titulo: missaoForm.titulo,
-        descricao: missaoForm.descricao,
+        descricao: missaoForm.descricao || '',
         data_inicio: missaoForm.data_inicio,
         data_fim: missaoForm.data_fim,
         local_principal: missaoForm.local_principal,
         prioridade: missaoForm.prioridade,
         orcamento_previsto: parseFloat(missaoForm.orcamento_previsto) || 0,
         pontos_totais,
-        responsavel_id: voluntarios[0]?.id || null,
-        status: 'pendente',
-        custo_real: 0,
-        min_participantes: 1,
-        ativo: true,
-        arquivado: false
+        status: 'pendente'
       };
 
+      console.log('📝 Dados da missão a serem inseridos:', missaoData);
+
       const { error } = await supabase
-        .from('missoes_2025_12_18_14_15')
+        .from('missoes_2025_12_21_19_00')
         .insert(missaoData);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro detalhado do Supabase:', error);
+        throw error;
+      }
 
       toast({
         title: "Missão criada",
@@ -357,7 +356,7 @@ const ModuloMissoes = () => {
       };
 
       const { error } = await supabase
-        .from('missoes_2025_12_18_14_15')
+        .from('missoes_2025_12_21_19_00')
         .update(missaoData)
         .eq('id', editingMissao.id);
 
@@ -388,7 +387,7 @@ const ModuloMissoes = () => {
 
     try {
       const { error } = await supabase
-        .from('missoes_2025_12_18_14_15')
+        .from('missoes_2025_12_21_19_00')
         .delete()
         .eq('id', missaoId);
 
