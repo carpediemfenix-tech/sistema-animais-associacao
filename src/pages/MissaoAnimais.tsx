@@ -130,9 +130,9 @@ const MissaoAnimais = () => {
   const loadAnimais = async () => {
     const { data, error } = await supabase
       .from('animais')
-      .select('id, nome, especie, numero_processo, idade_estimada, genero')
-      .eq('arquivado', false)
-      .order('nome');
+      .select('id, nome, especie, numero_processo')
+      .order('nome')
+      .limit(50);
 
     if (error) throw error;
     setAnimais(data || []);

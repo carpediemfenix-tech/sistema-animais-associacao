@@ -157,7 +157,7 @@ const MissaoParticipacoes = () => {
         data_fim: participacaoForm.data_fim || null,
         horas_dedicadas: parseFloat(participacaoForm.horas_dedicadas) || 0,
         pontos_atribuidos: 0,
-        status_participacao: 'confirmada',
+        status_participacao: 'ativa',
         observacoes: participacaoForm.observacoes || null
       };
 
