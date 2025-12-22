@@ -21,7 +21,6 @@ export interface VoluntarioValentao {
   localidade?: string;
   codigo_postal?: string;
   distrito?: string;
-  especialidade?: string;
   observacoes?: string;
   ativo: boolean;
   created_at: string;
@@ -52,7 +51,6 @@ export interface VoluntarioFormData {
   localidade: string;
   codigo_postal: string;
   distrito: string;
-  especialidade: string;
   observacoes: string;
 }
 
