@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   ArrowLeft, 
   User, 
@@ -32,10 +31,7 @@ import {
   Award,
   History,
   Loader2,
-  FileText,
-  Filter,
-  X,
-  RotateCcw
+  FileText
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -307,15 +303,6 @@ const VoluntarioProfile = () => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  // 🎯 NOVOS ESTADOS PARA FILTROS (NÃO AFETAM FUNCIONALIDADE EXISTENTE)
-  const [filtros, setFiltros] = useState({
-    periodo: 'todos', // 'todos', 'ultimo_mes', 'ultimos_3_meses', 'ultimo_ano'
-    status_missao: 'todos', // 'todos', 'ativa', 'concluida', 'planeada'
-    status_participacao: 'todos', // 'todos', 'ativa', 'concluida'
-    funcao: 'todos' // 'todos', 'coordenador', 'voluntario', 'veterinario'
-  });
-  const [mostrarFiltros, setMostrarFiltros] = useState(false);
-
   useEffect(() => {
     if (id) {
       loadVoluntarioCompleto();
@@ -366,66 +353,6 @@ const VoluntarioProfile = () => {
       console.error('Erro ao carregar missões participadas:', error);
       setMissoesParticipadas([]);
     }
-  };
-
-  // 🎯 FUNÇÃO DE FILTROS (NÃO MODIFICA DADOS ORIGINAIS)
-  const missoesFiltered = useMemo(() => {
-    let resultado = [...missoesParticipadas]; // Cópia dos dados originais
-
-    // Filtro por período
-    if (filtros.periodo !== 'todos') {
-      const agora = new Date();
-      let dataLimite = new Date();
-      
-      switch (filtros.periodo) {
-        case 'ultimo_mes':
-          dataLimite.setMonth(agora.getMonth() - 1);
-          break;
-        case 'ultimos_3_meses':
-          dataLimite.setMonth(agora.getMonth() - 3);
-          break;
-        case 'ultimo_ano':
-          dataLimite.setFullYear(agora.getFullYear() - 1);
-          break;
-      }
-      
-      resultado = resultado.filter(missao => 
-        new Date(missao.data_participacao) >= dataLimite
-      );
-    }
-
-    // Filtro por status da missão
-    if (filtros.status_missao !== 'todos') {
-      resultado = resultado.filter(missao => 
-        missao.status_missao === filtros.status_missao
-      );
-    }
-
-    // Filtro por status da participação
-    if (filtros.status_participacao !== 'todos') {
-      resultado = resultado.filter(missao => 
-        missao.status_participacao === filtros.status_participacao
-      );
-    }
-
-    // Filtro por função
-    if (filtros.funcao !== 'todos') {
-      resultado = resultado.filter(missao => 
-        missao.funcao === filtros.funcao
-      );
-    }
-
-    return resultado;
-  }, [missoesParticipadas, filtros]);
-
-  // 🎯 FUNÇÃO PARA RESETAR FILTROS
-  const resetarFiltros = () => {
-    setFiltros({
-      periodo: 'todos',
-      status_missao: 'todos',
-      status_participacao: 'todos',
-      funcao: 'todos'
-    });
   };
 
   const loadVoluntarioCompleto = async () => {
@@ -1081,105 +1008,10 @@ const VoluntarioProfile = () => {
           <TabsContent value="missoes">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <Target className="h-5 w-5 mr-2" />
-                    Missões Participadas ({missoesFiltered.length} de {missoesParticipadas.length})
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setMostrarFiltros(!mostrarFiltros)}
-                    className="flex items-center"
-                  >
-                    <Filter className="h-4 w-4 mr-2" />
-                    {mostrarFiltros ? 'Ocultar Filtros' : 'Filtros'}
-                  </Button>
+                <CardTitle className="flex items-center">
+                  <Target className="h-5 w-5 mr-2" />
+                  Missões Participadas ({missoesParticipadas.length})
                 </CardTitle>
-                
-                {/* 🎯 PAINEL DE FILTROS (COLAPSÁVEL) */}
-                {mostrarFiltros && (
-                  <div className="mt-4 p-4 bg-gray-50 rounded-lg border">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                      {/* Filtro por Período */}
-                      <div>
-                        <Label className="text-sm font-medium">Período</Label>
-                        <Select value={filtros.periodo} onValueChange={(value) => setFiltros(prev => ({ ...prev, periodo: value }))}>
-                          <SelectTrigger className="mt-1">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="todos">Todos os períodos</SelectItem>
-                            <SelectItem value="ultimo_mes">Último mês</SelectItem>
-                            <SelectItem value="ultimos_3_meses">Últimos 3 meses</SelectItem>
-                            <SelectItem value="ultimo_ano">Último ano</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* Filtro por Status da Missão */}
-                      <div>
-                        <Label className="text-sm font-medium">Status da Missão</Label>
-                        <Select value={filtros.status_missao} onValueChange={(value) => setFiltros(prev => ({ ...prev, status_missao: value }))}>
-                          <SelectTrigger className="mt-1">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="todos">Todos os status</SelectItem>
-                            <SelectItem value="ativa">Ativa</SelectItem>
-                            <SelectItem value="concluida">Concluída</SelectItem>
-                            <SelectItem value="planeada">Planeada</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* Filtro por Status da Participação */}
-                      <div>
-                        <Label className="text-sm font-medium">Status da Participação</Label>
-                        <Select value={filtros.status_participacao} onValueChange={(value) => setFiltros(prev => ({ ...prev, status_participacao: value }))}>
-                          <SelectTrigger className="mt-1">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="todos">Todos os status</SelectItem>
-                            <SelectItem value="ativa">Ativa</SelectItem>
-                            <SelectItem value="concluida">Concluída</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* Filtro por Função */}
-                      <div>
-                        <Label className="text-sm font-medium">Função</Label>
-                        <Select value={filtros.funcao} onValueChange={(value) => setFiltros(prev => ({ ...prev, funcao: value }))}>
-                          <SelectTrigger className="mt-1">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="todos">Todas as funções</SelectItem>
-                            <SelectItem value="coordenador">Coordenador</SelectItem>
-                            <SelectItem value="voluntario">Voluntário</SelectItem>
-                            <SelectItem value="veterinario">Veterinário</SelectItem>
-                            <SelectItem value="condutor">Condutor</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    
-                    {/* Botão para resetar filtros */}
-                    <div className="mt-4 flex justify-end">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={resetarFiltros}
-                        className="flex items-center text-gray-600 hover:text-gray-800"
-                      >
-                        <RotateCcw className="h-4 w-4 mr-2" />
-                        Limpar Filtros
-                      </Button>
-                    </div>
-                  </div>
-                )}
               </CardHeader>
               <CardContent>
                 {missoesParticipadas.length === 0 ? (
@@ -1192,23 +1024,9 @@ const VoluntarioProfile = () => {
                       Este voluntário ainda não participou em nenhuma missão.
                     </p>
                   </div>
-                ) : missoesFiltered.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Filter className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">
-                      Nenhuma missão encontrada
-                    </h3>
-                    <p className="text-gray-600 mb-4">
-                      Não há missões que correspondam aos filtros selecionados.
-                    </p>
-                    <Button variant="outline" onClick={resetarFiltros}>
-                      <RotateCcw className="h-4 w-4 mr-2" />
-                      Limpar Filtros
-                    </Button>
-                  </div>
                 ) : (
                   <div className="space-y-4">
-                    {missoesFiltered.map((missao) => (
+                    {missoesParticipadas.map((missao) => (
                     <div key={missao.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center space-x-2">
