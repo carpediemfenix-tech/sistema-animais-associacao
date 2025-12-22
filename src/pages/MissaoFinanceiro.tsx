@@ -114,8 +114,14 @@ const MissaoFinanceiro = () => {
   };
 
   const loadMovimentos = async () => {
-    // Por enquanto, usar dados mock até criar a tabela de movimentos financeiros
-    setMovimentos([]);
+    const { data, error } = await supabase
+      .from('movimentos_financeiros_2025_12_22_03_00')
+      .select('*')
+      .eq('missao_id', id)
+      .order('data_movimento', { ascending: false });
+
+    if (error) throw error;
+    setMovimentos(data || []);
   };
 
   // Calcular estatísticas
@@ -146,17 +152,36 @@ const MissaoFinanceiro = () => {
         observacoes: movimentoForm.observacoes || null
       };
 
-      // Por enquanto, apenas simular o sucesso até criar a tabela
-      console.log('Movimento a ser criado:', movimentoData);
-      
-      toast({
-        title: "Movimento criado",
-        description: "Movimento financeiro criado com sucesso!",
-      });
+      if (editingMovimento) {
+        // Atualizar movimento existente
+        const { error: updateError } = await supabase
+          .from('movimentos_financeiros_2025_12_22_03_00')
+          .update(movimentoData)
+          .eq('id', editingMovimento.id);
+
+        if (updateError) throw updateError;
+        
+        toast({
+          title: "Movimento atualizado",
+          description: "Movimento financeiro atualizado com sucesso!",
+        });
+      } else {
+        // Inserir novo movimento
+        const { error: insertError } = await supabase
+          .from('movimentos_financeiros_2025_12_22_03_00')
+          .insert([movimentoData]);
+
+        if (insertError) throw insertError;
+        
+        toast({
+          title: "Movimento criado",
+          description: "Movimento financeiro criado com sucesso!",
+        });
+      }
 
       setMovimentoDialogOpen(false);
       resetMovimentoForm();
-      // await loadMovimentos(); // Quando a tabela for criada
+      await loadMovimentos(); // Recarregar a lista
     } catch (error: any) {
       console.error('❌ Erro ao criar movimento:', error);
       toast({
@@ -176,6 +201,49 @@ const MissaoFinanceiro = () => {
       categoria: 'geral',
       observacoes: ''
     });
+    setEditingMovimento(null);
+  };
+
+  const handleEditMovimento = (movimento: MovimentoFinanceiro) => {
+    setEditingMovimento(movimento);
+    setMovimentoForm({
+      tipo: movimento.tipo,
+      descricao: movimento.descricao,
+      valor: movimento.valor.toString(),
+      data_movimento: movimento.data_movimento,
+      categoria: movimento.categoria,
+      observacoes: movimento.observacoes || ''
+    });
+    setMovimentoDialogOpen(true);
+  };
+
+  const handleDeleteMovimento = async (movimento: MovimentoFinanceiro) => {
+    if (!confirm('Tem certeza que deseja excluir este movimento financeiro?')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('movimentos_financeiros_2025_12_22_03_00')
+        .delete()
+        .eq('id', movimento.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Movimento excluído",
+        description: "Movimento financeiro excluído com sucesso!",
+      });
+
+      await loadMovimentos();
+    } catch (error: any) {
+      console.error('❌ Erro ao excluir movimento:', error);
+      toast({
+        title: "Erro ao excluir movimento",
+        description: error.message || "Erro inesperado",
+        variant: "destructive",
+      });
+    }
   };
 
   if (loading) {
@@ -360,6 +428,7 @@ const MissaoFinanceiro = () => {
                             size="sm"
                             variant="outline"
                             className="h-8 w-8 p-0"
+                            onClick={() => handleEditMovimento(movimento)}
                           >
                             <Edit className="h-3 w-3" />
                           </Button>
@@ -367,6 +436,7 @@ const MissaoFinanceiro = () => {
                             size="sm"
                             variant="outline"
                             className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                            onClick={() => handleDeleteMovimento(movimento)}
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>
