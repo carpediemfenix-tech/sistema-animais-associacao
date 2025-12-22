@@ -21,7 +21,7 @@ const LogotipoValentao: React.FC<LogotipoValentaoProps> = ({
   return (
     <div className={`flex items-center space-x-2 ${className}`}>
       <img 
-        src="./images/BackgroundEraser_20250411_205630024.png" 
+        src="./images/media-_3_.gif" 
         alt="Associação Valentão" 
         className={`${sizeClasses[size]} object-contain drop-shadow-sm`}
       />
