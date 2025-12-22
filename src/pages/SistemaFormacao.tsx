@@ -222,11 +222,9 @@ const SistemaFormacao = () => {
       // Carregar ações de formação com tipos e contadores
       const { data: acoesData, error: acoesError } = await supabase
         .from('acoes_formacao')
-        .select(`
-          *,
-          tipo_formacao:tipos_formacao(*)
-        `)
-        .order('data_inicio', { ascending: false });
+        .select('*')
+        .eq('ativo', true)
+        .order('created_at', { ascending: false });
 
       if (acoesError) throw acoesError;
 

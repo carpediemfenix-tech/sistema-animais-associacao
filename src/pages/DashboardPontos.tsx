@@ -118,7 +118,7 @@ const DashboardPontos = () => {
 
   const loadRanking = async () => {
     const { data, error } = await supabase
-      .from('pontuacao_voluntarios_2025_12_21_21_15')
+      .from('pontuacao_voluntarios_2025_12_22_02_00')
       .select(`
         *,
         voluntario:voluntarios(nome, email)
@@ -132,7 +132,7 @@ const DashboardPontos = () => {
 
   const loadHistorico = async () => {
     const { data, error } = await supabase
-      .from('historico_pontos_2025_12_21_21_15')
+      .from('historico_pontos_2025_12_22_02_00')
       .select(`
         *,
         missao:missoes_2025_12_21_19_00(codigo, titulo)
@@ -146,7 +146,7 @@ const DashboardPontos = () => {
 
   const loadBadges = async () => {
     const { data, error } = await supabase
-      .from('badges_sistema_2025_12_21_21_15')
+      .from('badges_sistema_2025_12_22_02_00')
       .select('*')
       .eq('ativo', true)
       .order('pontos_necessarios');
@@ -159,19 +159,19 @@ const DashboardPontos = () => {
     try {
       // Total de voluntários com pontos
       const { count: totalVoluntarios } = await supabase
-        .from('pontuacao_voluntarios_2025_12_21_21_15')
+        .from('pontuacao_voluntarios_2025_12_22_02_00')
         .select('*', { count: 'exact', head: true });
 
       // Total de pontos distribuídos
       const { data: pontosData } = await supabase
-        .from('historico_pontos_2025_12_21_21_15')
+        .from('historico_pontos_2025_12_22_02_00')
         .select('pontos_ganhos');
 
       const pontosDistribuidos = pontosData?.reduce((sum, item) => sum + item.pontos_ganhos, 0) || 0;
 
       // Missões com pontos
       const { data: missoesData } = await supabase
-        .from('historico_pontos_2025_12_21_21_15')
+        .from('historico_pontos_2025_12_22_02_00')
         .select('missao_id')
         .not('missao_id', 'is', null);
 
@@ -179,10 +179,10 @@ const DashboardPontos = () => {
 
       // Média de horas
       const { data: horasData } = await supabase
-        .from('pontuacao_voluntarios_2025_12_21_21_15')
-        .select('horas_totais');
+        .from('pontuacao_voluntarios_2025_12_22_02_00')
+        .select('total_horas');
 
-      const totalHoras = horasData?.reduce((sum, item) => sum + (item.horas_totais || 0), 0) || 0;
+      const totalHoras = horasData?.reduce((sum, item) => sum + (item.total_horas || 0), 0) || 0;
       const mediaHoras = totalVoluntarios ? totalHoras / totalVoluntarios : 0;
 
       setEstatisticas({

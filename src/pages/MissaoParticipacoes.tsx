@@ -189,11 +189,9 @@ const MissaoParticipacoes = () => {
       // Atualizar pontuação do voluntário usando a função SQL
       const { error: pontosError } = await supabase.rpc('atualizar_pontuacao_voluntario', {
         p_voluntario_id: participacaoForm.voluntario_id,
-        p_pontos_ganhos: pontosAtribuidos,
-        p_missao_id: id,
-        p_participacao_id: participacaoResult.id,
-        p_tipo_acao: participacaoForm.funcao === 'coordenador' ? 'coordenacao' : 'participacao',
-        p_descricao: `Participação como ${participacaoForm.funcao} na missão`
+        p_pontos: pontosAtribuidos,
+        p_descricao: `Participação como ${participacaoForm.funcao} na missão`,
+        p_missao_id: id
       });
 
       if (pontosError) {
