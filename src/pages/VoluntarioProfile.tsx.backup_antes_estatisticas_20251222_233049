@@ -35,33 +35,12 @@ import {
   FileText,
   Filter,
   X,
-  RotateCcw,
-  BarChart3,
-  TrendingUp,
-  PieChart as PieChartIcon
+  RotateCcw
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import EnhancedHeader from "@/components/EnhancedHeader";
 import EnhancedFooter from "@/components/EnhancedFooter";
-// 📊 IMPORTS PARA GRÁFICOS (NÃO AFETAM FUNCIONALIDADE EXISTENTE)
-import { 
-  LineChart, 
-  Line, 
-  AreaChart, 
-  Area, 
-  BarChart, 
-  Bar, 
-  PieChart, 
-  Pie, 
-  Cell, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
-  ResponsiveContainer 
-} from 'recharts';
 
 // Componente para Material do Voluntário
 const MaterialVoluntario = ({ voluntarioId }: { voluntarioId: string }) => {
@@ -316,278 +295,6 @@ interface MaterialFardamento {
   estado: string;
   observacoes?: string;
 }
-
-// 📊 COMPONENTE DE ESTATÍSTICAS (NÃO AFETA FUNCIONALIDADE EXISTENTE)
-const EstatisticasMissoes = ({ missoes }: { missoes: MissaoParticipada[] }) => {
-  // Cores para os gráficos
-  const CORES = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4'];
-
-  // 📈 DADOS PARA GRÁFICO DE PARTICIPAÇÃO AO LONGO DO TEMPO
-  const dadosTemporais = useMemo(() => {
-    const agrupados = missoes.reduce((acc, missao) => {
-      const mes = new Date(missao.data_participacao).toLocaleDateString('pt-PT', { 
-        year: 'numeric', 
-        month: 'short' 
-      });
-      
-      if (!acc[mes]) {
-        acc[mes] = { mes, participacoes: 0, horas: 0 };
-      }
-      
-      acc[mes].participacoes += 1;
-      acc[mes].horas += missao.horas_dedicadas;
-      
-      return acc;
-    }, {} as any);
-    
-    return Object.values(agrupados).sort((a: any, b: any) => 
-      new Date(a.mes).getTime() - new Date(b.mes).getTime()
-    );
-  }, [missoes]);
-
-  // 🎭 DADOS PARA GRÁFICO POR FUNÇÃO
-  const dadosPorFuncao = useMemo(() => {
-    const agrupados = missoes.reduce((acc, missao) => {
-      if (!acc[missao.funcao]) {
-        acc[missao.funcao] = { funcao: missao.funcao, count: 0, horas: 0 };
-      }
-      
-      acc[missao.funcao].count += 1;
-      acc[missao.funcao].horas += missao.horas_dedicadas;
-      
-      return acc;
-    }, {} as any);
-    
-    return Object.values(agrupados);
-  }, [missoes]);
-
-  // 📊 DADOS PARA GRÁFICO POR STATUS
-  const dadosPorStatus = useMemo(() => {
-    const agrupados = missoes.reduce((acc, missao) => {
-      if (!acc[missao.status_missao]) {
-        acc[missao.status_missao] = { status: missao.status_missao, count: 0 };
-      }
-      
-      acc[missao.status_missao].count += 1;
-      
-      return acc;
-    }, {} as any);
-    
-    return Object.values(agrupados);
-  }, [missoes]);
-
-  // 🎯 MÉTRICAS GERAIS
-  const metricas = useMemo(() => {
-    const totalHoras = missoes.reduce((sum, m) => sum + m.horas_dedicadas, 0);
-    const totalMissoes = missoes.length;
-    const mediaHorasPorMissao = totalMissoes > 0 ? totalHoras / totalMissoes : 0;
-    const missoesAtivas = missoes.filter(m => m.status_missao === 'ativa').length;
-    const missoesConcluidas = missoes.filter(m => m.status_missao === 'concluida').length;
-    
-    return {
-      totalHoras,
-      totalMissoes,
-      mediaHorasPorMissao,
-      missoesAtivas,
-      missoesConcluidas
-    };
-  }, [missoes]);
-
-  if (missoes.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <BarChart3 className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">
-          Sem dados para estatísticas
-        </h3>
-        <p className="text-gray-600">
-          As estatísticas aparecerão quando houver missões participadas.
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      {/* 🎯 MÉTRICAS GERAIS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center">
-              <Target className="h-8 w-8 text-blue-600 mr-3" />
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{metricas.totalMissoes}</p>
-                <p className="text-sm text-gray-600">Total Missões</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center">
-              <Clock className="h-8 w-8 text-green-600 mr-3" />
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{metricas.totalHoras}h</p>
-                <p className="text-sm text-gray-600">Total Horas</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center">
-              <TrendingUp className="h-8 w-8 text-orange-600 mr-3" />
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{metricas.mediaHorasPorMissao.toFixed(1)}h</p>
-                <p className="text-sm text-gray-600">Média/Missão</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center">
-              <Activity className="h-8 w-8 text-blue-600 mr-3" />
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{metricas.missoesAtivas}</p>
-                <p className="text-sm text-gray-600">Ativas</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center">
-              <CheckCircle className="h-8 w-8 text-green-600 mr-3" />
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{metricas.missoesConcluidas}</p>
-                <p className="text-sm text-gray-600">Concluídas</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* 📈 GRÁFICOS */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Gráfico de Participação ao Longo do Tempo */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <TrendingUp className="h-5 w-5 mr-2" />
-              Participação ao Longo do Tempo
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={dadosTemporais}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="mes" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Area 
-                  type="monotone" 
-                  dataKey="participacoes" 
-                  stroke="#3B82F6" 
-                  fill="#3B82F6" 
-                  fillOpacity={0.3}
-                  name="Participações"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        {/* Gráfico de Horas por Função */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <BarChart3 className="h-5 w-5 mr-2" />
-              Horas por Função
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={dadosPorFuncao}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="funcao" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="horas" fill="#10B981" name="Horas Dedicadas" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        {/* Gráfico de Distribuição por Status */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <PieChartIcon className="h-5 w-5 mr-2" />
-              Distribuição por Status
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={dadosPorStatus}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ status, count }) => `${status}: ${count}`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="count"
-                >
-                  {dadosPorStatus.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={CORES[index % CORES.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        {/* Gráfico de Horas ao Longo do Tempo */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Clock className="h-5 w-5 mr-2" />
-              Horas Dedicadas por Período
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={dadosTemporais}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="mes" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line 
-                  type="monotone" 
-                  dataKey="horas" 
-                  stroke="#F59E0B" 
-                  strokeWidth={3}
-                  name="Horas"
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-};
 
 const VoluntarioProfile = () => {
   const { id } = useParams<{ id: string }>();
@@ -1032,13 +739,12 @@ const VoluntarioProfile = () => {
 
         {/* Tabs com informações completas */}
         <Tabs defaultValue="dados-pessoais" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="dados-pessoais">Dados Pessoais</TabsTrigger>
             <TabsTrigger value="animais">Animais</TabsTrigger>
             <TabsTrigger value="historico">Histórico</TabsTrigger>
             <TabsTrigger value="formacao">Formação</TabsTrigger>
             <TabsTrigger value="missoes">Missões</TabsTrigger>
-            <TabsTrigger value="estatisticas">📊 Estatísticas</TabsTrigger>
             <TabsTrigger value="material">Material</TabsTrigger>
           </TabsList>
 
@@ -1551,24 +1257,6 @@ const VoluntarioProfile = () => {
                   ))}
                   </div>
                 )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* 📊 ABA: ESTATÍSTICAS (NÃO AFETA OUTRAS ABAS) */}
-          <TabsContent value="estatisticas">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <BarChart3 className="h-5 w-5 mr-2" />
-                  Estatísticas de Participação
-                </CardTitle>
-                <CardDescription>
-                  Análise detalhada da participação do voluntário em missões
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <EstatisticasMissoes missoes={missoesParticipadas} />
               </CardContent>
             </Card>
           </TabsContent>
