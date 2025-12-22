@@ -223,7 +223,6 @@ const SistemaFormacao = () => {
       const { data: acoesData, error: acoesError } = await supabase
         .from('acoes_formacao')
         .select('*')
-        .eq('ativo', true)
         .order('created_at', { ascending: false });
 
       if (acoesError) throw acoesError;
