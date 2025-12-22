@@ -64,6 +64,7 @@ import MissaoAnimais from "./pages/MissaoAnimais";
 import MissaoFinanceiro from "./pages/MissaoFinanceiro";
 import MissaoEquipamentos from "./pages/MissaoEquipamentos";
 import DashboardPontos from "./pages/DashboardPontos";
+import ConfiguracaoEspecialidades from "./pages/ConfiguracaoEspecialidades";
 import ModuloAgenda from "./pages/ModuloAgenda";
 import ModuloEquipamentos from "./pages/ModuloEquipamentos";
 import ModuloClinicas from "./pages/ModuloClinicas";
@@ -147,6 +148,7 @@ const App = () => (
             <Route path="/missao/:id/financeiro" element={<ProtectedRoute><MissaoFinanceiro /></ProtectedRoute>} />
             <Route path="/missao/:id/equipamentos" element={<ProtectedRoute><MissaoEquipamentos /></ProtectedRoute>} />
             <Route path="/dashboard-pontos" element={<ProtectedRoute><DashboardPontos /></ProtectedRoute>} />
+            <Route path="/configuracoes/especialidades" element={<ProtectedRoute><ConfiguracaoEspecialidades /></ProtectedRoute>} />
             <Route path="/modulo-agenda" element={<ProtectedRoute><ModuloAgenda /></ProtectedRoute>} />
             <Route path="/estatisticas-avancadas" element={<ProtectedRoute><EstatisticasAvancadas /></ProtectedRoute>} />
             <Route path="/dashboard-executivo" element={<ProtectedRoute><DashboardExecutivo /></ProtectedRoute>} />

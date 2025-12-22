@@ -90,11 +90,11 @@ const ModuloVoluntarios = () => {
     },
     {
       titulo: "Especialidades dos Voluntários",
-      descricao: "Configurar especialidades e competências",
+      descricao: "Sistema completo de especialidades e competências",
       icone: Settings,
       rota: "/configuracoes/especialidades",
-      status: "desenvolvimento",
-      funcionalidades: ["Definir Especialidades", "Competências", "Certificações"]
+      status: "ativo",
+      funcionalidades: ["10 Especialidades Disponíveis", "Níveis de Experiência", "Certificações", "Pontos Bonus"]
     }
   ];
 

@@ -96,13 +96,13 @@ const EditarVoluntario = () => {
       setSaving(true);
 
       // Preparar dados para atualização (apenas campos que existem na tabela)
-      const nickname = voluntario.nickname?.trim() || null;
+const nickname = voluntario.nickname?.trim() || null;
       const nome = voluntario.nome?.trim() || '';
       
       const updateData = {
         nome: nome,
         nickname: nickname,
-        display_name: nickname || getDisplayNameFromFullName(nome), // REGRA: nickname ou primeiro+último nome
+display_name: nickname || getDisplayNameFromFullName(nome), // REGRA: nickname ou primeiro+último nome
         full_name: nome, // Nome completo sempre preservado
         email: voluntario.email?.trim() || '',
         telefone: voluntario.telefone?.trim() || null,
@@ -357,7 +357,7 @@ const EditarVoluntario = () => {
               </div>
             </div>
 
-            {/* Especialidade */}
+            {/* Especialidade */
             <div>
               <Label htmlFor="especialidade">Especialidade</Label>
               <Select

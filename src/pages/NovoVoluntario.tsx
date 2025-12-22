@@ -61,8 +61,12 @@ const [formData, setFormData] = useState<VoluntarioFormData>({
     email: '',
     telefone: '',
     morada: '',
+    localidade: '',
+    codigo_postal: '',
+    distrito: '',
     nif: '',
     data_nascimento: '',
+    data_ingresso: new Date().toISOString().split('T')[0],
     profissao: '',
     observacoes: ''
   });
@@ -191,11 +195,14 @@ display_name: nickname || getDisplayNameFromFullName(nome), // REGRA: nickname o
         email: formData.email.trim().toLowerCase(),
         telefone: formData.telefone.trim(),
         morada: formData.morada.trim() || null,
+        localidade: formData.localidade.trim() || null,
+        codigo_postal: formData.codigo_postal.trim() || null,
+        distrito: formData.distrito.trim() || null,
         nif: formData.nif.trim() || null,
         data_nascimento: formData.data_nascimento || null,
+        data_ingresso: formData.data_ingresso || new Date().toISOString().split('T')[0],
         profissao: formData.profissao.trim() || null,
         observacoes: formData.observacoes.trim() || null,
-        data_ingresso: new Date().toISOString().split('T')[0],
         tem_formacao: false, // Novo voluntário sem formação inicial
         ativo: true
       };
@@ -316,7 +323,7 @@ setFormData({
                   {errors.nome && (
                     <p className="text-sm text-red-600">{errors.nome}</p>
                   )}
-</div>
+                </div>
 
                 {/* Nickname */}
                 <div className="space-y-2">
@@ -327,7 +334,7 @@ setFormData({
                     onChange={(e) => handleInputChange('nickname', e.target.value)}
                     placeholder="Como gosta de ser chamado (opcional)"
                   />
-<p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500">
                     💡 <strong>Display Name:</strong> Se preenchido, este será o nome exibido. Caso contrário, usará "Primeiro Último"
                   </p>
                 </div>
@@ -385,6 +392,20 @@ setFormData({
                   />
                 </div>
 
+                {/* Data de Ingresso */}
+                <div className="space-y-2">
+                  <Label htmlFor="data_ingresso">Data de Ingresso</Label>
+                  <Input
+                    id="data_ingresso"
+                    type="date"
+                    value={formData.data_ingresso}
+                    onChange={(e) => handleInputChange('data_ingresso', e.target.value)}
+                  />
+                  <p className="text-xs text-gray-500">
+                    Data em que o voluntário ingressou na associação
+                  </p>
+                </div>
+
                 {/* Profissão */}
                 <div className="space-y-2">
                   <Label htmlFor="profissao">Profissão</Label>
@@ -404,8 +425,41 @@ setFormData({
                   id="morada"
                   value={formData.morada}
                   onChange={(e) => handleInputChange('morada', e.target.value)}
-                  placeholder="Rua, número, código postal, cidade"
+                  placeholder="Rua e número"
                 />
+              </div>
+
+              {/* Campos de Localização */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="localidade">Localidade</Label>
+                  <Input
+                    id="localidade"
+                    value={formData.localidade}
+                    onChange={(e) => handleInputChange('localidade', e.target.value)}
+                    placeholder="Ex: Lisboa"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="codigo_postal">Código Postal</Label>
+                  <Input
+                    id="codigo_postal"
+                    value={formData.codigo_postal}
+                    onChange={(e) => handleInputChange('codigo_postal', e.target.value)}
+                    placeholder="Ex: 1000-001"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="distrito">Distrito</Label>
+                  <Input
+                    id="distrito"
+                    value={formData.distrito}
+                    onChange={(e) => handleInputChange('distrito', e.target.value)}
+                    placeholder="Ex: Lisboa"
+                  />
+                </div>
               </div>
 
               {/* Observações */}

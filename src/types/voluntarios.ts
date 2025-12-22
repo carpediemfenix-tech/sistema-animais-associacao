@@ -15,9 +15,12 @@ export interface VoluntarioValentao {
   telefone?: string;
   nif?: string;
   data_nascimento?: string;
+  data_ingresso: string; // Data de entrada na associação
   profissao?: string;
   morada?: string;
-  data_ingresso: string; // Data de entrada na associação
+  localidade?: string;
+  codigo_postal?: string;
+  distrito?: string;
   especialidade?: string;
   observacoes?: string;
   ativo: boolean;
@@ -43,8 +46,12 @@ export interface VoluntarioFormData {
   telefone: string;
   nif: string;
   data_nascimento: string;
+  data_ingresso: string;
   profissao: string;
   morada: string;
+  localidade: string;
+  codigo_postal: string;
+  distrito: string;
   especialidade: string;
   observacoes: string;
 }
