@@ -269,11 +269,16 @@ interface FormacaoFrequentada {
 
 interface MissaoParticipada {
   id: string;
-  data_missao: string;
-  tipo_missao: string;
-  descricao: string;
-  status: string;
-  resultado?: string;
+  missao_id: string;
+  codigo_missao: string;
+  titulo_missao: string;
+  data_inicio: string;
+  data_fim: string;
+  status_missao: string;
+  funcao: string;
+  data_participacao: string;
+  horas_dedicadas: number;
+  status_participacao: string;
 }
 
 interface MaterialFardamento {
@@ -303,6 +308,52 @@ const VoluntarioProfile = () => {
       loadVoluntarioCompleto();
     }
   }, [id]);
+
+  const loadMissoesParticipadas = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('participacoes_missoes_2025_12_21_20_00')
+        .select(`
+          id,
+          funcao,
+          data_participacao,
+          horas_dedicadas,
+          status_participacao,
+          missao:missoes_2025_12_21_19_00(
+            id,
+            codigo,
+            titulo,
+            data_inicio,
+            data_fim,
+            status
+          )
+        `)
+        .eq('voluntario_id', id)
+        .order('data_participacao', { ascending: false });
+
+      if (error) throw error;
+
+      // Transformar os dados para o formato esperado
+      const missoesFormatadas = (data || []).map(participacao => ({
+        id: participacao.id,
+        missao_id: participacao.missao?.id || '',
+        codigo_missao: participacao.missao?.codigo || '',
+        titulo_missao: participacao.missao?.titulo || '',
+        data_inicio: participacao.missao?.data_inicio || '',
+        data_fim: participacao.missao?.data_fim || '',
+        status_missao: participacao.missao?.status || '',
+        funcao: participacao.funcao,
+        data_participacao: participacao.data_participacao,
+        horas_dedicadas: participacao.horas_dedicadas || 0,
+        status_participacao: participacao.status_participacao
+      }));
+
+      setMissoesParticipadas(missoesFormatadas);
+    } catch (error) {
+      console.error('Erro ao carregar missões participadas:', error);
+      setMissoesParticipadas([]);
+    }
+  };
 
   const loadVoluntarioCompleto = async () => {
     try {
@@ -488,25 +539,8 @@ const VoluntarioProfile = () => {
         setFormacoesFrequentadas([]);
       }
 
-      // Carregar missões participadas (dados fictícios)
-      setMissoesParticipadas([
-        {
-          id: '1',
-          data_missao: '2024-02-10',
-          tipo_missao: 'Resgate',
-          descricao: 'Resgate de cão abandonado na A1',
-          status: 'concluida',
-          resultado: 'Animal resgatado com sucesso'
-        },
-        {
-          id: '2',
-          data_missao: '2024-03-05',
-          tipo_missao: 'Transporte',
-          descricao: 'Transporte para consulta veterinária',
-          status: 'concluida',
-          resultado: 'Transporte realizado sem intercorrências'
-        }
-      ]);
+      // Carregar missões participadas
+      await loadMissoesParticipadas();
 
       // Carregar material e fardamento (dados fictícios)
       setMaterialFardamento([
@@ -980,27 +1014,67 @@ const VoluntarioProfile = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {missoesParticipadas.map((missao) => (
-                    <div key={missao.id} className="border rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-semibold">{missao.tipo_missao}</h4>
-                        <Badge variant={missao.status === 'concluida' ? 'default' : 'secondary'}>
-                          {missao.status === 'concluida' ? 'Concluída' : 'Em Andamento'}
-                        </Badge>
+                {missoesParticipadas.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Target className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      Nenhuma missão participada
+                    </h3>
+                    <p className="text-gray-600">
+                      Este voluntário ainda não participou em nenhuma missão.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {missoesParticipadas.map((missao) => (
+                    <div key={missao.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center space-x-2">
+                          <h4 className="font-semibold text-lg">{missao.codigo_missao}</h4>
+                          <Badge variant="outline" className="text-xs">
+                            {missao.funcao}
+                          </Badge>
+                        </div>
+                        <div className="flex space-x-2">
+                          <Badge variant={missao.status_missao === 'concluida' ? 'default' : 'secondary'}>
+                            {missao.status_missao === 'concluida' ? 'Concluída' : 
+                             missao.status_missao === 'ativa' ? 'Ativa' : 
+                             missao.status_missao === 'planeada' ? 'Planeada' : missao.status_missao}
+                          </Badge>
+                          <Badge variant={missao.status_participacao === 'ativa' ? 'default' : 'secondary'}>
+                            {missao.status_participacao === 'ativa' ? 'Participação Ativa' : 
+                             missao.status_participacao === 'concluida' ? 'Participação Concluída' : missao.status_participacao}
+                          </Badge>
+                        </div>
                       </div>
-                      <p className="text-sm text-gray-700 mb-2">{missao.descricao}</p>
-                      <div className="text-sm text-gray-600 mb-2">
-                        <span className="font-medium">Data:</span> {new Date(missao.data_missao).toLocaleDateString('pt-PT')}
+                      <h5 className="font-medium text-gray-900 mb-2">{missao.titulo_missao}</h5>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
+                        <div>
+                          <span className="font-medium">Data de Início:</span> {new Date(missao.data_inicio).toLocaleDateString('pt-PT')}
+                        </div>
+                        <div>
+                          <span className="font-medium">Data de Fim:</span> {new Date(missao.data_fim).toLocaleDateString('pt-PT')}
+                        </div>
+                        <div>
+                          <span className="font-medium">Participação:</span> {new Date(missao.data_participacao).toLocaleDateString('pt-PT')}
+                        </div>
+                        <div>
+                          <span className="font-medium">Horas Dedicadas:</span> {missao.horas_dedicadas}h
+                        </div>
                       </div>
-                      {missao.resultado && (
-                        <p className="text-sm text-green-700 bg-green-50 p-2 rounded">
-                          <span className="font-medium">Resultado:</span> {missao.resultado}
-                        </p>
-                      )}
+                      <div className="mt-3 pt-3 border-t flex justify-end">
+                        <Link 
+                          to={`/missao/${missao.missao_id}`}
+                          className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center"
+                        >
+                          Ver Detalhes da Missão
+                          <ArrowLeft className="h-3 w-3 ml-1 rotate-180" />
+                        </Link>
+                      </div>
                     </div>
                   ))}
-                </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
