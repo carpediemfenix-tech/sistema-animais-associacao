@@ -149,7 +149,7 @@ const Dashboard: React.FC = () => {
         backTo="/"
       />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6">
         
         {/* Botão de Atualizar */}
         <div className="flex justify-end">
@@ -157,73 +157,85 @@ const Dashboard: React.FC = () => {
             onClick={loadDashboardData}
             variant="outline"
             size="sm"
-            className="flex items-center space-x-2"
+            className="flex items-center space-x-1 sm:space-x-2 px-3 sm:px-4"
           >
             <RefreshCw className="h-4 w-4" />
-            <span>Atualizar Dados</span>
+            <span className="text-xs sm:text-sm">Atualizar</span>
           </Button>
         </div>
 
         {/* KPIs Principais */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
           <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
               <CardTitle className="text-sm font-medium">Total de Animais</CardTitle>
               <Heart className="h-4 w-4" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats?.totalAnimais || 0}</div>
-              <p className="text-xs text-blue-100">
+            <CardContent className="p-3 sm:p-6">
+              <div className="text-xl sm:text-2xl font-bold">{stats?.totalAnimais || 0}</div>
+              <p className="text-xs text-blue-100 hidden sm:block">
                 Animais registrados na associação
+              </p>
+              <p className="text-xs text-blue-100 sm:hidden">
+                Animais registrados
               </p>
             </CardContent>
           </Card>
 
           <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
               <CardTitle className="text-sm font-medium">Intervenções Médicas</CardTitle>
               <Stethoscope className="h-4 w-4" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats?.totalIntervencoes || 0}</div>
-              <p className="text-xs text-green-100">
+            <CardContent className="p-3 sm:p-6">
+              <div className="text-xl sm:text-2xl font-bold">{stats?.totalIntervencoes || 0}</div>
+              <p className="text-xs text-green-100 hidden sm:block">
                 Intervenções realizadas
+              </p>
+              <p className="text-xs text-green-100 sm:hidden">
+                Intervenções
               </p>
             </CardContent>
           </Card>
 
           <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
               <CardTitle className="text-sm font-medium">Voluntários</CardTitle>
               <Users className="h-4 w-4" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats?.totalVoluntarios || 0}</div>
-              <p className="text-xs text-purple-100">
+            <CardContent className="p-3 sm:p-6">
+              <div className="text-xl sm:text-2xl font-bold">{stats?.totalVoluntarios || 0}</div>
+              <p className="text-xs text-purple-100 hidden sm:block">
                 Voluntários registrados
+              </p>
+              <p className="text-xs text-purple-100 sm:hidden">
+                Voluntários
               </p>
             </CardContent>
           </Card>
 
           <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
               <CardTitle className="text-sm font-medium">Custo Total</CardTitle>
               <DollarSign className="h-4 w-4" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(custoTotalAssociacao)}</div>
-              <p className="text-xs text-orange-100">
+            <CardContent className="p-3 sm:p-6">
+              <div className="text-lg sm:text-2xl font-bold">{formatCurrency(custoTotalAssociacao)}</div>
+              <p className="text-xs text-orange-100 hidden sm:block">
                 Custos acumulados
+              </p>
+              <p className="text-xs text-orange-100 sm:hidden">
+                Custos
               </p>
             </CardContent>
           </Card>
         </div>
 
         {/* Estatísticas Detalhadas */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           {/* Atividades por Categoria */}
           <Card>
-            <CardHeader>
+            <CardHeader className="p-3 sm:p-6">
               <CardTitle className="flex items-center space-x-2">
                 <BarChart3 className="h-5 w-5 text-blue-600" />
                 <span>Atividades por Categoria</span>
@@ -232,8 +244,8 @@ const Dashboard: React.FC = () => {
                 Distribuição das atividades da associação
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
+            <CardContent className="p-3 sm:p-6">
+              <div className="space-y-3 sm:space-y-4">
                 <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
                   <div className="flex items-center space-x-3">
                     <Calendar className="h-5 w-5 text-green-600" />
@@ -424,7 +436,7 @@ const Dashboard: React.FC = () => {
 
         {/* Links Rápidos */}
         <Card>
-          <CardHeader>
+          <CardHeader className="p-3 sm:p-6">
             <CardTitle className="flex items-center space-x-2">
               <Target className="h-5 w-5 text-gray-700" />
               <span>Acesso Rápido</span>
@@ -433,33 +445,33 @@ const Dashboard: React.FC = () => {
               Links diretos para as principais funcionalidades
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <CardContent className="p-3 sm:p-6">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               <Link to="/animais">
-                <Button variant="outline" className="w-full h-16 flex flex-col items-center justify-center space-y-1">
-                  <Heart className="h-5 w-5 text-blue-600" />
-                  <span className="text-sm">Ver Animais</span>
+                <Button variant="outline" className="w-full h-14 sm:h-16 flex flex-col items-center justify-center space-y-1">
+                  <Heart className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
+                  <span className="text-xs sm:text-sm">Ver Animais</span>
                 </Button>
               </Link>
               
               <Link to="/dashboard-financeiro">
-                <Button variant="outline" className="w-full h-16 flex flex-col items-center justify-center space-y-1">
-                  <DollarSign className="h-5 w-5 text-green-600" />
-                  <span className="text-sm">Dashboard Financeiro</span>
+                <Button variant="outline" className="w-full h-14 sm:h-16 flex flex-col items-center justify-center space-y-1">
+                  <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
+                  <span className="text-xs sm:text-sm">Financeiro</span>
                 </Button>
               </Link>
               
               <Link to="/voluntarios">
-                <Button variant="outline" className="w-full h-16 flex flex-col items-center justify-center space-y-1">
-                  <Users className="h-5 w-5 text-purple-600" />
-                  <span className="text-sm">Voluntários</span>
+                <Button variant="outline" className="w-full h-14 sm:h-16 flex flex-col items-center justify-center space-y-1">
+                  <Users className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
+                  <span className="text-xs sm:text-sm">Voluntários</span>
                 </Button>
               </Link>
               
               <Link to="/administracao">
-                <Button variant="outline" className="w-full h-16 flex flex-col items-center justify-center space-y-1">
-                  <Target className="h-5 w-5 text-orange-600" />
-                  <span className="text-sm">Administração</span>
+                <Button variant="outline" className="w-full h-14 sm:h-16 flex flex-col items-center justify-center space-y-1">
+                  <Target className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600" />
+                  <span className="text-xs sm:text-sm">Admin</span>
                 </Button>
               </Link>
             </div>
