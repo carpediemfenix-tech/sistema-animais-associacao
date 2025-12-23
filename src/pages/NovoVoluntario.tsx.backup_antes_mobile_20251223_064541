@@ -272,58 +272,53 @@ setFormData({
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <EnhancedHeader />
-      <div className="px-2 sm:px-4 py-4 sm:py-6 flex-1">
-      <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
+      <div className="p-4 flex-1">
+      <div className="max-w-4xl mx-auto space-y-6">
         
         {/* Cabeçalho */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-            <Link to="/voluntarios/gestao" className="w-full sm:w-auto">
-              <Button variant="outline" size="sm" className="w-full sm:w-auto">
-                <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
-                <span className="hidden sm:inline">Voltar</span>
-                <span className="sm:hidden">Voltar</span>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Link to="/voluntarios/gestao">
+              <Button variant="outline" size="sm">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Voltar
               </Button>
             </Link>
-            <div className="flex-1">
-              <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 flex items-center gap-2">
-                <Plus className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
-                <span className="hidden sm:inline">Registar Novo Voluntário</span>
-                <span className="sm:hidden">Novo Voluntário</span>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                <Plus className="h-6 w-6 text-blue-600" />
+                Registar Novo Voluntário
               </h1>
-              <p className="text-sm sm:text-base text-gray-600 mt-1">
-                <span className="hidden sm:inline">Adicionar um novo voluntário ao sistema Valentão</span>
-                <span className="sm:hidden">Adicionar novo voluntário</span>
+              <p className="text-gray-600">
+                Adicionar um novo voluntário ao sistema Valentão
               </p>
             </div>
           </div>
         </div>
 
         {/* Formulário */}
-        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <Card>
-            <CardHeader className="p-3 sm:p-6">
-              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                <User className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
-                <span className="hidden sm:inline">Informações Pessoais</span>
-                <span className="sm:hidden">Dados Pessoais</span>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5 text-blue-600" />
+                Informações Pessoais
               </CardTitle>
-              <CardDescription className="text-sm">
-                <span className="hidden sm:inline">Dados básicos do voluntário</span>
-                <span className="sm:hidden">Dados básicos</span>
+              <CardDescription>
+                Dados básicos do voluntário
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-6">
-              <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
                 {/* Nome */}
                 <div className="space-y-2">
-                  <Label htmlFor="nome" className="text-sm font-medium">Nome Completo *</Label>
+                  <Label htmlFor="nome">Nome Completo *</Label>
                   <Input
                     id="nome"
                     value={formData.nome}
                     onChange={(e) => handleInputChange('nome', e.target.value)}
-placeholder="Nome completo do voluntário"
-                    className={`text-sm ${errors.nome ? 'border-red-500' : ''}`}
+                    placeholder="Nome completo do voluntário"
+                    className={errors.nome ? 'border-red-500' : ''}
                   />
                   {errors.nome && (
                     <p className="text-sm text-red-600">{errors.nome}</p>
@@ -332,33 +327,28 @@ placeholder="Nome completo do voluntário"
 
                 {/* Nickname */}
                 <div className="space-y-2">
-                  <Label htmlFor="nickname" className="text-sm font-medium">
-                    <span className="hidden sm:inline">Nickname/Apelido</span>
-                    <span className="sm:hidden">Apelido</span>
-                  </Label>
+                  <Label htmlFor="nickname">Nickname/Apelido</Label>
                   <Input
                     id="nickname"
                     value={formData.nickname}
                     onChange={(e) => handleInputChange('nickname', e.target.value)}
                     placeholder="Como gosta de ser chamado (opcional)"
-                    className="text-sm"
                   />
                   <p className="text-xs text-gray-500">
-                    <span className="hidden sm:inline">💡 <strong>Display Name:</strong> Se preenchido, este será o nome exibido. Caso contrário, usará "Primeiro Último"</span>
-                    <span className="sm:hidden">💡 Nome de exibição</span>
+                    💡 <strong>Display Name:</strong> Se preenchido, este será o nome exibido. Caso contrário, usará "Primeiro Último"
                   </p>
                 </div>
 
                 {/* Email */}
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-sm font-medium">Email *</Label>
+                  <Label htmlFor="email">Email *</Label>
                   <Input
                     id="email"
                     type="email"
                     value={formData.email}
                     onChange={(e) => handleInputChange('email', e.target.value)}
                     placeholder="email@exemplo.com"
-                    className={`text-sm ${errors.email ? 'border-red-500' : ''}`}
+                    className={errors.email ? 'border-red-500' : ''}
                   />
                   {errors.email && (
                     <p className="text-sm text-red-600">{errors.email}</p>
@@ -367,7 +357,7 @@ placeholder="Nome completo do voluntário"
 
                 {/* Telefone */}
                 <div className="space-y-2">
-                  <Label htmlFor="telefone" className="text-sm font-medium">Telefone *</Label>
+                  <Label htmlFor="telefone">Telefone *</Label>
                   <Input
                     id="telefone"
                     value={formData.telefone}
@@ -533,40 +523,36 @@ placeholder="Nome completo do voluntário"
           </Card>
 
           {/* Botões de Ação */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
+          <div className="flex items-center justify-between">
             <Button
               type="button"
               variant="outline"
               onClick={resetForm}
               disabled={submitting}
-              className="w-full sm:w-auto"
             >
-              <span className="hidden sm:inline">Limpar Formulário</span>
-              <span className="sm:hidden">Limpar</span>
+              Limpar Formulário
             </Button>
             
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-              <Link to="/voluntarios/gestao" className="w-full sm:w-auto">
-                <Button variant="ghost" disabled={submitting} className="w-full sm:w-auto">
+            <div className="flex items-center gap-3">
+              <Link to="/voluntarios/gestao">
+                <Button variant="ghost" disabled={submitting}>
                   Cancelar
                 </Button>
               </Link>
               <Button
                 type="submit"
                 disabled={submitting}
-                className="min-w-[120px] w-full sm:w-auto"
+                className="min-w-[120px]"
               >
                 {submitting ? (
                   <>
-                    <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 mr-2 animate-spin" />
-                    <span className="hidden sm:inline">Registando...</span>
-                    <span className="sm:hidden">A registar...</span>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Registando...
                   </>
                 ) : (
                   <>
-                    <Save className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
-                    <span className="hidden sm:inline">Registar Voluntário</span>
-                    <span className="sm:hidden">Registar</span>
+                    <Save className="h-4 w-4 mr-2" />
+                    Registar Voluntário
                   </>
                 )}
               </Button>

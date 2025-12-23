@@ -335,34 +335,30 @@ const GestaoVoluntarios = () => {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <EnhancedHeader />
       
-      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         
         {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <div>
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 flex items-center">
-              <Users className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 mr-2 sm:mr-3 text-blue-600" />
-              <span className="hidden sm:inline">Gestão de Voluntários</span>
-              <span className="sm:hidden">Voluntários</span>
+            <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+              <Users className="h-8 w-8 mr-3 text-blue-600" />
+              Gestão de Voluntários
             </h1>
-            <p className="text-sm sm:text-base text-gray-600 mt-1">
-              <span className="hidden sm:inline">Gerir voluntários do sistema Valentão</span>
-              <span className="sm:hidden">Gerir voluntários</span>
+            <p className="text-gray-600 mt-1">
+              Gerir voluntários do sistema Valentão
             </p>
           </div>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
-            <Link to="/voluntarios" className="w-full sm:w-auto">
-              <Button variant="outline" size="sm" className="w-full sm:w-auto">
-                <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
-                <span className="hidden sm:inline">Dashboard Voluntários</span>
-                <span className="sm:hidden">Dashboard</span>
+          <div className="flex items-center space-x-3">
+            <Link to="/voluntarios">
+              <Button variant="outline">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Dashboard Voluntários
               </Button>
             </Link>
-            <Link to="/voluntarios/novo" className="w-full sm:w-auto">
-              <Button className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto" size="sm">
-                <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
-                <span className="hidden sm:inline">Novo Voluntário</span>
-                <span className="sm:hidden">Novo</span>
+            <Link to="/voluntarios/novo">
+              <Button className="bg-blue-600 hover:bg-blue-700">
+                <Plus className="h-4 w-4 mr-2" />
+                Novo Voluntário
               </Button>
             </Link>
           {/* Modal removido - agora usa página dedicada */}
@@ -370,19 +366,16 @@ const GestaoVoluntarios = () => {
         </div>
 
         {/* Filtros */}
-        <Card className="mb-4 sm:mb-6">
-          <CardHeader className="p-3 sm:p-6">
-            <CardTitle className="text-base sm:text-lg flex items-center">
-              <Filter className="h-4 w-4 mr-2" />
-              Filtros
-            </CardTitle>
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="text-lg">Filtros</CardTitle>
           </CardHeader>
-          <CardContent className="p-3 sm:p-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               
               {/* Pesquisa */}
               <div>
-                <Label htmlFor="search" className="text-sm font-medium">Pesquisar</Label>
+                <Label htmlFor="search">Pesquisar</Label>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
@@ -390,14 +383,14 @@ const GestaoVoluntarios = () => {
                     placeholder="Nome ou email..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 text-sm"
+                    className="pl-10"
                   />
                 </div>
               </div>
 
               {/* Status */}
               <div>
-                <Label htmlFor="status" className="text-sm font-medium">Status</Label>
+                <Label htmlFor="status">Status</Label>
                 <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
                   <SelectTrigger>
                     <SelectValue />
@@ -412,10 +405,7 @@ const GestaoVoluntarios = () => {
 
               {/* Nível de Formação */}
               <div>
-                <Label htmlFor="nivel" className="text-sm font-medium">
-                  <span className="hidden sm:inline">Nível de Formação</span>
-                  <span className="sm:hidden">Nível</span>
-                </Label>
+                <Label htmlFor="nivel">Nível de Formação</Label>
                 <Select value={nivelFilter} onValueChange={setNivelFilter}>
                   <SelectTrigger>
                     <SelectValue />
@@ -541,9 +531,7 @@ const GestaoVoluntarios = () => {
                 )}
               </div>
             ) : (
-              <>
-                {/* Desktop: Tabela */}
-                <div className="hidden lg:block overflow-x-auto">
+              <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -682,95 +670,6 @@ const GestaoVoluntarios = () => {
                   </TableBody>
                 </Table>
               </div>
-              
-              {/* Mobile: Cards */}
-              <div className="lg:hidden space-y-4">
-                {voluntariosFiltrados.map((voluntario) => (
-                  <Card key={voluntario.id} className="p-4">
-                    <div className="flex flex-col space-y-3">
-                      {/* Header do Card */}
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-lg truncate">{voluntario.nome}</h3>
-                          <div className="flex items-center space-x-2 mt-1">
-                            {voluntario.ativo ? (
-                              <Badge className="bg-green-100 text-green-800 text-xs">
-                                <CheckCircle className="h-3 w-3 mr-1" />
-                                Ativo
-                              </Badge>
-                            ) : (
-                              <Badge className="bg-red-100 text-red-800 text-xs">
-                                <UserX className="h-3 w-3 mr-1" />
-                                Inativo
-                              </Badge>
-                            )}
-                            <Badge variant="outline" className="text-xs">
-                              {voluntario.ultima_formacao}
-                            </Badge>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Informações */}
-                      <div className="space-y-2 text-sm">
-                        <div className="flex items-center space-x-2">
-                          <Mail className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                          <span className="truncate">{voluntario.email}</span>
-                        </div>
-                        
-                        {voluntario.telefone && (
-                          <div className="flex items-center space-x-2">
-                            <Phone className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                            <span>{voluntario.telefone}</span>
-                          </div>
-                        )}
-                        
-                        <div className="flex items-center space-x-2">
-                          <Calendar className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                          <span>{new Date(voluntario.data_ingresso).toLocaleDateString('pt-PT')}</span>
-                        </div>
-                      </div>
-                      
-                      {/* Ações */}
-                      <div className="flex flex-wrap gap-2 pt-2 border-t">
-                        <Link to={`/voluntarios/perfil/${voluntario.id}`} className="flex-1">
-                          <Button variant="outline" size="sm" className="w-full">
-                            <Eye className="h-3 w-3 mr-2" />
-                            Ver Perfil
-                          </Button>
-                        </Link>
-                        
-                        <Link to={`/voluntarios/editar/${voluntario.id}`} className="flex-1">
-                          <Button variant="outline" size="sm" className="w-full">
-                            <Edit className="h-3 w-3 mr-2" />
-                            Editar
-                          </Button>
-                        </Link>
-                        
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1"
-                          onClick={() => handleToggleStatus(voluntario)}
-                        >
-                          {voluntario.ativo ? (
-                            <>
-                              <UserX className="h-3 w-3 mr-2" />
-                              Desativar
-                            </>
-                          ) : (
-                            <>
-                              <UserCheck className="h-3 w-3 mr-2" />
-                              Ativar
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-              </>
             )}
           </CardContent>
         </Card>
