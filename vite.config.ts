@@ -22,6 +22,21 @@ export default defineConfig(({ mode }) => {
         "react-router-dom-original": "react-router-dom",
       },
     },
+    build: {
+      // Configuração otimizada para SPA
+      rollupOptions: {
+        output: {
+          manualChunks: undefined,
+        },
+      },
+      // Garantir que assets são servidos corretamente
+      assetsDir: 'assets',
+    },
+    // Configuração para desenvolvimento local
+    preview: {
+      port: 8080,
+      host: true,
+    },
     define: {
       __ROUTE_MESSAGING_ENABLED__: JSON.stringify(
         mode === 'production' 
