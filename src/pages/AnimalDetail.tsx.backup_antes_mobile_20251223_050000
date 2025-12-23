@@ -217,26 +217,24 @@ const AnimalDetail = () => {
 
       {/* Navegação Adicional */}
       <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-2 sm:py-3">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-3 sm:space-y-0">
-            <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
               <Link to="/">
-                <Button variant="outline" size="sm" className="h-8 sm:h-9">
-                  <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                  <span className="hidden sm:inline">Dashboard</span>
-                  <span className="sm:hidden">Home</span>
+                <Button variant="outline" size="sm">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Dashboard
                 </Button>
               </Link>
               <Link to="/animais">
-                <Button variant="outline" size="sm" className="h-8 sm:h-9">
-                  <PawPrint className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                  <span className="hidden sm:inline">Lista de Animais</span>
-                  <span className="sm:hidden">Lista</span>
+                <Button variant="outline" size="sm">
+                  <PawPrint className="h-4 w-4 mr-2" />
+                  Lista de Animais
                 </Button>
               </Link>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge className={`text-xs sm:text-sm px-2 sm:px-3 py-1 ${
+            <div className="flex items-center space-x-2">
+              <Badge className={`${
                 animal.estado === 'disponivel' ? 'bg-green-600' :
                 animal.estado === 'adotado' ? 'bg-blue-600' :
                 animal.estado === 'tratamento' ? 'bg-yellow-600' :
@@ -249,22 +247,19 @@ const AnimalDetail = () => {
               {hasPermission('admin') && (
                 <>
                   <Link to={`/animal/${id}/editar`}>
-                    <Button variant="outline" size="sm" className="h-8 sm:h-9">
-                      <Edit className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                      <span className="hidden sm:inline">Editar</span>
-                      <span className="sm:hidden">Edit</span>
+                    <Button variant="outline" size="sm">
+                      <Edit className="h-4 w-4 mr-2" />
+                      Editar
                     </Button>
                   </Link>
                   
                   <Button 
                     variant="destructive" 
                     size="sm"
-                    className="h-8 sm:h-9"
                     onClick={handleArquivar}
                   >
-                    <Archive className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                    <span className="hidden sm:inline">Arquivar</span>
-                    <span className="sm:hidden">Arq</span>
+                    <Archive className="h-4 w-4 mr-2" />
+                    Arquivar
                   </Button>
                 </>
               )}
@@ -273,28 +268,28 @@ const AnimalDetail = () => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         
         {/* Informações Básicas do Animal */}
         <Card className="border-orange-200 bg-gradient-to-br from-orange-50 to-red-50">
-<CardHeader className="p-3 sm:p-6">
+<CardHeader>
             <div className="text-center mb-4">
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-orange-900 mb-2 break-words">
-                <span className="block sm:inline">{animal.nome}</span>
-                <span className="text-orange-600 mx-1 sm:mx-3 hidden sm:inline">-</span>
-                <span className="block sm:inline text-orange-700">{animal.especie}</span>
+              <h1 className="text-4xl font-bold text-orange-900 mb-2">
+                {animal.nome}
+                <span className="text-orange-600 mx-3">-</span>
+                <span className="text-orange-700">{animal.especie}</span>
               </h1>
               <div className="flex items-center justify-center text-orange-600">
-                <PawPrint className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
-                <span className="text-sm sm:text-lg font-medium">Informações Básicas</span>
+                <PawPrint className="h-5 w-5 mr-2" />
+                <span className="text-lg font-medium">Informações Básicas</span>
               </div>
             </div>
           </CardHeader>
-          <CardContent className="p-3 sm:p-6">
+          <CardContent>
             {/* Estado e Localização em Grande Destaque */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
               {/* Estado do Animal */}
-              <div className="relative overflow-hidden rounded-xl p-4 sm:p-6 bg-gradient-to-br from-blue-500 to-blue-700 text-white shadow-lg">
+              <div className="relative overflow-hidden rounded-xl p-6 bg-gradient-to-br from-blue-500 to-blue-700 text-white shadow-lg">
                 <div className="relative z-10">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="text-sm font-medium opacity-90">Estado Atual</h3>
@@ -339,13 +334,13 @@ const AnimalDetail = () => {
               </div>
 
               {/* Localização Atual */}
-              <div className="relative overflow-hidden rounded-xl p-4 sm:p-6 bg-gradient-to-br from-emerald-500 to-emerald-700 text-white shadow-lg">
+              <div className="relative overflow-hidden rounded-xl p-6 bg-gradient-to-br from-emerald-500 to-emerald-700 text-white shadow-lg">
                 <div className="relative z-10">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="text-sm font-medium opacity-90">Localização Atual</h3>
                     <MapPin className="w-5 h-5 opacity-75" />
                   </div>
-                  <div className="text-lg sm:text-2xl font-bold mb-1 text-emerald-100 break-words">
+                  <div className="text-2xl font-bold mb-1 text-emerald-100">
                     {localizacaoAtual?.localizacao?.nome || 'Não definida'}
                   </div>
                   <div className="text-sm opacity-75">
@@ -367,127 +362,122 @@ const AnimalDetail = () => {
             </div>
 
             {/* Informações Secundárias em Destaque */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6 p-3 sm:p-4 bg-gradient-to-r from-orange-50 to-red-50 rounded-lg border border-orange-200">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 p-4 bg-gradient-to-r from-orange-50 to-red-50 rounded-lg border border-orange-200">
               <div>
                 <label className="text-orange-700 font-semibold flex items-center">
                   <span className="mr-2">📋</span>
                   Número do Processo
                 </label>
-                <p className="text-sm sm:text-lg font-bold text-orange-900 mt-1 break-all">{animal.numero_processo || "N/A"}</p>
+                <p className="text-lg font-bold text-orange-900 mt-1">{animal.numero_processo || "N/A"}</p>
               </div>
               <div>
                 <label className="text-orange-700 font-semibold flex items-center">
                   <span className="mr-2">🏠</span>
                   Grupo
                 </label>
-                <p className="text-sm sm:text-lg font-bold text-orange-900 mt-1 break-words">{animal.grupos?.nome || "Sem grupo"}</p>
+                <p className="text-lg font-bold text-orange-900 mt-1">{animal.grupos?.nome || "Sem grupo"}</p>
               </div>
             </div>
 
             {/* Informações Detalhadas */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {/* Nome do Animal */}
-              <div className="bg-white p-3 sm:p-4 rounded-lg border-l-4 border-l-blue-500 shadow-sm">
+              <div className="bg-white p-4 rounded-lg border-l-4 border-l-blue-500 shadow-sm">
                 <label className="text-gray-600 text-sm font-medium flex items-center">
                   <PawPrint className="w-4 h-4 mr-2" />
                   Nome
                 </label>
-                <p className="text-gray-900 text-lg sm:text-xl font-bold mt-1 break-words">{animal.nome}</p>
+                <p className="text-gray-900 text-xl font-bold mt-1">{animal.nome}</p>
               </div>
 
               {/* Espécie */}
-              {/* Espécie */}
-              <div className="bg-white p-3 sm:p-4 rounded-lg border-l-4 border-l-green-500 shadow-sm">
+              <div className="bg-white p-4 rounded-lg border-l-4 border-l-green-500 shadow-sm">
                 <label className="text-gray-600 text-sm font-medium flex items-center">
                   <span className="mr-2">🐾</span>
                   Espécie
                 </label>
-                <p className="text-gray-900 text-sm sm:text-lg font-semibold mt-1 break-words">{animal.especie}</p>
+                <p className="text-gray-900 text-lg font-semibold mt-1">{animal.especie}</p>
               </div>
 
               {/* Sexo */}
-              <div className="bg-white p-3 sm:p-4 rounded-lg border-l-4 border-l-purple-500 shadow-sm">
+              <div className="bg-white p-4 rounded-lg border-l-4 border-l-purple-500 shadow-sm">
                 <label className="text-gray-600 text-sm font-medium flex items-center">
                   <span className="mr-2">{animal.sexo === 'Macho' ? '♂️' : animal.sexo === 'Fêmea' ? '♀️' : '⚪'}</span>
                   Sexo
                 </label>
-                <p className="text-gray-900 text-sm sm:text-lg font-semibold mt-1">{animal.sexo}</p>
+                <p className="text-gray-900 text-lg font-semibold mt-1">{animal.sexo}</p>
               </div>
 
               {/* Data de Entrada */}
-              <div className="bg-white p-3 sm:p-4 rounded-lg border-l-4 border-l-yellow-500 shadow-sm">
+              <div className="bg-white p-4 rounded-lg border-l-4 border-l-yellow-500 shadow-sm">
                 <label className="text-gray-600 text-sm font-medium flex items-center">
                   <Calendar className="w-4 h-4 mr-2" />
-                  <span className="hidden sm:inline">Data de Entrada</span>
-                  <span className="sm:hidden">Entrada</span>
+                  Data de Entrada
                 </label>
-                <p className="text-gray-900 text-sm sm:text-lg font-semibold mt-1">
+                <p className="text-gray-900 text-lg font-semibold mt-1">
                   {animal.data_entrada ? new Date(animal.data_entrada).toLocaleDateString('pt-PT') : 'N/A'}
                 </p>
               </div>
 
               {/* Idade Estimada */}
-              <div className="bg-white p-3 sm:p-4 rounded-lg border-l-4 border-l-indigo-500 shadow-sm">
+              <div className="bg-white p-4 rounded-lg border-l-4 border-l-indigo-500 shadow-sm">
                 <label className="text-gray-600 text-sm font-medium flex items-center">
                   <Clock className="w-4 h-4 mr-2" />
-                  <span className="hidden sm:inline">Idade Estimada</span>
-                  <span className="sm:hidden">Idade</span>
+                  Idade Estimada
                 </label>
-                <p className="text-gray-900 text-xs sm:text-lg font-semibold mt-1">
+                <p className="text-gray-900 text-lg font-semibold mt-1">
                   {animal.idade_estimada ? `${Math.floor(animal.idade_estimada / 12)} anos e ${animal.idade_estimada % 12} meses` : 'N/A'}
                 </p>
               </div>
 
               {/* Peso */}
-              <div className="bg-white p-3 sm:p-4 rounded-lg border-l-4 border-l-red-500 shadow-sm">
+              <div className="bg-white p-4 rounded-lg border-l-4 border-l-red-500 shadow-sm">
                 <label className="text-gray-600 text-sm font-medium flex items-center">
                   <span className="mr-2">⚖️</span>
                   Peso
                 </label>
-                <p className="text-gray-900 text-sm sm:text-lg font-semibold mt-1">{animal.peso ? `${animal.peso} kg` : 'N/A'}</p>
+                <p className="text-gray-900 text-lg font-semibold mt-1">{animal.peso ? `${animal.peso} kg` : 'N/A'}</p>
               </div>
 
               {/* Cor */}
-              <div className="bg-white p-3 sm:p-4 rounded-lg border-l-4 border-l-pink-500 shadow-sm">
+              <div className="bg-white p-4 rounded-lg border-l-4 border-l-pink-500 shadow-sm">
                 <label className="text-gray-600 text-sm font-medium flex items-center">
                   <span className="mr-2">🎨</span>
                   Cor
                 </label>
-                <p className="text-gray-900 text-sm sm:text-lg font-semibold mt-1 break-words">{animal.cor || 'N/A'}</p>
+                <p className="text-gray-900 text-lg font-semibold mt-1">{animal.cor || 'N/A'}</p>
               </div>
 
               {/* Transponder */}
-              <div className="bg-white p-3 sm:p-4 rounded-lg border-l-4 border-l-teal-500 shadow-sm">
+              <div className="bg-white p-4 rounded-lg border-l-4 border-l-teal-500 shadow-sm">
                 <label className="text-gray-600 text-sm font-medium flex items-center">
                   <span className="mr-2">📶</span>
-                  <span className="hidden sm:inline">Transponder</span>
-                  <span className="sm:hidden">Chip</span>
+                  Transponder
                 </label>
-                <p className="text-gray-900 text-xs sm:text-lg font-semibold mt-1 break-all">{animal.transponder || 'N/A'}</p>
+                <p className="text-gray-900 text-lg font-semibold mt-1">{animal.transponder || 'N/A'}</p>
               </div>
 
               {/* Voluntário Responsável */}
-              <div className="bg-white p-3 sm:p-4 rounded-lg border-l-4 border-l-orange-500 shadow-sm">
+              <div className="bg-white p-4 rounded-lg border-l-4 border-l-orange-500 shadow-sm">
                 <label className="text-gray-600 text-sm font-medium flex items-center">
                   <User className="w-4 h-4 mr-2" />
-                  <span className="hidden sm:inline">Voluntário Responsável</span>
-                  <span className="sm:hidden">Responsável</span>
+                  Voluntário Responsável
                 </label>
-                <p className="text-gray-900 text-sm sm:text-lg font-semibold mt-1 break-words">{animal.voluntario_responsavel_nome || 'Sem responsável'}</p>
+                <p className="text-gray-900 text-lg font-semibold mt-1">{animal.voluntario_responsavel_nome || 'Sem responsável'}</p>
               </div>
             </div>
             
             {animal.caracteristicas_fisicas && (
-              <div className="mt-4 sm:mt-6">
-                <label className="text-orange-700 font-medium text-sm sm:text-base">Características Físicas</label>
-                <p className="text-orange-900 mt-1 text-sm sm:text-base break-words">{animal.caracteristicas_fisicas}</p>
+              <div className="mt-4">
+                <label className="text-orange-700 font-medium">Características Físicas</label>
+                <p className="text-orange-900 mt-1">{animal.caracteristicas_fisicas}</p>
               </div>
             )}
             
             {animal.observacoes && (
-              <div className="mt-4 sm:mt-6">
-                <label className="text-orange-700 font-medium text-sm sm:text-base">Observações</label>
-                <p className="text-orange-900 mt-1 text-sm sm:text-base break-words">{animal.observacoes}</p>
+              <div className="mt-4">
+                <label className="text-orange-700 font-medium">Observações</label>
+                <p className="text-orange-900 mt-1">{animal.observacoes}</p>
               </div>
             )}
           </CardContent>
@@ -495,29 +485,28 @@ const AnimalDetail = () => {
 
         {/* Navegação para Funcionalidades */}
         <Card>
-          <CardHeader className="p-3 sm:p-6">
-            <CardTitle className="flex items-center text-lg sm:text-xl">
-              <PawPrint className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-blue-600" />
-              <span className="hidden sm:inline">Gestão do Animal</span>
-              <span className="sm:hidden">Gestão</span>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <PawPrint className="h-5 w-5 mr-2 text-blue-600" />
+              Gestão do Animal
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-3 sm:p-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               
               {/* Intervenções */}
               <Link to={`/animal/${id}/intervencoes`}>
                 <Card className="hover:shadow-lg transition-shadow cursor-pointer border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100">
-                  <CardContent className="p-3 sm:p-4">
-                    <div className="flex items-center space-x-2 sm:space-x-3">
-                      <div className="bg-blue-600 p-1.5 sm:p-2 rounded-full flex-shrink-0">
-                        <Stethoscope className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                  <CardContent className="p-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="bg-blue-600 p-2 rounded-full">
+                        <Stethoscope className="h-5 w-5 text-white" />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-blue-800 text-sm sm:text-base truncate">Intervenções</h3>
-                        <p className="text-xs sm:text-sm text-blue-600 truncate">Histórico médico e consultas</p>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-blue-800">Intervenções</h3>
+                        <p className="text-sm text-blue-600">Histórico médico e consultas</p>
                       </div>
-                      <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600 flex-shrink-0" />
+                      <ExternalLink className="h-4 w-4 text-blue-600" />
                     </div>
                   </CardContent>
                 </Card>
@@ -526,16 +515,16 @@ const AnimalDetail = () => {
               {/* Eventos */}
               <Link to={`/animal/${id}/eventos`}>
                 <Card className="hover:shadow-lg transition-shadow cursor-pointer border-green-200 bg-gradient-to-br from-green-50 to-green-100">
-                  <CardContent className="p-3 sm:p-4">
-                    <div className="flex items-center space-x-2 sm:space-x-3">
-                      <div className="bg-green-600 p-1.5 sm:p-2 rounded-full flex-shrink-0">
-                        <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                  <CardContent className="p-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="bg-green-600 p-2 rounded-full">
+                        <Calendar className="h-5 w-5 text-white" />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-green-800 text-sm sm:text-base truncate">Eventos</h3>
-                        <p className="text-xs sm:text-sm text-green-600 truncate">Timeline e marcos importantes</p>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-green-800">Eventos</h3>
+                        <p className="text-sm text-green-600">Timeline e marcos importantes</p>
                       </div>
-                      <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-green-600 flex-shrink-0" />
+                      <ExternalLink className="h-4 w-4 text-green-600" />
                     </div>
                   </CardContent>
                 </Card>
@@ -544,16 +533,16 @@ const AnimalDetail = () => {
               {/* Localizações */}
               <Link to={`/animal/${id}/localizacoes`}>
                 <Card className="hover:shadow-lg transition-shadow cursor-pointer border-purple-200 bg-gradient-to-br from-purple-50 to-purple-100">
-                  <CardContent className="p-3 sm:p-4">
-                    <div className="flex items-center space-x-2 sm:space-x-3">
-                      <div className="bg-purple-600 p-1.5 sm:p-2 rounded-full flex-shrink-0">
-                        <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                  <CardContent className="p-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="bg-purple-600 p-2 rounded-full">
+                        <MapPin className="h-5 w-5 text-white" />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-purple-800 text-sm sm:text-base truncate">Localizações</h3>
-                        <p className="text-xs sm:text-sm text-purple-600 truncate">Histórico de transferências</p>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-purple-800">Localizações</h3>
+                        <p className="text-sm text-purple-600">Histórico de transferências</p>
                       </div>
-                      <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-purple-600 flex-shrink-0" />
+                      <ExternalLink className="h-4 w-4 text-purple-600" />
                     </div>
                   </CardContent>
                 </Card>
@@ -562,16 +551,16 @@ const AnimalDetail = () => {
               {/* Responsabilidades */}
               <Link to={`/animal/${id}/responsabilidades`}>
                 <Card className="hover:shadow-lg transition-shadow cursor-pointer border-orange-200 bg-gradient-to-br from-orange-50 to-orange-100">
-                  <CardContent className="p-3 sm:p-4">
-                    <div className="flex items-center space-x-2 sm:space-x-3">
-                      <div className="bg-orange-600 p-1.5 sm:p-2 rounded-full flex-shrink-0">
-                        <Users className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                  <CardContent className="p-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="bg-orange-600 p-2 rounded-full">
+                        <Users className="h-5 w-5 text-white" />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-orange-800 text-sm sm:text-base truncate">Responsabilidades</h3>
-                        <p className="text-xs sm:text-sm text-orange-600 truncate">Atribuições e voluntários</p>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-orange-800">Responsabilidades</h3>
+                        <p className="text-sm text-orange-600">Atribuições e voluntários</p>
                       </div>
-                      <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-orange-600 flex-shrink-0" />
+                      <ExternalLink className="h-4 w-4 text-orange-600" />
                     </div>
                   </CardContent>
                 </Card>
@@ -580,16 +569,16 @@ const AnimalDetail = () => {
               {/* Financeiro */}
               <Link to={`/animal/${id}/financeiro`}>
                 <Card className="hover:shadow-lg transition-shadow cursor-pointer border-emerald-200 bg-gradient-to-br from-emerald-50 to-emerald-100">
-                  <CardContent className="p-3 sm:p-4">
-                    <div className="flex items-center space-x-2 sm:space-x-3">
-                      <div className="bg-emerald-600 p-1.5 sm:p-2 rounded-full flex-shrink-0">
-                        <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                  <CardContent className="p-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="bg-emerald-600 p-2 rounded-full">
+                        <DollarSign className="h-5 w-5 text-white" />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-emerald-800 text-sm sm:text-base truncate">Financeiro</h3>
-                        <p className="text-xs sm:text-sm text-emerald-600 truncate">Custos e investimentos</p>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-emerald-800">Financeiro</h3>
+                        <p className="text-sm text-emerald-600">Custos e investimentos</p>
                       </div>
-                      <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-emerald-600 flex-shrink-0" />
+                      <ExternalLink className="h-4 w-4 text-emerald-600" />
                     </div>
                   </CardContent>
                 </Card>
@@ -598,16 +587,16 @@ const AnimalDetail = () => {
               {/* Histórico de Nomes */}
               <Link to={`/animal/${id}/historico-nomes`}>
                 <Card className="hover:shadow-lg transition-shadow cursor-pointer border-indigo-200 bg-gradient-to-br from-indigo-50 to-indigo-100">
-                  <CardContent className="p-3 sm:p-4">
-                    <div className="flex items-center space-x-2 sm:space-x-3">
-                      <div className="bg-indigo-600 p-1.5 sm:p-2 rounded-full flex-shrink-0">
-                        <Edit className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                  <CardContent className="p-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="bg-indigo-600 p-2 rounded-full">
+                        <Edit className="h-5 w-5 text-white" />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-indigo-800 text-sm sm:text-base truncate">Histórico de Nomes</h3>
-                        <p className="text-xs sm:text-sm text-indigo-600 truncate">Alterações de nomes do animal</p>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-indigo-800">Histórico de Nomes</h3>
+                        <p className="text-sm text-indigo-600">Alterações de nomes do animal</p>
                       </div>
-                      <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-indigo-600 flex-shrink-0" />
+                      <ExternalLink className="h-4 w-4 text-indigo-600" />
                     </div>
                   </CardContent>
                 </Card>
@@ -616,22 +605,16 @@ const AnimalDetail = () => {
               {/* Intervenções das Autoridades */}
               <Link to={`/animal/${id}/intervencoes-autoridades`}>
                 <Card className="hover:shadow-lg transition-shadow cursor-pointer border-red-200 bg-gradient-to-br from-red-50 to-red-100">
-                  <CardContent className="p-3 sm:p-4">
-                    <div className="flex items-center space-x-2 sm:space-x-3">
-                      <div className="bg-red-600 p-1.5 sm:p-2 rounded-full flex-shrink-0">
-                        <Shield className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                  <CardContent className="p-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="bg-red-600 p-2 rounded-full">
+                        <Shield className="h-5 w-5 text-white" />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-red-800 text-sm sm:text-base truncate">
-                          <span className="hidden sm:inline">Intervenções das Autoridades</span>
-                          <span className="sm:hidden">Autoridades</span>
-                        </h3>
-                        <p className="text-xs sm:text-sm text-red-600 truncate">
-                          <span className="hidden sm:inline">Denúncias, resgates e processos legais</span>
-                          <span className="sm:hidden">Denúncias e resgates</span>
-                        </p>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-red-800">Intervenções das Autoridades</h3>
+                        <p className="text-sm text-red-600">Denúncias, resgates e processos legais</p>
                       </div>
-                      <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-red-600 flex-shrink-0" />
+                      <ExternalLink className="h-4 w-4 text-red-600" />
                     </div>
                   </CardContent>
                 </Card>
