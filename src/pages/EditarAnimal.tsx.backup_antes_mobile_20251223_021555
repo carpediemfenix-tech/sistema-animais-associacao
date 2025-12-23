@@ -401,25 +401,24 @@ const EditarAnimal = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
-        <div className="max-w-4xl mx-auto px-2 sm:px-4 lg:px-8">
-          <div className="flex items-center justify-between min-h-16 py-2">
-            <div className="flex items-center space-x-2 sm:space-x-4 flex-1 min-w-0">
-              <Button variant="ghost" size="sm" asChild className="shrink-0">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center space-x-4">
+              <Button variant="ghost" size="sm" asChild>
                 <Link to={`/animal/${id}`}>
-                  <ArrowLeft className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Voltar aos Detalhes</span>
-                  <span className="sm:hidden">Voltar</span>
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Voltar aos Detalhes
                 </Link>
               </Button>
-              <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
+              <div className="flex items-center space-x-3">
                 <img 
                   src="/images/BackgroundEraser_20250411_205630024.png" 
                   alt="Valentão ao Resgate" 
-                  className="h-6 w-6 sm:h-8 sm:w-8 object-contain shrink-0"
+                  className="h-8 w-8 object-contain"
                 />
-                <div className="min-w-0">
-                  <h1 className="text-lg sm:text-xl font-bold text-gray-900 truncate">Editar Animal</h1>
-                  <p className="text-xs sm:text-sm text-gray-500 hidden sm:block">Altere as informações do animal</p>
+                <div>
+                  <h1 className="text-xl font-bold text-gray-900">Editar Animal</h1>
+                  <p className="text-sm text-gray-500">Altere as informações do animal</p>
                 </div>
               </div>
             </div>
@@ -427,7 +426,7 @@ const EditarAnimal = () => {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Alerta de Incompatibilidade */}
         {incompatibilityAlert.show && (
           <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
@@ -449,7 +448,7 @@ const EditarAnimal = () => {
           </div>
         )}
         
-        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
           {/* Informações Básicas */}
           <Card>
             <CardHeader>
@@ -458,9 +457,9 @@ const EditarAnimal = () => {
                 Dados essenciais do animal (campos obrigatórios marcados com *)
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-6">
+            <CardContent className="space-y-4">
               {/* Campos em Destaque */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6 p-3 sm:p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
                 <div>
                   <Label className="text-blue-700 font-semibold flex items-center">
                     <span className="mr-2">📋</span>
@@ -477,7 +476,7 @@ const EditarAnimal = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="nome">Nome *</Label>
                   <Input
@@ -634,8 +633,8 @@ const EditarAnimal = () => {
             <CardHeader>
               <CardTitle>Informações Adicionais</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="transponder">Transponder/Chip</Label>
                   <Input
@@ -777,7 +776,7 @@ const EditarAnimal = () => {
               {/* Campos de Adoção */}
               {formData.estado === "Adotado" && (
                 <>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="data_adocao">Data de Adoção</Label>
                       <Input
@@ -825,22 +824,20 @@ const EditarAnimal = () => {
           </Card>
 
           {/* Botões de Ação */}
-          <div className="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4">
-            <Button type="button" variant="outline" asChild className="w-full sm:w-auto">
+          <div className="flex justify-end space-x-4">
+            <Button type="button" variant="outline" asChild>
               <Link to={`/animal/${id}`}>Cancelar</Link>
             </Button>
-            <Button type="submit" disabled={loading} className="w-full sm:w-auto">
+            <Button type="submit" disabled={loading}>
               {loading ? (
                 <>
                   <AlertCircle className="h-4 w-4 mr-2 animate-spin" />
-                  <span className="hidden sm:inline">Salvando...</span>
-                  <span className="sm:hidden">Salvando...</span>
+                  Salvando...
                 </>
               ) : (
                 <>
                   <Save className="h-4 w-4 mr-2" />
-                  <span className="hidden sm:inline">Salvar Alterações</span>
-                  <span className="sm:hidden">Salvar</span>
+                  Salvar Alterações
                 </>
               )}
             </Button>
