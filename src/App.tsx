@@ -124,6 +124,7 @@ const App = () => (
             <Route path="/voluntarios/perfil/:id" element={<ProtectedRoute><VoluntarioProfile /></ProtectedRoute>} />
             <Route path="/voluntarios/:id/formacoes" element={<ProtectedRoute><FormacoesFrequentadas /></ProtectedRoute>} />
             <Route path="/sistema-formacao" element={<ProtectedRoute><SistemaFormacao /></ProtectedRoute>} />
+            <Route path="/formacao" element={<ProtectedRoute><SistemaFormacao /></ProtectedRoute>} />
             <Route path="/voluntarios/relatorios" element={<ProtectedRoute><RelatoriosVoluntarios /></ProtectedRoute>} />
             {/* Novos Módulos Dedicados */}
             <Route path="/modulo-animais" element={<ProtectedRoute><ModuloAnimais /></ProtectedRoute>} />
