@@ -152,15 +152,15 @@ const Dashboard: React.FC = () => {
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6">
         
         {/* Botão de Atualizar */}
-        <div className="flex justify-end">
+        <div className="flex justify-end mb-4">
           <Button 
             onClick={loadDashboardData}
-            variant="outline"
+            variant="default"
             size="sm"
-            className="flex items-center space-x-1 sm:space-x-2 px-3 sm:px-4"
+            className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 shadow-md"
           >
             <RefreshCw className="h-4 w-4" />
-            <span className="text-xs sm:text-sm">Atualizar</span>
+            <span className="text-sm font-medium">Atualizar Dados</span>
           </Button>
         </div>
 
