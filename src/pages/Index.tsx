@@ -236,7 +236,7 @@ const Index: React.FC = () => {
             </Link>
 
             {/* Financeiro */}
-            <Link to="/dashboard-financeiro" className="group">
+            <Link to="/financeiro" className="group">
               <Card className="h-full transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-0 bg-gradient-to-br from-orange-50 to-amber-50 group-hover:from-orange-100 group-hover:to-amber-100">
                 <CardContent className="p-6 text-center">
                   <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-orange-500 to-amber-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">

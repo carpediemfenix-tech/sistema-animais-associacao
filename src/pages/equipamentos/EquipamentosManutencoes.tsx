@@ -24,7 +24,7 @@ interface Manutencao {
   equipamento_id: string;
   tipo_manutencao: string;
   status: string;
-  data_agendada: string;
+  created_at: string;
   data_realizada?: string;
   custo?: number;
   observacoes: string;
@@ -53,7 +53,7 @@ const EquipamentosManutencoes: React.FC = () => {
             tipo_equipamento:tipos_equipamentos_2025_12_13_01_00(nome)
           )
         `)
-        .order('data_agendada', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       setManutencoes(data || []);
@@ -213,7 +213,7 @@ const EquipamentosManutencoes: React.FC = () => {
                         <TableCell>
                           <div className="flex items-center">
                             <Calendar className="h-4 w-4 mr-2 text-gray-400" />
-                            {new Date(manutencao.data_agendada).toLocaleDateString('pt-PT')}
+                            {new Date(manutencao.created_at).toLocaleDateString('pt-PT')}
                           </div>
                         </TableCell>
                         <TableCell>
