@@ -27,9 +27,7 @@ interface AnimalAdotado {
   data_adocao: string;
   nome_adotante: string;
   numero_processo: string;
-  localizacao?: {
-    nome: string;
-  };
+  localizacao_atual?: string;
 }
 
 const AnimaisAdotados: React.FC = () => {
@@ -71,7 +69,7 @@ const AnimaisAdotados: React.FC = () => {
           data_adocao,
           nome_adotante,
           numero_processo,
-          localizacao:localizacoes(nome)
+          localizacao_atual
         `)
         .eq('estado', 'Adotado')
         .order('data_adocao', { ascending: false });
@@ -258,14 +256,14 @@ const AnimaisAdotados: React.FC = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
-                <UserHeart className="h-5 w-5 mr-2" />
+                <Heart className="h-5 w-5 mr-2" />
                 Lista de Animais Adotados ({filteredAnimais.length})
               </CardTitle>
             </CardHeader>
             <CardContent>
               {filteredAnimais.length === 0 ? (
                 <div className="text-center py-8">
-                  <UserHeart className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                  <Heart className="h-12 w-12 mx-auto mb-4 text-gray-400" />
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">
                     {searchTerm ? 'Nenhum animal encontrado' : 'Nenhum animal adotado'}
                   </h3>
@@ -308,7 +306,7 @@ const AnimaisAdotados: React.FC = () => {
                             <TableCell>
                               <div className="flex items-center">
                                 <MapPin className="h-4 w-4 mr-2 text-gray-400" />
-                                {animal.localizacao?.nome || 'N/A'}
+                                {animal.localizacao_atual || 'N/A'}
                               </div>
                             </TableCell>
                             <TableCell>
@@ -357,7 +355,7 @@ const AnimaisAdotados: React.FC = () => {
                               <MapPin className="h-4 w-4 mr-2 text-gray-400" />
                               <span className="text-gray-600">Localização:</span>
                               <span className="ml-1 font-medium">
-                                {animal.localizacao?.nome || 'N/A'}
+                                {animal.localizacao_atual || 'N/A'}
                               </span>
                             </div>
                             
