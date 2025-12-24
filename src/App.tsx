@@ -88,6 +88,7 @@ import GestaoContas from "./pages/GestaoContas";
 import ConfiguracoesFinanceiras from "./pages/ConfiguracoesFinanceiras";
 import RelatoriosFinanceiros from "./pages/RelatoriosFinanceiros";
 import GestaoSocios from "./pages/GestaoSocios";
+import ConfiguracaoIntervencoes from "./pages/ConfiguracaoIntervencoes";
 import GruposArquivados from "./pages/GruposArquivados";
 
 const queryClient = new QueryClient();
@@ -178,6 +179,7 @@ const App = () => (
             <Route path="/configuracoes/categorias" element={<ProtectedRoute><GestaoCategorias /></ProtectedRoute>} />
             <Route path="/configuracoes/clinicas" element={<ProtectedRoute><GestaoClinicas /></ProtectedRoute>} />
             <Route path="/configuracoes/responsabilidades" element={<ProtectedRoute><GestaoResponsabilidades /></ProtectedRoute>} />
+            <Route path="/configuracoes/intervencoes" element={<ProtectedRoute><ConfiguracaoIntervencoes /></ProtectedRoute>} />
             <Route path="/historico-nomes" element={<ProtectedRoute><HistoricoNomesAnimais /></ProtectedRoute>} />
             <Route path="/animal/:animalId/historico-nomes" element={<ProtectedRoute><HistoricoNomesAnimais /></ProtectedRoute>} />
             <Route path="/utilizadores" element={<ProtectedRoute><GestaoUtilizadores /></ProtectedRoute>} />
