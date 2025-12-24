@@ -31,6 +31,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import NotificationCenter from "./NotificationCenter";
+import { useNotifications } from "@/hooks/useNotifications";
 
 interface NavigationButton {
   label: string;
@@ -81,90 +82,11 @@ const EnhancedHeader = () => {
   }, []);
 
 // Estados para notificações avançadas
-  const [notificacoes, setNotificacoes] = useState<any[]>([]);
-  const [notificacoesNaoLidas, setNotificacoesNaoLidas] = useState(0);
   const [showNotificacoes, setShowNotificacoes] = useState(false);
+  const { contadorNaoLidas } = useNotifications();
   const [autoRefresh, setAutoRefresh] = useState(true);
 
-  // Carregar notificações avançadas
-  const loadNotificacoes = async () => {
-    if (!user) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('notificacoes_avancadas_2025_12_16_12_00')
-        .select(`
-          *,
-          tipos_notificacoes_2025_12_16_12_00(
-            nome,
-            icone,
-            cor
-          )
-        `)
-        .eq('arquivada', false)
-        .order('created_at', { ascending: false })
-        .limit(50);
-
-      if (error) throw error;
-      
-      setNotificacoes(data || []);
-      const naoLidas = data?.filter(n => !n.lida && !n.arquivada).length || 0;
-      setNotificacoesNaoLidas(naoLidas);
-      setNotificationCount(naoLidas);
-    } catch (error) {
-      console.error('Erro ao carregar notificações:', error);
-    }
-  };
-
-  // Funções para gerenciar notificações
-  const handleMarcarNotificacaoLida = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .rpc('marcar_notificacao_lida_avancada', {
-          p_notificacao_id: id,
-          p_usuario_id: user?.id
-        });
-      
-      if (error) throw error;
-      
-      await loadNotificacoes();
-    } catch (error) {
-      console.error('Erro ao marcar notificação como lida:', error);
-    }
-  };
-
-  const handleMarcarTodasNotificacoesLidas = async () => {
-    try {
-      const notificacoesNaoLidas = notificacoes.filter(n => !n.lida && !n.arquivada);
-      
-      for (const notificacao of notificacoesNaoLidas) {
-        await supabase
-          .rpc('marcar_notificacao_lida_avancada', {
-            p_notificacao_id: notificacao.id,
-            p_usuario_id: user?.id
-          });
-      }
-      
-      await loadNotificacoes();
-    } catch (error) {
-      console.error('Erro ao marcar todas as notificações como lidas:', error);
-    }
-  };
-
-  // Carregar notificações
-  useEffect(() => {
-    loadNotificacoes();
-    
-    // Auto-refresh se ativado
-    let refreshTimer: NodeJS.Timeout;
-    if (autoRefresh) {
-      refreshTimer = setInterval(loadNotificacoes, 2 * 60 * 1000); // 2 minutos
-    }
-    
-    return () => {
-      if (refreshTimer) clearInterval(refreshTimer);
-    };
-  }, [user, autoRefresh]);
+  // As notificações são agora geridas pelo hook useNotifications
 
   // Mapeamento completo de páginas com IDs únicos
   const pageConfigs: Record<string, PageConfig> = {
@@ -758,9 +680,9 @@ const EnhancedHeader = () => {
               className="relative flex items-center space-x-2 hover:bg-blue-50 hover:text-blue-600"
             >
               <Bell className="h-4 w-4" />
-              {notificacoesNaoLidas > 0 && (
+              {contadorNaoLidas > 0 && (
                 <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center p-0">
-                  {notificacoesNaoLidas > 99 ? '99+' : notificacoesNaoLidas}
+                  {contadorNaoLidas > 99 ? '99+' : contadorNaoLidas}
                 </Badge>
               )}
               <span className="hidden sm:inline">Notificações</span>
@@ -805,10 +727,6 @@ const EnhancedHeader = () => {
       <NotificationCenter
         isOpen={showNotificacoes}
         onClose={() => setShowNotificacoes(false)}
-        notificacoes={notificacoes}
-        onMarcarLida={handleMarcarNotificacaoLida}
-        onMarcarTodasLidas={handleMarcarTodasNotificacoesLidas}
-        onRefresh={loadNotificacoes}
       />
     </div>
   );

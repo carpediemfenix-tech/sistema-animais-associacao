@@ -74,6 +74,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.error('💥 [LOG] Erro inesperado ao registar log:', error);
     }
   };
+
+  // Função para criar notificações automáticas
+  const criarNotificacaoAutomatica = async (titulo: string, mensagem: string, prioridade: 'baixa' | 'media' | 'alta' | 'critica' | 'urgente' = 'media', utilizadorId?: string) => {
+    try {
+      console.log('🔔 [AUTH] Criando notificação automática:', titulo);
+      
+      const { data, error } = await supabase.functions.invoke('create_notification_2025_12_24_07_45', {
+        body: {
+          utilizador_id: utilizadorId || 'admin',
+          titulo,
+          mensagem,
+          prioridade,
+          categoria: 'seguranca',
+          tipo_codigo: prioridade === 'critica' ? 'login_suspeito' : 'sessao_expirada'
+        }
+      });
+
+      if (error) {
+        console.error('❌ [AUTH] Erro ao criar notificação:', error);
+      } else {
+        console.log('✅ [AUTH] Notificação criada:', data);
+      }
+    } catch (error) {
+      console.error('💥 [AUTH] Erro inesperado ao criar notificação:', error);
+    }
+  };
   // Verificar se há utilizador logado no localStorage
   useEffect(() => {
     const checkStoredUser = () => {
@@ -102,6 +128,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               const sessaoId = localStorage.getItem('valentao_sessao_id');
               const duracaoSessao = Math.floor(hoursElapsed * 60); // converter para minutos
               registarLogAcesso(userData.username, 'logout', sessaoId || undefined, duracaoSessao);
+              
+              // Criar notificação de sessão expirada
+              criarNotificacaoAutomatica(
+                'Sessão Expirada',
+                `A sessão do utilizador ${userData.username} expirou após ${Math.floor(hoursElapsed)} horas.`,
+                'alta',
+                userData.username
+              );
               
               // Limpar dados
               localStorage.removeItem('valentao_user');
@@ -224,6 +258,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       localStorage.setItem('valentao_sessao_id', sessaoId);
       localStorage.setItem('valentao_login_time', new Date().toISOString());
       await registarLogAcesso(userData.username, 'login', sessaoId);
+      
+      // Criar notificação de login bem-sucedido
+      criarNotificacaoAutomatica(
+        'Login Realizado',
+        `O utilizador ${userData.username} fez login no sistema com sucesso.`,
+        'baixa',
+        userData.username
+      );
       
       console.log('🔍 [AUTH] Estado atualizado:', userData);
       
