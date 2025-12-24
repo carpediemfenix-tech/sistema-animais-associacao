@@ -661,6 +661,18 @@ const EnhancedHeader = () => {
     };
   };
 
+  // Função para obter estilos personalizados dos botões de navegação
+  const getButtonStyles = (label: string, path: string) => {
+    const styles = {
+      'Voltar': 'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 hover:text-gray-900 hover:shadow-md hover:border-gray-400 transition-all duration-300',
+      'Novo Animal': 'bg-emerald-100 text-emerald-700 border border-emerald-300 hover:bg-emerald-200 hover:text-emerald-900 hover:shadow-lg hover:border-emerald-400 hover:scale-105 transition-all duration-300',
+      'Arquivados': 'bg-orange-100 text-orange-700 border border-orange-300 hover:bg-orange-200 hover:text-orange-900 hover:shadow-lg hover:border-orange-400 hover:scale-105 transition-all duration-300',
+      'Adotados': 'bg-pink-100 text-pink-700 border border-pink-300 hover:bg-pink-200 hover:text-pink-900 hover:shadow-lg hover:border-pink-400 hover:scale-105 transition-all duration-300'
+    };
+    
+    return styles[label as keyof typeof styles] || 'bg-blue-100 text-blue-700 border border-blue-300 hover:bg-blue-200 hover:text-blue-900 hover:shadow-md hover:border-blue-400 transition-all duration-300';
+  };
+
   const currentPage = getCurrentPageConfig();
 
   const handleLogout = async () => {
@@ -775,13 +787,13 @@ const EnhancedHeader = () => {
             {currentPage.navigationButtons.map((button, index) => (
               <Link key={index} to={button.path}>
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
-                  className="flex items-center space-x-2 whitespace-nowrap hover:bg-white hover:shadow-sm transition-all duration-200"
+                  className={`flex items-center space-x-2 whitespace-nowrap ${getButtonStyles(button.label, button.path)}`}
                   title={button.description}
                 >
                   {button.icon}
-                  <span className="text-xs">{button.label}</span>
+                  <span className="text-xs font-medium">{button.label}</span>
                 </Button>
               </Link>
             ))}
