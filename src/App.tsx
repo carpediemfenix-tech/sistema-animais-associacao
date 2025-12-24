@@ -140,7 +140,9 @@ const App = () => (
             <Route path="/equipamentos/alertas" element={<ProtectedRoute><EquipamentosAlertas /></ProtectedRoute>} />
             <Route path="/equipamentos/relatorios" element={<ProtectedRoute><EquipamentosRelatorios /></ProtectedRoute>} />
             <Route path="/modulo-clinicas" element={<ProtectedRoute><ModuloClinicas /></ProtectedRoute>} />
+            <Route path="/clinicas" element={<ProtectedRoute><ModuloClinicas /></ProtectedRoute>} />
             <Route path="/modulo-missoes" element={<ProtectedRoute><ModuloMissoesOtimizado /></ProtectedRoute>} />
+            <Route path="/missoes" element={<ProtectedRoute><ModuloMissoesOtimizado /></ProtectedRoute>} />
             <Route path="/modulo-missoes-original" element={<ProtectedRoute><ModuloMissoes /></ProtectedRoute>} />
             <Route path="/missao/:id" element={<ProtectedRoute><MissaoDetailOtimizada /></ProtectedRoute>} />
             <Route path="/missao-original/:id" element={<ProtectedRoute><MissaoDetail /></ProtectedRoute>} />
@@ -151,6 +153,7 @@ const App = () => (
             <Route path="/dashboard-pontos" element={<ProtectedRoute><DashboardPontos /></ProtectedRoute>} />
             <Route path="/configuracoes/especialidades" element={<ProtectedRoute><ConfiguracaoEspecialidades /></ProtectedRoute>} />
             <Route path="/modulo-agenda" element={<ProtectedRoute><ModuloAgenda /></ProtectedRoute>} />
+            <Route path="/agenda" element={<ProtectedRoute><ModuloAgenda /></ProtectedRoute>} />
             <Route path="/estatisticas-avancadas" element={<ProtectedRoute><EstatisticasAvancadas /></ProtectedRoute>} />
             <Route path="/dashboard-executivo" element={<ProtectedRoute><DashboardExecutivo /></ProtectedRoute>} />
             <Route path="/voluntario/:id" element={<ProtectedRoute><VoluntarioDetail /></ProtectedRoute>} />

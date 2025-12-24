@@ -373,7 +373,7 @@ const Index: React.FC = () => {
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               
-              <Link to="/modulo-equipamentos" className="group">
+              <Link to="/equipamentos" className="group">
                 <Card className="h-full transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border border-gray-200 group-hover:border-purple-300">
                   <CardContent className="p-4 text-center">
                     <div className="w-12 h-12 mx-auto mb-3 bg-gradient-to-br from-purple-500 to-violet-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
@@ -385,7 +385,7 @@ const Index: React.FC = () => {
                 </Card>
               </Link>
 
-              <Link to="/modulo-agenda" className="group">
+              <Link to="/agenda" className="group">
                 <Card className="h-full transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border border-gray-200 group-hover:border-green-300">
                   <CardContent className="p-4 text-center">
                     <div className="w-12 h-12 mx-auto mb-3 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
@@ -397,7 +397,7 @@ const Index: React.FC = () => {
                 </Card>
               </Link>
 
-              <Link to="/modulo-clinicas" className="group">
+              <Link to="/clinicas" className="group">
                 <Card className="h-full transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border border-gray-200 group-hover:border-blue-300">
                   <CardContent className="p-4 text-center">
                     <div className="w-12 h-12 mx-auto mb-3 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
@@ -421,7 +421,7 @@ const Index: React.FC = () => {
                 </Card>
               </Link>
 
-              <Link to="/modulo-missoes" className="group">
+              <Link to="/missoes" className="group">
                 <Card className="h-full transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border border-gray-200 group-hover:border-indigo-300">
                   <CardContent className="p-4 text-center">
                     <div className="w-12 h-12 mx-auto mb-3 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
