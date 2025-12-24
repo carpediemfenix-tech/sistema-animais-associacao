@@ -88,6 +88,7 @@ import GestaoContas from "./pages/GestaoContas";
 import ConfiguracoesFinanceiras from "./pages/ConfiguracoesFinanceiras";
 import RelatoriosFinanceiros from "./pages/RelatoriosFinanceiros";
 import GestaoSocios from "./pages/GestaoSocios";
+import GruposArquivados from "./pages/GruposArquivados";
 
 const queryClient = new QueryClient();
 
@@ -182,6 +183,7 @@ const App = () => (
             <Route path="/utilizadores" element={<ProtectedRoute><GestaoUtilizadores /></ProtectedRoute>} />
             <Route path="/animais-arquivados" element={<ProtectedRoute><AnimaisArquivados /></ProtectedRoute>} />
             <Route path="/grupos" element={<ProtectedRoute><GestaoGrupos /></ProtectedRoute>} />
+            <Route path="/grupos-arquivados" element={<ProtectedRoute><GruposArquivados /></ProtectedRoute>} />
             <Route path="/grupo/:id" element={<ProtectedRoute><GrupoDetail /></ProtectedRoute>} />
             <Route path="/manual" element={<ProtectedRoute><ManualUtilizador /></ProtectedRoute>} />
             <Route path="/administracao" element={<ProtectedRoute><Administracao /></ProtectedRoute>} />

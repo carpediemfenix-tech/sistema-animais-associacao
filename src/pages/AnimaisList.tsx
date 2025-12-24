@@ -135,7 +135,7 @@ const AnimaisList: React.FC = () => {
       const [especiesData, sexosData, gruposData] = await Promise.all([
         supabase.from('especies').select('nome').eq('ativo', true).order('nome'),
         supabase.from('sexos').select('nome').eq('ativo', true).order('nome'),
-        supabase.from('grupos').select('id, nome, tipo').eq('ativo', true).order('nome')
+        supabase.from('grupos').select('id, nome, tipo').eq('ativo', true).neq('arquivado', true).order('nome')
       ]);
       
       setEspecies(especiesData.data || []);
@@ -237,36 +237,14 @@ const AnimaisList: React.FC = () => {
 
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-6">
         
-        {/* Barra de Ações */}
-        <div className="flex flex-col gap-3 sm:gap-4 mb-4 sm:mb-6">
-          {/* Primeira linha: Botão voltar */}
-          <div className="flex items-center">
-            <Link to="/">
-              <Button variant="outline" size="sm" className="shrink-0">
-                <ArrowLeft className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Dashboard Principal</span>
-                <span className="sm:hidden">Voltar</span>
-              </Button>
-            </Link>
-          </div>
-          
-          {/* Segunda linha: Botões de ação */}
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
-            <Link to="/novo-animal" className="flex-1 sm:flex-none">
-              <Button className="bg-emerald-600 hover:bg-emerald-700 w-full sm:w-auto">
-                <Plus className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">Novo Animal</span>
-                <span className="sm:hidden">Novo</span>
-              </Button>
-            </Link>
-            <Link to="/animais-arquivados" className="flex-1 sm:flex-none">
-              <Button variant="outline" className="w-full sm:w-auto">
-                <Archive className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">Arquivados</span>
-                <span className="sm:hidden">Arquivo</span>
-              </Button>
-            </Link>
-          </div>
+        {/* Título da Página */}
+        <div className="mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+            Lista de Animais
+          </h1>
+          <p className="text-gray-600">
+            Gestão completa dos animais da associação
+          </p>
         </div>
 
         {/* Filtros e Pesquisa */}

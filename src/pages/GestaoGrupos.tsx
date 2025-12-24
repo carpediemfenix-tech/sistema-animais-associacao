@@ -27,7 +27,9 @@ import {
   Dog,
   Loader2,
   AlertCircle,
-  Heart
+  Heart,
+  Archive,
+  Power
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Grupo, Voluntario } from "@/types/animal";
@@ -105,6 +107,7 @@ const GestaoGrupos = () => {
           voluntarios(nome)
         `)
         .eq('ativo', true)
+        .neq('arquivado', true) // Excluir grupos arquivados
         .order('tipo')
         .order('nome');
 
@@ -339,6 +342,77 @@ const GestaoGrupos = () => {
       toast({
         title: "❌ Erro",
         description: "Não foi possível eliminar o grupo",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDesativar = async (grupo: Grupo) => {
+    const confirmDesativar = confirm(
+      `Tem certeza que deseja ${grupo.ativo ? 'desativar' : 'ativar'} o grupo "${grupo.nome}"?\n\n` +
+      `${grupo.ativo ? 'Grupos desativados não aparecerão em formulários de seleção.' : 'O grupo voltará a aparecer em formulários de seleção.'}`
+    );
+    
+    if (!confirmDesativar) return;
+
+    try {
+      console.log(`🔄 [GRUPOS] ${grupo.ativo ? 'Desativando' : 'Ativando'} grupo:`, grupo.nome);
+
+      const { error } = await supabase
+        .from('grupos')
+        .update({ ativo: !grupo.ativo })
+        .eq('id', grupo.id);
+
+      if (error) throw error;
+
+      toast({
+        title: `✅ Grupo ${grupo.ativo ? 'desativado' : 'ativado'}`,
+        description: `${grupo.nome} foi ${grupo.ativo ? 'desativado' : 'ativado'} com sucesso`,
+      });
+
+      await fetchGrupos();
+    } catch (error: any) {
+      console.error('💥 [GRUPOS] Erro ao alterar estado:', error);
+      toast({
+        title: "❌ Erro",
+        description: `Não foi possível ${grupo.ativo ? 'desativar' : 'ativar'} o grupo`,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleArquivar = async (grupo: Grupo) => {
+    const confirmArquivar = confirm(
+      `Tem certeza que deseja arquivar o grupo "${grupo.nome}"?\n\n` +
+      `Grupos arquivados não aparecerão em listagens normais nem em formulários de seleção.`
+    );
+    
+    if (!confirmArquivar) return;
+
+    try {
+      console.log('📦 [GRUPOS] Arquivando grupo:', grupo.nome);
+
+      const { error } = await supabase
+        .from('grupos')
+        .update({ 
+          arquivado: true,
+          ativo: false // Arquivar também desativa
+        })
+        .eq('id', grupo.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "✅ Grupo arquivado",
+        description: `${grupo.nome} foi arquivado com sucesso`,
+      });
+
+      await fetchGrupos();
+    } catch (error: any) {
+      console.error('💥 [GRUPOS] Erro ao arquivar:', error);
+      toast({
+        title: "❌ Erro",
+        description: "Não foi possível arquivar o grupo",
         variant: "destructive",
       });
     }
@@ -625,6 +699,28 @@ const GestaoGrupos = () => {
                                 onClick={() => openEditDialog(grupo)}
                               >
                                 <Edit className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {hasPermission('update') && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDesativar(grupo)}
+                                className={grupo.ativo ? "text-orange-600 hover:text-orange-800" : "text-green-600 hover:text-green-800"}
+                                title={grupo.ativo ? "Desativar grupo" : "Ativar grupo"}
+                              >
+                                <Power className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {hasPermission('update') && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleArquivar(grupo)}
+                                className="text-blue-600 hover:text-blue-800"
+                                title="Arquivar grupo"
+                              >
+                                <Archive className="h-4 w-4" />
                               </Button>
                             )}
                             {hasPermission('delete') && (

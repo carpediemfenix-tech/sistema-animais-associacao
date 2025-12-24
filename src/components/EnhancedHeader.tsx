@@ -25,7 +25,8 @@ import {
   Shield,
   Package,
   DollarSign,
-  Bell
+  Bell,
+  Archive
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -193,7 +194,10 @@ const EnhancedHeader = () => {
       id: 'B01',
       title: 'Lista de Animais',
       navigationButtons: [
-        { label: 'Voltar', path: '/modulo-animais', icon: <ArrowLeft className="h-4 w-4" /> }
+        { label: 'Voltar', path: '/modulo-animais', icon: <ArrowLeft className="h-4 w-4" /> },
+        { label: 'Novo Animal', path: '/novo-animal', icon: <Plus className="h-4 w-4" /> },
+        { label: 'Arquivados', path: '/animais-arquivados', icon: <Archive className="h-4 w-4" /> },
+        { label: 'Adotados', path: '/animais-adotados', icon: <Heart className="h-4 w-4" /> }
       ]
     },
     '/modulo-animais': {
@@ -401,7 +405,16 @@ const EnhancedHeader = () => {
       navigationButtons: [
         { label: 'Módulo Animais', path: '/modulo-animais', icon: <PawPrint className="h-4 w-4" /> },
         { label: 'Novo Grupo', path: '/grupo/novo', icon: <Plus className="h-4 w-4" /> },
+        { label: 'Arquivados', path: '/grupos-arquivados', icon: <Archive className="h-4 w-4" /> },
         { label: 'Dashboard Principal', path: '/', icon: <Home className="h-4 w-4" /> }
+      ]
+    },
+    '/grupos-arquivados': {
+      id: 'I03',
+      title: 'Grupos Arquivados',
+      navigationButtons: [
+        { label: 'Voltar', path: '/grupos', icon: <ArrowLeft className="h-4 w-4" /> },
+        { label: 'Módulo Animais', path: '/modulo-animais', icon: <PawPrint className="h-4 w-4" /> }
       ]
     },
 

@@ -175,6 +175,7 @@ const NovoAnimal = () => {
         .from('grupos')
         .select('*')
         .eq('ativo', true)
+        .neq('arquivado', true) // Excluir grupos arquivados
         .order('tipo')
         .order('nome');
 
