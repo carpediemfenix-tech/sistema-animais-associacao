@@ -5,14 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
   Heart,
-  ArrowLeft,
+  Home,
   Eye,
   Archive,
   MapPin,
   Users,
   Settings,
   BarChart3,
-  Plus,
+  List,
   Grid3X3,
   Stethoscope,
   Target
@@ -50,7 +50,7 @@ const ModuloAnimais = () => {
 
   const funcionalidades = [
     {
-      titulo: "Dashboard",
+      titulo: "Ver Animais",
       descricao: "Dashboard de gestão de animais",
       icone: Eye,
       rota: "/animais",
@@ -184,33 +184,54 @@ const ModuloAnimais = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <EnhancedHeader />
-      <div className="bg-gradient-to-br from-red-50 to-pink-100 p-6 flex-1">
+      <div className="bg-gradient-to-br from-blue-50 to-indigo-100 p-6 flex-1">
       <div className="max-w-7xl mx-auto">
-        {/* Cabeçalho */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-4">
+        
+        {/* Barra de Navegação */}
+        <div className="mb-6">
+          <div className="flex flex-wrap items-center gap-3">
             <Link to="/">
               <Button variant="outline" size="sm">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Dashboard Principal
+                <Home className="h-4 w-4 mr-2" />
+                Início
               </Button>
             </Link>
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900 flex items-center">
-                <Heart className="h-10 w-10 mr-3 text-red-600" />
-                Módulo Animais
-              </h1>
-              <p className="text-gray-600 text-lg">
-                Gestão completa de animais, grupos e localizações
-              </p>
-            </div>
+            <Link to="/animais">
+              <Button variant="outline" size="sm">
+                <List className="h-4 w-4 mr-2" />
+                Lista de Animais
+              </Button>
+            </Link>
+            <Link to="/historico-nomes">
+              <Button variant="outline" size="sm">
+                <Settings className="h-4 w-4 mr-2" />
+                Histórico Nomes
+              </Button>
+            </Link>
+            <Link to="/estatisticas-avancadas">
+              <Button variant="outline" size="sm">
+                <BarChart3 className="h-4 w-4 mr-2" />
+                Estatística
+              </Button>
+            </Link>
+            <Link to="/grupos">
+              <Button variant="outline" size="sm">
+                <Users className="h-4 w-4 mr-2" />
+                Grupos
+              </Button>
+            </Link>
           </div>
-          <Link to="/novo-animal">
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Novo Animal
-            </Button>
-          </Link>
+        </div>
+
+        {/* Cabeçalho */}
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 flex items-center">
+            <Heart className="h-10 w-10 mr-3 text-blue-600" />
+            Módulo Animais
+          </h1>
+          <p className="text-gray-600 text-lg">
+            Gestão completa de animais, grupos e localizações
+          </p>
         </div>
 
         {/* Estatísticas do Módulo */}
@@ -218,7 +239,7 @@ const ModuloAnimais = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total de Animais</CardTitle>
-              <Heart className="h-4 w-4 text-red-600" />
+              <Heart className="h-4 w-4 text-blue-600" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{estatisticas.totalAnimais}</div>
