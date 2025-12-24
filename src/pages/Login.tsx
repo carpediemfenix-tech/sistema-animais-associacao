@@ -63,16 +63,16 @@ const Login = () => {
           {/* Logotipo da Associação Valentão - MAIOR */}
           <div className="inline-flex items-center justify-center mb-6">
             <img 
-              src="./images/media-_3_.gif" 
-              alt="Associação Valentão" 
+              src="./images/BackgroundEraser_20250411_205630024.png" 
+              alt="Valentão Operacionais" 
               className="h-32 w-auto object-contain drop-shadow-lg"
             />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Valentão ao Resgate
+            Valentão Operacionais v2.0
           </h1>
           <p className="text-gray-600">
-            Sistema de Gestão - Valentão Operacionais
+            Sistema de Gestão Operacional
           </p>
         </div>
 

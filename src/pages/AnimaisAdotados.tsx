@@ -24,10 +24,9 @@ interface AnimalAdotado {
   id: string;
   nome: string;
   especie: string;
-  data_adocao: string;
-  nome_adotante: string;
-  numero_processo: string;
+  estado: string;
   localizacao_atual?: string;
+  created_at: string;
 }
 
 const AnimaisAdotados: React.FC = () => {
@@ -48,8 +47,6 @@ const AnimaisAdotados: React.FC = () => {
     } else {
       const filtered = animaisAdotados.filter(animal =>
         animal.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        animal.nome_adotante.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        animal.numero_processo.toLowerCase().includes(searchTerm.toLowerCase()) ||
         animal.especie.toLowerCase().includes(searchTerm.toLowerCase())
       );
       setFilteredAnimais(filtered);
@@ -66,13 +63,12 @@ const AnimaisAdotados: React.FC = () => {
           id,
           nome,
           especie,
-          data_adocao,
-          nome_adotante,
-          numero_processo,
-          localizacao_atual
+          estado,
+          localizacao_atual,
+          created_at
         `)
         .eq('estado', 'Adotado')
-        .order('data_adocao', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Erro ao carregar animais adotados:', error);
@@ -204,11 +200,11 @@ const AnimaisAdotados: React.FC = () => {
               <CardContent>
                 <div className="text-2xl font-bold">
                   {animaisAdotados.filter(a => {
-                    if (!a.data_adocao) return false;
-                    const adocaoDate = new Date(a.data_adocao);
+                    if (!a.created_at) return false;
+                    const criadoDate = new Date(a.created_at);
                     const now = new Date();
-                    return adocaoDate.getMonth() === now.getMonth() && 
-                           adocaoDate.getFullYear() === now.getFullYear();
+                    return criadoDate.getMonth() === now.getMonth() && 
+                           criadoDate.getFullYear() === now.getFullYear();
                   }).length}
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -230,7 +226,7 @@ const AnimaisAdotados: React.FC = () => {
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="flex-1">
                   <Input
-                    placeholder="Pesquisar por nome do animal, adotante, processo ou espécie..."
+                    placeholder="Pesquisar por nome do animal ou espécie..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full"
@@ -284,9 +280,7 @@ const AnimaisAdotados: React.FC = () => {
                           <TableHead>Nome do Animal</TableHead>
                           <TableHead>Espécie</TableHead>
                           <TableHead>Localização</TableHead>
-                          <TableHead>Data da Adoção</TableHead>
-                          <TableHead>Nome do Adotante</TableHead>
-                          <TableHead>Nº Processo</TableHead>
+                          <TableHead>Data de Registo</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -312,21 +306,7 @@ const AnimaisAdotados: React.FC = () => {
                             <TableCell>
                               <div className="flex items-center">
                                 <Calendar className="h-4 w-4 mr-2 text-gray-400" />
-                                {formatDate(animal.data_adocao)}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center">
-                                <User className="h-4 w-4 mr-2 text-gray-400" />
-                                {animal.nome_adotante || 'N/A'}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center">
-                                <FileText className="h-4 w-4 mr-2 text-gray-400" />
-                                <Badge variant="secondary">
-                                  {animal.numero_processo || 'N/A'}
-                                </Badge>
+                                {formatDate(animal.created_at)}
                               </div>
                             </TableCell>
                           </TableRow>
@@ -361,26 +341,10 @@ const AnimaisAdotados: React.FC = () => {
                             
                             <div className="flex items-center">
                               <Calendar className="h-4 w-4 mr-2 text-gray-400" />
-                              <span className="text-gray-600">Data Adoção:</span>
+                              <span className="text-gray-600">Data Registo:</span>
                               <span className="ml-1 font-medium">
-                                {formatDate(animal.data_adocao)}
+                                {formatDate(animal.created_at)}
                               </span>
-                            </div>
-                            
-                            <div className="flex items-center">
-                              <User className="h-4 w-4 mr-2 text-gray-400" />
-                              <span className="text-gray-600">Adotante:</span>
-                              <span className="ml-1 font-medium">
-                                {animal.nome_adotante || 'N/A'}
-                              </span>
-                            </div>
-                            
-                            <div className="flex items-center">
-                              <FileText className="h-4 w-4 mr-2 text-gray-400" />
-                              <span className="text-gray-600">Processo:</span>
-                              <Badge variant="secondary" className="ml-1">
-                                {animal.numero_processo || 'N/A'}
-                              </Badge>
                             </div>
                           </div>
                         </CardContent>

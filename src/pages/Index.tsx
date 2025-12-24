@@ -95,15 +95,15 @@ const Index: React.FC = () => {
             <div className="flex justify-center mb-6">
               <div className="relative">
                 <img 
-                  src="/images/media-_3_.gif" 
-                  alt="Valentão ao Resgate" 
+                  src="/images/BackgroundEraser_20250411_205630024.png" 
+                  alt="Valentão Operacionais" 
                   className="h-16 w-16 sm:h-20 sm:w-20 object-contain"
                 />
                 <div className="absolute -inset-2 bg-white rounded-full opacity-20 animate-pulse"></div>
               </div>
             </div>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4">
-              Sistema Valentão
+              Valentão Operacionais v2.0
             </h1>
             <p className="text-lg sm:text-xl text-blue-100 mb-8 max-w-3xl mx-auto">
               Gestão completa e profissional para proteção animal
@@ -336,11 +336,11 @@ const Index: React.FC = () => {
         <div className="text-center py-8 border-t border-gray-200">
           <div className="flex justify-center items-center space-x-2 mb-4">
             <img 
-              src="/images/media-_3_.gif" 
-              alt="Valentão ao Resgate" 
+              src="/images/BackgroundEraser_20250411_205630024.png" 
+              alt="Valentão Operacionais" 
               className="h-8 w-8 object-contain"
             />
-            <h3 className="text-lg font-semibold text-gray-800">Sistema Valentão</h3>
+            <h3 className="text-lg font-semibold text-gray-800">Valentão Operacionais v2.0</h3>
           </div>
           <p className="text-sm text-gray-600 max-w-2xl mx-auto">
             Sistema completo de gestão para associações de proteção animal. 
