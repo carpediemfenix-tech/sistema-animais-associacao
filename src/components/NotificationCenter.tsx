@@ -1,74 +1,31 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useState } from 'react';
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { 
   Bell,
   BellRing,
   Check,
-  X,
   Archive,
-  Filter,
   Settings,
   Trash2,
   AlertTriangle,
   Info,
-  CheckCircle,
   Clock,
-  User,
-  Heart,
-  Users,
-  FileText,
   AlertCircle,
-  Wrench,
   Search,
   RefreshCw,
   Volume2,
   VolumeX,
-  MoreVertical,
-  Eye,
-  EyeOff,
   Zap,
-  Shield,
-  Activity
+  Bug
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
-
-interface Notificacao {
-  id: string;
-  tipo_id?: string;
-  utilizador_id: string;
-  titulo: string;
-  mensagem: string;
-  prioridade: 'baixa' | 'media' | 'alta' | 'critica' | 'urgente';
-  categoria: string;
-  entidade_tipo?: string;
-  entidade_id?: string;
-  acao_url?: string;
-  acao_texto?: string;
-  lida: boolean;
-  arquivada: boolean;
-  data_leitura?: string;
-  auto_dismiss: boolean;
-  som_ativo: boolean;
-  tags?: string[];
-  metadata?: any;
-  created_at: string;
-  updated_at: string;
-  tipos_notificacoes?: {
-    nome: string;
-    icone: string;
-    cor: string;
-    categoria: string;
-  };
-}
+import { useNotifications } from "@/hooks/useNotifications";
 
 interface NotificationCenterProps {
   isOpen: boolean;
@@ -79,185 +36,55 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
   isOpen,
   onClose
 }) => {
-  const [notificacoes, setNotificacoes] = useState<Notificacao[]>([]);
-  const [loading, setLoading] = useState(true);
   const [filtroCategoria, setFiltroCategoria] = useState<string>('todas');
   const [filtroPrioridade, setFiltroPrioridade] = useState<string>('todas');
   const [filtroStatus, setFiltroStatus] = useState<string>('todas');
   const [searchTerm, setSearchTerm] = useState('');
-  const [configuracaoOpen, setConfiguracaoOpen] = useState(false);
   const [somAtivo, setSomAtivo] = useState(true);
   const { toast } = useToast();
-  const { user } = useAuth();
+  
+  // Usar o hook de notificações
+  const {
+    notificacoes,
+    loading,
+    contadorNaoLidas,
+    carregarNotificacoes,
+    marcarComoLida,
+    marcarTodasComoLidas,
+    arquivarNotificacao,
+    eliminarNotificacao,
+    recalcularContador,
+    limparDadosInconsistentes
+  } = useNotifications();
 
-  // Carregar notificações
-  const carregarNotificacoes = useCallback(async () => {
-    if (!user) return;
+  // Função de debug
+  const debugContador = async () => {
+    console.log('🐛 [DEBUG] Iniciando debug do contador...');
+    console.log('🐛 [DEBUG] Contador atual:', contadorNaoLidas);
+    console.log('🐛 [DEBUG] Notificações carregadas:', notificacoes.length);
     
-    try {
-      setLoading(true);
-      console.log('🔔 Carregando notificações...');
-
-      const { data, error } = await supabase
-        .from('notificacoes')
-        .select(`
-          *,
-          tipos_notificacoes (
-            nome,
-            icone,
-            cor,
-            categoria
-          )
-        `)
-        .eq('utilizador_id', user.username)
-        .order('created_at', { ascending: false })
-        .limit(100);
-
-      if (error) {
-        console.error('❌ Erro ao carregar notificações:', error);
-        throw error;
-      }
-
-      console.log('✅ Notificações carregadas:', data?.length || 0);
-      setNotificacoes(data || []);
-    } catch (error: any) {
-      console.error('💥 Erro geral:', error);
-      toast({
-        title: "Erro ao carregar notificações",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [user, toast]);
-
-  // Marcar como lida
-  const marcarComoLida = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('notificacoes')
-        .update({ 
-          lida: true, 
-          data_leitura: new Date().toISOString() 
-        })
-        .eq('id', id);
-
-      if (error) throw error;
-
-      setNotificacoes(prev => 
-        prev.map(notif => 
-          notif.id === id 
-            ? { ...notif, lida: true, data_leitura: new Date().toISOString() }
-            : notif
-        )
-      );
-
-      toast({
-        title: "✅ Notificação marcada como lida",
-        description: "A notificação foi marcada como lida",
-      });
-    } catch (error: any) {
-      console.error('❌ Erro ao marcar como lida:', error);
-      toast({
-        title: "Erro",
-        description: error.message,
-        variant: "destructive",
+    const naoLidasLocal = notificacoes.filter(n => !n.lida && !n.arquivada);
+    console.log('🐛 [DEBUG] Não lidas localmente:', naoLidasLocal.length);
+    
+    if (naoLidasLocal.length > 0) {
+      console.log('🐛 [DEBUG] Notificações não lidas:');
+      naoLidasLocal.forEach((notif, index) => {
+        console.log(`  ${index + 1}. ${notif.titulo} - ID: ${notif.id}`);
       });
     }
-  };
-
-  // Marcar todas como lidas
-  const marcarTodasComoLidas = async () => {
-    if (!user) return;
-
-    try {
-      const { error } = await supabase
-        .from('notificacoes')
-        .update({ 
-          lida: true, 
-          data_leitura: new Date().toISOString() 
-        })
-        .eq('utilizador_id', user.username)
-        .eq('lida', false);
-
-      if (error) throw error;
-
-      setNotificacoes(prev => 
-        prev.map(notif => ({ 
-          ...notif, 
-          lida: true, 
-          data_leitura: new Date().toISOString() 
-        }))
-      );
-
-      toast({
-        title: "✅ Todas as notificações marcadas como lidas",
-        description: "Todas as notificações foram marcadas como lidas",
-      });
-    } catch (error: any) {
-      console.error('❌ Erro ao marcar todas como lidas:', error);
-      toast({
-        title: "Erro",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Arquivar notificação
-  const arquivarNotificacao = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('notificacoes')
-        .update({ arquivada: true })
-        .eq('id', id);
-
-      if (error) throw error;
-
-      setNotificacoes(prev => prev.filter(notif => notif.id !== id));
-
-      toast({
-        title: "📁 Notificação arquivada",
-        description: "A notificação foi arquivada",
-      });
-    } catch (error: any) {
-      console.error('❌ Erro ao arquivar:', error);
-      toast({
-        title: "Erro",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Eliminar notificação
-  const eliminarNotificacao = async (id: string) => {
-    const confirmacao = window.confirm('Tem certeza que deseja eliminar esta notificação?');
-    if (!confirmacao) return;
-
-    try {
-      const { error } = await supabase
-        .from('notificacoes')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      setNotificacoes(prev => prev.filter(notif => notif.id !== id));
-
-      toast({
-        title: "🗑️ Notificação eliminada",
-        description: "A notificação foi eliminada permanentemente",
-      });
-    } catch (error: any) {
-      console.error('❌ Erro ao eliminar:', error);
-      toast({
-        title: "Erro",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
+    
+    // Verificar dados na base de dados
+    const realCount = await limparDadosInconsistentes();
+    console.log('🐛 [DEBUG] Contador real da BD:', realCount);
+    
+    // Recalcular contador local
+    const localCount = recalcularContador();
+    console.log('🐛 [DEBUG] Contador recalculado:', localCount);
+    
+    toast({
+      title: "🐛 Debug Completo",
+      description: `Contador: ${contadorNaoLidas} | BD: ${realCount} | Local: ${localCount}`,
+    });
   };
 
   // Filtrar notificações
@@ -322,12 +149,6 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
     }).length
   };
 
-  useEffect(() => {
-    if (isOpen) {
-      carregarNotificacoes();
-    }
-  }, [isOpen, carregarNotificacoes]);
-
   if (!isOpen) return null;
 
   return (
@@ -338,9 +159,9 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
             <div className="flex items-center space-x-3">
               <div className="relative">
                 <Bell className="h-6 w-6 text-blue-600" />
-                {stats.naoLidas > 0 && (
+                {contadorNaoLidas > 0 && (
                   <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs bg-red-500">
-                    {stats.naoLidas > 99 ? '99+' : stats.naoLidas}
+                    {contadorNaoLidas > 99 ? '99+' : contadorNaoLidas}
                   </Badge>
                 )}
               </div>
@@ -350,18 +171,19 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setSomAtivo(!somAtivo)}
-                className="hidden sm:flex"
+                onClick={debugContador}
+                className="hidden sm:flex text-purple-600 hover:text-purple-700"
+                title="Debug Contador"
               >
-                {somAtivo ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+                <Bug className="h-4 w-4" />
               </Button>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setConfiguracaoOpen(true)}
+                onClick={() => setSomAtivo(!somAtivo)}
                 className="hidden sm:flex"
               >
-                <Settings className="h-4 w-4" />
+                {somAtivo ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
               </Button>
               <Button
                 variant="outline"
@@ -414,6 +236,24 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
                 </div>
               </div>
             </Card>
+          </div>
+
+          {/* Debug Info */}
+          <div className="mb-4 p-3 bg-purple-50 rounded-lg border border-purple-200">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-purple-700">
+                🐛 Debug: Contador={contadorNaoLidas} | Local={stats.naoLidas} | Total={stats.total}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={debugContador}
+                className="text-purple-600 hover:text-purple-700"
+              >
+                <Bug className="h-4 w-4 mr-1" />
+                Debug
+              </Button>
+            </div>
           </div>
 
           {/* Filtros e Pesquisa */}

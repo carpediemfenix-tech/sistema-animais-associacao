@@ -39,6 +39,45 @@ export const useNotifications = () => {
   const { toast } = useToast();
   const { user } = useAuth();
 
+  // Função para forçar recalculo do contador
+  const recalcularContador = useCallback(() => {
+    const naoLidas = notificacoes.filter(n => !n.lida && !n.arquivada).length;
+    console.log('🔄 [HOOK] Recalculando contador:', naoLidas);
+    setContadorNaoLidas(naoLidas);
+    return naoLidas;
+  }, [notificacoes]);
+
+  // Função para limpar dados inconsistentes
+  const limparDadosInconsistentes = useCallback(async () => {
+    if (!user) return;
+    
+    try {
+      console.log('🧽 [HOOK] Limpando dados inconsistentes...');
+      
+      // Forçar recarga completa dos dados
+      const { data, error } = await supabase
+        .from('notificacoes')
+        .select('id, lida, arquivada')
+        .eq('utilizador_id', user.username);
+
+      if (error) {
+        console.error('❌ [HOOK] Erro ao verificar dados:', error);
+        return;
+      }
+
+      const realNaoLidas = data?.filter(n => !n.lida && !n.arquivada).length || 0;
+      console.log('🔍 [HOOK] Contador real da BD:', realNaoLidas);
+      
+      // Forçar atualização do contador
+      setContadorNaoLidas(realNaoLidas);
+      
+      return realNaoLidas;
+    } catch (error) {
+      console.error('💥 [HOOK] Erro ao limpar dados:', error);
+      return 0;
+    }
+  }, [user]);
+
   // Carregar notificações
   const carregarNotificacoes = useCallback(async () => {
     if (!user) return;
@@ -69,10 +108,20 @@ export const useNotifications = () => {
       }
 
       console.log('✅ [HOOK] Notificações carregadas:', data?.length || 0);
+      
+      // Debug detalhado das notificações
+      if (data && data.length > 0) {
+        console.log('🔍 [HOOK] Detalhes das notificações:');
+        data.forEach((notif, index) => {
+          console.log(`  ${index + 1}. ${notif.titulo} - Lida: ${notif.lida}, Arquivada: ${notif.arquivada}`);
+        });
+      }
+      
       setNotificacoes(data || []);
       
       // Atualizar contador de não lidas
       const naoLidas = data?.filter(n => !n.lida).length || 0;
+      console.log('🔢 [HOOK] Contador de não lidas:', naoLidas);
       setContadorNaoLidas(naoLidas);
       
     } catch (error: any) {
@@ -344,6 +393,8 @@ export const useNotifications = () => {
     marcarComoLida,
     marcarTodasComoLidas,
     arquivarNotificacao,
-    eliminarNotificacao
+    eliminarNotificacao,
+    recalcularContador,
+    limparDadosInconsistentes
   };
 };
