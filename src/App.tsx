@@ -28,6 +28,7 @@ import Relatorios from "./pages/Relatorios";
 import Configuracoes from "./pages/Configuracoes";
 import GestaoUtilizadores from "./pages/GestaoUtilizadores";
 import AnimaisArquivados from "./pages/AnimaisArquivados";
+import AnimaisAdotados from "./pages/AnimaisAdotados";
 import GestaoGrupos from "./pages/GestaoGrupos";
 import GrupoDetail from "./pages/GrupoDetail";
 import ManualUtilizador from "./pages/ManualUtilizador";
@@ -114,6 +115,7 @@ const App = () => (
             <Route path="/animal/:id/financeiro" element={<ProtectedRoute><AnimalFinanceiro /></ProtectedRoute>} />
             <Route path="/animal/:id/editar" element={<ProtectedRoute><EditarAnimal /></ProtectedRoute>} />
             <Route path="/novo-animal" element={<ProtectedRoute><NovoAnimal /></ProtectedRoute>} />
+            <Route path="/animais-adotados" element={<ProtectedRoute><AnimaisAdotados /></ProtectedRoute>} />
             <Route path="/intervencoes" element={<ProtectedRoute><IntervencoesPage /></ProtectedRoute>} />
             <Route path="/eventos" element={<ProtectedRoute><EventosPage /></ProtectedRoute>} />
             {/* Rotas do Sistema de Voluntários Valentão */}

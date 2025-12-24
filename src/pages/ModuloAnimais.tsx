@@ -15,7 +15,8 @@ import {
   List,
   Grid3X3,
   Stethoscope,
-  Target
+  Target,
+  Heart
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -71,11 +72,11 @@ const ModuloAnimais = () => {
       cor: "bg-gray-500"
     },
     {
-      titulo: "Localizações",
-      descricao: "Gestão de localizações e espaços",
-      icone: MapPin,
-      rota: "/configuracoes/localizacoes",
-      cor: "bg-purple-500"
+      titulo: "Adotados",
+      descricao: "Listagem de animais adotados",
+      icone: Heart,
+      rota: "/animais-adotados",
+      cor: "bg-pink-500"
     },
     {
       titulo: "Histórico de Nomes",

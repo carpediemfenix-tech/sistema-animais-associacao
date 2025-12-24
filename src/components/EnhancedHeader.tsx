@@ -203,10 +203,7 @@ const EnhancedHeader = () => {
       id: 'B02',
       title: 'Módulo de Animais',
       navigationButtons: [
-        { label: 'Dashboard', path: '/', icon: <Home className="h-4 w-4" /> },
-        { label: 'Lista Animais', path: '/animais', icon: <PawPrint className="h-4 w-4" /> },
-        { label: 'Histórico Nomes', path: '/historico-nomes', icon: <History className="h-4 w-4" /> },
-        { label: 'Estatísticas', path: '/estatisticas-avancadas', icon: <BarChart3 className="h-4 w-4" /> }
+        // Navegação será gerida pelo próprio componente ModuloAnimais
       ]
     },
     '/animal/novo': {
