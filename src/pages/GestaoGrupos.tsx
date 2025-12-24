@@ -428,135 +428,111 @@ const GestaoGrupos = () => {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <EnhancedHeader />
       
-      <div className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Área de Navegação Contextual */}
-        <div className="bg-white rounded-lg shadow-sm border mb-6 p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Button variant="outline" asChild>
-                <Link to="/modulo-animais">
-                  <Heart className="h-4 w-4 mr-2" />
-                  Módulo Animais
-                </Link>
-              </Button>
-              
-              {hasPermission('create') && (
-                <Button onClick={openNewDialog}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Novo Grupo
-                </Button>
-              )}
-              
-              <Button variant="outline" asChild>
-                <Link to="/">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Dashboard Principal
-                </Link>
-              </Button>
+      <div className="flex-1 max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-6">
+        {/* Header - Otimizado para móvel */}
+        <div className="mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+            <div className="mb-4 sm:mb-0">
+              <h1 className="text-2xl sm:text-xl sm:text-3xl font-bold text-gray-900 flex items-center">
+                <Users className="h-6 w-6 sm:h-8 sm:w-8 mr-2 sm:mr-3 text-blue-600" />
+                <span className="hidden sm:inline">Gestão de Grupos</span>
+                <span className="sm:hidden">Grupos</span>
+              </h1>
+              <p className="text-sm sm:text-base text-gray-600 mt-1">
+                <span className="hidden sm:inline">Matilhas, Colónias, Sócios e grupos especiais</span>
+                <span className="sm:hidden">Gestão de grupos da associação</span>
+              </p>
             </div>
           </div>
         </div>
-        
-        {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-              <Users className="h-8 w-8 mr-3 text-blue-600" />
-              Gestão de Grupos
-            </h1>
-            <p className="text-gray-600 mt-1">
-              Matilhas, Colónias, Sócios e grupos especiais
-            </p>
-          </div>
-        </div>
         {/* Estatísticas */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-6 mb-6 sm:mb-8">
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-3 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total de Grupos</p>
-                  <p className="text-3xl font-bold text-gray-900">{grupos.length}</p>
+                  <p className="text-xs sm:text-xs sm:text-sm font-medium text-gray-600">Total de Grupos</p>
+                  <p className="text-xl sm:text-xl sm:text-3xl font-bold text-gray-900">{grupos.length}</p>
                 </div>
-                <Users className="h-8 w-8 text-blue-600" />
+                <Users className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
               </div>
             </CardContent>
           </Card>
           
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-3 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Matilhas</p>
-                  <p className="text-3xl font-bold text-blue-600">
+                  <p className="text-xs sm:text-sm font-medium text-gray-600">Matilhas</p>
+                  <p className="text-xl sm:text-3xl font-bold text-blue-600">
                     {grupos.filter(g => 
                       g.tipo && g.tipo.toLowerCase().includes('matilha')
                     ).length}
                   </p>
                 </div>
-                <Dog className="h-8 w-8 text-blue-600" />
+                <Dog className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
               </div>
             </CardContent>
           </Card>
           
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-3 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Colónias</p>
-                  <p className="text-3xl font-bold text-purple-600">
+                  <p className="text-xs sm:text-sm font-medium text-gray-600">Colónias</p>
+                  <p className="text-xl sm:text-3xl font-bold text-purple-600">
                     {grupos.filter(g => 
                       g.tipo && (g.tipo.toLowerCase().includes('colónia') || g.tipo.toLowerCase().includes('colonia'))
                     ).length}
                   </p>
                 </div>
-                <Cat className="h-8 w-8 text-purple-600" />
+                <Cat className="h-6 w-6 sm:h-8 sm:w-8 text-purple-600" />
               </div>
             </CardContent>
           </Card>
           
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-3 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Canis</p>
-                  <p className="text-3xl font-bold text-orange-600">
+                  <p className="text-xs sm:text-sm font-medium text-gray-600">Canis</p>
+                  <p className="text-xl sm:text-3xl font-bold text-orange-600">
                     {grupos.filter(g => 
                       g.tipo && g.tipo.toLowerCase().includes('canil')
                     ).length}
                   </p>
                 </div>
-                <Building2 className="h-8 w-8 text-orange-600" />
+                <Building2 className="h-6 w-6 sm:h-8 sm:w-8 text-orange-600" />
               </div>
             </CardContent>
           </Card>
           
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-3 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Gatis</p>
-                  <p className="text-3xl font-bold text-pink-600">
+                  <p className="text-xs sm:text-sm font-medium text-gray-600">Gatis</p>
+                  <p className="text-xl sm:text-3xl font-bold text-pink-600">
                     {grupos.filter(g => 
                       g.tipo && g.tipo.toLowerCase().includes('gatil')
                     ).length}
                   </p>
                 </div>
-                <Heart className="h-8 w-8 text-pink-600" />
+                <Heart className="h-6 w-6 sm:h-8 sm:w-8 text-pink-600" />
               </div>
             </CardContent>
           </Card>
           
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-3 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total de Animais</p>
-                  <p className="text-3xl font-bold text-green-600">
+                  <p className="text-xs sm:text-sm font-medium text-gray-600">Total de Animais</p>
+                  <p className="text-xl sm:text-3xl font-bold text-green-600">
                     {grupos.reduce((sum, g) => sum + (g.total_animais || 0), 0)}
                   </p>
                 </div>
-                <PawPrint className="h-8 w-8 text-green-600" />
+                <PawPrint className="h-6 w-6 sm:h-8 sm:w-8 text-green-600" />
               </div>
             </CardContent>
           </Card>
