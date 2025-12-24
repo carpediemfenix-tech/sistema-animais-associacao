@@ -90,6 +90,7 @@ import RelatoriosFinanceiros from "./pages/RelatoriosFinanceiros";
 import GestaoSocios from "./pages/GestaoSocios";
 import ConfiguracaoIntervencoes from "./pages/ConfiguracaoIntervencoes";
 import GruposArquivados from "./pages/GruposArquivados";
+import LogsAcesso from "./pages/LogsAcesso";
 
 const queryClient = new QueryClient();
 
@@ -183,6 +184,7 @@ const App = () => (
             <Route path="/historico-nomes" element={<ProtectedRoute><HistoricoNomesAnimais /></ProtectedRoute>} />
             <Route path="/animal/:animalId/historico-nomes" element={<ProtectedRoute><HistoricoNomesAnimais /></ProtectedRoute>} />
             <Route path="/utilizadores" element={<ProtectedRoute><GestaoUtilizadores /></ProtectedRoute>} />
+            <Route path="/logs-acesso" element={<ProtectedRoute><LogsAcesso /></ProtectedRoute>} />
             <Route path="/animais-arquivados" element={<ProtectedRoute><AnimaisArquivados /></ProtectedRoute>} />
             <Route path="/grupos" element={<ProtectedRoute><GestaoGrupos /></ProtectedRoute>} />
             <Route path="/grupos-arquivados" element={<ProtectedRoute><GruposArquivados /></ProtectedRoute>} />

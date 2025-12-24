@@ -45,6 +45,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [showGoodbyeMessage, setShowGoodbyeMessage] = useState(false);
   const { toast } = useToast();
 
+  // Função para registar logs de acesso
+  const registarLogAcesso = async (utilizadorNome: string, acao: 'login' | 'logout', sessaoId?: string, duracaoSessao?: number) => {
+    try {
+      console.log(`📝 [LOG] Registando ${acao} para ${utilizadorNome}`);
+      
+      const logData = {
+        utilizador_nome: utilizadorNome,
+        utilizador_id: utilizadorNome, // Por agora usar o nome como ID
+        acao,
+        data_hora: new Date().toISOString(),
+        sessao_id: sessaoId || `sess_${Date.now()}`,
+        duracao_sessao: duracaoSessao,
+        ip_address: null, // Pode ser implementado posteriormente
+        user_agent: navigator.userAgent
+      };
+
+      const { error } = await supabase
+        .from('user_access_logs')
+        .insert([logData]);
+
+      if (error) {
+        console.error('❌ [LOG] Erro ao registar log:', error);
+      } else {
+        console.log('✅ [LOG] Log registado com sucesso');
+      }
+    } catch (error) {
+      console.error('💥 [LOG] Erro inesperado ao registar log:', error);
+    }
+  };
+
   // Verificar se há utilizador logado no localStorage
   useEffect(() => {
     const checkStoredUser = () => {
@@ -116,6 +146,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(userData);
       localStorage.setItem('valentao_user', JSON.stringify(userData));
       
+      // Registar log de login
+      const sessaoId = `sess_${Date.now()}_${userData.username}`;
+      localStorage.setItem('valentao_sessao_id', sessaoId);
+      localStorage.setItem('valentao_login_time', new Date().toISOString());
+      await registarLogAcesso(userData.username, 'login', sessaoId);
+      
       console.log('🔍 [AUTH] Estado atualizado:', userData);
       
       // Mostrar mensagem de boas-vindas
@@ -136,8 +172,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   // Função de logout
-  const logout = () => {
+  const logout = async () => {
     console.log('🚪 [AUTH] Logout realizado');
+    
+    // Calcular duração da sessão
+    const loginTime = localStorage.getItem('valentao_login_time');
+    const sessaoId = localStorage.getItem('valentao_sessao_id');
+    let duracaoSessao = 0;
+    
+    if (loginTime) {
+      const loginDate = new Date(loginTime);
+      const logoutDate = new Date();
+      duracaoSessao = Math.floor((logoutDate.getTime() - loginDate.getTime()) / (1000 * 60)); // em minutos
+    }
+    
+    // Registar log de logout se há utilizador logado
+    if (user && sessaoId) {
+      await registarLogAcesso(user.username, 'logout', sessaoId, duracaoSessao);
+    }
     
     // Mostrar mensagem de despedida
     setShowGoodbyeMessage(true);
@@ -146,6 +198,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setTimeout(() => {
       setUser(null);
       localStorage.removeItem('valentao_user');
+      localStorage.removeItem('valentao_sessao_id');
+      localStorage.removeItem('valentao_login_time');
       setShowGoodbyeMessage(false);
     }, 4300); // Aumentado de 2300ms para 4300ms para sincronizar com a mensagem de 4 segundos
   };

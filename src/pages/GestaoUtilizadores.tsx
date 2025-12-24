@@ -517,6 +517,13 @@ const GestaoUtilizadores = () => {
             </div>
             
             <div className="flex items-center space-x-4">
+              <Link to="/logs-acesso">
+                <Button variant="outline" size="sm">
+                  <Shield className="h-4 w-4 mr-2" />
+                  Logs de Acesso
+                </Button>
+              </Link>
+              
               <Button 
                 variant="ghost" 
                 size="sm" 
@@ -526,7 +533,6 @@ const GestaoUtilizadores = () => {
               >
                 <LogOut className="h-4 w-4" />
               </Button>
-              
               <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogTrigger asChild>
                   <Button onClick={resetForm}>

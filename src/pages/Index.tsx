@@ -248,18 +248,18 @@ const Index: React.FC = () => {
               </Card>
             </Link>
 
-            {/* 7. Sócios */}
-            <Link to="/socios" className="group">
+            {/* 7. Utilizadores */}
+            <Link to="/utilizadores" className="group">
               <Card className="h-full transition-all duration-300 hover:shadow-xl hover:-translate-y-2 border-0 bg-gradient-to-br from-indigo-50 to-purple-50 group-hover:from-indigo-100 group-hover:to-purple-100">
                 <CardContent className="p-6 text-center">
                   <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                    <UserCheck className="h-10 w-10 text-white" />
+                    <Users className="h-10 w-10 text-white" />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">Sócios</h3>
-                  <p className="text-sm text-gray-600 mb-4">Gestão de sócios e apoiantes</p>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">Utilizadores</h3>
+                  <p className="text-sm text-gray-600 mb-4">Gestão de utilizadores e acessos</p>
                   <div className="flex justify-center space-x-2">
-                    <Badge variant="secondary" className="text-xs bg-indigo-100 text-indigo-700">Membros</Badge>
-                    <Badge variant="outline" className="text-xs">Apoio</Badge>
+                    <Badge variant="secondary" className="text-xs bg-indigo-100 text-indigo-700">Utilizadores</Badge>
+                    <Badge variant="outline" className="text-xs">Auditoria</Badge>
                   </div>
                 </CardContent>
               </Card>
