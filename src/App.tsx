@@ -86,6 +86,7 @@ import NovoMovimento from "./pages/NovoMovimento";
 import GestaoContas from "./pages/GestaoContas";
 import ConfiguracoesFinanceiras from "./pages/ConfiguracoesFinanceiras";
 import RelatoriosFinanceiros from "./pages/RelatoriosFinanceiros";
+import GestaoSocios from "./pages/GestaoSocios";
 
 const queryClient = new QueryClient();
 
@@ -167,6 +168,7 @@ const App = () => (
             <Route path="/financeiro/relatorios" element={<ProtectedRoute><RelatoriosFinanceiros /></ProtectedRoute>} />
             <Route path="/relatorios" element={<ProtectedRoute><Relatorios /></ProtectedRoute>} />
             <Route path="/configuracoes" element={<ProtectedRoute><Configuracoes /></ProtectedRoute>} />
+            <Route path="/socios" element={<ProtectedRoute><GestaoSocios /></ProtectedRoute>} />
             <Route path="/configuracoes/especies" element={<ProtectedRoute><GestaoEspecies /></ProtectedRoute>} />
             <Route path="/configuracoes/grupos" element={<ProtectedRoute><GestaoGrupos /></ProtectedRoute>} />
             <Route path="/configuracoes/localizacoes" element={<ProtectedRoute><GestaoLocalizacoes /></ProtectedRoute>} />
