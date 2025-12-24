@@ -74,7 +74,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.error('💥 [LOG] Erro inesperado ao registar log:', error);
     }
   };
-
   // Verificar se há utilizador logado no localStorage
   useEffect(() => {
     const checkStoredUser = () => {
@@ -83,17 +82,91 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (storedUser) {
           const userData = JSON.parse(storedUser);
           console.log('🔐 [AUTH] Utilizador encontrado no localStorage:', userData.username);
+          
+          // Verificar se a sessão não excedeu 12 horas
+          const loginTime = localStorage.getItem('valentao_login_time');
+          if (loginTime) {
+            const loginDate = new Date(loginTime);
+            const currentDate = new Date();
+            const hoursElapsed = (currentDate.getTime() - loginDate.getTime()) / (1000 * 60 * 60);
+            
+            if (hoursElapsed >= 12) {
+              console.log('⏰ [AUTH] Sessão expirada (>12h), fazendo logout automático');
+              toast({
+                title: "⏰ Sessão expirada",
+                description: "A sua sessão expirou após 12 horas. Por favor, faça login novamente.",
+                variant: "destructive",
+              });
+              
+              // Registar logout automático
+              const sessaoId = localStorage.getItem('valentao_sessao_id');
+              const duracaoSessao = Math.floor(hoursElapsed * 60); // converter para minutos
+              registarLogAcesso(userData.username, 'logout', sessaoId || undefined, duracaoSessao);
+              
+              // Limpar dados
+              localStorage.removeItem('valentao_user');
+              localStorage.removeItem('valentao_sessao_id');
+              localStorage.removeItem('valentao_login_time');
+              setUser(null);
+              setLoading(false);
+              return;
+            }
+          }
+          
           setUser(userData);
         }
       } catch (error) {
         console.error('❌ [AUTH] Erro ao ler localStorage:', error);
         localStorage.removeItem('valentao_user');
+        localStorage.removeItem('valentao_sessao_id');
+        localStorage.removeItem('valentao_login_time');
       } finally {
         setLoading(false);
       }
     };
 
     checkStoredUser();
+    
+    // Verificar sessões longas a cada 30 minutos
+    const intervalId = setInterval(() => {
+      const loginTime = localStorage.getItem('valentao_login_time');
+      const storedUser = localStorage.getItem('valentao_user');
+      
+      if (loginTime && storedUser) {
+        const loginDate = new Date(loginTime);
+        const currentDate = new Date();
+        const hoursElapsed = (currentDate.getTime() - loginDate.getTime()) / (1000 * 60 * 60);
+        
+        if (hoursElapsed >= 12) {
+          console.log('⏰ [AUTH] Logout automático por sessão longa');
+          
+          try {
+            const userData = JSON.parse(storedUser);
+            const sessaoId = localStorage.getItem('valentao_sessao_id');
+            const duracaoSessao = Math.floor(hoursElapsed * 60);
+            
+            // Registar logout automático
+            registarLogAcesso(userData.username, 'logout', sessaoId || undefined, duracaoSessao);
+            
+            toast({
+              title: "⏰ Sessão expirada",
+              description: "A sua sessão expirou após 12 horas. Faça login novamente.",
+              variant: "destructive",
+            });
+          } catch (error) {
+            console.error('❌ [AUTH] Erro ao processar logout automático:', error);
+          }
+          
+          // Limpar dados
+          localStorage.removeItem('valentao_user');
+          localStorage.removeItem('valentao_sessao_id');
+          localStorage.removeItem('valentao_login_time');
+          setUser(null);
+        }
+      }
+    }, 30 * 60 * 1000); // 30 minutos
+
+    return () => clearInterval(intervalId);
   }, []);
 
   // Função de login

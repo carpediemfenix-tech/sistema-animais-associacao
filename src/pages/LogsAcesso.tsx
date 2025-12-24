@@ -20,7 +20,8 @@ import {
   Shield,
   Eye,
   Download,
-  RefreshCw
+  RefreshCw,
+  Trash2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -111,7 +112,47 @@ const LogsAcesso = () => {
     }
   };
 
-  // Filtrar logs por termo de pesquisa
+  // Função para limpar registos antigos (mais de 48 horas)
+  const limparRegistosAntigos = async () => {
+    const confirmacao = window.confirm(
+      'Tem certeza que deseja eliminar todos os registos com mais de 48 horas?\n\nEsta ação não pode ser desfeita.'
+    );
+    
+    if (!confirmacao) return;
+
+    try {
+      console.log('🗑️ Limpando registos antigos...');
+      
+      // Chamar Edge Function para limpeza
+      const { data, error } = await supabase.functions.invoke('cleanup_old_logs_2025_12_24_07_15');
+
+      if (error) {
+        console.error('❌ Erro ao limpar registos:', error);
+        throw error;
+      }
+
+      console.log('✅ Resposta da limpeza:', data);
+      
+      if (data.success) {
+        toast({
+          title: "✅ Limpeza concluída",
+          description: `${data.deleted_count} registos com mais de 48 horas foram eliminados`,
+        });
+      } else {
+        throw new Error(data.error || 'Erro desconhecido na limpeza');
+      }
+
+      // Recarregar logs
+      fetchLogs();
+    } catch (error: any) {
+      console.error('💥 Erro ao limpar registos:', error);
+      toast({
+        title: "Erro na limpeza",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
   const logsFiltrados = logs.filter(log => 
     log.utilizador_nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
     log.utilizador_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -220,6 +261,11 @@ const LogsAcesso = () => {
               </p>
             </div>
             <div className="flex space-x-2">
+              <Button onClick={limparRegistosAntigos} variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                <Trash2 className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">Limpar Antigos</span>
+                <span className="sm:hidden">🗑️</span>
+              </Button>
               <Button onClick={exportLogs} variant="outline" size="sm">
                 <Download className="h-4 w-4 mr-2" />
                 <span className="hidden sm:inline">Exportar</span>
