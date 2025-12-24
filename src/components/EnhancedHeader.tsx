@@ -193,10 +193,7 @@ const EnhancedHeader = () => {
       id: 'B01',
       title: 'Lista de Animais',
       navigationButtons: [
-        { label: 'Dashboard', path: '/', icon: <Home className="h-4 w-4" /> },
-        { label: 'Novo Animal', path: '/animal/novo', icon: <Plus className="h-4 w-4" /> },
-        { label: 'Módulo Animais', path: '/modulo-animais', icon: <Heart className="h-4 w-4" /> },
-        { label: 'Histórico Nomes', path: '/historico-nomes', icon: <History className="h-4 w-4" /> }
+        { label: 'Voltar', path: '/modulo-animais', icon: <ArrowLeft className="h-4 w-4" /> }
       ]
     },
     '/modulo-animais': {

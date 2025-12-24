@@ -25,7 +25,6 @@ interface AnimalAdotado {
   nome: string;
   especie: string;
   estado: string;
-  localizacao_atual?: string;
   created_at: string;
 }
 
@@ -64,7 +63,6 @@ const AnimaisAdotados: React.FC = () => {
           nome,
           especie,
           estado,
-          localizacao_atual,
           created_at
         `)
         .eq('estado', 'Adotado')
@@ -279,7 +277,6 @@ const AnimaisAdotados: React.FC = () => {
                         <TableRow>
                           <TableHead>Nome do Animal</TableHead>
                           <TableHead>Espécie</TableHead>
-                          <TableHead>Localização</TableHead>
                           <TableHead>Data de Registo</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -296,12 +293,6 @@ const AnimaisAdotados: React.FC = () => {
                               <Badge variant="outline">
                                 {animal.especie}
                               </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center">
-                                <MapPin className="h-4 w-4 mr-2 text-gray-400" />
-                                {animal.localizacao_atual || 'N/A'}
-                              </div>
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center">
@@ -331,14 +322,6 @@ const AnimaisAdotados: React.FC = () => {
                           </div>
                           
                           <div className="space-y-2 text-sm">
-                            <div className="flex items-center">
-                              <MapPin className="h-4 w-4 mr-2 text-gray-400" />
-                              <span className="text-gray-600">Localização:</span>
-                              <span className="ml-1 font-medium">
-                                {animal.localizacao_atual || 'N/A'}
-                              </span>
-                            </div>
-                            
                             <div className="flex items-center">
                               <Calendar className="h-4 w-4 mr-2 text-gray-400" />
                               <span className="text-gray-600">Data Registo:</span>
