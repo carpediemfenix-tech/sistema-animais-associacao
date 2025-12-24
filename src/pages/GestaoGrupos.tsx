@@ -133,6 +133,7 @@ const GestaoGrupos = () => {
       );
 
       console.log('✅ [GRUPOS] Grupos carregados:', gruposComContagem.length);
+      console.log('🔍 [GRUPOS] Tipos encontrados:', [...new Set(gruposComContagem.map(g => g.tipo))]);
       setGrupos(gruposComContagem);
     } catch (error: any) {
       console.error('💥 [GRUPOS] Erro:', error);
@@ -468,7 +469,7 @@ const GestaoGrupos = () => {
           </div>
         </div>
         {/* Estatísticas */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -487,7 +488,9 @@ const GestaoGrupos = () => {
                 <div>
                   <p className="text-sm font-medium text-gray-600">Matilhas</p>
                   <p className="text-3xl font-bold text-blue-600">
-                    {grupos.filter(g => g.tipo === 'matilha').length}
+                    {grupos.filter(g => 
+                      g.tipo && g.tipo.toLowerCase().includes('matilha')
+                    ).length}
                   </p>
                 </div>
                 <Dog className="h-8 w-8 text-blue-600" />
@@ -501,10 +504,44 @@ const GestaoGrupos = () => {
                 <div>
                   <p className="text-sm font-medium text-gray-600">Colónias</p>
                   <p className="text-3xl font-bold text-purple-600">
-                    {grupos.filter(g => g.tipo === 'colonia').length}
+                    {grupos.filter(g => 
+                      g.tipo && (g.tipo.toLowerCase().includes('colónia') || g.tipo.toLowerCase().includes('colonia'))
+                    ).length}
                   </p>
                 </div>
                 <Cat className="h-8 w-8 text-purple-600" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Canis</p>
+                  <p className="text-3xl font-bold text-orange-600">
+                    {grupos.filter(g => 
+                      g.tipo && g.tipo.toLowerCase().includes('canil')
+                    ).length}
+                  </p>
+                </div>
+                <Building2 className="h-8 w-8 text-orange-600" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Gatis</p>
+                  <p className="text-3xl font-bold text-pink-600">
+                    {grupos.filter(g => 
+                      g.tipo && g.tipo.toLowerCase().includes('gatil')
+                    ).length}
+                  </p>
+                </div>
+                <Heart className="h-8 w-8 text-pink-600" />
               </div>
             </CardContent>
           </Card>
@@ -546,8 +583,11 @@ const GestaoGrupos = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todos os tipos</SelectItem>
-                  <SelectItem value="matilha">Matilhas</SelectItem>
-                  <SelectItem value="colonia">Colónias</SelectItem>
+                  <SelectItem value="Matilha">Matilhas</SelectItem>
+                  <SelectItem value="Colónia">Colónias</SelectItem>
+                  <SelectItem value="Canil">Canis</SelectItem>
+                  <SelectItem value="Gatil">Gatis</SelectItem>
+                  <SelectItem value="Lar Temporário">Lares Temporários</SelectItem>
                 </SelectContent>
               </Select>
             </div>
