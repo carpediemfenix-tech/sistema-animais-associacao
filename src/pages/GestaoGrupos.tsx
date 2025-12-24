@@ -107,7 +107,6 @@ const GestaoGrupos = () => {
           voluntarios(nome)
         `)
         .eq('ativo', true)
-        .neq('arquivado', true) // Excluir grupos arquivados
         .order('tipo')
         .order('nome');
 
@@ -381,42 +380,6 @@ const GestaoGrupos = () => {
     }
   };
 
-  const handleArquivar = async (grupo: Grupo) => {
-    const confirmArquivar = confirm(
-      `Tem certeza que deseja arquivar o grupo "${grupo.nome}"?\n\n` +
-      `Grupos arquivados não aparecerão em listagens normais nem em formulários de seleção.`
-    );
-    
-    if (!confirmArquivar) return;
-
-    try {
-      console.log('📦 [GRUPOS] Arquivando grupo:', grupo.nome);
-
-      const { error } = await supabase
-        .from('grupos')
-        .update({ 
-          arquivado: true,
-          ativo: false // Arquivar também desativa
-        })
-        .eq('id', grupo.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "✅ Grupo arquivado",
-        description: `${grupo.nome} foi arquivado com sucesso`,
-      });
-
-      await fetchGrupos();
-    } catch (error: any) {
-      console.error('💥 [GRUPOS] Erro ao arquivar:', error);
-      toast({
-        title: "❌ Erro",
-        description: "Não foi possível arquivar o grupo",
-        variant: "destructive",
-      });
-    }
-  };
 
   // Filtrar grupos
   const gruposFiltrados = grupos.filter(grupo => {
@@ -712,17 +675,7 @@ const GestaoGrupos = () => {
                                 <Power className="h-4 w-4" />
                               </Button>
                             )}
-                            {hasPermission('update') && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleArquivar(grupo)}
-                                className="text-blue-600 hover:text-blue-800"
-                                title="Arquivar grupo"
-                              >
-                                <Archive className="h-4 w-4" />
-                              </Button>
-                            )}
+
                             {hasPermission('delete') && (
                               <Button
                                 variant="ghost"

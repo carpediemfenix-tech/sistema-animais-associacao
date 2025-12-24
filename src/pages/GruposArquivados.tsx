@@ -22,7 +22,8 @@ import {
   Dog,
   Loader2,
   AlertCircle,
-  Archive
+  Archive,
+  Power
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Grupo } from "@/types/animal";
@@ -45,7 +46,7 @@ const GruposArquivados = () => {
   const fetchGruposArquivados = async () => {
     try {
       setLoading(true);
-      console.log('📦 [GRUPOS ARQUIVADOS] Carregando grupos arquivados...');
+      console.log('📦 [GRUPOS DESATIVADOS] Carregando grupos desativados...');
 
       const { data, error } = await supabase
         .from('grupos')
@@ -53,22 +54,22 @@ const GruposArquivados = () => {
           *,
           voluntarios(nome)
         `)
-        .eq('arquivado', true)
+        .eq('ativo', false) // Grupos desativados em vez de arquivados
         .order('tipo')
         .order('nome');
 
       if (error) {
-        console.error('❌ [GRUPOS ARQUIVADOS] Erro ao carregar:', error);
+        console.error('❌ [GRUPOS DESATIVADOS] Erro ao carregar:', error);
         throw error;
       }
 
-      console.log('✅ [GRUPOS ARQUIVADOS] Grupos carregados:', data?.length || 0);
+      console.log('✅ [GRUPOS DESATIVADOS] Grupos carregados:', data?.length || 0);
       setGrupos(data || []);
     } catch (error: any) {
-      console.error('💥 [GRUPOS ARQUIVADOS] Erro:', error);
+      console.error('💥 [GRUPOS DESATIVADOS] Erro:', error);
       toast({
         title: "❌ Erro",
-        description: "Não foi possível carregar os grupos arquivados",
+        description: "Não foi possível carregar os grupos desativados",
         variant: "destructive",
       });
     } finally {
@@ -78,36 +79,33 @@ const GruposArquivados = () => {
 
   const handleRestaurar = async (grupo: Grupo) => {
     const confirmRestaurar = confirm(
-      `Tem certeza que deseja restaurar o grupo "${grupo.nome}"?\n\n` +
+      `Tem certeza que deseja ativar o grupo "${grupo.nome}"?\n\n` +
       `O grupo voltará a aparecer na listagem normal e em formulários de seleção.`
     );
     
     if (!confirmRestaurar) return;
 
     try {
-      console.log('🔄 [GRUPOS ARQUIVADOS] Restaurando grupo:', grupo.nome);
+      console.log('🔄 [GRUPOS DESATIVADOS] Ativando grupo:', grupo.nome);
 
       const { error } = await supabase
         .from('grupos')
-        .update({ 
-          arquivado: false,
-          ativo: true // Restaurar também ativa
-        })
+        .update({ ativo: true }) // Apenas ativar
         .eq('id', grupo.id);
 
       if (error) throw error;
 
       toast({
-        title: "✅ Grupo restaurado",
-        description: `${grupo.nome} foi restaurado com sucesso`,
+        title: "✅ Grupo ativado",
+        description: `${grupo.nome} foi ativado com sucesso`,
       });
 
       await fetchGruposArquivados();
     } catch (error: any) {
-      console.error('💥 [GRUPOS ARQUIVADOS] Erro ao restaurar:', error);
+      console.error('💥 [GRUPOS DESATIVADOS] Erro ao ativar:', error);
       toast({
         title: "❌ Erro",
-        description: "Não foi possível restaurar o grupo",
+        description: "Não foi possível ativar o grupo",
         variant: "destructive",
       });
     }
@@ -126,9 +124,9 @@ const GruposArquivados = () => {
 
   const getStatusBadge = (grupo: Grupo) => {
     return (
-      <Badge variant="secondary" className="bg-gray-100 text-gray-800">
-        <Archive className="h-3 w-3 mr-1" />
-        Arquivado
+      <Badge variant="secondary" className="bg-orange-100 text-orange-800">
+        <Power className="h-3 w-3 mr-1" />
+        Desativado
       </Badge>
     );
   };
@@ -150,7 +148,7 @@ const GruposArquivados = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-16 w-16 animate-spin mx-auto mb-4 text-blue-600" />
-          <p className="text-lg text-gray-600">A carregar grupos arquivados...</p>
+          <p className="text-lg text-gray-600">A carregar grupos desativados...</p>
         </div>
       </div>
     );
@@ -165,10 +163,10 @@ const GruposArquivados = () => {
         {/* Título da Página */}
         <div className="mb-6">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-            Grupos Arquivados
+            Grupos Desativados
           </h1>
           <p className="text-gray-600">
-            Gestão de grupos arquivados da associação
+            Gestão de grupos desativados da associação
           </p>
         </div>
 
@@ -177,7 +175,7 @@ const GruposArquivados = () => {
           <CardHeader>
             <CardTitle className="flex items-center">
               <Search className="h-5 w-5 mr-2" />
-              Pesquisar Grupos Arquivados
+              Pesquisar Grupos Desativados
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -230,11 +228,11 @@ const GruposArquivados = () => {
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center">
                 <Archive className="h-5 w-5 mr-2" />
-                Grupos Arquivados ({gruposFiltrados.length})
+                Grupos Desativados ({gruposFiltrados.length})
               </div>
             </CardTitle>
             <CardDescription>
-              Grupos que foram arquivados e não aparecem em listagens normais
+              Grupos que foram desativados e não aparecem em listagens normais
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -242,12 +240,12 @@ const GruposArquivados = () => {
               <div className="text-center py-12">
                 <Archive className="h-16 w-16 mx-auto mb-4 text-gray-400" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  {searchTerm ? 'Nenhum grupo encontrado' : 'Nenhum grupo arquivado'}
+                  {searchTerm ? 'Nenhum grupo encontrado' : 'Nenhum grupo desativado'}
                 </h3>
                 <p className="text-gray-600 mb-4">
                   {searchTerm 
                     ? 'Tente ajustar os filtros de pesquisa'
-                    : 'Não há grupos arquivados no momento'
+                    : 'Não há grupos desativados no momento'
                   }
                 </p>
                 {searchTerm && (
@@ -321,7 +319,7 @@ const GruposArquivados = () => {
                                 size="sm"
                                 onClick={() => handleRestaurar(grupo)}
                                 className="text-green-600 hover:text-green-800"
-                                title="Restaurar grupo"
+                                title="Ativar grupo"
                               >
                                 <RotateCcw className="h-4 w-4" />
                               </Button>

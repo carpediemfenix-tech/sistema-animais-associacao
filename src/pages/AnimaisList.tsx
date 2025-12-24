@@ -135,7 +135,7 @@ const AnimaisList: React.FC = () => {
       const [especiesData, sexosData, gruposData] = await Promise.all([
         supabase.from('especies').select('nome').eq('ativo', true).order('nome'),
         supabase.from('sexos').select('nome').eq('ativo', true).order('nome'),
-        supabase.from('grupos').select('id, nome, tipo').eq('ativo', true).neq('arquivado', true).order('nome')
+        supabase.from('grupos').select('id, nome, tipo').eq('ativo', true).order('nome')
       ]);
       
       setEspecies(especiesData.data || []);

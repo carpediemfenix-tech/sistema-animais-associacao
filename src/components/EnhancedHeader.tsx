@@ -405,13 +405,13 @@ const EnhancedHeader = () => {
       navigationButtons: [
         { label: 'Módulo Animais', path: '/modulo-animais', icon: <PawPrint className="h-4 w-4" /> },
         { label: 'Novo Grupo', path: '/grupo/novo', icon: <Plus className="h-4 w-4" /> },
-        { label: 'Arquivados', path: '/grupos-arquivados', icon: <Archive className="h-4 w-4" /> },
+        { label: 'Desativados', path: '/grupos-arquivados', icon: <Archive className="h-4 w-4" /> },
         { label: 'Dashboard Principal', path: '/', icon: <Home className="h-4 w-4" /> }
       ]
     },
     '/grupos-arquivados': {
       id: 'I03',
-      title: 'Grupos Arquivados',
+      title: 'Grupos Desativados',
       navigationButtons: [
         { label: 'Voltar', path: '/grupos', icon: <ArrowLeft className="h-4 w-4" /> },
         { label: 'Módulo Animais', path: '/modulo-animais', icon: <PawPrint className="h-4 w-4" /> }

@@ -174,8 +174,7 @@ const NovoAnimal = () => {
       const { data, error } = await supabase
         .from('grupos')
         .select('*')
-        .eq('ativo', true)
-        .neq('arquivado', true) // Excluir grupos arquivados
+        .eq('ativo', true) // Apenas grupos ativos
         .order('tipo')
         .order('nome');
 
