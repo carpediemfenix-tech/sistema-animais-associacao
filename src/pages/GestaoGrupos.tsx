@@ -29,7 +29,8 @@ import {
   AlertCircle,
   Heart,
   Archive,
-  Power
+  Power,
+  Building2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Grupo, Voluntario } from "@/types/animal";
