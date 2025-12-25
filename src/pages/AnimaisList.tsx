@@ -249,6 +249,111 @@ const AnimaisList: React.FC = () => {
           </p>
         </div>
 
+        {/* Estatísticas no Topo */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+          {/* Total de Animais */}
+          <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0 shadow-lg hover:shadow-xl transition-shadow">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs sm:text-sm opacity-90 mb-1">Total</p>
+                  <p className="text-2xl sm:text-3xl font-bold">{animais.length}</p>
+                  <p className="text-xs opacity-75 mt-1">animais</p>
+                </div>
+                <PawPrint className="h-8 w-8 sm:h-10 sm:w-10 opacity-50" />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Animais Ativos */}
+          <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white border-0 shadow-lg hover:shadow-xl transition-shadow">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs sm:text-sm opacity-90 mb-1">Ativos</p>
+                  <p className="text-2xl sm:text-3xl font-bold">
+                    {animais.filter(a => a.estado === 'Ativo').length}
+                  </p>
+                  <p className="text-xs opacity-75 mt-1">
+                    {animais.length > 0 ? Math.round((animais.filter(a => a.estado === 'Ativo').length / animais.length) * 100) : 0}%
+                  </p>
+                </div>
+                <Heart className="h-8 w-8 sm:h-10 sm:w-10 opacity-50" />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Animais Adotados */}
+          <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white border-0 shadow-lg hover:shadow-xl transition-shadow">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs sm:text-sm opacity-90 mb-1">Adotados</p>
+                  <p className="text-2xl sm:text-3xl font-bold">
+                    {animais.filter(a => a.estado === 'Adotado').length}
+                  </p>
+                  <p className="text-xs opacity-75 mt-1">
+                    {animais.length > 0 ? Math.round((animais.filter(a => a.estado === 'Adotado').length / animais.length) * 100) : 0}%
+                  </p>
+                </div>
+                <Users className="h-8 w-8 sm:h-10 sm:w-10 opacity-50" />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Animais Urgentes (>6 meses) */}
+          <Card className="bg-gradient-to-br from-red-500 to-red-600 text-white border-0 shadow-lg hover:shadow-xl transition-shadow">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs sm:text-sm opacity-90 mb-1">Urgente</p>
+                  <p className="text-2xl sm:text-3xl font-bold">
+                    {animais.filter(a => {
+                      const diasDesdeEntrada = Math.floor((new Date().getTime() - new Date(a.data_entrada).getTime()) / (1000 * 60 * 60 * 24));
+                      return a.estado === 'Ativo' && diasDesdeEntrada > 180;
+                    }).length}
+                  </p>
+                  <p className="text-xs opacity-75 mt-1">
+                    {animais.length > 0 ? Math.round((animais.filter(a => {
+                      const diasDesdeEntrada = Math.floor((new Date().getTime() - new Date(a.data_entrada).getTime()) / (1000 * 60 * 60 * 24));
+                      return a.estado === 'Ativo' && diasDesdeEntrada > 180;
+                    }).length / animais.length) * 100) : 0}%
+                  </p>
+                </div>
+                <Calendar className="h-8 w-8 sm:h-10 sm:w-10 opacity-50" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Filtros Rápidos por Espécie */}
+        <div className="flex flex-wrap gap-2 mb-6">
+          <Button
+            variant={filtroEspecie === 'todas' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFiltroEspecie('todas')}
+            className="text-xs sm:text-sm"
+          >
+            Todos ({animais.length})
+          </Button>
+          {especies.map((especie) => {
+            const count = animais.filter(a => a.especie === especie.nome).length;
+            const icon = especie.nome.toLowerCase().includes('cão') ? '🐕' : 
+                        especie.nome.toLowerCase().includes('gato') ? '🐱' : '🐾';
+            return (
+              <Button
+                key={especie.nome}
+                variant={filtroEspecie === especie.nome ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setFiltroEspecie(especie.nome)}
+                className="text-xs sm:text-sm"
+              >
+                {icon} {especie.nome} ({count})
+              </Button>
+            );
+          })}
+        </div>
+
         {/* Filtros e Pesquisa */}
         <Card className="mb-4 sm:mb-6">
           <CardHeader className="pb-3 sm:pb-6">
@@ -404,7 +509,10 @@ const AnimaisList: React.FC = () => {
             {filteredAnimais.map((animal) => (
               <Card 
                 key={animal.id} 
-                className={`hover:shadow-lg transition-shadow duration-200 ${getCardColorBySex(animal.sexo)}`}
+                className="hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 border-l-4 group relative overflow-hidden"
+                style={{
+                  borderLeftColor: animal.sexo === 'Macho' ? '#3b82f6' : animal.sexo === 'Fêmea' ? '#ec4899' : '#9ca3af'
+                }}
               >
                 <CardHeader className="pb-2 sm:pb-3 p-3 sm:p-6">
                   <div className="flex items-start gap-3">
@@ -436,12 +544,14 @@ const AnimaisList: React.FC = () => {
                     </div>
 
                     {/* Informações do Animal */}
-                    <div className="flex-1 min-w-0 flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1 sm:gap-2 mb-1">
-                          <CardTitle className="text-base sm:text-lg font-bold text-gray-900 truncate">
-                            {animal.nome}
-                          </CardTitle>
+                    <div className="flex-1 min-w-0">
+                      {/* Nome em destaque */}
+                      <CardTitle className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
+                        {animal.nome}
+                      </CardTitle>
+                      
+                      {/* Sexo e Estado em badges */}
+                      <div className="flex flex-wrap items-center gap-2 mb-3">
                         <Badge className={`${getSexBadge(animal.sexo)} text-xs shrink-0`}>
                           <span className="hidden sm:inline">
                             {animal.sexo === 'Macho' ? '♂️' : animal.sexo === 'Fêmea' ? '♀️' : '❓'} {animal.sexo}
@@ -471,10 +581,10 @@ const AnimaisList: React.FC = () => {
                         </div>
                       )}
                     </div>
-                      <Badge className={getEstadoBadge(animal.estado)}>
-                        {animal.estado}
-                      </Badge>
-                    </div>
+                    
+                    <Badge className={getEstadoBadge(animal.estado)}>
+                      {animal.estado}
+                    </Badge>
                   </div>
                 </CardHeader>
                 
