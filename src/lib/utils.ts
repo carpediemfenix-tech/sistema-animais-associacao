@@ -8,6 +8,7 @@ export function cn(...inputs: ClassValue[]) {
 /**
  * Converte URL do Google Drive para formato de imagem direta
  * @param url - URL original do Google Drive ou qualquer outro URL de imagem
+ * @param size - Tamanho da imagem em pixels (padrão: 1000). Use 200 para thumbnails, 1000 para imagens grandes
  * @returns URL convertido para exibição direta de imagem
  * 
  * Suporta múltiplos formatos:
@@ -16,9 +17,10 @@ export function cn(...inputs: ClassValue[]) {
  * - https://drive.google.com/open?id=ID
  * 
  * Converte para:
- * - https://drive.google.com/thumbnail?id=ID&sz=w1000 (melhor para imagens)
+ * - https://drive.google.com/thumbnail?id=ID&sz=w200 (thumbnails leves para listas)
+ * - https://drive.google.com/thumbnail?id=ID&sz=w1000 (imagens grandes para fichas)
  */
-export function convertGoogleDriveUrl(url: string): string {
+export function convertGoogleDriveUrl(url: string, size: number = 1000): string {
   if (!url) return url;
   
   // Padrão 1: /file/d/ID/
@@ -27,7 +29,7 @@ export function convertGoogleDriveUrl(url: string): string {
   
   if (match1 && match1[1]) {
     // Usa thumbnail API que funciona melhor para imagens
-    return `https://drive.google.com/thumbnail?id=${match1[1]}&sz=w1000`;
+    return `https://drive.google.com/thumbnail?id=${match1[1]}&sz=w${size}`;
   }
   
   // Padrão 2: open?id=ID
@@ -35,7 +37,7 @@ export function convertGoogleDriveUrl(url: string): string {
   const match2 = url.match(driveRegex2);
   
   if (match2 && match2[1]) {
-    return `https://drive.google.com/thumbnail?id=${match2[1]}&sz=w1000`;
+    return `https://drive.google.com/thumbnail?id=${match2[1]}&sz=w${size}`;
   }
   
   // Se não for Google Drive, retorna o URL original

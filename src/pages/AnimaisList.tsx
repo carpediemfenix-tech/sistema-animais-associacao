@@ -25,6 +25,7 @@ import {
   Home
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { convertGoogleDriveUrl } from "@/lib/utils";
 
 interface Animal {
   id: string;
@@ -40,6 +41,7 @@ interface Animal {
   data_entrada: string;
   localizacao_atual?: string;
   foto_url?: string;
+  url_fotografia?: string; // URL da fotografia
   observacoes?: string;
   grupo_id?: string;
   created_at: string;
@@ -405,12 +407,41 @@ const AnimaisList: React.FC = () => {
                 className={`hover:shadow-lg transition-shadow duration-200 ${getCardColorBySex(animal.sexo)}`}
               >
                 <CardHeader className="pb-2 sm:pb-3 p-3 sm:p-6">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1 sm:gap-2 mb-1">
-                        <CardTitle className="text-base sm:text-lg font-bold text-gray-900 truncate">
-                          {animal.nome}
-                        </CardTitle>
+                  <div className="flex items-start gap-3">
+                    {/* Foto do Animal */}
+                    <div className="shrink-0">
+                      {animal.url_fotografia ? (
+                        <img
+                          src={convertGoogleDriveUrl(animal.url_fotografia, 200)}
+                          alt={`Foto de ${animal.nome}`}
+                          loading="lazy"
+                          className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-full border-2 border-gray-200 shadow-sm"
+                          onError={(e) => {
+                            // Fallback para ícone se imagem falhar
+                            const target = e.currentTarget;
+                            target.style.display = 'none';
+                            const fallback = target.nextElementSibling as HTMLElement;
+                            if (fallback) fallback.style.display = 'flex';
+                          }}
+                        />
+                      ) : null}
+                      {/* Fallback icon */}
+                      <div 
+                        className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center text-2xl sm:text-3xl"
+                        style={{ display: animal.url_fotografia ? 'none' : 'flex' }}
+                      >
+                        {animal.especie?.toLowerCase().includes('cão') ? '🐕' : 
+                         animal.especie?.toLowerCase().includes('gato') ? '🐱' : '🐾'}
+                      </div>
+                    </div>
+
+                    {/* Informações do Animal */}
+                    <div className="flex-1 min-w-0 flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1 sm:gap-2 mb-1">
+                          <CardTitle className="text-base sm:text-lg font-bold text-gray-900 truncate">
+                            {animal.nome}
+                          </CardTitle>
                         <Badge className={`${getSexBadge(animal.sexo)} text-xs shrink-0`}>
                           <span className="hidden sm:inline">
                             {animal.sexo === 'Macho' ? '♂️' : animal.sexo === 'Fêmea' ? '♀️' : '❓'} {animal.sexo}
@@ -440,9 +471,10 @@ const AnimaisList: React.FC = () => {
                         </div>
                       )}
                     </div>
-                    <Badge className={getEstadoBadge(animal.estado)}>
-                      {animal.estado}
-                    </Badge>
+                      <Badge className={getEstadoBadge(animal.estado)}>
+                        {animal.estado}
+                      </Badge>
+                    </div>
                   </div>
                 </CardHeader>
                 
