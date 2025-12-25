@@ -10,6 +10,7 @@ import { ArrowLeft, Save, AlertCircle, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import VoluntarioSelector from "@/components/VoluntarioSelector";
+import { convertGoogleDriveUrl } from "@/lib/utils";
 
 // Interfaces para tipos de dados
 interface Especie {
@@ -820,12 +821,15 @@ const EditarAnimal = () => {
                   type="url"
                   value={formData.url_fotografia}
                   onChange={(e) => handleInputChange("url_fotografia", e.target.value)}
-                  placeholder="https://exemplo.com/foto.jpg"
+                  placeholder="Cole o URL do Google Drive ou link direto da imagem"
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  Aceita URLs do Google Drive (serão convertidos automaticamente)
+                </p>
                 {formData.url_fotografia && (
                   <div className="mt-2">
                     <img 
-                      src={formData.url_fotografia} 
+                      src={convertGoogleDriveUrl(formData.url_fotografia)} 
                       alt="Preview" 
                       className="w-32 h-32 object-cover rounded-lg border"
                       onError={(e) => {

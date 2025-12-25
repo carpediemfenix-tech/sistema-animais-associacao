@@ -26,6 +26,7 @@ import { Animal } from "@/types/animal";
 import { useToast } from "@/hooks/use-toast";
 import EnhancedHeader from "@/components/EnhancedHeader";
 import EnhancedFooter from "@/components/EnhancedFooter";
+import { convertGoogleDriveUrl } from "@/lib/utils";
 
 const AnimalDetail = () => {
   const { id } = useParams();
@@ -283,7 +284,7 @@ const AnimalDetail = () => {
               {animal.url_fotografia && (
                 <div className="mb-6">
                   <img 
-                    src={animal.url_fotografia} 
+                    src={convertGoogleDriveUrl(animal.url_fotografia)} 
                     alt={`Foto de ${animal.nome}`}
                     className="w-48 h-48 sm:w-64 sm:h-64 object-cover rounded-full mx-auto border-4 border-orange-200 shadow-lg"
                     onError={(e) => {
