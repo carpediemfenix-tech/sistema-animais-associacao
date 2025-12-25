@@ -827,14 +827,26 @@ const EditarAnimal = () => {
                   Aceita URLs do Google Drive (serão convertidos automaticamente)
                 </p>
                 {formData.url_fotografia && (
-                  <div className="mt-2">
+                  <div className="mt-2 space-y-2">
+                    <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
+                      <strong>URL convertido:</strong>
+                      <br />
+                      <code className="text-xs break-all">{convertGoogleDriveUrl(formData.url_fotografia)}</code>
+                    </div>
                     <img 
                       src={convertGoogleDriveUrl(formData.url_fotografia)} 
                       alt="Preview" 
                       className="w-32 h-32 object-cover rounded-lg border"
                       onError={(e) => {
-                        e.currentTarget.src = '';
-                        e.currentTarget.style.display = 'none';
+                        const target = e.currentTarget;
+                        target.style.display = 'none';
+                        const errorMsg = document.createElement('div');
+                        errorMsg.className = 'text-xs text-red-600 bg-red-50 p-2 rounded mt-2';
+                        errorMsg.innerHTML = '⚠️ Erro ao carregar imagem. Verifique se o arquivo do Google Drive está com permissões públicas ("Qualquer pessoa com o link pode visualizar")';
+                        target.parentElement?.appendChild(errorMsg);
+                      }}
+                      onLoad={(e) => {
+                        console.log('✅ Imagem carregada com sucesso!');
                       }}
                     />
                   </div>
