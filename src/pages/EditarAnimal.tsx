@@ -51,7 +51,8 @@ const EditarAnimal = () => {
     observacoes: "",
     data_entrada: "",
     voluntario_responsavel: "",
-    grupo_id: ""
+    grupo_id: "",
+    url_fotografia: "" // URL da fotografia
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -122,7 +123,8 @@ const EditarAnimal = () => {
         observacoes: data.observacoes || "",
         data_entrada: data.data_entrada || "",
         voluntario_responsavel: data.voluntario_responsavel || "",
-        grupo_id: data.grupo_id || ""
+        grupo_id: data.grupo_id || "",
+        url_fotografia: data.url_fotografia || "" // URL da fotografia
       });
 
     } catch (error: any) {
@@ -810,6 +812,30 @@ const EditarAnimal = () => {
                   </div>
                 </>
               )}
+
+              <div>
+                <Label htmlFor="url_fotografia">URL da Fotografia</Label>
+                <Input
+                  id="url_fotografia"
+                  type="url"
+                  value={formData.url_fotografia}
+                  onChange={(e) => handleInputChange("url_fotografia", e.target.value)}
+                  placeholder="https://exemplo.com/foto.jpg"
+                />
+                {formData.url_fotografia && (
+                  <div className="mt-2">
+                    <img 
+                      src={formData.url_fotografia} 
+                      alt="Preview" 
+                      className="w-32 h-32 object-cover rounded-lg border"
+                      onError={(e) => {
+                        e.currentTarget.src = '';
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
 
               <div>
                 <Label htmlFor="observacoes">Observações</Label>

@@ -279,6 +279,21 @@ const AnimalDetail = () => {
         <Card className="border-orange-200 bg-gradient-to-br from-orange-50 to-red-50">
 <CardHeader className="p-3 sm:p-6">
             <div className="text-center mb-4">
+              {/* Fotografia do Animal */}
+              {animal.url_fotografia && (
+                <div className="mb-6">
+                  <img 
+                    src={animal.url_fotografia} 
+                    alt={`Foto de ${animal.nome}`}
+                    className="w-48 h-48 sm:w-64 sm:h-64 object-cover rounded-full mx-auto border-4 border-orange-200 shadow-lg"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
+              
+              {/* Nome e Espécie */}
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-orange-900 mb-2 break-words">
                 <span className="block sm:inline">{animal.nome}</span>
                 <span className="text-orange-600 mx-1 sm:mx-3 hidden sm:inline">-</span>
