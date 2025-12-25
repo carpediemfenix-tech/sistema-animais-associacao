@@ -445,36 +445,43 @@ const NovoAnimal = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
       <EnhancedHeader />
-      {/* Header - Otimizado para móvel */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-4xl mx-auto px-2 sm:px-4 lg:px-8">
-          <div className="flex items-center justify-between min-h-16 py-2">
-            <div className="flex items-center space-x-2 sm:space-x-4 flex-1 min-w-0">
-              <Button variant="ghost" size="sm" asChild className="shrink-0">
+      
+      {/* Header Moderno */}
+      <div className="bg-white shadow-lg border-b border-gray-200">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Button variant="outline" size="sm" asChild className="hover:bg-gray-100">
                 <Link to="/animais">
-                  <ArrowLeft className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Voltar à Lista</span>
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Voltar
                 </Link>
               </Button>
-              <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
-                <img 
-                  src="/images/BackgroundEraser_20250411_205630024.png" 
-                  alt="Valentão ao Resgate" 
-                  className="h-6 w-6 sm:h-8 sm:w-8 object-contain shrink-0"
-                />
-                <div className="min-w-0">
-                  <h1 className="text-lg sm:text-xl font-bold text-gray-900 truncate">Cadastrar Novo Animal</h1>
-                  <p className="text-xs sm:text-sm text-gray-500 hidden sm:block">Preencha as informações do animal</p>
+              <div className="flex items-center space-x-3">
+                <div className="bg-gradient-to-br from-orange-400 to-orange-600 p-3 rounded-xl shadow-lg">
+                  <img 
+                    src="/images/BackgroundEraser_20250411_205630024.png" 
+                    alt="Valentão ao Resgate" 
+                    className="h-8 w-8 object-contain"
+                  />
+                </div>
+                <div>
+                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+                    Cadastrar Novo Animal
+                  </h1>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Preencha as informações para adicionar um novo animal ao sistema
+                  </p>
                 </div>
               </div>
             </div>
             {numeroProcesso && (
-              <div className="flex items-center space-x-1 sm:space-x-2 bg-green-50 px-2 sm:px-3 py-1 rounded-full shrink-0">
-                <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
-                <span className="text-xs sm:text-sm font-medium text-green-700">
-                  <span className="hidden sm:inline">Processo: </span>{numeroProcesso}
+              <div className="flex items-center space-x-2 bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg shadow-lg">
+                <CheckCircle className="h-5 w-5" />
+                <span className="font-semibold">
+                  Processo: {numeroProcesso}
                 </span>
               </div>
             )}
@@ -482,13 +489,18 @@ const NovoAnimal = () => {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-8">
-        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <form onSubmit={handleSubmit} className="space-y-6">
           {/* Informações Básicas */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Informações Básicas</CardTitle>
-              <CardDescription>
+          <Card className="border-l-4 border-l-blue-500 shadow-lg hover:shadow-xl transition-shadow">
+            <CardHeader className="bg-gradient-to-r from-blue-50 to-white">
+              <CardTitle className="text-xl font-bold text-gray-900 flex items-center">
+                <div className="bg-blue-500 text-white p-2 rounded-lg mr-3">
+                  🐾
+                </div>
+                Informações Básicas
+              </CardTitle>
+              <CardDescription className="text-gray-600">
                 Dados essenciais do animal (campos obrigatórios marcados com *)
               </CardDescription>
             </CardHeader>
@@ -646,9 +658,14 @@ const NovoAnimal = () => {
           </Card>
 
           {/* Informações Adicionais */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Informações Adicionais</CardTitle>
+          <Card className="border-l-4 border-l-purple-500 shadow-lg hover:shadow-xl transition-shadow">
+            <CardHeader className="bg-gradient-to-r from-purple-50 to-white">
+              <CardTitle className="text-xl font-bold text-gray-900 flex items-center">
+                <div className="bg-purple-500 text-white p-2 rounded-lg mr-3">
+                  📝
+                </div>
+                Informações Adicionais
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
@@ -823,22 +840,34 @@ const NovoAnimal = () => {
           </Card>
 
           {/* Botões de Ação */}
-          <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4">
-            <Button type="button" variant="outline" asChild className="w-full sm:w-auto">
-              <Link to="/animais">Cancelar</Link>
+          <div className="flex flex-col sm:flex-row justify-end gap-4 pt-4">
+            <Button 
+              type="button" 
+              variant="outline" 
+              asChild 
+              className="w-full sm:w-auto border-2 hover:bg-gray-100 transition-colors"
+              size="lg"
+            >
+              <Link to="/animais">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Cancelar
+              </Link>
             </Button>
-            <Button type="submit" disabled={loading} className="w-full sm:w-auto">
+            <Button 
+              type="submit" 
+              disabled={loading} 
+              className="w-full sm:w-auto bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-lg hover:shadow-xl transition-all"
+              size="lg"
+            >
               {loading ? (
                 <>
-                  <AlertCircle className="h-4 w-4 mr-2 animate-spin" />
-                  <span className="hidden sm:inline">Cadastrando...</span>
-                  <span className="sm:hidden">Salvando...</span>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                  Cadastrando Animal...
                 </>
               ) : (
                 <>
-                  <Save className="h-4 w-4 mr-2" />
-                  <span className="hidden sm:inline">Cadastrar Animal</span>
-                  <span className="sm:hidden">Cadastrar</span>
+                  <Save className="h-5 w-5 mr-2" />
+                  Cadastrar Animal
                 </>
               )}
             </Button>
