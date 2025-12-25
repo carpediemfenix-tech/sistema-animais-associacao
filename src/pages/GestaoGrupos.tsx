@@ -574,10 +574,37 @@ const GestaoGrupos = () => {
         {/* Lista de Grupos */}
         <Card>
           <CardHeader>
-            <CardTitle>Lista de Grupos ({gruposFiltrados.length})</CardTitle>
-            <CardDescription>
-              Gestão de matilhas e colónias
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Lista de Grupos ({gruposFiltrados.length})</CardTitle>
+                <CardDescription>
+                  Gestão de matilhas e colónias
+                </CardDescription>
+              </div>
+              {hasPermission('create') && (
+                <Button 
+                  onClick={() => {
+                    setEditingGrupo(null);
+                    setGrupoForm({
+                      nome: '',
+                      tipo: '',
+                      localizacao: '',
+                      responsavel_id: '',
+                      cuidador_informal: '',
+                      contacto: '',
+                      observacoes: '',
+                      estado: 'Ativo'
+                    });
+                    setDialogOpen(true);
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span className="hidden sm:inline">Criar Novo Grupo</span>
+                  <span className="sm:hidden">Novo</span>
+                </Button>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             {gruposFiltrados.length === 0 ? (

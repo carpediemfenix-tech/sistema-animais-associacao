@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,7 +42,6 @@ import EnhancedFooter from "@/components/EnhancedFooter";
 
 const GrupoDetail = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
   const [grupo, setGrupo] = useState<Grupo | null>(null);
   const [animais, setAnimais] = useState<Animal[]>([]);
   const [animaisDisponiveis, setAnimaisDisponiveis] = useState<Animal[]>([]);
@@ -77,31 +76,11 @@ const GrupoDetail = () => {
     observacoes: ""
   });
 
-  // Função para validar UUID
-  const isValidUUID = (str: string) => {
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    return uuidRegex.test(str);
-  };
-
   useEffect(() => {
-    console.log('🔍 [DEBUG] ID recebido:', id, 'Tipo:', typeof id);
-    
-    if (id && id !== 'novo' && isValidUUID(id)) {
+    if (id) {
       fetchGrupoData();
-    } else if (id === 'novo') {
-      console.log('🚫 [GRUPO] ID "novo" detectado, redirecionando...');
-      setLoading(false);
-      setError('Para criar um novo grupo, use a página de Gestão de Grupos.');
-      // Redirecionar automaticamente após 3 segundos
-      setTimeout(() => {
-        navigate('/grupos', { replace: true });
-      }, 3000);
-    } else if (id && !isValidUUID(id)) {
-      console.warn('⚠️ [AVISO] ID inválido detectado:', id);
-      setLoading(false);
-      setError('ID de grupo inválido. Verifique a URL.');
     }
-  }, [id, navigate]);
+  }, [id]);
 
   const fetchGrupoData = async () => {
     try {
@@ -517,35 +496,28 @@ const GrupoDetail = () => {
 
   if (error || !grupo) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <EnhancedHeader />
-        <div className="flex items-center justify-center py-20">
-          <div className="text-center max-w-md">
-            <AlertCircle className="h-16 w-16 mx-auto mb-4 text-red-500" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Erro</h2>
-            <p className="text-gray-600 mb-4">{error || "Grupo não encontrado"}</p>
-            <div className="space-y-2">
-              {id !== 'novo' && (
-                <Button onClick={fetchGrupoData} className="w-full mb-2">
-                  <Loader2 className="h-4 w-4 mr-2" />
-                  Tentar Novamente
-                </Button>
-              )}
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+            <CardTitle className="text-red-600">Erro ao Carregar</CardTitle>
+            <CardDescription>
+              {error || "Grupo não encontrado"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="text-center space-y-4">
+            <Button onClick={fetchGrupoData}>
+              <Loader2 className="h-4 w-4 mr-2" />
+              Tentar Novamente
+            </Button>
+            <Button variant="outline" asChild>
               <Link to="/grupos">
-                <Button className="w-full">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Voltar para Grupos
-                </Button>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Voltar aos Grupos
               </Link>
-              {id === 'novo' && (
-                <p className="text-sm text-gray-500 mt-2">
-                  Redirecionando automaticamente em alguns segundos...
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-        <EnhancedFooter />
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
