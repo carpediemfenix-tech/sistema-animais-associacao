@@ -43,6 +43,7 @@ import FormacoesFrequentadas from "@/pages/FormacoesFrequentadas";
 import RelatoriosVoluntarios from "./pages/RelatoriosVoluntarios";
 import ModuloVoluntarios from "@/pages/ModuloVoluntarios";
 import ModuloFormacao from "@/pages/ModuloFormacao";
+import GestaoVoluntariosUnificada from "./pages/GestaoVoluntariosUnificada";
 import ModuloAnimais from "./pages/ModuloAnimais";
 import GestaoEspecies from "./pages/GestaoEspecies";
 import GestaoLocalizacoes from "./pages/GestaoLocalizacoes";
@@ -122,9 +123,14 @@ const App = () => (
             <Route path="/intervencoes" element={<ProtectedRoute><IntervencoesPage /></ProtectedRoute>} />
             <Route path="/eventos" element={<ProtectedRoute><EventosPage /></ProtectedRoute>} />
             {/* Rotas do Sistema de Voluntários Valentão */}
-            <Route path="/voluntarios" element={<ProtectedRoute><VoluntariosDashboard /></ProtectedRoute>} />
-            <Route path="/voluntarios/dashboard" element={<ProtectedRoute><VoluntariosDashboard /></ProtectedRoute>} />
+            {/* Nova página unificada */}
+            <Route path="/gestao-voluntarios" element={<ProtectedRoute><GestaoVoluntariosUnificada /></ProtectedRoute>} />
+            {/* Redirecionamentos das páginas antigas para a nova */}
+            <Route path="/voluntarios" element={<ProtectedRoute><GestaoVoluntariosUnificada /></ProtectedRoute>} />
+            <Route path="/modulo-voluntarios" element={<ProtectedRoute><GestaoVoluntariosUnificada /></ProtectedRoute>} />
+            <Route path="/voluntarios/dashboard" element={<ProtectedRoute><GestaoVoluntariosUnificada /></ProtectedRoute>} />
             <Route path="/voluntarios/gestao" element={<ProtectedRoute><GestaoVoluntarios /></ProtectedRoute>} />
+            <Route path="/gestao-voluntarios-completa" element={<ProtectedRoute><GestaoVoluntarios /></ProtectedRoute>} />
             <Route path="/voluntarios/novo" element={<ProtectedRoute><NovoVoluntario /></ProtectedRoute>} />
             <Route path="/voluntarios/editar/:id" element={<ProtectedRoute><EditarVoluntario /></ProtectedRoute>} />
             <Route path="/voluntarios/perfil/:id" element={<ProtectedRoute><VoluntarioProfile /></ProtectedRoute>} />
@@ -134,7 +140,6 @@ const App = () => (
             <Route path="/voluntarios/relatorios" element={<ProtectedRoute><RelatoriosVoluntarios /></ProtectedRoute>} />
             {/* Novos Módulos Dedicados */}
             <Route path="/modulo-animais" element={<ProtectedRoute><ModuloAnimais /></ProtectedRoute>} />
-            <Route path="/modulo-voluntarios" element={<ProtectedRoute><ModuloVoluntarios /></ProtectedRoute>} />
             <Route path="/modulo-formacao" element={<ProtectedRoute><ModuloFormacao /></ProtectedRoute>} />
             <Route path="/modulo-equipamentos" element={<ProtectedRoute><ModuloEquipamentos /></ProtectedRoute>} />
             {/* Rotas do Módulo Equipamentos */}
