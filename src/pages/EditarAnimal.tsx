@@ -328,6 +328,7 @@ const EditarAnimal = () => {
         data_entrada: formData.data_entrada,
         voluntario_responsavel: formData.voluntario_responsavel || null,
         grupo_id: formData.grupo_id || null,
+        url_fotografia: formData.url_fotografia.trim() || null, // URL da fotografia
         updated_at: new Date().toISOString()
       };
 
