@@ -86,6 +86,10 @@ const AnimaisList: React.FC = () => {
   const [filtroGrupo, setFiltroGrupo] = useState("todos");
   const [filtroIdade, setFiltroIdade] = useState("todas");
   
+  // Paginação
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
+  
   // Estados para dados dinâmicos
   const [especies, setEspecies] = useState<any[]>([]);
   const [sexos, setSexos] = useState<any[]>([]);
@@ -182,6 +186,17 @@ const AnimaisList: React.FC = () => {
 
     return matchesSearch && matchesEspecie && matchesEstado && matchesSexo && matchesGrupo && matchesIdade;
   });
+
+  // Paginação
+  const totalPages = Math.ceil(filteredAnimais.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedAnimais = filteredAnimais.slice(startIndex, endIndex);
+
+  // Reset para página 1 quando filtros mudarem
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filtroEspecie, filtroEstado, filtroSexo, filtroGrupo, filtroIdade]);
 
   const getEstadoBadge = (estado: string) => {
     const variants = {
@@ -505,8 +520,9 @@ const AnimaisList: React.FC = () => {
             </CardContent>
           </Card>
         ) : (
+          <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
-            {filteredAnimais.map((animal) => (
+            {paginatedAnimais.map((animal) => (
               <Card 
                 key={animal.id} 
                 className="hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 border-l-4 group relative overflow-hidden"
@@ -552,39 +568,76 @@ const AnimaisList: React.FC = () => {
                       
                       {/* Sexo e Estado em badges */}
                       <div className="flex flex-wrap items-center gap-2 mb-3">
-                        <Badge className={`${getSexBadge(animal.sexo)} text-xs shrink-0`}>
-                          <span className="hidden sm:inline">
-                            {animal.sexo === 'Macho' ? '♂️' : animal.sexo === 'Fêmea' ? '♀️' : '❓'} {animal.sexo}
-                          </span>
-                          <span className="sm:hidden">
-                            {animal.sexo === 'Macho' ? '♂️' : animal.sexo === 'Fêmea' ? '♀️' : '❓'}
-                          </span>
+                        <Badge className={`${getSexBadge(animal.sexo)} text-xs font-semibold`}>
+                          {animal.sexo === 'Macho' ? '♂️' : animal.sexo === 'Fêmea' ? '♀️' : '❓'} {animal.sexo}
                         </Badge>
+                        <Badge className={`${getEstadoBadge(animal.estado)} text-xs font-semibold`}>
+                          {animal.estado}
+                        </Badge>
+                        {/* Badge NOVO */}
+                        {(() => {
+                          const dias = Math.floor((new Date().getTime() - new Date(animal.data_entrada).getTime()) / (1000 * 60 * 60 * 24));
+                          return dias <= 7 ? <Badge className="bg-green-500 text-white text-xs font-semibold animate-pulse">🆕 NOVO</Badge> : null;
+                        })()}
+                        {/* Badge URGENTE */}
+                        {(() => {
+                          const dias = Math.floor((new Date().getTime() - new Date(animal.data_entrada).getTime()) / (1000 * 60 * 60 * 24));
+                          return animal.estado === 'Ativo' && dias > 180 ? <Badge className="bg-red-500 text-white text-xs font-semibold">⚠️ URGENTE</Badge> : null;
+                        })()}
                       </div>
-                      <CardDescription className="text-xs sm:text-sm text-gray-600 truncate">
+                      
+                      {/* Espécie e Raça */}
+                      <CardDescription className="text-sm text-gray-700 font-medium mb-3">
                         {animal.especie} {animal.raca && `• ${animal.raca}`}
                       </CardDescription>
                       
-                      {/* Número do Processo */}
-                      {animal.numero_processo && (
-                        <div className="flex items-center text-xs text-gray-500 mt-1">
-                          <Hash className="h-3 w-3 mr-1" />
-                          Processo: {animal.numero_processo}
+                      {/* Informações adicionais */}
+                      <div className="space-y-1.5">
+                        {animal.numero_processo && (
+                          <div className="flex items-center text-xs text-gray-600">
+                            <Hash className="h-3.5 w-3.5 mr-1.5 text-gray-400" />
+                            <span className="font-medium">Processo:</span>
+                            <span className="ml-1">{animal.numero_processo}</span>
+                          </div>
+                        )}
+                        
+                        {/* Tempo desde entrada */}
+                        <div className="flex items-center text-xs text-gray-600">
+                          <Calendar className="h-3.5 w-3.5 mr-1.5 text-gray-400" />
+                          <span className="font-medium">
+                            {(() => {
+                              const dias = Math.floor((new Date().getTime() - new Date(animal.data_entrada).getTime()) / (1000 * 60 * 60 * 24));
+                              if (dias === 0) return 'Entrou hoje';
+                              if (dias === 1) return 'Há 1 dia';
+                              if (dias < 30) return `Há ${dias} dias`;
+                              const meses = Math.floor(dias / 30);
+                              return meses === 1 ? 'Há 1 mês' : `Há ${meses} meses`;
+                            })()}
+                          </span>
                         </div>
-                      )}
-                      
-                      {/* Grupo */}
-                      {animal.grupos && (
-                        <div className="flex items-center text-xs text-gray-500 mt-1">
-                          <Home className="h-3 w-3 mr-1" />
-                          Grupo: {animal.grupos.nome}
-                        </div>
-                      )}
+                        
+                        {/* Idade */}
+                        {animal.idade_estimada && (
+                          <div className="flex items-center text-xs text-gray-600">
+                            <span className="mr-1.5">🎂</span>
+                            <span className="font-medium">
+                              {animal.idade_estimada < 12 
+                                ? `${animal.idade_estimada} ${animal.idade_estimada === 1 ? 'mês' : 'meses'}`
+                                : `${Math.floor(animal.idade_estimada / 12)} ${Math.floor(animal.idade_estimada / 12) === 1 ? 'ano' : 'anos'}`
+                              }
+                            </span>
+                          </div>
+                        )}
+                        
+                        {/* Grupo */}
+                        {animal.grupos && (
+                          <div className="flex items-center text-xs text-gray-600">
+                            <Home className="h-3.5 w-3.5 mr-1.5 text-gray-400" />
+                            <span className="font-medium">{animal.grupos.nome}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    
-                    <Badge className={getEstadoBadge(animal.estado)}>
-                      {animal.estado}
-                    </Badge>
                   </div>
                 </CardHeader>
                 
@@ -649,6 +702,47 @@ const AnimaisList: React.FC = () => {
               </Card>
             ))}
           </div>
+
+          {/* Controles de Paginação */}
+          {totalPages > 1 && (
+            <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-lg shadow">
+              <div className="text-sm text-gray-600">
+                Mostrando {startIndex + 1} a {Math.min(endIndex, filteredAnimais.length)} de {filteredAnimais.length} animais
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                >
+                  Anterior
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                    <Button
+                      key={page}
+                      variant={currentPage === page ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCurrentPage(page)}
+                      className="w-10"
+                    >
+                      {page}
+                    </Button>
+                  ))}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Próxima
+                </Button>
+              </div>
+            </div>
+          )}
+          </>
         )}
       </div>
       
