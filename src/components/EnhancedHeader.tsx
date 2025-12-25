@@ -326,7 +326,6 @@ const EnhancedHeader = () => {
       title: 'Gestão de Grupos',
       navigationButtons: [
         { label: 'Módulo Animais', path: '/modulo-animais', icon: <PawPrint className="h-4 w-4" /> },
-        { label: 'Novo Grupo', path: '/grupo/novo', icon: <Plus className="h-4 w-4" /> },
         { label: 'Desativados', path: '/grupos-arquivados', icon: <Archive className="h-4 w-4" /> },
         { label: 'Dashboard Principal', path: '/', icon: <Home className="h-4 w-4" /> }
       ]

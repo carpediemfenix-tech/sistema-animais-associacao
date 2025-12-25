@@ -589,11 +589,16 @@ const GestaoGrupos = () => {
                       nome: '',
                       tipo: '',
                       localizacao: '',
-                      responsavel_id: '',
+                      endereco: '',
+                      coordenadas_latitude: '',
+                      coordenadas_longitude: '',
+                      localidade: '',
+                      concelho: '',
+                      distrito: '',
+                      responsavel_voluntario_id: '',
                       cuidador_informal: '',
-                      contacto: '',
-                      observacoes: '',
-                      estado: 'Ativo'
+                      contacto_cuidador: '',
+                      observacoes: ''
                     });
                     setDialogOpen(true);
                   }}
