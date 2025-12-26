@@ -441,94 +441,126 @@ voluntarios(id, nome, email, telefone, display_name, full_name)
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
       <EnhancedHeader />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 flex-1">
         
-        {/* Navegação */}
-        <div className="flex items-center space-x-4">
-          <Link to={`/animal/${id}`}>
-            <Button variant="outline" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Voltar à Ficha
-            </Button>
-          </Link>
-          <div className="flex-1" />
-          <Button onClick={() => openResponsabilidadeDialog()} className="bg-green-600 hover:bg-green-700">
-            <Plus className="h-4 w-4 mr-2" />
-            Novo Responsabilidade
-          </Button>
+        {/* Cabeçalho da Página */}
+        <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-500">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 flex items-center gap-2">
+                <Star className="h-7 w-7 text-green-600" />
+                Responsabilidades - {animal?.nome}
+              </h1>
+              <p className="text-gray-600">
+                Gestão de voluntários responsáveis pelos cuidados do animal
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Link to={`/animal/${id}`}>
+                <Button variant="outline" size="sm" className="h-10">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Voltar
+                </Button>
+              </Link>
+              <Button 
+                onClick={() => openResponsabilidadeDialog()} 
+                className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-lg h-10"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">Nova Responsabilidade</span>
+                <span className="sm:hidden">Nova</span>
+              </Button>
+            </div>
+          </div>
         </div>
 
         {/* Responsabilidades Ativas */}
-        <Card className="border-green-200 bg-gradient-to-br from-green-50 to-green-100">
-          <CardHeader>
-            <CardTitle className="flex items-center text-green-800">
-              <Star className="h-6 w-6 mr-2" />
-              Responsabilidades Ativas ({responsabilidades.filter(r => r.ativo).length})
-            </CardTitle>
-            <CardDescription className="text-green-600">
-              Voluntários atualmente responsáveis pelo animal
-            </CardDescription>
+        <Card className="border-green-300 bg-white shadow-lg">
+          <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center text-green-800 text-xl">
+                  <div className="bg-green-600 p-2 rounded-lg mr-3">
+                    <Star className="h-5 w-5 text-white" />
+                  </div>
+                  Responsabilidades Ativas
+                  <Badge className="ml-3 bg-green-600 text-white">
+                    {responsabilidades.filter(r => r.ativo).length}
+                  </Badge>
+                </CardTitle>
+                <CardDescription className="text-green-700 mt-1">
+                  👥 Voluntários atualmente responsáveis pelos cuidados
+                </CardDescription>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             {responsabilidades.filter(r => r.ativo).length > 0 ? (
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2">
                 {responsabilidades.filter(r => r.ativo).map((responsabilidade) => {
                   const tipoInfo = getTipoResponsabilidadeInfo(responsabilidade.tipo_responsabilidade);
                   return (
-                    <Card key={responsabilidade.id} className="border-green-300 bg-white shadow-md">
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-start space-x-3">
-                            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-green-500 flex items-center justify-center text-white text-lg">
+                    <Card key={responsabilidade.id} className="border-l-4 border-green-500 bg-gradient-to-br from-white to-green-50 shadow-md hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
+                      <CardContent className="p-5">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-start space-x-3 flex-1 min-w-0">
+                            <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-white text-xl shadow-lg">
                               {tipoInfo.emoji}
                             </div>
-                            <div className="flex-1">
-                              <h3 className="font-semibold text-gray-900 mb-1">{tipoInfo.nome}</h3>
-{responsabilidade.voluntarios && (
-                                <div className="flex items-center text-sm text-gray-600 mb-2">
-                                  <User className="h-4 w-4 mr-1" />
-                                  {responsabilidade.voluntarios.display_name || responsabilidade.voluntarios.nome}
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-bold text-gray-900 mb-2 text-base">{tipoInfo.nome}</h3>
+                              {responsabilidade.voluntarios && (
+                                <div className="flex items-center gap-2 mb-2 bg-blue-50 px-3 py-2 rounded-lg border border-blue-200">
+                                  <User className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                                  <span className="font-semibold text-blue-900 text-sm truncate">
+                                    {responsabilidade.voluntarios.display_name || responsabilidade.voluntarios.nome}
+                                  </span>
                                 </div>
                               )}
-                              <div className="flex items-center text-xs text-gray-500">
-                                <Calendar className="h-3 w-3 mr-1" />
-                                Desde {new Date(responsabilidade.data_inicio).toLocaleDateString('pt-PT')}
+                              <div className="flex items-center gap-2 text-xs text-gray-600 bg-gray-50 px-3 py-1.5 rounded-md">
+                                <Calendar className="h-3.5 w-3.5 text-green-600" />
+                                <span className="font-medium">Desde {new Date(responsabilidade.data_inicio).toLocaleDateString('pt-PT')}</span>
                               </div>
                               {responsabilidade.observacoes && (
-                                <p className="text-sm text-gray-700 mt-2 p-2 bg-gray-50 rounded">
-                                  {responsabilidade.observacoes}
-                                </p>
+                                <div className="mt-3 pt-3 border-t border-green-200">
+                                  <p className="text-xs text-gray-500 mb-1 font-semibold">📝 Observações:</p>
+                                  <p className="text-sm text-gray-700 bg-yellow-50 p-2.5 rounded-lg border border-yellow-200">
+                                    {responsabilidade.observacoes}
+                                  </p>
+                                </div>
                               )}
                             </div>
                           </div>
-                          <div className="flex flex-col space-y-1">
+                          <div className="flex flex-col gap-2 flex-shrink-0">
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => openResponsabilidadeDialog(responsabilidade)}
-                              className="h-8 w-8 p-0"
+                              className="h-9 w-9 p-0 hover:bg-blue-50 hover:border-blue-300"
+                              title="Editar"
                             >
-                              <Edit className="h-3 w-3" />
+                              <Edit className="h-4 w-4 text-blue-600" />
                             </Button>
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => handleEncerrarResponsabilidade(responsabilidade.id)}
-                              className="h-8 w-8 p-0 text-orange-600 hover:text-orange-700"
-                              title="Encerrar Responsabilidade"
+                              className="h-9 w-9 p-0 hover:bg-orange-50 hover:border-orange-300"
+                              title="Encerrar"
                             >
-                              <Clock className="h-3 w-3" />
+                              <Clock className="h-4 w-4 text-orange-600" />
                             </Button>
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => handleDeleteResponsabilidade(responsabilidade.id)}
-                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                              className="h-9 w-9 p-0 hover:bg-red-50 hover:border-red-300"
+                              title="Eliminar"
                             >
-                              <Trash2 className="h-3 w-3" />
+                              <Trash2 className="h-4 w-4 text-red-600" />
                             </Button>
                           </div>
                         </div>
@@ -538,25 +570,43 @@ voluntarios(id, nome, email, telefone, display_name, full_name)
                 })}
               </div>
             ) : (
-              <div className="text-center py-8 text-gray-500">
-                <Star className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p className="text-lg font-medium mb-2">Nenhuma responsabilidade ativa</p>
-                <p className="text-sm">Clique em "Novo Responsabilidade" para atribuir a primeira responsabilidade.</p>
+              <div className="text-center py-12 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border-2 border-dashed border-gray-300">
+                <div className="bg-gray-200 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Star className="h-10 w-10 text-gray-400" />
+                </div>
+                <p className="text-lg font-semibold text-gray-700 mb-2">🔍 Nenhuma responsabilidade ativa</p>
+                <p className="text-sm text-gray-600 mb-4">Atribua voluntários para cuidar de {animal?.nome}</p>
+                <Button 
+                  onClick={() => openResponsabilidadeDialog()} 
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Adicionar Primeira Responsabilidade
+                </Button>
               </div>
             )}
           </CardContent>
         </Card>
 
         {/* Histórico de Responsabilidades */}
-        <Card className="border-gray-200 bg-white">
-          <CardHeader>
-            <CardTitle className="flex items-center text-gray-800">
-              <Calendar className="h-6 w-6 mr-2" />
-              Histórico de Responsabilidades ({responsabilidades.filter(r => !r.ativo).length})
-            </CardTitle>
-            <CardDescription className="text-gray-600">
-              Responsabilidades anteriores já encerradas
-            </CardDescription>
+        <Card className="border-gray-300 bg-white shadow-lg">
+          <CardHeader className="bg-gradient-to-r from-gray-50 to-slate-50 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center text-gray-800 text-xl">
+                  <div className="bg-gray-600 p-2 rounded-lg mr-3">
+                    <Calendar className="h-5 w-5 text-white" />
+                  </div>
+                  Histórico
+                  <Badge className="ml-3 bg-gray-600 text-white">
+                    {responsabilidades.filter(r => !r.ativo).length}
+                  </Badge>
+                </CardTitle>
+                <CardDescription className="text-gray-600 mt-1">
+                  📅 Responsabilidades anteriores já encerradas
+                </CardDescription>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             {responsabilidades.filter(r => !r.ativo).length > 0 ? (
@@ -572,7 +622,7 @@ voluntarios(id, nome, email, telefone, display_name, full_name)
                       
                       {/* Card do histórico */}
                       <div className="flex items-start space-x-4">
-                        <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gray-400 flex items-center justify-center text-white text-lg">
+                        <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-br from-gray-400 to-gray-500 flex items-center justify-center text-white text-lg shadow-md">
                           {tipoInfo.emoji}
                         </div>
                         
@@ -661,45 +711,56 @@ voluntarios(id, nome, email, telefone, display_name, full_name)
 
       {/* Diálogo de Responsabilidade */}
       <Dialog open={responsabilidadeDialogOpen} onOpenChange={setResponsabilidadeDialogOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="text-green-800">
-              {editingResponsabilidade ? 'Editar Responsabilidade' : 'Novo Responsabilidade'}
-            </DialogTitle>
-            <DialogDescription className="text-green-600">
-              {editingResponsabilidade ? 'Editar informações do responsabilidade' : `Registar novo responsabilidade para ${animal?.nome}`}
-            </DialogDescription>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="sticky top-0 bg-white z-10 pb-4 border-b">
+            <div className="flex items-center gap-3">
+              <div className="bg-gradient-to-br from-green-500 to-green-600 p-2.5 rounded-lg shadow-lg">
+                <Star className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-bold text-gray-900">
+                  {editingResponsabilidade ? '✏️ Editar Responsabilidade' : '⭐ Nova Responsabilidade'}
+                </DialogTitle>
+                <DialogDescription className="text-sm text-gray-600">
+                  {editingResponsabilidade ? 'Atualizar dados da responsabilidade' : `Atribuir voluntário para cuidar de ${animal?.nome}`}
+                </DialogDescription>
+              </div>
+            </div>
           </DialogHeader>
           
-          <form onSubmit={handleResponsabilidadeSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="tipo_responsabilidade" className="text-green-700 font-medium">
+          <form onSubmit={handleResponsabilidadeSubmit} className="space-y-5 pt-4">
+            {/* Tipo de Responsabilidade */}
+            <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+              <Label htmlFor="tipo_responsabilidade" className="text-sm font-semibold text-green-900 mb-2 flex items-center gap-2">
+                <Star className="h-4 w-4" />
                 Tipo de Responsabilidade *
               </Label>
               <Select 
                 value={responsabilidadeForm.tipo_responsabilidade} 
                 onValueChange={(value) => setResponsabilidadeForm({ ...responsabilidadeForm, tipo_responsabilidade: value })}
               >
-                <SelectTrigger className="border-green-200 focus:border-green-400">
-                  <SelectValue placeholder="Selecionar tipo" />
+                <SelectTrigger className="mt-1.5 bg-white border-green-300 focus:border-green-500 h-11">
+                  <SelectValue placeholder="🎯 Selecionar tipo de responsabilidade" />
                 </SelectTrigger>
                 <SelectContent>
                   {tiposResponsabilidades.length === 0 && (
                     <SelectItem value="loading" disabled>
-                      Carregando tipos...
+                      ⏳ Carregando tipos...
                     </SelectItem>
                   )}
                   {tiposResponsabilidades.map((tipo) => (
-                    <SelectItem key={tipo.id} value={tipo.id}>
-                      {tipo.nome}
+                    <SelectItem key={tipo.id} value={tipo.id} className="py-2.5">
+                      <span className="font-medium">{tipo.nome}</span>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             
+            {/* Data de Início */}
             <div>
-              <Label htmlFor="data_inicio" className="text-green-700 font-medium">
+              <Label htmlFor="data_inicio" className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-green-600" />
                 Data de Atribuição *
               </Label>
               <Input
@@ -707,57 +768,81 @@ voluntarios(id, nome, email, telefone, display_name, full_name)
                 type="date"
                 value={responsabilidadeForm.data_inicio}
                 onChange={(e) => setResponsabilidadeForm({ ...responsabilidadeForm, data_inicio: e.target.value })}
-                className="border-green-200 focus:border-green-400"
+                className="mt-1.5 border-gray-300 focus:border-green-500 h-11"
                 required
               />
             </div>
             
-<div>
+            {/* Voluntário */}
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+              <Label className="text-sm font-semibold text-blue-900 mb-2 flex items-center gap-2">
+                <User className="h-4 w-4" />
+                Voluntário Responsável
+              </Label>
               <VoluntarioSelector
                 value={responsabilidadeForm.voluntario_id}
                 onValueChange={(voluntarioId, voluntario) => {
                   setResponsabilidadeForm({ ...responsabilidadeForm, voluntario_id: voluntarioId });
                 }}
-                label="Voluntário Responsável"
-                placeholder="Selecionar voluntário (opcional)..."
+                label=""
+                placeholder="👥 Selecionar voluntário (opcional)..."
                 showFullName={true}
                 required={false}
-                className="border-green-200 focus:border-green-400"
+                className="mt-1.5 bg-white border-blue-300 focus:border-blue-500 h-11"
               />
             </div>
             
+            {/* Observações */}
             <div>
-              <Label htmlFor="observacoes" className="text-green-700 font-medium">
+              <Label htmlFor="observacoes" className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                <FileText className="h-4 w-4 text-gray-600" />
                 Observações
               </Label>
               <Textarea
                 id="observacoes"
                 value={responsabilidadeForm.observacoes}
                 onChange={(e) => setResponsabilidadeForm({ ...responsabilidadeForm, observacoes: e.target.value })}
-                className="border-green-200 focus:border-green-400"
-                placeholder="Detalhes adicionais sobre a responsabilidade..."
-                rows={3}
+                className="mt-1.5 border-gray-300 focus:border-green-500 min-h-[100px] resize-y"
+                placeholder="Detalhes sobre a responsabilidade, horários, instruções especiais, etc..."
               />
             </div>
 
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="ativo"
-                checked={responsabilidadeForm.ativo}
-                onCheckedChange={(checked) => setResponsabilidadeForm({ ...responsabilidadeForm, ativo: !!checked })}
-              />
-              <Label htmlFor="ativo" className="text-green-700 font-medium">
-                Responsabilidade Ativa
-              </Label>
-            </div>
-
-            <div className="bg-green-50 p-3 rounded-lg">
-              <p className="text-sm text-green-700">
-                <strong>Dica:</strong> Responsabilidades ativas aparecem na seção "Ativas" e podem ser encerradas a qualquer momento.
+            {/* Status Ativo */}
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200">
+              <div className="flex items-center space-x-3">
+                <Checkbox
+                  id="ativo"
+                  checked={responsabilidadeForm.ativo}
+                  onCheckedChange={(checked) => setResponsabilidadeForm({ ...responsabilidadeForm, ativo: !!checked })}
+                  className="h-5 w-5"
+                />
+                <Label htmlFor="ativo" className="text-sm font-semibold text-green-900 cursor-pointer flex items-center gap-2">
+                  <Star className="h-4 w-4 text-green-600" />
+                  Responsabilidade Ativa
+                </Label>
+              </div>
+              <p className="text-xs text-green-700 mt-2 ml-8">
+                Responsabilidades ativas aparecem na secção principal e podem ser encerradas a qualquer momento.
               </p>
             </div>
+
+            {/* Nota Informativa */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border-l-4 border-blue-500">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-blue-900 mb-1">
+                    <strong>💡 Dica:</strong>
+                  </p>
+                  <p className="text-sm text-blue-700">
+                    Atribua diferentes tipos de responsabilidades a voluntários específicos. Pode ter múltiplas responsabilidades ativas simultaneamente.
+                  </p>
+                </div>
+              </div>
+            </div>
             
-            <div className="flex justify-end space-x-3 pt-4">
+            {/* Botões de Ação */}
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-6 border-t sticky bottom-0 bg-white pb-2">
               <Button 
                 type="button" 
                 variant="outline" 
@@ -765,11 +850,15 @@ voluntarios(id, nome, email, telefone, display_name, full_name)
                   setResponsabilidadeDialogOpen(false);
                   resetResponsabilidadeForm();
                 }}
+                className="w-full sm:w-auto h-11 border-gray-300 hover:bg-gray-50"
               >
-                Cancelar
+                ❌ Cancelar
               </Button>
-              <Button type="submit" className="bg-green-600 hover:bg-green-700">
-                {editingResponsabilidade ? 'Atualizar' : 'Registar Responsabilidade'}
+              <Button 
+                type="submit" 
+                className="w-full sm:w-auto h-11 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-lg hover:shadow-xl transition-all"
+              >
+                {editingResponsabilidade ? '✅ Atualizar Responsabilidade' : '⭐ Registar Responsabilidade'}
               </Button>
             </div>
           </form>
