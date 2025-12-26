@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import EnhancedHeader from "@/components/EnhancedHeader";
 import EnhancedFooter from "@/components/EnhancedFooter";
+import PageActionBar from "@/components/PageActionBar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -206,117 +207,115 @@ const GestaoEspecies = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
       <EnhancedHeader />
       
-      <div className="max-w-6xl mx-auto px-6 py-6 flex-1">
-        {/* Cabeçalho */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-              <Database className="h-8 w-8 mr-3 text-blue-600" />
-              Gestão de Espécies
-            </h1>
-            <p className="text-gray-600">Gerir espécies de animais do sistema</p>
+      {/* Barra de Navegação e Ações */}
+      <PageActionBar
+        breadcrumbs={[
+          { label: 'Configurações', href: '/configuracoes' },
+          { label: 'Espécies', icon: <Database className="h-4 w-4" /> }
+        ]}
+        primaryActions={
+          <Button onClick={() => { resetForm(); setDialogOpen(true); }} className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 h-9">
+            <Plus className="h-4 w-4 mr-2" />
+            Nova Espécie
+          </Button>
+        }
+      />
+      
+      {/* Dialog de Criação/Edição */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editingEspecie ? 'Editar Espécie' : 'Nova Espécie'}
+            </DialogTitle>
+            <DialogDescription>
+              {editingEspecie ? 'Edite os dados da espécie' : 'Adicione uma nova espécie ao sistema'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="nome">Nome da Espécie *</Label>
+              <Input
+                id="nome"
+                value={formData.nome}
+                onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                placeholder="Ex: Cão, Gato, Coelho..."
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="icone">Ícone da Espécie</Label>
+              <div className="space-y-3">
+                {/* Seletor Visual de Ícones */}
+                <div className="grid grid-cols-8 gap-2 p-3 border rounded-lg bg-gray-50">
+                  {iconesDisponiveis.map((icone) => (
+                    <button
+                      key={icone.emoji}
+                      type="button"
+                      className={`p-2 text-2xl rounded-md border-2 hover:bg-white transition-colors ${
+                        formData.icone === icone.emoji 
+                          ? 'border-blue-500 bg-blue-50' 
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                      onClick={() => setFormData({ ...formData, icone: icone.emoji })}
+                      title={icone.nome}
+                    >
+                      {icone.emoji}
+                    </button>
+                  ))}
+                </div>
+                
+                {/* Campo de texto para ícone personalizado */}
+                <div>
+                  <Label htmlFor="icone-custom" className="text-sm">Ou insira um ícone personalizado:</Label>
+                  <Input
+                    id="icone-custom"
+                    value={formData.icone}
+                    onChange={(e) => setFormData({ ...formData, icone: e.target.value })}
+                    placeholder="Ex: 🐕, 🐱, 🐰..."
+                    className="mt-1"
+                  />
+                </div>
+                
+                {/* Preview do ícone selecionado */}
+                {formData.icone && (
+                  <div className="flex items-center space-x-2 p-2 bg-blue-50 rounded-md">
+                    <span className="text-2xl">{formData.icone}</span>
+                    <span className="text-sm text-gray-600">Preview do ícone selecionado</span>
+                  </div>
+                )}
+                
+                <p className="text-xs text-gray-500">
+                  Selecione um ícone da grade acima ou insira um emoji personalizado. Deixe vazio para usar 🐾
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="ativo"
+                checked={formData.ativo}
+                onCheckedChange={(checked) => setFormData({ ...formData, ativo: checked })}
+              />
+              <Label htmlFor="ativo">Espécie ativa</Label>
+            </div>
           </div>
 
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={resetForm}>
-                <Plus className="h-4 w-4 mr-2" />
-                Nova Espécie
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>
-                  {editingEspecie ? 'Editar Espécie' : 'Nova Espécie'}
-                </DialogTitle>
-                <DialogDescription>
-                  {editingEspecie ? 'Edite os dados da espécie' : 'Adicione uma nova espécie ao sistema'}
-                </DialogDescription>
-              </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+              <X className="h-4 w-4 mr-2" />
+              Cancelar
+            </Button>
+            <Button onClick={handleSave}>
+              <Save className="h-4 w-4 mr-2" />
+              {editingEspecie ? 'Atualizar' : 'Criar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="nome">Nome da Espécie *</Label>
-                  <Input
-                    id="nome"
-                    value={formData.nome}
-                    onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                    placeholder="Ex: Cão, Gato, Coelho..."
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="icone">Ícone da Espécie</Label>
-                  <div className="space-y-3">
-                    {/* Seletor Visual de Ícones */}
-                    <div className="grid grid-cols-8 gap-2 p-3 border rounded-lg bg-gray-50">
-                      {iconesDisponiveis.map((icone) => (
-                        <button
-                          key={icone.emoji}
-                          type="button"
-                          className={`p-2 text-2xl rounded-md border-2 hover:bg-white transition-colors ${
-                            formData.icone === icone.emoji 
-                              ? 'border-blue-500 bg-blue-50' 
-                              : 'border-gray-200 hover:border-gray-300'
-                          }`}
-                          onClick={() => setFormData({ ...formData, icone: icone.emoji })}
-                          title={icone.nome}
-                        >
-                          {icone.emoji}
-                        </button>
-                      ))}
-                    </div>
-                    
-                    {/* Campo de texto para ícone personalizado */}
-                    <div>
-                      <Label htmlFor="icone-custom" className="text-sm">Ou insira um ícone personalizado:</Label>
-                      <Input
-                        id="icone-custom"
-                        value={formData.icone}
-                        onChange={(e) => setFormData({ ...formData, icone: e.target.value })}
-                        placeholder="Ex: 🐕, 🐱, 🐰..."
-                        className="mt-1"
-                      />
-                    </div>
-                    
-                    {/* Preview do ícone selecionado */}
-                    {formData.icone && (
-                      <div className="flex items-center space-x-2 p-2 bg-blue-50 rounded-md">
-                        <span className="text-2xl">{formData.icone}</span>
-                        <span className="text-sm text-gray-600">Preview do ícone selecionado</span>
-                      </div>
-                    )}
-                    
-                    <p className="text-xs text-gray-500">
-                      Selecione um ícone da grade acima ou insira um emoji personalizado. Deixe vazio para usar 🐾
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="ativo"
-                    checked={formData.ativo}
-                    onCheckedChange={(checked) => setFormData({ ...formData, ativo: checked })}
-                  />
-                  <Label htmlFor="ativo">Espécie ativa</Label>
-                </div>
-              </div>
-
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setDialogOpen(false)}>
-                  <X className="h-4 w-4 mr-2" />
-                  Cancelar
-                </Button>
-                <Button onClick={handleSave}>
-                  <Save className="h-4 w-4 mr-2" />
-                  {editingEspecie ? 'Atualizar' : 'Criar'}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
-
+      <div className="container mx-auto px-4 py-6 flex-1">
         {/* Filtros */}
         <Card className="mb-6">
           <CardHeader>

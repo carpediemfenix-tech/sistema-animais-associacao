@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import EnhancedHeader from "@/components/EnhancedHeader";
 import EnhancedFooter from "@/components/EnhancedFooter";
+import PageActionBar from "@/components/PageActionBar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -225,150 +226,105 @@ const GestaoCategorias = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
       <EnhancedHeader />
       
+      {/* Barra de Navegação e Ações */}
+      <PageActionBar
+        breadcrumbs={[
+          { label: 'Configurações', href: '/configuracoes' },
+          { label: 'Categorias Financeiras', icon: <Grid3X3 className="h-4 w-4" /> }
+        ]}
+        primaryActions={
+          <Button onClick={() => { resetForm(); setDialogOpen(true); }} className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 h-9">
+            <Plus className="h-4 w-4 mr-2" />
+            Nova Categoria
+          </Button>
+        }
+      />
+      
       <div className="max-w-6xl mx-auto px-6 py-6 flex-1">
-        {/* Cabeçalho */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-              <Grid3X3 className="h-8 w-8 mr-3 text-blue-600" />
-              Gestão de Categorias Financeiras
-            </h1>
-            <p className="text-gray-600">Gerir categorias de receitas e despesas</p>
+        {/* Dialog de Criação/Edição */}
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editingCategoria ? 'Editar Categoria' : 'Nova Categoria'}
+            </DialogTitle>
+            <DialogDescription>
+              {editingCategoria ? 'Edite os dados da categoria' : 'Adicione uma nova categoria financeira'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="nome">Nome da Categoria *</Label>
+              <Input
+                id="nome"
+                value={formData.nome}
+                onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                placeholder="Ex: Alimentação, Veterinário, Doações..."
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="tipo">Tipo *</Label>
+              <Select value={formData.tipo} onValueChange={(value: 'receita' | 'despesa') => setFormData({ ...formData, tipo: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="receita">Receita</SelectItem>
+                  <SelectItem value="despesa">Despesa</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="descricao">Descrição</Label>
+              <Input
+                id="descricao"
+                value={formData.descricao}
+                onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
+                placeholder="Descrição opcional da categoria"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="cor">Cor</Label>
+              <div className="flex items-center space-x-2">
+                <Input
+                  id="cor"
+                  type="color"
+                  value={formData.cor}
+                  onChange={(e) => setFormData({ ...formData, cor: e.target.value })}
+                  className="w-20 h-10"
+                />
+                <span className="text-sm text-gray-600">{formData.cor}</span>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="ativo"
+                checked={formData.ativo}
+                onCheckedChange={(checked) => setFormData({ ...formData, ativo: checked })}
+              />
+              <Label htmlFor="ativo">Categoria ativa</Label>
+            </div>
           </div>
 
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={resetForm}>
-                <Plus className="h-4 w-4 mr-2" />
-                Nova Categoria
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>
-                  {editingCategoria ? 'Editar Categoria' : 'Nova Categoria'}
-                </DialogTitle>
-                <DialogDescription>
-                  {editingCategoria ? 'Edite os dados da categoria' : 'Adicione uma nova categoria financeira'}
-                </DialogDescription>
-              </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+              <X className="h-4 w-4 mr-2" />
+              Cancelar
+            </Button>
+            <Button onClick={handleSave}>
+              <Save className="h-4 w-4 mr-2" />
+              {editingCategoria ? 'Atualizar' : 'Criar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="nome">Nome da Categoria *</Label>
-                  <Input
-                    id="nome"
-                    value={formData.nome}
-                    onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                    placeholder="Ex: Alimentação, Veterinário, Doações..."
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="tipo">Tipo *</Label>
-                  <Select value={formData.tipo} onValueChange={(value: 'receita' | 'despesa') => setFormData({ ...formData, tipo: value })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="receita">
-                        <div className="flex items-center">
-                          <TrendingUp className="h-4 w-4 mr-2 text-green-600" />
-                          Receita
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="despesa">
-                        <div className="flex items-center">
-                          <TrendingDown className="h-4 w-4 mr-2 text-red-600" />
-                          Despesa
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="escopo">Escopo</Label>
-                  <Select
-                    value={formData.escopo}
-                    onValueChange={(value: 'animal' | 'associacao' | 'ambos') => setFormData({ ...formData, escopo: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecionar escopo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="animal">
-                        <div className="flex items-center space-x-2">
-                          <span>🐾 Animal</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="associacao">
-                        <div className="flex items-center space-x-2">
-                          <span>🏢 Associação</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="ambos">
-                        <div className="flex items-center space-x-2">
-                          <span>🔄 Ambos</span>
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="cor">Cor</Label>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {coresDisponiveis.map((cor) => (
-                      <button
-                        key={cor.valor}
-                        type="button"
-                        className={`w-8 h-8 rounded-full border-2 ${
-                          formData.cor === cor.valor ? 'border-gray-900' : 'border-gray-300'
-                        }`}
-                        style={{ backgroundColor: cor.valor }}
-                        onClick={() => setFormData({ ...formData, cor: cor.valor })}
-                        title={cor.nome}
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="descricao">Descrição</Label>
-                  <Textarea
-                    id="descricao"
-                    value={formData.descricao}
-                    onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
-                    placeholder="Descrição detalhada da categoria..."
-                    rows={3}
-                  />
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="ativo"
-                    checked={formData.ativo}
-                    onCheckedChange={(checked) => setFormData({ ...formData, ativo: checked })}
-                  />
-                  <Label htmlFor="ativo">Categoria ativa</Label>
-                </div>
-              </div>
-
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setDialogOpen(false)}>
-                  <X className="h-4 w-4 mr-2" />
-                  Cancelar
-                </Button>
-                <Button onClick={handleSave}>
-                  <Save className="h-4 w-4 mr-2" />
-                  {editingCategoria ? 'Atualizar' : 'Criar'}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
-
+      <div className="container mx-auto px-4 py-6 flex-1">
         {/* Filtros */}
         <Card className="mb-6">
           <CardHeader>
@@ -609,6 +565,7 @@ const GestaoCategorias = () => {
             </CardContent>
           </Card>
         </div>
+      </div>
       </div>
       
       <EnhancedFooter />

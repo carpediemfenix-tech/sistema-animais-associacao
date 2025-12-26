@@ -38,6 +38,7 @@ import { useToast } from "@/hooks/use-toast";
 import LogotipoValentao from "@/components/LogotipoValentao";
 import EnhancedHeader from "@/components/EnhancedHeader";
 import EnhancedFooter from "@/components/EnhancedFooter";
+import PageActionBar from "@/components/PageActionBar";
 
 const GestaoGrupos = () => {
   const [grupos, setGrupos] = useState<Grupo[]>([]);
@@ -425,26 +426,25 @@ const GestaoGrupos = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
       <EnhancedHeader />
       
+      {/* Barra de Navegação e Ações */}
+      <PageActionBar
+        breadcrumbs={[
+          { label: 'Configurações', href: '/configuracoes' },
+          { label: 'Grupos', icon: <Users className="h-4 w-4" /> }
+        ]}
+        primaryActions={
+          <Button onClick={() => { resetForm(); setDialogOpen(true); }} className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 h-9">
+            <Plus className="h-4 w-4 mr-2" />
+            Criar Novo Grupo
+          </Button>
+        }
+      />
+      
       <div className="flex-1 max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-6">
-        {/* Header - Otimizado para móvel */}
-        <div className="mb-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-            <div className="mb-4 sm:mb-0">
-              <h1 className="text-2xl sm:text-xl sm:text-3xl font-bold text-gray-900 flex items-center">
-                <Users className="h-6 w-6 sm:h-8 sm:w-8 mr-2 sm:mr-3 text-blue-600" />
-                <span className="hidden sm:inline">Gestão de Grupos</span>
-                <span className="sm:hidden">Grupos</span>
-              </h1>
-              <p className="text-sm sm:text-base text-gray-600 mt-1">
-                <span className="hidden sm:inline">Matilhas, Colónias, Sócios e grupos especiais</span>
-                <span className="sm:hidden">Gestão de grupos da associação</span>
-              </p>
-            </div>
-          </div>
-        </div>
+        {/* Header removido - agora está no PageActionBar */}
         {/* Estatísticas */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-6 mb-6 sm:mb-8">
           <Card>
