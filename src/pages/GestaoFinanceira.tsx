@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import UserHeader from "@/components/UserHeader";
+import EnhancedHeader from "@/components/EnhancedHeader";
+import EnhancedFooter from "@/components/EnhancedFooter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -281,7 +282,7 @@ const GestaoFinanceira = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-16 w-16 animate-spin mx-auto mb-4 text-blue-600" />
           <p className="text-lg text-gray-600">A carregar dados financeiros...</p>
@@ -291,12 +292,8 @@ const GestaoFinanceira = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <UserHeader 
-        title="Gestão Financeira" 
-        subtitle="Controlo de receitas, despesas e movimentos financeiros"
-        backTo="/"
-      />
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
+      <EnhancedHeader />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         
@@ -595,6 +592,8 @@ const GestaoFinanceira = () => {
           </CardContent>
         </Card>
       </div>
+      
+      <EnhancedFooter />
     </div>
   );
 };
