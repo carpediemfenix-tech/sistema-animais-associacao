@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import EnhancedHeader from '@/components/EnhancedHeader';
+import EnhancedFooter from '@/components/EnhancedFooter';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -481,7 +483,7 @@ const GestaoUtilizadores = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-16 w-16 animate-spin mx-auto mb-4 text-blue-600" />
           <p className="text-lg text-gray-600">A carregar utilizadores...</p>
@@ -491,49 +493,27 @@ const GestaoUtilizadores = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
-              <Link to="/">
-                <Button variant="ghost" size="sm">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Voltar
-                </Button>
-              </Link>
-              <div className="flex items-center space-x-3">
-                <img 
-                  src="./images/BackgroundEraser_20250411_205630024.png" 
-                  alt="Associação Valentão"
-                  className="h-8 w-auto object-contain"
-                />
-                <Users className="h-6 w-6 text-blue-600" />
-                <h1 className="text-xl font-semibold text-gray-900">
-                  Gestão de Utilizadores
-                </h1>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <Link to="/logs-acesso">
-                <Button variant="outline" size="sm">
-                  <Shield className="h-4 w-4 mr-2" />
-                  Logs de Acesso
-                </Button>
-              </Link>
-              
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={logout}
-                className="hover:bg-red-100 text-red-600 hover:text-red-700"
-                title="Terminar Sessão"
-              >
-                <LogOut className="h-4 w-4" />
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
+      <EnhancedHeader />
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-3">
+            <Users className="h-6 w-6 text-blue-600" />
+            <h1 className="text-2xl font-bold text-gray-900">
+              Gestão de Utilizadores
+            </h1>
+          </div>
+          
+          <div className="flex items-center space-x-4">
+            <Link to="/logs-acesso">
+              <Button variant="outline" size="sm">
+                <Shield className="h-4 w-4 mr-2" />
+                Logs de Acesso
               </Button>
-              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            </Link>
+            
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogTrigger asChild>
                   <Button onClick={resetForm}>
                     <Plus className="h-4 w-4 mr-2" />
@@ -673,12 +653,10 @@ const GestaoUtilizadores = () => {
                 </form>
               </DialogContent>
             </Dialog>
-            </div>
           </div>
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Estatísticas */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card>
@@ -897,6 +875,9 @@ const GestaoUtilizadores = () => {
           </div>
         </DialogContent>
       </Dialog>
+      </div>
+      
+      <EnhancedFooter />
     </div>
   );
 };

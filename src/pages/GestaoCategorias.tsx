@@ -33,6 +33,7 @@ interface CategoriaFinanceira {
   nome: string;
   descricao: string;
   tipo: 'receita' | 'despesa';
+  escopo: 'animal' | 'associacao' | 'ambos';
   cor: string;
   ativo: boolean;
   created_at: string;
@@ -51,6 +52,7 @@ const GestaoCategorias = () => {
     nome: "",
     descricao: "",
     tipo: "despesa" as 'receita' | 'despesa',
+    escopo: "ambos" as 'animal' | 'associacao' | 'ambos',
     cor: "#3B82F6",
     ativo: true
   });
@@ -187,6 +189,7 @@ const GestaoCategorias = () => {
       nome: categoria.nome,
       descricao: categoria.descricao || "",
       tipo: categoria.tipo,
+      escopo: categoria.escopo || "ambos",
       cor: categoria.cor || "#3B82F6",
       ativo: categoria.ativo
     });
@@ -199,6 +202,7 @@ const GestaoCategorias = () => {
       nome: "",
       descricao: "",
       tipo: "despesa",
+      escopo: "ambos",
       cor: "#3B82F6",
       ativo: true
     });
@@ -275,6 +279,35 @@ const GestaoCategorias = () => {
                         <div className="flex items-center">
                           <TrendingDown className="h-4 w-4 mr-2 text-red-600" />
                           Despesa
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="escopo">Escopo</Label>
+                  <Select
+                    value={formData.escopo}
+                    onValueChange={(value: 'animal' | 'associacao' | 'ambos') => setFormData({ ...formData, escopo: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecionar escopo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="animal">
+                        <div className="flex items-center space-x-2">
+                          <span>🐾 Animal</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="associacao">
+                        <div className="flex items-center space-x-2">
+                          <span>🏢 Associação</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="ambos">
+                        <div className="flex items-center space-x-2">
+                          <span>🔄 Ambos</span>
                         </div>
                       </SelectItem>
                     </SelectContent>
