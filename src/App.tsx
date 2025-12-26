@@ -197,7 +197,6 @@ const App = () => (
             <Route path="/administracao" element={<ProtectedRoute><Administracao /></ProtectedRoute>} /> {/* Página antiga */}
             {/* /modulo-administrador - Página nova com design tático (definida acima) */}
             
-            <Route path="/modulo-missoes" element={<ProtectedRoute><ModuloMissoes /></ProtectedRoute>} />
             <Route path="/modulo-agenda" element={<ProtectedRoute><ModuloAgenda /></ProtectedRoute>} />
 <Route path="/modulo-equipamentos" element={<ProtectedRoute><ModuloEquipamentos /></ProtectedRoute>} />
             {/* Rotas removidas - páginas vazias redirecionadas */}
