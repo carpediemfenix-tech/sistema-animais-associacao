@@ -32,7 +32,8 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import UserHeader from "@/components/UserHeader";
+import EnhancedHeader from "@/components/EnhancedHeader";
+import EnhancedFooter from "@/components/EnhancedFooter";
 
 interface Especialidade {
   id: string;
@@ -275,21 +276,18 @@ const ConfiguracaoEspecialidades = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <UserHeader />
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <span className="ml-2">Carregando...</span>
-          </div>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-lg text-gray-600">A carregar especialidades...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <UserHeader />
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
+      <EnhancedHeader />
       
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
@@ -543,6 +541,8 @@ const ConfiguracaoEspecialidades = () => {
           </Card>
         )}
       </div>
+      
+      <EnhancedFooter />
     </div>
   );
 };

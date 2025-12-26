@@ -30,7 +30,8 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import UserHeader from "@/components/UserHeader";
+import EnhancedHeader from "@/components/EnhancedHeader";
+import EnhancedFooter from "@/components/EnhancedFooter";
 
 interface TipoResponsabilidade {
   id: string;
@@ -250,23 +251,18 @@ const GestaoResponsabilidades = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <UserHeader />
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4" />
-              <p className="text-gray-600">Carregando tipos de responsabilidades...</p>
-            </div>
-          </div>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <RefreshCw className="h-16 w-16 animate-spin mx-auto mb-4 text-blue-600" />
+          <p className="text-lg text-gray-600">A carregar tipos de responsabilidades...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <UserHeader />
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
+      <EnhancedHeader />
       
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
@@ -540,6 +536,8 @@ const GestaoResponsabilidades = () => {
           </DialogContent>
         </Dialog>
       </div>
+      
+      <EnhancedFooter />
     </div>
   );
 };

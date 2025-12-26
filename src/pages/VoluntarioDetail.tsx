@@ -30,7 +30,8 @@ import {
   PlayCircle,
   XCircle
 } from "lucide-react";
-import UserHeader from "@/components/UserHeader";
+import EnhancedHeader from "@/components/EnhancedHeader";
+import EnhancedFooter from "@/components/EnhancedFooter";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface Voluntario {
@@ -275,15 +276,10 @@ const VoluntarioDetail = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-green-50">
-        <UserHeader 
-          title="Carregando..." 
-          description="A carregar dados do voluntário"
-        />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
-          </div>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-lg text-gray-600">A carregar dados do voluntário...</p>
         </div>
       </div>
     );
@@ -291,12 +287,8 @@ const VoluntarioDetail = () => {
 
   if (error || !voluntario) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-green-50">
-        <UserHeader 
-          title="Erro" 
-          description="Não foi possível carregar os dados"
-        />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="max-w-md mx-auto px-4">
           <Card className="border-red-200 bg-red-50">
             <CardContent className="p-6">
               <div className="flex items-center space-x-2 text-red-600">
@@ -311,11 +303,8 @@ const VoluntarioDetail = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-green-50">
-      <UserHeader 
-        title={`Voluntário: ${voluntario.nome}`} 
-        description="Ficha completa de atividade na associação"
-      />
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
+      <EnhancedHeader />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         
@@ -735,6 +724,8 @@ const VoluntarioDetail = () => {
           </CardContent>
         </Card>
       </div>
+      
+      <EnhancedFooter />
     </div>
   );
 };

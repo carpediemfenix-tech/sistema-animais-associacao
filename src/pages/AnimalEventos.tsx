@@ -27,7 +27,8 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { Animal, EventoAnimal, TipoEvento, Voluntario } from "@/types/animal";
 import { useToast } from "@/hooks/use-toast";
-import UserHeader from "@/components/UserHeader";
+import EnhancedHeader from "@/components/EnhancedHeader";
+import EnhancedFooter from "@/components/EnhancedFooter";
 
 const AnimalEventos = () => {
   const { id } = useParams();
@@ -305,7 +306,7 @@ const AnimalEventos = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-16 w-16 animate-spin mx-auto mb-4 text-green-600" />
           <p className="text-lg text-gray-600">A carregar eventos...</p>
@@ -316,7 +317,7 @@ const AnimalEventos = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
           <AlertCircle className="h-16 w-16 mx-auto mb-4 text-red-600" />
           <p className="text-lg text-red-600 mb-4">{error}</p>
@@ -333,7 +334,7 @@ const AnimalEventos = () => {
 
   if (!animal) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
           <PawPrint className="h-16 w-16 mx-auto mb-4 text-gray-400" />
           <p className="text-lg text-gray-600 mb-4">Animal não encontrado</p>
@@ -349,12 +350,8 @@ const AnimalEventos = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <UserHeader 
-        title={`${animal.nome} - Timeline de Eventos`}
-        subtitle={`${animal.especie} • ${animal.sexo} • ${animal.estado}`}
-        backTo={`/animal/${id}`}
-      />
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
+      <EnhancedHeader />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         
@@ -645,6 +642,8 @@ const AnimalEventos = () => {
           </form>
         </DialogContent>
       </Dialog>
+      
+      <EnhancedFooter />
     </div>
   );
 };

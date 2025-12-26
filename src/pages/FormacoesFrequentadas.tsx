@@ -18,7 +18,8 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import UserHeader from "@/components/UserHeader";
+import EnhancedHeader from "@/components/EnhancedHeader";
+import EnhancedFooter from "@/components/EnhancedFooter";
 
 interface FormacaoFrequentada {
   id: string;
@@ -156,7 +157,7 @@ const FormacoesFrequentadas: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
           <GraduationCap className="h-16 w-16 animate-pulse text-blue-600 mx-auto mb-4" />
           <p className="text-gray-600">Carregando formações...</p>
@@ -166,8 +167,8 @@ const FormacoesFrequentadas: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <UserHeader />
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
+      <EnhancedHeader />
       
       <div className="container mx-auto px-4 py-8">
         {/* Cabeçalho */}
@@ -367,6 +368,8 @@ const FormacoesFrequentadas: React.FC = () => {
           )}
         </div>
       </div>
+      
+      <EnhancedFooter />
     </div>
   );
 };
