@@ -11,6 +11,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import VoluntarioSelector from "@/components/VoluntarioSelector";
 import { convertGoogleDriveUrl } from "@/lib/utils";
+import PageActionBar from "@/components/PageActionBar";
+import EnhancedHeader from "@/components/EnhancedHeader";
+import EnhancedFooter from "@/components/EnhancedFooter";
+import { PawPrint, Archive } from "lucide-react";
 
 // Interfaces para tipos de dados
 interface Especie {
@@ -402,34 +406,48 @@ const EditarAnimal = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-4xl mx-auto px-2 sm:px-4 lg:px-8">
-          <div className="flex items-center justify-between min-h-16 py-2">
-            <div className="flex items-center space-x-2 sm:space-x-4 flex-1 min-w-0">
-              <Button variant="ghost" size="sm" asChild className="shrink-0">
-                <Link to={`/animal/${id}`}>
-                  <ArrowLeft className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Voltar aos Detalhes</span>
-                  <span className="sm:hidden">Voltar</span>
-                </Link>
-              </Button>
-              <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
-                <img 
-                  src="/images/BackgroundEraser_20250411_205630024.png" 
-                  alt="Valentão ao Resgate" 
-                  className="h-6 w-6 sm:h-8 sm:w-8 object-contain shrink-0"
-                />
-                <div className="min-w-0">
-                  <h1 className="text-lg sm:text-xl font-bold text-gray-900 truncate">Editar Animal</h1>
-                  <p className="text-xs sm:text-sm text-gray-500 hidden sm:block">Altere as informações do animal</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
+      <EnhancedHeader />
+      
+      {/* Barra de Navegação e Ações */}
+      <PageActionBar
+        breadcrumbs={[
+          { label: 'Animais', href: '/animais', icon: <PawPrint className="h-4 w-4" /> },
+          { label: formData.nome || 'Editar Animal' }
+        ]}
+        primaryActions={
+          <>
+            <Button 
+              onClick={handleSubmit}
+              disabled={loading}
+              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 h-9"
+            >
+              {loading ? (
+                <>
+                  <AlertCircle className="h-4 w-4 mr-2 animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Salvar Alterações
+                </>
+              )}
+            </Button>
+          </>
+        }
+        secondaryActions={[
+          {
+            label: 'Arquivar Animal',
+            onClick: () => {
+              if (confirm('Tem certeza que deseja arquivar este animal?')) {
+                // Lógica de arquivar
+              }
+            },
+            icon: <Archive className="h-4 w-4" />
+          }
+        ]}
+      />
 
       <div className="max-w-4xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
         {/* Alerta de Incompatibilidade */}
@@ -867,29 +885,11 @@ const EditarAnimal = () => {
             </CardContent>
           </Card>
 
-          {/* Botões de Ação */}
-          <div className="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4">
-            <Button type="button" variant="outline" asChild className="w-full sm:w-auto">
-              <Link to={`/animal/${id}`}>Cancelar</Link>
-            </Button>
-            <Button type="submit" disabled={loading} className="w-full sm:w-auto">
-              {loading ? (
-                <>
-                  <AlertCircle className="h-4 w-4 mr-2 animate-spin" />
-                  <span className="hidden sm:inline">Salvando...</span>
-                  <span className="sm:hidden">Salvando...</span>
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  <span className="hidden sm:inline">Salvar Alterações</span>
-                  <span className="sm:hidden">Salvar</span>
-                </>
-              )}
-            </Button>
-          </div>
+          {/* Botões removidos - agora estão no PageActionBar */}
         </form>
       </div>
+      
+      <EnhancedFooter />
     </div>
   );
 };

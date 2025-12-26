@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { convertGoogleDriveUrl } from "@/lib/utils";
+import PageActionBar from "@/components/PageActionBar";
 
 interface Animal {
   id: string;
@@ -251,18 +252,31 @@ const AnimaisList: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
       <EnhancedHeader />
+      
+      {/* Barra de Navegação e Ações */}
+      <PageActionBar
+        breadcrumbs={[
+          { label: 'Animais', icon: <PawPrint className="h-4 w-4" /> }
+        ]}
+        primaryActions={
+          <>
+            <Link to="/animais/novo">
+              <Button className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 h-9">
+                <Plus className="h-4 w-4 mr-2" />
+                Novo Animal
+              </Button>
+            </Link>
+            <Link to="/animais-arquivados">
+              <Button variant="outline" className="h-9">
+                <Archive className="h-4 w-4 mr-2" />
+                Arquivados
+              </Button>
+            </Link>
+          </>
+        }
+      />
 
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-6">
-        
-        {/* Título da Página */}
-        <div className="mb-6">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-            Lista de Animais
-          </h1>
-          <p className="text-gray-600">
-            Gestão completa dos animais da associação
-          </p>
-        </div>
 
         {/* Estatísticas no Topo */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
@@ -499,15 +513,7 @@ const AnimaisList: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Botões de Ação */}
-        <div className="flex flex-wrap gap-3 mb-6">
-          <Link to="/animais-arquivados">
-            <Button variant="outline" className="bg-gray-50 hover:bg-gray-100">
-              <Archive className="h-4 w-4 mr-2" />
-              Ver Arquivados
-            </Button>
-          </Link>
-        </div>
+        {/* Botões removidos - agora estão no PageActionBar */}
 
         {/* Lista de Animais */}
         {filteredAnimais.length === 0 ? (

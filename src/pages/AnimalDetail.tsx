@@ -27,6 +27,7 @@ import { useToast } from "@/hooks/use-toast";
 import EnhancedHeader from "@/components/EnhancedHeader";
 import EnhancedFooter from "@/components/EnhancedFooter";
 import { convertGoogleDriveUrl } from "@/lib/utils";
+import PageActionBar from "@/components/PageActionBar";
 
 const AnimalDetail = () => {
   const { id } = useParams();
@@ -215,64 +216,46 @@ const AnimalDetail = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
       <EnhancedHeader />
-
-      {/* Navegação Adicional */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-2 sm:py-3">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-3 sm:space-y-0">
-            <div className="flex flex-wrap items-center gap-2 sm:gap-4">
-              <Link to="/">
-                <Button variant="outline" size="sm" className="h-8 sm:h-9">
-                  <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                  <span className="hidden sm:inline">Dashboard</span>
-                  <span className="sm:hidden">Home</span>
-                </Button>
-              </Link>
-              <Link to="/animais">
-                <Button variant="outline" size="sm" className="h-8 sm:h-9">
-                  <PawPrint className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                  <span className="hidden sm:inline">Lista de Animais</span>
-                  <span className="sm:hidden">Lista</span>
-                </Button>
-              </Link>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge className={`text-xs sm:text-sm px-2 sm:px-3 py-1 ${
-                animal.estado === 'disponivel' ? 'bg-green-600' :
-                animal.estado === 'adotado' ? 'bg-blue-600' :
-                animal.estado === 'tratamento' ? 'bg-yellow-600' :
-                'bg-gray-600'
-              }`}>
-                {animal.estado}
-              </Badge>
-              
-              {/* Botões de Ação */}
-              {hasPermission('admin') && (
-                <>
-                  <Link to={`/animal/${id}/editar`}>
-                    <Button variant="outline" size="sm" className="h-8 sm:h-9">
-                      <Edit className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                      <span className="hidden sm:inline">Editar</span>
-                      <span className="sm:hidden">Edit</span>
-                    </Button>
-                  </Link>
-                  
-                  <Button 
-                    variant="destructive" 
-                    size="sm"
-                    className="h-8 sm:h-9"
-                    onClick={handleArquivar}
-                  >
-                    <Archive className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                    <span className="hidden sm:inline">Arquivar</span>
-                    <span className="sm:hidden">Arq</span>
+      
+      {/* Barra de Navegação e Ações */}
+      <PageActionBar
+        breadcrumbs={[
+          { label: 'Animais', href: '/animais', icon: <PawPrint className="h-4 w-4" /> },
+          { label: animal.nome }
+        ]}
+        primaryActions={
+          <>
+            <Badge className={`text-sm px-3 py-1 ${
+              animal.estado === 'Ativo' ? 'bg-green-600' :
+              animal.estado === 'Adotado' ? 'bg-blue-600' :
+              animal.estado === 'Óbito' ? 'bg-gray-600' :
+              'bg-yellow-600'
+            }`}>
+              {animal.estado}
+            </Badge>
+            
+            {hasPermission('admin') && (
+              <>
+                <Link to={`/animal/${id}/editar`}>
+                  <Button variant="outline" className="h-9">
+                    <Edit className="h-4 w-4 mr-2" />
+                    Editar
                   </Button>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
+                </Link>
+              </>
+            )}
+          </>
+        }
+        secondaryActions={
+          hasPermission('admin') ? [
+            {
+              label: 'Arquivar Animal',
+              onClick: handleArquivar,
+              icon: <Archive className="h-4 w-4" />
+            }
+          ] : []
+        }
+      />
 
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6">
         
