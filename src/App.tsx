@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { HashRouter, Routes, Route } from "react-router-dom";
+import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Index from "./pages/Index";
@@ -32,7 +32,6 @@ import AnimaisAdotados from "./pages/AnimaisAdotados";
 import GestaoGrupos from "./pages/GestaoGrupos";
 import GrupoDetail from "./pages/GrupoDetail";
 import ManualUtilizador from "./pages/ManualUtilizador";
-import Administracao from "./pages/Administracao";
 import Dashboard from "./pages/Dashboard";
 import VoluntariosDashboard from "./pages/VoluntariosDashboard";
 import VoluntarioProfile from "./pages/VoluntarioProfile";
@@ -193,9 +192,8 @@ const App = () => (
             <Route path="/grupo/:id" element={<ProtectedRoute><GrupoDetail /></ProtectedRoute>} />
             <Route path="/manual" element={<ProtectedRoute><ManualUtilizador /></ProtectedRoute>} />
             
-            {/* ADMINISTRAÇÃO - Duas páginas disponíveis */}
-            <Route path="/administracao" element={<ProtectedRoute><Administracao /></ProtectedRoute>} /> {/* Página antiga */}
-            {/* /modulo-administrador - Página nova com design tático (definida acima) */}
+            {/* ADMINISTRAÇÃO - Redirecionamento */}
+            <Route path="/administracao" element={<Navigate to="/modulo-administrador" replace />} /> {/* Redireciona para nova página */}
             
             <Route path="/modulo-agenda" element={<ProtectedRoute><ModuloAgenda /></ProtectedRoute>} />
 <Route path="/modulo-equipamentos" element={<ProtectedRoute><ModuloEquipamentos /></ProtectedRoute>} />
