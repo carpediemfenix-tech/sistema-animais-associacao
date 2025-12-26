@@ -313,6 +313,317 @@ const ModuloAdministrador = () => {
             </div>
           </div>
 
+          {/* Seção: MÓDULO VOLUNTÁRIOS */}
+          <div className="mb-8">
+            <div className="bg-gradient-to-r from-blue-600/20 to-blue-700/20 border-l-4 border-blue-500 rounded-lg p-4 mb-6">
+              <div className="flex items-center gap-3">
+                <div className="bg-blue-500/20 p-3 rounded-lg border border-blue-500/30">
+                  <Users className="h-6 w-6 text-blue-400" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-white font-mono">SEÇÃO: MÓDULO VOLUNTÁRIOS</h2>
+                  <p className="text-slate-300 text-sm font-mono">Configurações e gestão de dados do módulo de voluntários</p>
+                </div>
+                <div className="ml-auto">
+                  <Badge className="bg-blue-500/20 text-blue-400 border border-blue-500/30 font-mono">
+                    2 SUBSISTEMAS
+                  </Badge>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <Link to="/configuracao-especialidades">
+                <Card className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm border-2 border-blue-500 hover:border-opacity-100 border-opacity-30 transition-all duration-300 hover:scale-105 hover:shadow-2xl group cursor-pointer">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="bg-gradient-to-br from-blue-600 to-blue-700 p-3 rounded-lg shadow-lg group-hover:scale-110 transition-transform">
+                        <Target className="h-6 w-6 text-white" />
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        <Badge className="bg-green-500/20 text-green-400 border border-green-500/30 font-mono text-xs">
+                          OPERACIONAL
+                        </Badge>
+                      </div>
+                    </div>
+                    <CardTitle className="text-white font-mono text-lg group-hover:text-blue-400 transition-colors">
+                      Especialidades
+                    </CardTitle>
+                    <CardDescription className="text-slate-400 font-mono text-sm">
+                      Configurar especialidades dos voluntários
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between pt-3 border-t border-slate-700/50">
+                      <div className="flex items-center gap-2">
+                        <Activity className="h-4 w-4 text-green-500 animate-pulse" />
+                        <span className="text-xs text-slate-400 font-mono">ATIVO</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-blue-400 group-hover:gap-3 transition-all">
+                        <span className="text-xs font-mono font-semibold">ACESSAR</span>
+                        <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+
+              <Link to="/configuracoes/responsabilidades">
+                <Card className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm border-2 border-purple-500 hover:border-opacity-100 border-opacity-30 transition-all duration-300 hover:scale-105 hover:shadow-2xl group cursor-pointer">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="bg-gradient-to-br from-purple-600 to-purple-700 p-3 rounded-lg shadow-lg group-hover:scale-110 transition-transform">
+                        <UserCog className="h-6 w-6 text-white" />
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        <Badge className="bg-green-500/20 text-green-400 border border-green-500/30 font-mono text-xs">
+                          OPERACIONAL
+                        </Badge>
+                      </div>
+                    </div>
+                    <CardTitle className="text-white font-mono text-lg group-hover:text-purple-400 transition-colors">
+                      Responsabilidades
+                    </CardTitle>
+                    <CardDescription className="text-slate-400 font-mono text-sm">
+                      Gerir tipos de responsabilidades
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between pt-3 border-t border-slate-700/50">
+                      <div className="flex items-center gap-2">
+                        <Activity className="h-4 w-4 text-green-500 animate-pulse" />
+                        <span className="text-xs text-slate-400 font-mono">ATIVO</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-purple-400 group-hover:gap-3 transition-all">
+                        <span className="text-xs font-mono font-semibold">ACESSAR</span>
+                        <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            </div>
+          </div>
+
+          {/* Seção: MÓDULO FINANCEIRO */}
+          <div className="mb-8">
+            <div className="bg-gradient-to-r from-green-600/20 to-green-700/20 border-l-4 border-green-500 rounded-lg p-4 mb-6">
+              <div className="flex items-center gap-3">
+                <div className="bg-green-500/20 p-3 rounded-lg border border-green-500/30">
+                  <DollarSign className="h-6 w-6 text-green-400" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-white font-mono">SEÇÃO: MÓDULO FINANCEIRO</h2>
+                  <p className="text-slate-300 text-sm font-mono">Configurações e gestão de dados financeiros</p>
+                </div>
+                <div className="ml-auto">
+                  <Badge className="bg-green-500/20 text-green-400 border border-green-500/30 font-mono">
+                    2 SUBSISTEMAS
+                  </Badge>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <Link to="/configuracoes/categorias">
+                <Card className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm border-2 border-green-500 hover:border-opacity-100 border-opacity-30 transition-all duration-300 hover:scale-105 hover:shadow-2xl group cursor-pointer">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="bg-gradient-to-br from-green-600 to-green-700 p-3 rounded-lg shadow-lg group-hover:scale-110 transition-transform">
+                        <DollarSign className="h-6 w-6 text-white" />
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        <Badge className="bg-green-500/20 text-green-400 border border-green-500/30 font-mono text-xs">
+                          OPERACIONAL
+                        </Badge>
+                      </div>
+                    </div>
+                    <CardTitle className="text-white font-mono text-lg group-hover:text-green-400 transition-colors">
+                      Categorias Financeiras
+                    </CardTitle>
+                    <CardDescription className="text-slate-400 font-mono text-sm">
+                      Configurar categorias de receitas e despesas
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between pt-3 border-t border-slate-700/50">
+                      <div className="flex items-center gap-2">
+                        <Activity className="h-4 w-4 text-green-500 animate-pulse" />
+                        <span className="text-xs text-slate-400 font-mono">ATIVO</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-green-400 group-hover:gap-3 transition-all">
+                        <span className="text-xs font-mono font-semibold">ACESSAR</span>
+                        <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+
+              <Link to="/gestao-financeira">
+                <Card className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm border-2 border-emerald-500 hover:border-opacity-100 border-opacity-30 transition-all duration-300 hover:scale-105 hover:shadow-2xl group cursor-pointer">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="bg-gradient-to-br from-emerald-600 to-emerald-700 p-3 rounded-lg shadow-lg group-hover:scale-110 transition-transform">
+                        <Briefcase className="h-6 w-6 text-white" />
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        <Badge className="bg-green-500/20 text-green-400 border border-green-500/30 font-mono text-xs">
+                          OPERACIONAL
+                        </Badge>
+                      </div>
+                    </div>
+                    <CardTitle className="text-white font-mono text-lg group-hover:text-emerald-400 transition-colors">
+                      Gestão Financeira
+                    </CardTitle>
+                    <CardDescription className="text-slate-400 font-mono text-sm">
+                      Gerir transações e relatórios financeiros
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between pt-3 border-t border-slate-700/50">
+                      <div className="flex items-center gap-2">
+                        <Activity className="h-4 w-4 text-green-500 animate-pulse" />
+                        <span className="text-xs text-slate-400 font-mono">ATIVO</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-emerald-400 group-hover:gap-3 transition-all">
+                        <span className="text-xs font-mono font-semibold">ACESSAR</span>
+                        <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            </div>
+          </div>
+
+          {/* Seção: CONFIGURAÇÕES GERAIS */}
+          <div className="mb-8">
+            <div className="bg-gradient-to-r from-slate-600/20 to-slate-700/20 border-l-4 border-slate-500 rounded-lg p-4 mb-6">
+              <div className="flex items-center gap-3">
+                <div className="bg-slate-500/20 p-3 rounded-lg border border-slate-500/30">
+                  <Settings className="h-6 w-6 text-slate-400" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-white font-mono">SEÇÃO: CONFIGURAÇÕES GERAIS</h2>
+                  <p className="text-slate-300 text-sm font-mono">Configurações gerais do sistema</p>
+                </div>
+                <div className="ml-auto">
+                  <Badge className="bg-slate-500/20 text-slate-400 border border-slate-500/30 font-mono">
+                    3 SUBSISTEMAS
+                  </Badge>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <Link to="/utilizadores">
+                <Card className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm border-2 border-blue-500 hover:border-opacity-100 border-opacity-30 transition-all duration-300 hover:scale-105 hover:shadow-2xl group cursor-pointer">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="bg-gradient-to-br from-blue-600 to-blue-700 p-3 rounded-lg shadow-lg group-hover:scale-110 transition-transform">
+                        <Users className="h-6 w-6 text-white" />
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        <Badge className="bg-green-500/20 text-green-400 border border-green-500/30 font-mono text-xs">
+                          OPERACIONAL
+                        </Badge>
+                      </div>
+                    </div>
+                    <CardTitle className="text-white font-mono text-lg group-hover:text-blue-400 transition-colors">
+                      Utilizadores
+                    </CardTitle>
+                    <CardDescription className="text-slate-400 font-mono text-sm">
+                      Gestão de utilizadores e permissões
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between pt-3 border-t border-slate-700/50">
+                      <div className="flex items-center gap-2">
+                        <Activity className="h-4 w-4 text-green-500 animate-pulse" />
+                        <span className="text-xs text-slate-400 font-mono">ATIVO</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-blue-400 group-hover:gap-3 transition-all">
+                        <span className="text-xs font-mono font-semibold">ACESSAR</span>
+                        <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+
+              <Link to="/logs-acesso">
+                <Card className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm border-2 border-purple-500 hover:border-opacity-100 border-opacity-30 transition-all duration-300 hover:scale-105 hover:shadow-2xl group cursor-pointer">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="bg-gradient-to-br from-purple-600 to-purple-700 p-3 rounded-lg shadow-lg group-hover:scale-110 transition-transform">
+                        <FileText className="h-6 w-6 text-white" />
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        <Badge className="bg-green-500/20 text-green-400 border border-green-500/30 font-mono text-xs">
+                          OPERACIONAL
+                        </Badge>
+                      </div>
+                    </div>
+                    <CardTitle className="text-white font-mono text-lg group-hover:text-purple-400 transition-colors">
+                      Logs de Acesso
+                    </CardTitle>
+                    <CardDescription className="text-slate-400 font-mono text-sm">
+                      Auditoria e monitoramento do sistema
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between pt-3 border-t border-slate-700/50">
+                      <div className="flex items-center gap-2">
+                        <Activity className="h-4 w-4 text-green-500 animate-pulse" />
+                        <span className="text-xs text-slate-400 font-mono">ATIVO</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-purple-400 group-hover:gap-3 transition-all">
+                        <span className="text-xs font-mono font-semibold">ACESSAR</span>
+                        <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+
+              <Link to="/configuracoes/clinicas">
+                <Card className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm border-2 border-teal-500 hover:border-opacity-100 border-opacity-30 transition-all duration-300 hover:scale-105 hover:shadow-2xl group cursor-pointer">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="bg-gradient-to-br from-teal-600 to-teal-700 p-3 rounded-lg shadow-lg group-hover:scale-110 transition-transform">
+                        <Stethoscope className="h-6 w-6 text-white" />
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        <Badge className="bg-green-500/20 text-green-400 border border-green-500/30 font-mono text-xs">
+                          OPERACIONAL
+                        </Badge>
+                      </div>
+                    </div>
+                    <CardTitle className="text-white font-mono text-lg group-hover:text-teal-400 transition-colors">
+                      Clínicas Veterinárias
+                    </CardTitle>
+                    <CardDescription className="text-slate-400 font-mono text-sm">
+                      Gerir clínicas e protocolos
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between pt-3 border-t border-slate-700/50">
+                      <div className="flex items-center gap-2">
+                        <Activity className="h-4 w-4 text-green-500 animate-pulse" />
+                        <span className="text-xs text-slate-400 font-mono">ATIVO</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-teal-400 group-hover:gap-3 transition-all">
+                        <span className="text-xs font-mono font-semibold">ACESSAR</span>
+                        <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            </div>
+          </div>
+
           {/* Ações Rápidas */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
             <Button 
