@@ -18,7 +18,9 @@ import {
   Plus,
   DollarSign,
   TrendingUp,
-  Activity
+  Activity,
+  Stethoscope,
+  Shield
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -277,6 +279,40 @@ const Index: React.FC = () => {
                   <div className="flex justify-center space-x-2">
                     <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-700">Sistema</Badge>
                     <Badge variant="outline" className="text-xs">Admin</Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+
+            {/* 9. Clínicas */}
+            <Link to="/configuracoes/clinicas" className="group">
+              <Card className="h-full transition-all duration-300 hover:shadow-xl hover:-translate-y-2 border-0 bg-gradient-to-br from-cyan-50 to-sky-50 group-hover:from-cyan-100 group-hover:to-sky-100">
+                <CardContent className="p-6 text-center">
+                  <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-cyan-500 to-sky-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                    <Stethoscope className="h-10 w-10 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">Clínicas</h3>
+                  <p className="text-sm text-gray-600 mb-4">Gestão de clínicas veterinárias</p>
+                  <div className="flex justify-center space-x-2">
+                    <Badge variant="secondary" className="text-xs bg-cyan-100 text-cyan-700">Veterinária</Badge>
+                    <Badge variant="outline" className="text-xs">Protocolos</Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+
+            {/* 10. Administrador */}
+            <Link to="/modulo-administrador" className="group">
+              <Card className="h-full transition-all duration-300 hover:shadow-xl hover:-translate-y-2 border-0 bg-gradient-to-br from-slate-800 to-slate-900 group-hover:from-slate-700 group-hover:to-slate-800">
+                <CardContent className="p-6 text-center">
+                  <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg border-2 border-orange-400">
+                    <Shield className="h-10 w-10 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-2">Administrador</h3>
+                  <p className="text-sm text-slate-300 mb-4">Configurações avançadas do sistema</p>
+                  <div className="flex justify-center space-x-2">
+                    <Badge className="text-xs bg-orange-500/20 text-orange-400 border border-orange-500/30">NÍVEL 5</Badge>
+                    <Badge variant="outline" className="text-xs text-slate-300 border-slate-600">Admin</Badge>
                   </div>
                 </CardContent>
               </Card>
