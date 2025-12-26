@@ -581,7 +581,14 @@ const GestaoGrupos = () => {
                   Gestão de matilhas e colónias
                 </CardDescription>
               </div>
-              {hasPermission('create') && (
+              <div className="flex gap-2">
+                <Link to="/grupos-arquivados">
+                  <Button variant="outline" size="sm">
+                    <Archive className="h-4 w-4 mr-2" />
+                    Arquivados
+                  </Button>
+                </Link>
+                {hasPermission('create') && (
                 <Button 
                   onClick={() => {
                     setEditingGrupo(null);
@@ -609,6 +616,7 @@ const GestaoGrupos = () => {
                   <span className="sm:hidden">Novo</span>
                 </Button>
               )}
+              </div>
             </div>
           </CardHeader>
           <CardContent>

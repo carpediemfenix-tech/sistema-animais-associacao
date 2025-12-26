@@ -299,8 +299,9 @@ const AnimaisList: React.FC = () => {
           </Card>
 
           {/* Animais Adotados */}
-          <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white border-0 shadow-lg hover:shadow-xl transition-shadow">
-            <CardContent className="p-4">
+          <Link to="/animais-adotados">
+            <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white border-0 shadow-lg hover:shadow-xl transition-all hover:scale-105 cursor-pointer">
+              <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs sm:text-sm opacity-90 mb-1">Adotados</p>
@@ -315,6 +316,7 @@ const AnimaisList: React.FC = () => {
               </div>
             </CardContent>
           </Card>
+          </Link>
 
           {/* Animais Urgentes (>6 meses) */}
           <Card className="bg-gradient-to-br from-red-500 to-red-600 text-white border-0 shadow-lg hover:shadow-xl transition-shadow">
@@ -496,6 +498,16 @@ const AnimaisList: React.FC = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Botões de Ação */}
+        <div className="flex flex-wrap gap-3 mb-6">
+          <Link to="/animais-arquivados">
+            <Button variant="outline" className="bg-gray-50 hover:bg-gray-100">
+              <Archive className="h-4 w-4 mr-2" />
+              Ver Arquivados
+            </Button>
+          </Link>
+        </div>
 
         {/* Lista de Animais */}
         {filteredAnimais.length === 0 ? (
