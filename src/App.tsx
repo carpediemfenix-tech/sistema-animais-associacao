@@ -51,16 +51,9 @@ import GestaoLocalizacoes from "./pages/GestaoLocalizacoes";
 import GestaoCategorias from "./pages/GestaoCategorias";
 import GestaoClinicas from "./pages/GestaoClinicas";
 import GestaoResponsabilidades from "./pages/GestaoResponsabilidades";
-import PaginaAnalytics from "./pages/PaginaAnalytics";
-import PaginaMonitoramento from "./pages/PaginaMonitoramento";
-import TesteVoluntarios from "./pages/TesteVoluntarios";
-import PaginaRelatorios from "./pages/PaginaRelatorios";
-import PaginaWorkflow from "./pages/PaginaWorkflow";
 import HistoricoNomesAnimais from "./pages/HistoricoNomesAnimais";
 import IntervencoesAutoridades from "./pages/IntervencoesAutoridades";
-import ModuloMissoes from "./pages/ModuloMissoes";
 import ModuloMissoesOtimizado from "./pages/ModuloMissoesOtimizado";
-import MissaoDetail from "./pages/MissaoDetail";
 import MissaoDetailOtimizada from "./pages/MissaoDetailOtimizada";
 import MissaoParticipacoes from "./pages/MissaoParticipacoes";
 import MissaoAnimais from "./pages/MissaoAnimais";
@@ -160,9 +153,7 @@ const App = () => (
             <Route path="/clinicas" element={<ProtectedRoute><ModuloClinicas /></ProtectedRoute>} />
             <Route path="/modulo-missoes" element={<ProtectedRoute><ModuloMissoesOtimizado /></ProtectedRoute>} />
             <Route path="/missoes" element={<ProtectedRoute><ModuloMissoesOtimizado /></ProtectedRoute>} />
-            <Route path="/modulo-missoes-original" element={<ProtectedRoute><ModuloMissoes /></ProtectedRoute>} />
             <Route path="/missao/:id" element={<ProtectedRoute><MissaoDetailOtimizada /></ProtectedRoute>} />
-            <Route path="/missao-original/:id" element={<ProtectedRoute><MissaoDetail /></ProtectedRoute>} />
             <Route path="/missao/:id/participacoes" element={<ProtectedRoute><MissaoParticipacoes /></ProtectedRoute>} />
             <Route path="/missao/:id/animais" element={<ProtectedRoute><MissaoAnimais /></ProtectedRoute>} />
             <Route path="/missao/:id/financeiro" element={<ProtectedRoute><MissaoFinanceiro /></ProtectedRoute>} />
