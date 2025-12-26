@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import EnhancedHeader from "@/components/EnhancedHeader";
+import EnhancedFooter from "@/components/EnhancedFooter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -201,24 +203,18 @@ const GestaoEspecies = () => {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
+      <EnhancedHeader />
+      
+      <div className="max-w-6xl mx-auto px-6 py-6 flex-1">
         {/* Cabeçalho */}
         <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-4">
-            <Link to="/">
-              <Button variant="outline" size="sm">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Voltar
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-                <Database className="h-8 w-8 mr-3 text-blue-600" />
-                Gestão de Espécies
-              </h1>
-              <p className="text-gray-600">Gerir espécies de animais do sistema</p>
-            </div>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+              <Database className="h-8 w-8 mr-3 text-blue-600" />
+              Gestão de Espécies
+            </h1>
+            <p className="text-gray-600">Gerir espécies de animais do sistema</p>
           </div>
 
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -429,6 +425,8 @@ const GestaoEspecies = () => {
           </CardContent>
         </Card>
       </div>
+      
+      <EnhancedFooter />
     </div>
   );
 };
