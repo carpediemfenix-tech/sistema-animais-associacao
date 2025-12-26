@@ -124,12 +124,15 @@ const App = () => (
             <Route path="/intervencoes" element={<ProtectedRoute><IntervencoesPage /></ProtectedRoute>} />
             <Route path="/eventos" element={<ProtectedRoute><EventosPage /></ProtectedRoute>} />
             {/* Rotas do Sistema de Voluntários Valentão */}
-            {/* Nova página unificada */}
+            {/* PÁGINA PRINCIPAL - Gestão Unificada (USAR ESTA!) */}
             <Route path="/gestao-voluntarios" element={<ProtectedRoute><GestaoVoluntariosUnificada /></ProtectedRoute>} />
-            {/* Redirecionamentos das páginas antigas para a nova */}
+            
+            {/* REDIRECIONAMENTOS - Rotas antigas que apontam para a nova página unificada */}
             <Route path="/voluntarios" element={<ProtectedRoute><GestaoVoluntariosUnificada /></ProtectedRoute>} />
             <Route path="/modulo-voluntarios" element={<ProtectedRoute><GestaoVoluntariosUnificada /></ProtectedRoute>} />
             <Route path="/voluntarios/dashboard" element={<ProtectedRoute><GestaoVoluntariosUnificada /></ProtectedRoute>} />
+            
+            {/* PÁGINA LEGADA - Gestão Completa (manter por compatibilidade) */}
             <Route path="/voluntarios/gestao" element={<ProtectedRoute><GestaoVoluntarios /></ProtectedRoute>} />
             <Route path="/gestao-voluntarios-completa" element={<ProtectedRoute><GestaoVoluntarios /></ProtectedRoute>} />
             <Route path="/voluntarios/novo" element={<ProtectedRoute><NovoVoluntario /></ProtectedRoute>} />
@@ -198,15 +201,18 @@ const App = () => (
             <Route path="/grupos-arquivados" element={<ProtectedRoute><GruposArquivados /></ProtectedRoute>} />
             <Route path="/grupo/:id" element={<ProtectedRoute><GrupoDetail /></ProtectedRoute>} />
             <Route path="/manual" element={<ProtectedRoute><ManualUtilizador /></ProtectedRoute>} />
-            <Route path="/administracao" element={<ProtectedRoute><Administracao /></ProtectedRoute>} />
+            
+            {/* ADMINISTRAÇÃO - Duas páginas disponíveis */}
+            <Route path="/administracao" element={<ProtectedRoute><Administracao /></ProtectedRoute>} /> {/* Página antiga */}
+            {/* /modulo-administrador - Página nova com design tático (definida acima) */}
+            
             <Route path="/modulo-missoes" element={<ProtectedRoute><ModuloMissoes /></ProtectedRoute>} />
             <Route path="/modulo-agenda" element={<ProtectedRoute><ModuloAgenda /></ProtectedRoute>} />
 <Route path="/modulo-equipamentos" element={<ProtectedRoute><ModuloEquipamentos /></ProtectedRoute>} />
-<Route path="/analytics" element={<ProtectedRoute><PaginaAnalytics /></ProtectedRoute>} />
-<Route path="/monitoramento" element={<ProtectedRoute><PaginaMonitoramento /></ProtectedRoute>} />
-<Route path="/teste-voluntarios" element={<ProtectedRoute><TesteVoluntarios /></ProtectedRoute>} />
-            <Route path="/relatorios" element={<ProtectedRoute><PaginaRelatorios /></ProtectedRoute>} />
-            <Route path="/workflow" element={<ProtectedRoute><PaginaWorkflow /></ProtectedRoute>} />
+            {/* Rotas removidas - páginas vazias redirecionadas */}
+            {/* /analytics, /monitoramento, /workflow removidos - eram placeholders vazios */}
+            {/* /relatorios agora redireciona para dashboard de relatórios */}
+            <Route path="/relatorios" element={<ProtectedRoute><RelatoriosVoluntarios /></ProtectedRoute>} />
             
             {/* Rota 404 */}
             <Route path="*" element={<NotFound />} />
