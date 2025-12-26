@@ -448,7 +448,7 @@ const GestaoVoluntariosUnificada = () => {
                           Ver
                         </Button>
                       </Link>
-                      <Link to={`/voluntario/${voluntario.id}/editar`} className="flex-1">
+                      <Link to={`/voluntarios/editar/${voluntario.id}`} className="flex-1">
                         <Button variant="outline" size="sm" className="w-full">
                           <Edit className="h-4 w-4 mr-1" />
                           Editar
