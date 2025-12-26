@@ -213,7 +213,7 @@ const AnimalDetail = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
       <EnhancedHeader />
 
       {/* Navegação Adicional */}
@@ -277,8 +277,8 @@ const AnimalDetail = () => {
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6">
         
         {/* Informações Básicas do Animal */}
-        <Card className="border-orange-200 bg-gradient-to-br from-orange-50 to-red-50">
-<CardHeader className="p-3 sm:p-6">
+        <Card className="border-l-4 border-orange-500 bg-white shadow-xl">
+          <CardHeader className="bg-gradient-to-r from-orange-50 to-red-50 p-4 sm:p-6 border-b-2 border-orange-200">
             <div className="text-center mb-4">
               {/* Fotografia do Animal */}
               {animal.url_fotografia && (
@@ -286,7 +286,7 @@ const AnimalDetail = () => {
                   <img 
                     src={convertGoogleDriveUrl(animal.url_fotografia)} 
                     alt={`Foto de ${animal.nome}`}
-                    className="w-48 h-48 sm:w-64 sm:h-64 object-cover rounded-full mx-auto border-4 border-orange-200 shadow-lg"
+                    className="w-40 h-40 sm:w-56 sm:h-56 lg:w-64 lg:h-64 object-cover rounded-full mx-auto border-8 border-white shadow-2xl ring-4 ring-orange-300"
                     onError={(e) => {
                       e.currentTarget.style.display = 'none';
                     }}
@@ -295,7 +295,7 @@ const AnimalDetail = () => {
               )}
               
               {/* Nome e Espécie */}
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-orange-900 mb-2 break-words">
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent mb-3 break-words">
                 <span className="block sm:inline">{animal.nome}</span>
                 <span className="text-orange-600 mx-1 sm:mx-3 hidden sm:inline">-</span>
                 <span className="block sm:inline text-orange-700">{animal.especie}</span>
@@ -523,7 +523,7 @@ const AnimalDetail = () => {
               
               {/* Intervenções */}
               <Link to={`/animal/${id}/intervencoes`}>
-                <Card className="hover:shadow-lg transition-shadow cursor-pointer border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100">
+                <Card className="border-l-4 border-blue-500 bg-white hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 cursor-pointer">
                   <CardContent className="p-3 sm:p-4">
                     <div className="flex items-center space-x-2 sm:space-x-3">
                       <div className="bg-blue-600 p-1.5 sm:p-2 rounded-full flex-shrink-0">
@@ -541,7 +541,7 @@ const AnimalDetail = () => {
               
               {/* Eventos */}
               <Link to={`/animal/${id}/eventos`}>
-                <Card className="hover:shadow-lg transition-shadow cursor-pointer border-green-200 bg-gradient-to-br from-green-50 to-green-100">
+                <Card className="border-l-4 border-green-500 bg-white hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 cursor-pointer">
                   <CardContent className="p-3 sm:p-4">
                     <div className="flex items-center space-x-2 sm:space-x-3">
                       <div className="bg-green-600 p-1.5 sm:p-2 rounded-full flex-shrink-0">
