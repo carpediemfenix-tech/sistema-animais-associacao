@@ -260,7 +260,7 @@ const AnimaisList: React.FC = () => {
         ]}
         primaryActions={
           <>
-            <Link to="/animais/novo">
+            <Link to="/novo-animal">
               <Button className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 h-9">
                 <Plus className="h-4 w-4 mr-2" />
                 Novo Animal
