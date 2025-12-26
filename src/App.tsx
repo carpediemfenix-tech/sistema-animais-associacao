@@ -45,6 +45,7 @@ import ModuloVoluntarios from "@/pages/ModuloVoluntarios";
 import ModuloFormacao from "@/pages/ModuloFormacao";
 import GestaoVoluntariosUnificada from "./pages/GestaoVoluntariosUnificada";
 import ModuloAnimais from "./pages/ModuloAnimais";
+import ModuloAdministrador from "./pages/ModuloAdministrador";
 import GestaoEspecies from "./pages/GestaoEspecies";
 import GestaoLocalizacoes from "./pages/GestaoLocalizacoes";
 import GestaoCategorias from "./pages/GestaoCategorias";
@@ -141,6 +142,8 @@ const App = () => (
             {/* Novos Módulos Dedicados */}
             <Route path="/modulo-animais" element={<ProtectedRoute><ModuloAnimais /></ProtectedRoute>} />
             <Route path="/modulo-formacao" element={<ProtectedRoute><ModuloFormacao /></ProtectedRoute>} />
+            <Route path="/modulo-administrador" element={<ProtectedRoute><ModuloAdministrador /></ProtectedRoute>} />
+            <Route path="/administrador" element={<ProtectedRoute><ModuloAdministrador /></ProtectedRoute>} />
             <Route path="/modulo-equipamentos" element={<ProtectedRoute><ModuloEquipamentos /></ProtectedRoute>} />
             {/* Rotas do Módulo Equipamentos */}
             <Route path="/equipamentos" element={<ProtectedRoute><EquipamentosNavigation /></ProtectedRoute>} />
