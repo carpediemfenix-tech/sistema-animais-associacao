@@ -156,7 +156,7 @@ const EditarVoluntario = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
         <EnhancedHeader />
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-center min-h-[400px]">
@@ -173,7 +173,7 @@ const EditarVoluntario = () => {
 
   if (!voluntario) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
         <EnhancedHeader />
         <div className="container mx-auto px-4 py-8">
           <div className="text-center min-h-[400px] flex items-center justify-center">
@@ -197,7 +197,7 @@ const EditarVoluntario = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <EnhancedHeader />
       
       <div className="container mx-auto px-4 py-8">

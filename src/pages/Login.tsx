@@ -23,7 +23,7 @@ const Login = () => {
   // Mostrar loading enquanto verifica autenticação
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-16 w-16 animate-spin mx-auto mb-4 text-blue-600" />
           <p className="text-lg text-gray-600">A verificar autenticação...</p>
@@ -56,7 +56,7 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-purple-50 to-pink-100 flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4 relative overflow-hidden">
       {/* Elementos gráficos decorativos */}
       <div className="absolute inset-0 pointer-events-none">
         {/* Patas decorativas */}

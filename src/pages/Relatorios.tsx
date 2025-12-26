@@ -5,7 +5,7 @@ import SistemaRelatoriosProfissional from "@/components/SistemaRelatoriosProfiss
 
 const Relatorios = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Header */}
       <div className="bg-white/80 backdrop-blur-sm shadow-lg border-b border-indigo-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

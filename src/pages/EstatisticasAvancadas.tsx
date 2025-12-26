@@ -201,7 +201,7 @@ const EstatisticasAvancadasPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-100 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Cabeçalho */}
         <div className="flex items-center justify-between mb-8">
