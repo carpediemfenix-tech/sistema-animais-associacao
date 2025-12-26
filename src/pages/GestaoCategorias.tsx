@@ -114,6 +114,7 @@ const GestaoCategorias = () => {
             nome: formData.nome.trim(),
             descricao: formData.descricao.trim(),
             tipo: formData.tipo,
+            escopo: formData.escopo,
             cor: formData.cor,
             ativo: formData.ativo
           })
@@ -133,6 +134,7 @@ const GestaoCategorias = () => {
             nome: formData.nome.trim(),
             descricao: formData.descricao.trim(),
             tipo: formData.tipo,
+            escopo: formData.escopo,
             cor: formData.cor,
             ativo: formData.ativo
           }]);
