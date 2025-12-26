@@ -6,13 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Save, AlertCircle, CheckCircle } from "lucide-react";
+import { ArrowLeft, Save, AlertCircle, CheckCircle, PawPrint, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import EnhancedHeader from "@/components/EnhancedHeader";
 import EnhancedFooter from "@/components/EnhancedFooter";
 import VoluntarioSelector from "@/components/VoluntarioSelector";
 import { convertGoogleDriveUrl } from "@/lib/utils";
+import PageActionBar from "@/components/PageActionBar";
 
 const NovoAnimal = () => {
   const navigate = useNavigate();
@@ -448,46 +449,42 @@ const NovoAnimal = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
       <EnhancedHeader />
       
-      {/* Header Moderno */}
-      <div className="bg-white shadow-lg border-b border-gray-200">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Button variant="outline" size="sm" asChild className="hover:bg-gray-100">
-                <Link to="/animais">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Voltar
-                </Link>
-              </Button>
-              <div className="flex items-center space-x-3">
-                <div className="bg-gradient-to-br from-orange-400 to-orange-600 p-3 rounded-xl shadow-lg">
-                  <img 
-                    src="/images/BackgroundEraser_20250411_205630024.png" 
-                    alt="Valentão ao Resgate" 
-                    className="h-8 w-8 object-contain"
-                  />
-                </div>
-                <div>
-                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                    Cadastrar Novo Animal
-                  </h1>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Preencha as informações para adicionar um novo animal ao sistema
-                  </p>
-                </div>
-              </div>
-            </div>
+      {/* Barra de Navegação e Ações */}
+      <PageActionBar
+        breadcrumbs={[
+          { label: 'Animais', href: '/animais', icon: <PawPrint className="h-4 w-4" /> },
+          { label: 'Novo Animal', icon: <Plus className="h-4 w-4" /> }
+        ]}
+        primaryActions={
+          <>
             {numeroProcesso && (
-              <div className="flex items-center space-x-2 bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg shadow-lg">
-                <CheckCircle className="h-5 w-5" />
-                <span className="font-semibold">
-                  Processo: {numeroProcesso}
-                </span>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
+                <p className="text-xs text-blue-600 font-medium">Processo</p>
+                <p className="text-sm font-bold text-blue-900">{numeroProcesso}</p>
               </div>
             )}
-          </div>
-        </div>
-      </div>
+            <Button 
+              onClick={handleSubmit}
+              disabled={loading}
+              className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 h-9"
+            >
+              {loading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Cadastrando...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Cadastrar Animal
+                </>
+              )}
+            </Button>
+          </>
+        }
+      />
+      
+
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -839,39 +836,7 @@ const NovoAnimal = () => {
             </CardContent>
           </Card>
 
-          {/* Botões de Ação */}
-          <div className="flex flex-col sm:flex-row justify-end gap-4 pt-4">
-            <Button 
-              type="button" 
-              variant="outline" 
-              asChild 
-              className="w-full sm:w-auto border-2 hover:bg-gray-100 transition-colors"
-              size="lg"
-            >
-              <Link to="/animais">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Cancelar
-              </Link>
-            </Button>
-            <Button 
-              type="submit" 
-              disabled={loading} 
-              className="w-full sm:w-auto bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-lg hover:shadow-xl transition-all"
-              size="lg"
-            >
-              {loading ? (
-                <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                  Cadastrando Animal...
-                </>
-              ) : (
-                <>
-                  <Save className="h-5 w-5 mr-2" />
-                  Cadastrar Animal
-                </>
-              )}
-            </Button>
-          </div>
+          {/* Botões removidos - agora estão no PageActionBar */}
         </form>
       </div>
       

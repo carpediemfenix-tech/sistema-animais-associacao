@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import EnhancedHeader from "@/components/EnhancedHeader";
 import EnhancedFooter from "@/components/EnhancedFooter";
+import PageActionBar from "@/components/PageActionBar";
 import EspecialidadesVoluntario from "@/components/EspecialidadesVoluntario";
 
 // Função helper para extrair primeiro e último nome
@@ -197,58 +198,45 @@ const EditarVoluntario = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
       <EnhancedHeader />
       
-      <div className="container mx-auto px-4 py-8">
-        {/* Cabeçalho Moderno */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate('/voluntarios/gestao')}
-                className="bg-white/80 backdrop-blur-sm border-blue-200 hover:bg-blue-50"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Voltar à Gestão
-              </Button>
-              <div>
-                <h1 className="text-4xl font-bold text-gray-900 mb-2 flex items-center">
-                  <Edit className="h-8 w-8 mr-3 text-blue-600" />
-                  Editar Voluntário
-                </h1>
-                {voluntario && (
-                  <div className="flex items-center space-x-3">
-                    <Badge variant="outline" className="bg-white/80 backdrop-blur-sm">
-                      {voluntario.nome}
-                    </Badge>
-                    <Badge variant={voluntario.ativo ? "default" : "secondary"} className="bg-white/80 backdrop-blur-sm">
-                      {voluntario.ativo ? "Ativo" : "Inativo"}
-                    </Badge>
-                    <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
-                      ID: {voluntario.id.slice(0, 8)}...
-                    </Badge>
-                  </div>
-                )}
-              </div>
-            </div>
-          
+      {/* Barra de Navegação e Ações */}
+      <PageActionBar
+        breadcrumbs={[
+          { label: 'Voluntários', href: '/voluntarios/gestao', icon: <Users className="h-4 w-4" /> },
+          { label: voluntario?.nome || 'Editar' }
+        ]}
+        primaryActions={
+          <>
+            {voluntario && (
+              <Badge variant={voluntario.ativo ? "default" : "secondary"}>
+                {voluntario.ativo ? "Ativo" : "Inativo"}
+              </Badge>
+            )}
             <Button 
               onClick={handleSave} 
               disabled={saving}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg"
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 h-9"
             >
               {saving ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Salvando...
+                </>
               ) : (
-                <Save className="h-4 w-4 mr-2" />
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Salvar Alterações
+                </>
               )}
-              {saving ? 'Salvando...' : 'Salvar Alterações'}
             </Button>
-          </div>
-        </div>
+          </>
+        }
+      />
+      
+      <div className="container mx-auto px-4 py-8">
+        {/* Cabeçalho removido - agora está no PageActionBar */}
 
         {/* Formulário */}
         <Card className="bg-white/80 backdrop-blur-sm shadow-lg border-blue-200">
