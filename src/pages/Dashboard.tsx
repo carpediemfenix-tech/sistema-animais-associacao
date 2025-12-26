@@ -24,7 +24,8 @@ import {
   Award,
   Home,
   FileText,
-  Briefcase
+  Briefcase,
+  Shield
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -266,6 +267,23 @@ const Dashboard: React.FC = () => {
                   <div className="flex justify-center space-x-2">
                     <Badge variant="secondary" className="text-xs">Cursos</Badge>
                     <Badge variant="outline" className="text-xs">Certificados</Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+
+            {/* Módulo Administrador */}
+            <Link to="/modulo-administrador" className="group">
+              <Card className="h-full transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-0 bg-gradient-to-br from-slate-800 to-slate-900 group-hover:from-slate-700 group-hover:to-slate-800">
+                <CardContent className="p-6 text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                    <Shield className="h-8 w-8 text-white" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-white mb-2">Administrador</h3>
+                  <p className="text-sm text-slate-300 mb-4">Centro de comando tático</p>
+                  <div className="flex justify-center space-x-2">
+                    <Badge className="bg-orange-500/20 text-orange-400 border border-orange-500/30 text-xs">NÍVEL 5</Badge>
+                    <Badge className="bg-green-500/20 text-green-400 border border-green-500/30 text-xs">ATIVO</Badge>
                   </div>
                 </CardContent>
               </Card>
