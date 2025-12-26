@@ -23,6 +23,8 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import EnhancedHeader from "@/components/EnhancedHeader";
+import EnhancedFooter from "@/components/EnhancedFooter";
 
 interface EstatisticasAvancadas {
   // Animais
@@ -185,7 +187,7 @@ const EstatisticasAvancadasPage = () => {
         movimentosMes,
         eficienciaOperacional: Math.min(95, Math.max(60, 85 + (voluntariosAtivos / Math.max(totalAnimais, 1)) * 10)),
         satisfacaoGeral: Math.min(100, Math.max(70, 90 + taxaAprovacao / 10)),
-        crescimentoMensal: Math.round((movimentosMes / Math.max(totalAnimais, 1)) * 100) // Baseado em movimentos por animal
+        crescimentoMensal: Math.round((movimentosMes / Math.max(totalAnimais, 1)) * 100)
       });
 
     } catch (error) {
@@ -201,30 +203,19 @@ const EstatisticasAvancadasPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Cabeçalho */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-4">
-            <Link to="/">
-              <Button variant="outline" size="sm">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Dashboard Principal
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900 flex items-center">
-                <BarChart3 className="h-10 w-10 mr-3 text-indigo-600" />
-                Estatísticas Avançadas
-              </h1>
-              <p className="text-gray-600 text-lg">
-                Análise detalhada e métricas de performance do sistema
-              </p>
-            </div>
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
+      <EnhancedHeader />
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Estatísticas Avançadas
+          </h1>
+          <p className="text-gray-600">
+            Análise detalhada e métricas de performance do sistema
+          </p>
         </div>
 
-        {/* Métricas de Performance */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card>
             <CardHeader>
@@ -290,9 +281,7 @@ const EstatisticasAvancadasPage = () => {
           </Card>
         </div>
 
-        {/* Estatísticas Detalhadas */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Animais */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
@@ -334,7 +323,6 @@ const EstatisticasAvancadasPage = () => {
             </CardContent>
           </Card>
 
-          {/* Voluntários */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
@@ -378,9 +366,7 @@ const EstatisticasAvancadasPage = () => {
           </Card>
         </div>
 
-        {/* Formação e Financeiro */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Formação */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
@@ -412,7 +398,6 @@ const EstatisticasAvancadasPage = () => {
             </CardContent>
           </Card>
 
-          {/* Financeiro */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
@@ -449,6 +434,8 @@ const EstatisticasAvancadasPage = () => {
           </Card>
         </div>
       </div>
+      
+      <EnhancedFooter />
     </div>
   );
 };
