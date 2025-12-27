@@ -294,23 +294,17 @@ const GestaoFinanceira = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
       <EnhancedHeader />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        
-        {/* Cabeçalho com Novo Movimento */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">Movimentos Financeiros</h2>
-            <p className="text-gray-600">Registo e controlo de todas as transações</p>
-          </div>
-            
-          {hasPermission('create') && (
+      
+      <PageActionBar
+        breadcrumbs={[
+          { label: 'Financeiro', icon: <DollarSign className="h-4 w-4" /> },
+          { label: 'Movimentos' }
+        ]}
+        primaryActions={
+          hasPermission('create') && (
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
-                <Button 
-                  size="sm" 
-                  className="bg-green-600 hover:bg-green-700"
-                >
+                <Button size="sm" className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 h-9">
                   <Plus className="h-4 w-4 mr-2" />
                   Novo Movimento
                 </Button>
@@ -462,8 +456,11 @@ const GestaoFinanceira = () => {
                 </form>
               </DialogContent>
             </Dialog>
-          )}
-        </div>
+          )
+        }
+      />
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
         {/* Resumo Financeiro */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
