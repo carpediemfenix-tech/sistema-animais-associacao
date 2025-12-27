@@ -33,6 +33,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import EnhancedHeader from "@/components/EnhancedHeader";
 import EnhancedFooter from "@/components/EnhancedFooter";
+import PageActionBar from "@/components/PageActionBar";
 
 interface Voluntario {
   id: string;
@@ -136,41 +137,30 @@ const GestaoVoluntariosUnificada = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
       <EnhancedHeader />
+      
+      <PageActionBar
+        breadcrumbs={[
+          { label: 'Voluntários', icon: <Users className="h-4 w-4" /> }
+        ]}
+        primaryActions={
+          <>
+            <Link to="/relatorios-voluntarios">
+              <Button variant="outline" className="h-9">
+                <FileText className="h-4 w-4 mr-2" />
+                Relatórios
+              </Button>
+            </Link>
+            <Link to="/novo-voluntario">
+              <Button className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 h-9">
+                <Plus className="h-4 w-4 mr-2" />
+                Novo Voluntário
+              </Button>
+            </Link>
+          </>
+        }
+      />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
-        {/* Header da Página */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-4">
-              <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-4 rounded-xl shadow-lg">
-                <Users className="h-8 w-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">
-                  Gestão de Voluntários
-                </h1>
-                <p className="text-gray-600 mt-1">
-                  Sistema completo de gestão e acompanhamento de voluntários
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <Button asChild variant="outline" size="lg">
-                <Link to="/relatorios-voluntarios">
-                  <FileText className="h-5 w-5 mr-2" />
-                  Relatórios
-                </Link>
-              </Button>
-              <Button asChild size="lg" className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-lg">
-                <Link to="/novo-voluntario">
-                  <Plus className="h-5 w-5 mr-2" />
-                  Novo Voluntário
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </div>
 
         {/* Estatísticas no Topo */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
