@@ -99,7 +99,7 @@ const Index: React.FC = () => {
                 <img 
                   src="/images/BackgroundEraser_20250411_205630024.png" 
                   alt="Valentão Operacionais" 
-                  className="h-16 w-16 sm:h-20 sm:w-20 object-contain"
+                  className="h-24 w-24 sm:h-32 sm:w-32 lg:h-40 lg:w-40 object-contain"
                 />
                 <div className="absolute -inset-2 bg-white rounded-full opacity-20 animate-pulse"></div>
               </div>

@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import PageActionBar from '@/components/PageActionBar';
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, FileText } from "lucide-react";
 import EnhancedHeader from "@/components/EnhancedHeader";
