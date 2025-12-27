@@ -384,33 +384,21 @@ const MissaoParticipacoes = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <EnhancedHeader />
       
-      <div className="container mx-auto px-4 py-8">
-        {/* Header com navegação */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-4">
-            <Link to={'/missao/' + id}>
-              <Button variant="outline" size="sm">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Voltar à Missão
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-                <Users className="h-8 w-8 text-blue-600 mr-3" />
-                Participações da Missão
-              </h1>
-              <p className="text-gray-600 mt-1">{missao.titulo} ({missao.codigo})</p>
-            </div>
-          </div>
-          
-          <Button 
-            onClick={() => openParticipacaoDialog()} 
-            className="bg-blue-600 hover:bg-blue-700"
-          >
+      <PageActionBar
+        breadcrumbs={[
+          { label: 'Missões', href: '/modulo-missoes', icon: <Target className="h-4 w-4" /> },
+          { label: missao.titulo, href: `/missao/${id}` },
+          { label: 'Participações', icon: <Users className="h-4 w-4" /> }
+        ]}
+        primaryActions={
+          <Button onClick={() => openParticipacaoDialog()} className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 h-9">
             <Plus className="h-4 w-4 mr-2" />
             Adicionar Participação
           </Button>
-        </div>
+        }
+      />
+      
+      <div className="container mx-auto px-4 py-8">
 
         {/* Estatísticas */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">

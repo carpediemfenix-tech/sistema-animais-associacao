@@ -287,26 +287,15 @@ const MissaoFinanceiro = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <EnhancedHeader />
       
+      <PageActionBar
+        breadcrumbs={[
+          { label: 'Missões', href: '/modulo-missoes', icon: <Target className="h-4 w-4" /> },
+          { label: missao?.titulo || 'Missão', href: `/missao/${id}` },
+          { label: 'Financeiro', icon: <DollarSign className="h-4 w-4" /> }
+        ]}
+      />
+      
       <div className="container mx-auto px-4 py-8">
-        {/* Cabeçalho */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-4">
-            <Button
-              variant="outline"
-              onClick={() => navigate(`/missao/${id}`)}
-              className="flex items-center space-x-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              <span>Voltar à Missão</span>
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                Financeiro - {missao?.codigo}
-              </h1>
-              <p className="text-gray-600">{missao?.titulo}</p>
-            </div>
-          </div>
-        </div>
 
         {/* Estatísticas Financeiras */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
