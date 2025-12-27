@@ -985,55 +985,30 @@ const VoluntarioProfile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
       <EnhancedHeader />
       
+      <PageActionBar
+        breadcrumbs={[
+          { label: 'Voluntários', href: '/voluntarios', icon: <Users className="h-4 w-4" /> },
+          { label: voluntario.nome, icon: <User className="h-4 w-4" /> }
+        ]}
+        badge={
+          <Badge variant={voluntario.ativo ? "default" : "secondary"}>
+            {voluntario.ativo ? "Ativo" : "Inativo"}
+          </Badge>
+        }
+        primaryActions={
+          <Link to={`/editar-voluntario/${id}`}>
+            <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 h-9">
+              <User className="h-4 w-4 mr-2" />
+              Editar Perfil
+            </Button>
+          </Link>
+        }
+      />
+      
       <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 space-y-3 sm:space-y-0">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
-            <Link to="/voluntarios/gestao">
-              <Button variant="outline" size="sm" className="w-full sm:w-auto">
-                <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
-                <span className="hidden sm:inline">Voltar à Gestão</span>
-                <span className="sm:hidden">Voltar</span>
-              </Button>
-            </Link>
-            <div className="w-full sm:w-auto">
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 flex items-center break-words">
-                <User className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 mr-2 sm:mr-3 text-blue-600 flex-shrink-0" />
-                <span className="truncate">{voluntario.nome}</span>
-              </h1>
-              <div className="flex flex-wrap items-center gap-2 mt-1">
-                <Badge variant={voluntario.ativo ? "default" : "secondary"} className="text-xs">
-                  {voluntario.ativo ? "Ativo" : "Inativo"}
-                </Badge>
-                <Badge variant="outline" className="text-xs">
-                  {voluntario.especialidade || "Geral"}
-                </Badge>
-                {voluntario.tem_formacao && (
-                  <Badge variant="outline" className="bg-green-50 text-green-700 text-xs">
-                    <GraduationCap className="h-3 w-3 mr-1" />
-                    <span className="hidden sm:inline">Com Formação</span>
-                    <span className="sm:hidden">Formado</span>
-                  </Badge>
-                )}
-              </div>
-            </div>
-          </div>
-          
-          {/* Botões de Ação */}
-          <div className="flex flex-wrap gap-2 mt-3 sm:mt-0">
-            <Link to={`/voluntarios/${voluntario.id}/formacoes`}>
-              <Button variant="outline" size="sm" className="bg-blue-50 text-blue-700 hover:bg-blue-100 w-full sm:w-auto">
-                <GraduationCap className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
-                <span className="hidden sm:inline">Formações Frequentadas</span>
-                <span className="sm:hidden">Formações</span>
-              </Button>
-            </Link>
-          </div>
-        </div>
-
         {/* Tabs com informações completas */}
         <Tabs defaultValue="dados-pessoais" className="space-y-4 sm:space-y-6">
           <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 h-auto">
