@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import PageActionBar from '@/components/PageActionBar';
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import EnhancedHeader from "@/components/EnhancedHeader";
