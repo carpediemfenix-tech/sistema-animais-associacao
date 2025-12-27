@@ -86,33 +86,19 @@ const EventosPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="sm" asChild>
-                <Link to="/">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Voltar
-                </Link>
-              </Button>
-              <div className="flex items-center space-x-3">
-                <img 
-                  src="/images/BackgroundEraser_20250411_205630024.png" 
-                  alt="Valentão ao Resgate" 
-                  className="h-8 w-8 object-contain"
-                />
-                <div>
-                  <h1 className="text-xl font-bold text-gray-900">Eventos & Histórico</h1>
-                  <p className="text-sm text-gray-500">{eventosFiltrados.length} eventos encontrados</p>
-                </div>
-              </div>
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <EnhancedHeader />
+      
+      <PageActionBar
+        breadcrumbs={[
+          { label: 'Eventos & Histórico', icon: <Calendar className="h-4 w-4" /> }
+        ]}
+        secondaryActions={
+          <div className="text-sm text-gray-600">
+            {eventosFiltrados.length} eventos encontrados
           </div>
-        </div>
-      </div>
+        }
+      />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Pesquisa */}
