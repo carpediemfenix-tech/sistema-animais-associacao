@@ -265,91 +265,23 @@ const GestaoResponsabilidades = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
       <EnhancedHeader />
       
+      <PageActionBar
+        breadcrumbs={[
+          { label: 'Configurações', href: '/configuracoes' },
+          { label: 'Responsabilidades', icon: <Shield className="h-4 w-4" /> }
+        ]}
+        primaryActions={
+          <Button onClick={() => { resetForm(); setNovoTipoOpen(true); }} className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 h-9">
+            <Plus className="h-4 w-4 mr-2" />
+            Novo Tipo
+          </Button>
+        }
+        secondaryActions={[
+          { label: 'Atualizar', onClick: loadTiposResponsabilidade, icon: <RefreshCw className="h-4 w-4" /> }
+        ]}
+      />
+      
       <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-4">
-            <Link to="/configuracoes">
-              <Button variant="outline">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Configurações
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-                <Shield className="h-8 w-8 mr-3 text-blue-600" />
-                Gestão de Tipos de Responsabilidades
-              </h1>
-              <p className="text-gray-600 mt-1">
-                Gerir tipos de responsabilidades para voluntários
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-3">
-            <Button onClick={loadTiposResponsabilidade} variant="outline">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Atualizar
-            </Button>
-            <Dialog open={novoTipoOpen} onOpenChange={setNovoTipoOpen}>
-              <DialogTrigger asChild>
-                <Button onClick={resetForm}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Novo Tipo
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Criar Novo Tipo de Responsabilidade</DialogTitle>
-                  <DialogDescription>
-                    Adicione um novo tipo de responsabilidade ao sistema
-                  </DialogDescription>
-                </DialogHeader>
-                
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="nome">Nome *</Label>
-                    <Input
-                      id="nome"
-                      value={tipoForm.nome}
-                      onChange={(e) => setTipoForm({...tipoForm, nome: e.target.value})}
-                      placeholder="Ex: Cuidador Principal"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="descricao">Descrição</Label>
-                    <Textarea
-                      id="descricao"
-                      value={tipoForm.descricao}
-                      onChange={(e) => setTipoForm({...tipoForm, descricao: e.target.value})}
-                      placeholder="Descrição do tipo de responsabilidade..."
-                      rows={3}
-                    />
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      checked={tipoForm.ativo}
-                      onCheckedChange={(checked) => setTipoForm({...tipoForm, ativo: checked})}
-                    />
-                    <Label>Tipo ativo</Label>
-                  </div>
-                </div>
-                
-                <div className="flex justify-end space-x-2 mt-6">
-                  <Button variant="outline" onClick={() => setNovoTipoOpen(false)}>
-                    Cancelar
-                  </Button>
-                  <Button onClick={handleSalvarTipo}>
-                    <Save className="h-4 w-4 mr-2" />
-                    Salvar Tipo
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </div>
-
         {/* Estatísticas */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card>
@@ -485,58 +417,111 @@ const GestaoResponsabilidades = () => {
             )}
           </div>
         )}
-
-        {/* Dialog de Edição */}
-        <Dialog open={editarTipoOpen} onOpenChange={setEditarTipoOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Editar Tipo de Responsabilidade</DialogTitle>
-              <DialogDescription>
-                Altere as informações do tipo de responsabilidade
-              </DialogDescription>
-            </DialogHeader>
-            {editandoTipo && (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="edit-nome">Nome *</Label>
-                  <Input
-                    id="edit-nome"
-                    value={editandoTipo.nome}
-                    onChange={(e) => setEditandoTipo({...editandoTipo, nome: e.target.value})}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="edit-descricao">Descrição</Label>
-                  <Textarea
-                    id="edit-descricao"
-                    value={editandoTipo.descricao || ''}
-                    onChange={(e) => setEditandoTipo({...editandoTipo, descricao: e.target.value})}
-                    rows={3}
-                  />
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    checked={editandoTipo.ativo}
-                    onCheckedChange={(checked) => setEditandoTipo({...editandoTipo, ativo: checked})}
-                  />
-                  <Label>Tipo ativo</Label>
-                </div>
-              </div>
-            )}
-            <div className="flex justify-end space-x-2 mt-6">
-              <Button variant="outline" onClick={() => setEditarTipoOpen(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={handleEditarTipo}>
-                <Save className="h-4 w-4 mr-2" />
-                Salvar Alterações
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
       </div>
+
+      {/* Dialog de Novo Tipo */}
+      <Dialog open={novoTipoOpen} onOpenChange={setNovoTipoOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Criar Novo Tipo de Responsabilidade</DialogTitle>
+            <DialogDescription>
+              Adicione um novo tipo de responsabilidade ao sistema
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="nome">Nome *</Label>
+              <Input
+                id="nome"
+                value={tipoForm.nome}
+                onChange={(e) => setTipoForm({...tipoForm, nome: e.target.value})}
+                placeholder="Ex: Cuidador Principal"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="descricao">Descrição</Label>
+              <Textarea
+                id="descricao"
+                value={tipoForm.descricao}
+                onChange={(e) => setTipoForm({...tipoForm, descricao: e.target.value})}
+                placeholder="Descrição do tipo de responsabilidade..."
+                rows={3}
+              />
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Switch
+                checked={tipoForm.ativo}
+                onCheckedChange={(checked) => setTipoForm({...tipoForm, ativo: checked})}
+              />
+              <Label>Tipo ativo</Label>
+            </div>
+          </div>
+          
+          <div className="flex justify-end space-x-2 mt-6">
+            <Button variant="outline" onClick={() => setNovoTipoOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSalvarTipo}>
+              <Save className="h-4 w-4 mr-2" />
+              Salvar Tipo
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de Edição */}
+      <Dialog open={editarTipoOpen} onOpenChange={setEditarTipoOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Tipo de Responsabilidade</DialogTitle>
+            <DialogDescription>
+              Altere as informações do tipo de responsabilidade
+            </DialogDescription>
+          </DialogHeader>
+          {editandoTipo && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-nome">Nome *</Label>
+                <Input
+                  id="edit-nome"
+                  value={editandoTipo.nome}
+                  onChange={(e) => setEditandoTipo({...editandoTipo, nome: e.target.value})}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="edit-descricao">Descrição</Label>
+                <Textarea
+                  id="edit-descricao"
+                  value={editandoTipo.descricao || ''}
+                  onChange={(e) => setEditandoTipo({...editandoTipo, descricao: e.target.value})}
+                  rows={3}
+                />
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Switch
+                  checked={editandoTipo.ativo}
+                  onCheckedChange={(checked) => setEditandoTipo({...editandoTipo, ativo: checked})}
+                />
+                <Label>Tipo ativo</Label>
+              </div>
+            </div>
+          )}
+          <div className="flex justify-end space-x-2 mt-6">
+            <Button variant="outline" onClick={() => setEditarTipoOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleEditarTipo}>
+              <Save className="h-4 w-4 mr-2" />
+              Salvar Alterações
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       
       <EnhancedFooter />
     </div>

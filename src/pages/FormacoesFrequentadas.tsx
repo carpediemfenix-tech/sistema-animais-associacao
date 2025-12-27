@@ -170,27 +170,15 @@ const FormacoesFrequentadas: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
       <EnhancedHeader />
       
+      <PageActionBar
+        breadcrumbs={[
+          { label: 'Voluntários', href: '/voluntarios', icon: <Users className="h-4 w-4" /> },
+          { label: voluntario?.nome || 'Voluntário', href: `/voluntarios/perfil/${id}` },
+          { label: 'Formações', icon: <GraduationCap className="h-4 w-4" /> }
+        ]}
+      />
+      
       <div className="container mx-auto px-4 py-8">
-        {/* Cabeçalho */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-4">
-            <Link to={`/voluntarios/perfil/${id}`}>
-              <Button variant="outline" size="sm">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Voltar ao Perfil
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 flex items-center space-x-2">
-                <GraduationCap className="h-6 w-6 text-blue-600" />
-                <span>Formações Frequentadas</span>
-              </h1>
-              {voluntario && (
-                <p className="text-gray-600">{voluntario.nome}</p>
-              )}
-            </div>
-          </div>
-        </div>
 
         {/* Estatísticas */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
