@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import PageActionBar from '@/components/PageActionBar';
 import { useParams, Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";

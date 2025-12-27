@@ -271,27 +271,37 @@ setFormData({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <EnhancedHeader />
-      
-      <PageActionBar
-        breadcrumbs={[
-          { label: 'Voluntários', href: '/voluntarios', icon: <Users className="h-4 w-4" /> },
-          { label: 'Novo Voluntário', icon: <Plus className="h-4 w-4" /> }
-        ]}
-        primaryActions={
-          <Button type="submit" form="novo-voluntario-form" className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 h-9">
-            <Plus className="h-4 w-4 mr-2" />
-            Registar Voluntário
-          </Button>
-        }
-      />
-      
       <div className="px-2 sm:px-4 py-4 sm:py-6 flex-1">
       <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
+        
+        {/* Cabeçalho */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+            <Link to="/voluntarios/gestao" className="w-full sm:w-auto">
+              <Button variant="outline" size="sm" className="w-full sm:w-auto">
+                <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
+                <span className="hidden sm:inline">Voltar</span>
+                <span className="sm:hidden">Voltar</span>
+              </Button>
+            </Link>
+            <div className="flex-1">
+              <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 flex items-center gap-2">
+                <Plus className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
+                <span className="hidden sm:inline">Registar Novo Voluntário</span>
+                <span className="sm:hidden">Novo Voluntário</span>
+              </h1>
+              <p className="text-sm sm:text-base text-gray-600 mt-1">
+                <span className="hidden sm:inline">Adicionar um novo voluntário ao sistema Valentão</span>
+                <span className="sm:hidden">Adicionar novo voluntário</span>
+              </p>
+            </div>
+          </div>
+        </div>
 
         {/* Formulário */}
-        <form id="novo-voluntario-form" onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
           <Card>
             <CardHeader className="p-3 sm:p-6">
               <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">

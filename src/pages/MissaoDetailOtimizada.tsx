@@ -243,18 +243,32 @@ const MissaoDetailOtimizada = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <EnhancedHeader />
       
-      <PageActionBar
-        breadcrumbs={[
-          { label: 'Missões', href: '/modulo-missoes', icon: <Target className="h-4 w-4" /> },
-          { label: `${missao.codigo} - ${missao.titulo}` }
-        ]}
-        secondaryActions={
-          <div className="flex items-center space-x-2">
-            {getStatusBadge(missao.status)}
-            {getPrioridadeBadge(missao.prioridade)}
+      <div className="container mx-auto px-4 py-8">
+        {/* Cabeçalho */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center space-x-4">
+            <Button
+              variant="outline"
+              onClick={() => navigate('/modulo-missoes')}
+              className="flex items-center space-x-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span>Voltar às Missões</span>
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">
+                {missao.codigo} - {missao.titulo}
+              </h1>
+              <div className="flex items-center space-x-4 mt-2">
+                {getStatusBadge(missao.status)}
+                {getPrioridadeBadge(missao.prioridade)}
+                <div className="flex items-center space-x-1 text-gray-600">
+                  <Calendar className="h-4 w-4" />
+                  <span>{new Date(missao.data_inicio).toLocaleDateString('pt-PT')}</span>
+                </div>
+              </div>
+            </div>
           </div>
-        }
-        primaryActions={
           <div className="flex space-x-2">
             <Button variant="outline" size="sm">
               <Share2 className="h-4 w-4 mr-2" />
@@ -268,15 +282,12 @@ const MissaoDetailOtimizada = () => {
               <RefreshCw className="h-4 w-4 mr-2" />
               Atualizar
             </Button>
-            <Button size="sm" className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800">
+            <Button size="sm">
               <Edit className="h-4 w-4 mr-2" />
-              Editar Missão
+              Editar
             </Button>
           </div>
-        }
-      />
-      
-      <div className="container mx-auto px-4 py-8">
+        </div>
 
         {/* Estatísticas Rápidas */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">

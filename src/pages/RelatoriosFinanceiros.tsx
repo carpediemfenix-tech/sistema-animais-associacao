@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import PageActionBar from '@/components/PageActionBar';
 import { Calendar, Download, Filter, TrendingUp, TrendingDown, DollarSign, PieChart, BarChart3, FileText, Eye } from 'lucide-react';
 
 interface ReportFilter {
