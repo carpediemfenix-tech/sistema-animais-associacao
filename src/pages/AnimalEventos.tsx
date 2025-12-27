@@ -29,6 +29,7 @@ import { Animal, EventoAnimal, TipoEvento, Voluntario } from "@/types/animal";
 import { useToast } from "@/hooks/use-toast";
 import EnhancedHeader from "@/components/EnhancedHeader";
 import EnhancedFooter from "@/components/EnhancedFooter";
+import PageActionBar from "@/components/PageActionBar";
 
 const AnimalEventos = () => {
   const { id } = useParams();

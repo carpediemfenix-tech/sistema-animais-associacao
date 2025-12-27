@@ -445,39 +445,22 @@ voluntarios(id, nome, email, telefone, display_name, full_name)
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
       <EnhancedHeader />
+      
+      <PageActionBar
+        breadcrumbs={[
+          { label: 'Animais', href: '/animais', icon: <PawPrint className="h-4 w-4" /> },
+          { label: animal?.nome || 'Animal', href: `/animal/${id}` },
+          { label: 'Responsabilidades', icon: <Star className="h-4 w-4" /> }
+        ]}
+        primaryActions={
+          <Button onClick={() => openResponsabilidadeDialog()} className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 h-9">
+            <Plus className="h-4 w-4 mr-2" />
+            Nova Responsabilidade
+          </Button>
+        }
+      />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 flex-1">
-        
-        {/* Cabeçalho da Página */}
-        <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-500">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 flex items-center gap-2">
-                <Star className="h-7 w-7 text-green-600" />
-                Responsabilidades - {animal?.nome}
-              </h1>
-              <p className="text-gray-600">
-                Gestão de voluntários responsáveis pelos cuidados do animal
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <Link to={`/animal/${id}`}>
-                <Button variant="outline" size="sm" className="h-10">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Voltar
-                </Button>
-              </Link>
-              <Button 
-                onClick={() => openResponsabilidadeDialog()} 
-                className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-lg h-10"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">Nova Responsabilidade</span>
-                <span className="sm:hidden">Nova</span>
-              </Button>
-            </div>
-          </div>
-        </div>
 
         {/* Responsabilidades Ativas */}
         <Card className="border-green-300 bg-white shadow-lg">

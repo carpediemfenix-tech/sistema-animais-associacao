@@ -28,6 +28,7 @@ import { Animal, LocalizacaoAnimal, Voluntario } from "@/types/animal";
 import { useToast } from "@/hooks/use-toast";
 import EnhancedHeader from "@/components/EnhancedHeader";
 import EnhancedFooter from "@/components/EnhancedFooter";
+import PageActionBar from "@/components/PageActionBar";
 
 // Tipos de localizações predefinidos
 const TIPOS_LOCALIZACOES = [
