@@ -115,12 +115,7 @@ const EnhancedHeader = () => {
     '/animais': {
       id: 'B01',
       title: 'Lista de Animais',
-      navigationButtons: [
-        { label: 'Voltar', path: '/modulo-animais', icon: <ArrowLeft className="h-4 w-4" /> },
-        { label: 'Novo Animal', path: '/novo-animal', icon: <Plus className="h-4 w-4" /> },
-        { label: 'Arquivados', path: '/animais-arquivados', icon: <Archive className="h-4 w-4" /> },
-        { label: 'Adotados', path: '/animais-adotados', icon: <Heart className="h-4 w-4" /> }
-      ]
+      navigationButtons: [] // Removido - usando PageActionBar
     },
     '/modulo-animais': {
       id: 'B02',
@@ -132,18 +127,12 @@ const EnhancedHeader = () => {
     '/animal/novo': {
       id: 'B03',
       title: 'Novo Animal',
-      navigationButtons: [
-        { label: 'Lista Animais', path: '/animais', icon: <ArrowLeft className="h-4 w-4" /> },
-        { label: 'Dashboard', path: '/', icon: <Home className="h-4 w-4" /> }
-      ]
+      navigationButtons: [] // Removido - usando PageActionBar
     },
     '/animais-arquivados': {
       id: 'B04',
       title: 'Animais Arquivados',
-      navigationButtons: [
-        { label: 'Lista Animais', path: '/animais', icon: <PawPrint className="h-4 w-4" /> },
-        { label: 'Dashboard', path: '/', icon: <Home className="h-4 w-4" /> }
-      ]
+      navigationButtons: [] // Removido - usando PageActionBar
     },
 
     // C## = Módulo de Voluntários
@@ -169,10 +158,7 @@ const EnhancedHeader = () => {
     '/voluntario/novo': {
       id: 'C03',
       title: 'Novo Voluntário',
-      navigationButtons: [
-        { label: 'Gestão Voluntários', path: '/voluntarios/gestao', icon: <ArrowLeft className="h-4 w-4" /> },
-        { label: 'Dashboard', path: '/', icon: <Home className="h-4 w-4" /> }
-      ]
+      navigationButtons: [] // Removido - usando PageActionBar
     },
     '/voluntarios/dashboard': {
       id: 'C04',
@@ -490,25 +476,17 @@ const EnhancedHeader = () => {
     // Verificar rotas dinâmicas com IDs únicos
     if (path.startsWith('/animal/') && path.includes('/intervencoes')) {
       return {
-        id: 'B10', // ID único para intervenções de animal específico
+        id: 'B10',
         title: 'Intervenções do Animal',
-        navigationButtons: [
-          { label: 'Voltar ao Animal', path: path.replace('/intervencoes', ''), icon: <ArrowLeft className="h-4 w-4" /> },
-          { label: 'Lista Animais', path: '/animais', icon: <PawPrint className="h-4 w-4" /> },
-          { label: 'Dashboard', path: '/', icon: <Home className="h-4 w-4" /> }
-        ]
+        navigationButtons: [] // Removido - usando PageActionBar
       };
     }
     
     if (path.startsWith('/animal/') && path.includes('/responsabilidades')) {
       return {
-        id: 'B11', // ID único para responsabilidades de animal específico
+        id: 'B11',
         title: 'Responsabilidades do Animal',
-        navigationButtons: [
-          { label: 'Voltar ao Animal', path: path.replace('/responsabilidades', ''), icon: <ArrowLeft className="h-4 w-4" /> },
-          { label: 'Lista Animais', path: '/animais', icon: <PawPrint className="h-4 w-4" /> },
-          { label: 'Dashboard', path: '/', icon: <Home className="h-4 w-4" /> }
-        ]
+        navigationButtons: [] // Removido - usando PageActionBar
       };
     }
     
@@ -526,13 +504,9 @@ const EnhancedHeader = () => {
     
     if (path.startsWith('/animal/') && path.includes('/editar')) {
       return {
-        id: 'B13', // ID único para edição de animal específico
+        id: 'B13',
         title: 'Editar Animal',
-        navigationButtons: [
-          { label: 'Voltar ao Animal', path: path.replace('/editar', ''), icon: <ArrowLeft className="h-4 w-4" /> },
-          { label: 'Lista Animais', path: '/animais', icon: <PawPrint className="h-4 w-4" /> },
-          { label: 'Dashboard', path: '/', icon: <Home className="h-4 w-4" /> }
-        ]
+        navigationButtons: [] // Removido - usando PageActionBar
       };
     }
     
