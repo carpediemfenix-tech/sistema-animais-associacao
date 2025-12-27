@@ -353,23 +353,22 @@ const AnimalEventos = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
       <EnhancedHeader />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        
-        {/* Navegação */}
-        <div className="flex items-center space-x-4">
-          <Link to={`/animal/${id}`}>
-            <Button variant="outline" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Voltar à Ficha
-            </Button>
-          </Link>
-          <div className="flex-1" />
-          <Button onClick={() => openEventoDialog()} className="bg-green-600 hover:bg-green-700">
+      
+      <PageActionBar
+        breadcrumbs={[
+          { label: 'Animais', href: '/animais', icon: <PawPrint className="h-4 w-4" /> },
+          { label: animal?.nome || 'Animal', href: `/animal/${id}` },
+          { label: 'Eventos', icon: <Calendar className="h-4 w-4" /> }
+        ]}
+        primaryActions={
+          <Button onClick={() => openEventoDialog()} className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 h-9">
             <Plus className="h-4 w-4 mr-2" />
             Novo Evento
           </Button>
-        </div>
+        }
+      />
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
         {/* Timeline de Eventos */}
         <Card className="border-green-200 bg-gradient-to-br from-green-50 to-green-100">

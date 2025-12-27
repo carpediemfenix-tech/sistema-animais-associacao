@@ -394,26 +394,24 @@ const AnimalLocalizacoes = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
       <EnhancedHeader />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        
-        {/* Navegação */}
-        <div className="flex items-center space-x-4">
-          <Link to={`/animal/${id}`}>
-            <Button variant="outline" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Voltar à Ficha
-            </Button>
-          </Link>
-          <div className="flex-1" />
-          <Button onClick={() => openLocalizacaoDialog()} className="bg-blue-600 hover:bg-blue-700">
+      
+      <PageActionBar
+        breadcrumbs={[
+          { label: 'Animais', href: '/animais', icon: <PawPrint className="h-4 w-4" /> },
+          { label: animal?.nome || 'Animal', href: `/animal/${id}` },
+          { label: 'Localizações', icon: <MapPin className="h-4 w-4" /> }
+        ]}
+        primaryActions={
+          <Button onClick={() => openLocalizacaoDialog()} className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 h-9">
             <Plus className="h-4 w-4 mr-2" />
             Nova Localização
           </Button>
-        </div>
+        }
+      />
 
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         {/* Localização Atual */}
         {localizacaoAtual && (
           <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100">
