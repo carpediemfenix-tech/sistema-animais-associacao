@@ -221,35 +221,31 @@ const GestaoMovimentos = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
       <EnhancedHeader />
       
-      <div className="flex-1 container mx-auto px-4 py-8 space-y-8">
-        {/* Cabeçalho */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Gestão de Movimentos</h1>
-            <p className="text-gray-600 mt-1">Histórico completo de receitas e despesas</p>
-          </div>
-          <div className="flex space-x-3">
-            <Link to="/financeiro">
-              <Button variant="outline">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Dashboard
-              </Button>
-            </Link>
-            <Button onClick={loadData} variant="outline">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Atualizar
+      <PageActionBar
+        breadcrumbs={[
+          { label: 'Financeiro', href: '/financeiro', icon: <DollarSign className="h-4 w-4" /> },
+          { label: 'Movimentos' }
+        ]}
+        secondaryActions={
+          <Button onClick={loadData} variant="outline" size="sm">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Atualizar
+          </Button>
+        }
+        primaryActions={
+          <Link to="/financeiro/movimentos/novo">
+            <Button className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 h-9">
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Movimento
             </Button>
-            <Link to="/financeiro/movimentos/novo">
-              <Button className="bg-green-600 hover:bg-green-700">
-                <Plus className="h-4 w-4 mr-2" />
-                Novo Movimento
-              </Button>
-            </Link>
-          </div>
-        </div>
+          </Link>
+        }
+      />
+      
+      <div className="flex-1 container mx-auto px-4 py-8 space-y-8">
 
         {/* Estatísticas Rápidas */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
