@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import PageActionBar from '@/components/PageActionBar';
 import { useAuth } from '@/contexts/AuthContext';
 import EnhancedHeader from '@/components/EnhancedHeader';
 import EnhancedFooter from '@/components/EnhancedFooter';

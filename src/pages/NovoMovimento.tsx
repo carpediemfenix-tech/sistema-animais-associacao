@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import PageActionBar from '@/components/PageActionBar';
 import { ArrowLeft, Save, Calculator, Calendar, DollarSign, FileText, Tag, Building2, CreditCard, AlertCircle } from 'lucide-react';
 import EnhancedHeader from '@/components/EnhancedHeader';
 import EnhancedFooter from '@/components/EnhancedFooter';
