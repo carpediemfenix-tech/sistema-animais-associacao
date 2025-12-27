@@ -27,6 +27,7 @@ import { Animal, Intervencao, TipoIntervencao, Voluntario, ClinicaVeterinaria } 
 import { useToast } from "@/hooks/use-toast";
 import EnhancedHeader from "@/components/EnhancedHeader";
 import EnhancedFooter from "@/components/EnhancedFooter";
+import PageActionBar from "@/components/PageActionBar";
 
 const AnimalIntervencoes = () => {
   const { id } = useParams();
@@ -408,48 +409,24 @@ const AnimalIntervencoes = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
       <EnhancedHeader />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        
-        {/* Campos em Destaque */}
-        <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100">
-          <CardContent className="p-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-blue-700 font-semibold flex items-center">
-                  <span className="mr-2">📋</span>
-                  Número do Processo
-                </label>
-                <p className="text-lg font-bold text-blue-900 mt-1">{animal.numero_processo || "N/A"}</p>
-              </div>
-              <div>
-                <label className="text-blue-700 font-semibold flex items-center">
-                  <span className="mr-2">🐶</span>
-                  Nome do Animal
-                </label>
-                <p className="text-lg font-bold text-blue-900 mt-1">{animal.nome}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Navegação */}
-        <div className="flex items-center space-x-4">
-          <Link to={`/animal/${id}`}>
-            <Button variant="outline" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Voltar à Ficha
-            </Button>
-          </Link>
-          <div className="flex-1" />
-          <Button onClick={() => openIntervencaoDialog()} className="bg-blue-600 hover:bg-blue-700">
+      
+      <PageActionBar
+        breadcrumbs={[
+          { label: 'Animais', href: '/animais', icon: <PawPrint className="h-4 w-4" /> },
+          { label: animal.nome, href: `/animal/${id}` },
+          { label: 'Intervenções', icon: <Stethoscope className="h-4 w-4" /> }
+        ]}
+        primaryActions={
+          <Button onClick={() => openIntervencaoDialog()} className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 h-9">
             <Plus className="h-4 w-4 mr-2" />
             Nova Intervenção
           </Button>
-        </div>
+        }
+      />
 
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         {/* Lista de Intervenções */}
         <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100">
           <CardHeader>
@@ -555,7 +532,6 @@ const AnimalIntervencoes = () => {
             )}
           </CardContent>
         </Card>
-
       </div>
 
       {/* Diálogo de Intervenção */}
