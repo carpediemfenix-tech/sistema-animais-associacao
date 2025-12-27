@@ -184,35 +184,24 @@ const GestaoLocalizacoes = () => {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
       <EnhancedHeader />
       
+      <PageActionBar
+        breadcrumbs={[
+          { label: 'Configurações', href: '/configuracoes' },
+          { label: 'Localizações', icon: <MapPin className="h-4 w-4" /> }
+        ]}
+        primaryActions={
+          <Button onClick={() => { resetForm(); setDialogOpen(true); }} className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 h-9">
+            <Plus className="h-4 w-4 mr-2" />
+            Nova Localização
+          </Button>
+        }
+      />
+      
       <div className="flex-1 container mx-auto px-4 py-8">
-        {/* Cabeçalho */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-4">
-            <Link to="/">
-              <Button variant="outline" size="sm">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Voltar
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-                <MapPin className="h-8 w-8 mr-3 text-blue-600" />
-                Gestão de Localizações
-              </h1>
-              <p className="text-gray-600">Gerir localizações e espaços da associação</p>
-            </div>
-          </div>
-
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={resetForm}>
-                <Plus className="h-4 w-4 mr-2" />
-                Nova Localização
-              </Button>
-            </DialogTrigger>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>
@@ -267,10 +256,9 @@ const GestaoLocalizacoes = () => {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-        </div>
 
-        {/* Filtros */}
-        <Card className="mb-6">
+          {/* Filtros */}
+          <Card className="mb-6">
           <CardHeader>
             <CardTitle className="text-lg">Filtros</CardTitle>
           </CardHeader>
@@ -302,8 +290,8 @@ const GestaoLocalizacoes = () => {
           </CardContent>
         </Card>
 
-        {/* Lista de Localizações */}
-        <Card>
+          {/* Lista de Localizações */}
+          <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Localizações ({filteredLocalizacoes.length})</span>

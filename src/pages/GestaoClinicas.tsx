@@ -590,41 +590,27 @@ const GestaoClinicas = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
       <EnhancedHeader />
       
+      <PageActionBar
+        breadcrumbs={[
+          { label: 'Configurações', href: '/configuracoes' },
+          { label: 'Clínicas', icon: <Building2 className="h-4 w-4" /> }
+        ]}
+        primaryActions={
+          <Button onClick={() => { resetForm(); setNovaClinicaOpen(true); }} className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 h-9">
+            <Plus className="h-4 w-4 mr-2" />
+            Nova Clínica
+          </Button>
+        }
+        secondaryActions={[
+          { label: 'Atualizar', onClick: loadClinicas, icon: <RefreshCw className="h-4 w-4" /> }
+        ]}
+      />
+      
       <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-4">
-            <Link to="/configuracoes">
-              <Button variant="outline">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Configurações
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-                <Building2 className="h-8 w-8 mr-3 text-blue-600" />
-                Gestão de Clínicas Veterinárias
-              </h1>
-              <p className="text-gray-600 mt-1">
-                Gerir clínicas parceiras, contactos e protocolos de desconto
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-3">
-            <Button onClick={loadClinicas} variant="outline">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Atualizar
-            </Button>
-            <Dialog open={novaClinicaOpen} onOpenChange={setNovaClinicaOpen}>
-              <DialogTrigger asChild>
-                <Button onClick={resetForm}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Nova Clínica
-                </Button>
-              </DialogTrigger>
+        <Dialog open={novaClinicaOpen} onOpenChange={setNovaClinicaOpen}>
               <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Cadastrar Nova Clínica</DialogTitle>
@@ -819,8 +805,6 @@ const GestaoClinicas = () => {
                 </div>
               </DialogContent>
             </Dialog>
-          </div>
-        </div>
 
         {/* Estatísticas */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
