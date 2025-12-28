@@ -44,11 +44,7 @@ const AnimalBI = () => {
       // Buscar dados do animal
       const { data: animalData, error: animalError } = await supabase
         .from('animais')
-        .select(`
-          *,
-          especies (nome),
-          grupos (nome)
-        `)
+        .select('*')
         .eq('id', id)
         .single();
 
@@ -232,7 +228,7 @@ const AnimalBI = () => {
                   <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                     <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Espécie</p>
                     <p className="text-lg font-semibold text-gray-800">
-                      {animal.especies?.nome || animal.especie || 'N/A'}
+                      {animal.especie || 'N/A'}
                     </p>
                   </div>
 
