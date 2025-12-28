@@ -235,6 +235,13 @@ const AnimalDetail = () => {
               {animal.estado}
             </Badge>
             
+            <Link to={`/animal/${id}/bi`}>
+              <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 h-9">
+                <Shield className="h-4 w-4 mr-2" />
+                B.I.
+              </Button>
+            </Link>
+            
             {hasPermission('admin') && (
               <>
                 <Link to={`/animal/${id}/editar`}>
