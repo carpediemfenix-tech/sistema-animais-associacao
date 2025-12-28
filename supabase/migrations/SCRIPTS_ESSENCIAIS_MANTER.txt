@@ -1,0 +1,97 @@
+# LISTA DE SCRIPTS ESSENCIAIS A MANTER
+# Total: 32 ficheiros (15% do total)
+# Data: 2025-12-28 02:00
+
+## ESTRUTURA PRINCIPAL (20 ficheiros)
+
+### Sistema de Animais
+create_animals_system_2025_11_13_03_23.sql
+add_animal_archive_system_2025_11_23_03_00.sql
+create_grupos_system_2025_11_23_06_00.sql
+create_historico_nomes_system_2025_12_09_07_15.sql
+setup_automatic_name_history_2025_12_09_07_15.sql
+
+### Sistema de Voluntários
+create_voluntarios_2025_11_16_18_00.sql
+sistema_voluntarios_fase1_estrutura_2025_12_02.sql
+adicionar_campos_voluntarios.sql
+add_voluntario_responsavel_column_2025_12_08.sql
+add_data_inscricao_column_2025_12_08.sql
+
+### Sistema de Formação
+20251207034159_create_nivel_functions.sql
+20251207043741_create_new_formacao_system.sql
+create_formacao_tables_2025_12_07.sql
+recreate_niveis_formacao_permissive_2025_12_07_03_00.sql
+add_evaluation_system_2025_12_08.sql
+add_status_column_participacoes_2025_12_08.sql
+
+### Sistema Financeiro
+create_movimentos_financeiros_2025_11_16_18_00.sql
+criar_movimentos_financeiros_2025_12_22_03_00.sql
+create_novo_sistema_financeiro_2025_12_13_06_00.sql
+add_adotante_fields_2025_12_13_04_00.sql
+
+### Sistema de Missões
+criar_tabela_missoes_simplificada_2025_12_21_19_00.sql
+criar_tabelas_participacoes_animais_2025_12_21_20_00.sql
+create_sistema_missoes_gamificacao_2025_12_11_02_00.sql
+
+### Sistema de Equipamentos
+create_sistema_equipamentos_2025_12_13_01_00.sql
+adicionar_campos_equipamentos_2025_12_16_06_00.sql
+melhorar_estrutura_atribuicoes_2025_12_16_06_00.sql
+
+### Sistema de Clínicas e Intervenções
+create_modulo_clinicas_complete_2025_12_09_04_30.sql
+criar_tipos_intervencoes_2025_12_24_06_32.sql
+adicionar_colunas_tipos_intervencoes_2025_12_24_06_32.sql
+intervencoes_autoridades_2025_12_18_04_50.sql
+
+### Sistema de Localizações
+create_localizacoes_table_2025_12_09.sql
+recreate_localizacoes_clean_2025_12_09.sql
+
+### Sistema de Responsabilidades
+create_tipos_responsabilidades_2025_12_09_07_30.sql
+create_sample_responsabilidades_fixed_2025_12_09_08_00.sql
+
+### Sistema de Agenda
+create_sistema_agenda_calendario_2025_12_11_03_00.sql
+
+### Sistema de Arquivamento
+create_motivos_arquivamento_2025_12_11_04_00.sql
+
+## SISTEMAS AVANÇADOS (12 ficheiros)
+
+### Notificações
+criar_sistema_notificacoes_2025_12_24_07_30.sql
+sistema_notificacoes_completo_2025_12_16_06_00.sql
+
+### Pontuação e Gamificação
+sistema_pontuacao_voluntarios.sql
+recriar_sistema_pontuacao_2025_12_22_02_00.sql
+
+### Especialidades
+sistema_especialidades_voluntarios.sql
+remover_campo_especialidade_obsoleto.sql
+
+### Workflow e Aprovações
+sistema_workflow_aprovacoes_2025_12_16_13_30.sql
+
+### Relatórios
+sistema_relatorios_avancados_2025_12_16_13_30.sql
+
+### Controle de Acesso
+sistema_controle_acessos_2025_11_19_05_00.sql
+criar_user_access_logs_2025_12_24_06_45.sql
+
+### Funções e Permissões
+recriar_funcoes_voluntarios_2025_12_16_13_30.sql
+permissoes_rls_voluntarios_2025_12_16_13_00.sql
+
+### Otimização
+database_optimization_fixed_2025_11_23_07_00.sql
+
+### Alertas
+criar_sistema_alertas_completo_2025_12_16_07_30.sql
