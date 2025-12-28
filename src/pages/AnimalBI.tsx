@@ -27,6 +27,7 @@ const AnimalBI = () => {
   const [animal, setAnimal] = useState<Animal | null>(null);
   const [localizacaoAtual, setLocalizacaoAtual] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [mostrarVerso, setMostrarVerso] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -41,15 +42,19 @@ const AnimalBI = () => {
     }
 
     try {
-      // Buscar dados do animal
+      // Buscar dados do animal (mesma query do AnimalDetail que funciona)
       const { data: animalData, error: animalError } = await supabase
         .from('animais')
-        .select('*')
+        .select(`
+          *,
+          grupos(nome, tipo)
+        `)
         .eq('id', id)
         .single();
 
       if (animalError) throw animalError;
 
+      console.log('🐾 Dados do animal carregados:', animalData);
       setAnimal(animalData);
 
       // Buscar localização atual
@@ -148,6 +153,20 @@ const AnimalBI = () => {
               <h1 className="text-xl font-bold text-gray-800">Bilhete de Identidade</h1>
             </div>
             <div className="flex gap-2">
+              <Button 
+                onClick={() => setMostrarVerso(false)} 
+                variant={!mostrarVerso ? "default" : "outline"} 
+                size="sm"
+              >
+                Frente
+              </Button>
+              <Button 
+                onClick={() => setMostrarVerso(true)} 
+                variant={mostrarVerso ? "default" : "outline"} 
+                size="sm"
+              >
+                Verso
+              </Button>
               <Button onClick={handlePrint} variant="outline" size="sm">
                 <Printer className="h-4 w-4 mr-2" />
                 Imprimir
@@ -159,6 +178,8 @@ const AnimalBI = () => {
 
       {/* Cartão de Identidade */}
       <div className="max-w-5xl mx-auto px-6 py-12">
+        {/* FRENTE DO CARTÃO */}
+        {!mostrarVerso && (
         <Card className="overflow-hidden shadow-2xl border-4 border-blue-900 bg-gradient-to-br from-blue-50 to-white">
           {/* Cabeçalho Institucional */}
           <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 text-white px-8 py-6">
@@ -362,6 +383,173 @@ const AnimalBI = () => {
             </div>
           </div>
         </Card>
+        )}
+
+        {/* VERSO DO CARTÃO */}
+        {mostrarVerso && (
+        <Card className="overflow-hidden shadow-2xl border-4 border-blue-900 bg-gradient-to-br from-blue-50 to-white">
+          {/* Cabeçalho Institucional */}
+          <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 text-white px-8 py-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="bg-white p-3 rounded-full">
+                  <PawPrint className="h-8 w-8 text-blue-900" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold tracking-wide">ASSOCIAÇÃO VALENTÃO</h2>
+                  <p className="text-blue-200 text-sm">Bilhete de Identidade Animal - Verso</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Corpo do Verso */}
+          <div className="p-8 space-y-6">
+            {/* Informações Médicas e Históricas */}
+            <div className="border-b-2 border-blue-200 pb-4">
+              <h3 className="text-2xl font-bold text-blue-900 mb-4">Informações Complementares</h3>
+            </div>
+
+            {/* Grid de Informações */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Grupo */}
+              {animal.grupos && (
+                <div className="bg-purple-50 p-4 rounded-lg border-2 border-purple-300">
+                  <p className="text-xs text-gray-500 uppercase tracking-wide mb-1 flex items-center gap-1">
+                    <Users className="h-3 w-3" />
+                    Grupo
+                  </p>
+                  <p className="text-lg font-semibold text-gray-800">{animal.grupos.nome}</p>
+                  {animal.grupos.tipo && (
+                    <p className="text-sm text-gray-600 mt-1">Tipo: {animal.grupos.tipo}</p>
+                  )}
+                </div>
+              )}
+
+              {/* Data de Registo */}
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <p className="text-xs text-gray-500 uppercase tracking-wide mb-1 flex items-center gap-1">
+                  <Calendar className="h-3 w-3" />
+                  Data de Registo no Sistema
+                </p>
+                <p className="text-lg font-semibold text-gray-800">
+                  {animal.created_at 
+                    ? new Date(animal.created_at).toLocaleDateString('pt-PT', {
+                        day: '2-digit',
+                        month: 'long',
+                        year: 'numeric'
+                      })
+                    : 'N/A'
+                  }
+                </p>
+              </div>
+
+              {/* Última Atualização */}
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <p className="text-xs text-gray-500 uppercase tracking-wide mb-1 flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  Última Atualização
+                </p>
+                <p className="text-lg font-semibold text-gray-800">
+                  {animal.updated_at 
+                    ? new Date(animal.updated_at).toLocaleDateString('pt-PT', {
+                        day: '2-digit',
+                        month: 'long',
+                        year: 'numeric'
+                      })
+                    : 'N/A'
+                  }
+                </p>
+              </div>
+
+              {/* Estado Arquivado */}
+              <div className={`p-4 rounded-lg border-2 ${
+                animal.arquivado 
+                  ? 'bg-red-50 border-red-300' 
+                  : 'bg-green-50 border-green-300'
+              }`}>
+                <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Status no Sistema</p>
+                <p className={`text-lg font-bold ${
+                  animal.arquivado ? 'text-red-700' : 'text-green-700'
+                }`}>
+                  {animal.arquivado ? '📦 ARQUIVADO' : '✅ ATIVO NO SISTEMA'}
+                </p>
+              </div>
+            </div>
+
+            {/* Observações Médicas/Comportamentais */}
+            {animal.observacoes && (
+              <div className="bg-yellow-50 p-6 rounded-lg border-2 border-yellow-300">
+                <p className="text-xs text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-1">
+                  <Stethoscope className="h-4 w-4" />
+                  Observações Médicas / Comportamentais
+                </p>
+                <p className="text-base text-gray-700 leading-relaxed whitespace-pre-wrap">
+                  {animal.observacoes}
+                </p>
+              </div>
+            )}
+
+            {/* Localização Atual - Destaque */}
+            {localizacaoAtual && (
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-lg border-2 border-green-400">
+                <p className="text-xs text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-1">
+                  <MapPin className="h-4 w-4" />
+                  Localização Atual
+                </p>
+                <p className="text-2xl font-bold text-green-800 mb-2">
+                  {localizacaoAtual.tipo_localizacao?.nome || 'N/A'}
+                </p>
+                {localizacaoAtual.observacoes && (
+                  <p className="text-sm text-gray-700 mt-2 italic">
+                    "{localizacaoAtual.observacoes}"
+                  </p>
+                )}
+                {localizacaoAtual.data_inicio && (
+                  <p className="text-xs text-gray-600 mt-2">
+                    Desde: {new Date(localizacaoAtual.data_inicio).toLocaleDateString('pt-PT')}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Informações Legais */}
+            <div className="bg-gray-50 p-6 rounded-lg border border-gray-300">
+              <p className="text-xs text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-1">
+                <Shield className="h-4 w-4" />
+                Informações Legais e de Identificação
+              </p>
+              <div className="space-y-2 text-sm text-gray-700">
+                <p>• Este documento certifica que o animal identificado está registado na Associação Valentão</p>
+                <p>• Número de identificação único: <strong>{animal.id.slice(0, 13).toUpperCase()}</strong></p>
+                <p>• Chip/Transponder: <strong>{animal.chip || animal.transponder || 'NÃO IDENTIFICADO'}</strong></p>
+                <p>• Este bilhete de identidade é válido para fins de identificação do animal</p>
+              </div>
+            </div>
+
+            {/* Assinatura Digital */}
+            <div className="text-center py-6 border-t-2 border-blue-200">
+              <p className="text-sm text-gray-600 mb-2">Documento gerado eletronicamente</p>
+              <p className="text-xs text-gray-500">
+                Emitido em: {new Date().toLocaleDateString('pt-PT')} às {new Date().toLocaleTimeString('pt-PT')}
+              </p>
+            </div>
+          </div>
+
+          {/* Rodapé Institucional */}
+          <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 text-white px-8 py-4">
+            <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2">
+                <Heart className="h-4 w-4" />
+                <span>Associação Valentão - Proteção e Bem-Estar Animal</span>
+              </div>
+              <div>
+                <span>Página 2/2</span>
+              </div>
+            </div>
+          </div>
+        </Card>
+        )}
 
         {/* Nota de Impressão */}
         <div className="print:hidden mt-6 text-center text-sm text-gray-600">
