@@ -139,12 +139,7 @@ const EnhancedHeader = () => {
     '/voluntarios/gestao': {
       id: 'C01',
       title: 'Gestão de Voluntários',
-      navigationButtons: [
-        { label: 'Dashboard', path: '/', icon: <Home className="h-4 w-4" /> },
-        { label: 'Novo Voluntário', path: '/voluntario/novo', icon: <Plus className="h-4 w-4" /> },
-        { label: 'Módulo Voluntários', path: '/modulo-voluntarios', icon: <Users className="h-4 w-4" /> },
-        { label: 'Dashboard Voluntários', path: '/voluntarios/dashboard', icon: <BarChart3 className="h-4 w-4" /> }
-      ]
+      navigationButtons: [] // Removido - usando PageActionBar
     },
     '/modulo-voluntarios': {
       id: 'C02',
@@ -486,24 +481,17 @@ const EnhancedHeader = () => {
     
     if (path.startsWith('/voluntarios/perfil/')) {
       return {
-        id: 'C10', // ID único para perfil de voluntário específico
+        id: 'C10',
         title: 'Perfil Completo do Voluntário',
-        navigationButtons: [
-          { label: 'Lista Voluntários', path: '/voluntarios/gestao', icon: <Users className="h-4 w-4" /> },
-          { label: 'Dashboard', path: '/', icon: <Home className="h-4 w-4" /> }
-        ]
+        navigationButtons: [] // Removido - usando PageActionBar
       };
     }
     
     if (path.startsWith('/voluntario/') && path.includes('/formacoes')) {
       return {
-        id: 'C11', // ID único para formações de voluntário específico
+        id: 'C11',
         title: 'Formações do Voluntário',
-        navigationButtons: [
-          { label: 'Voltar ao Voluntário', path: path.replace('/formacoes', ''), icon: <ArrowLeft className="h-4 w-4" /> },
-          { label: 'Lista Voluntários', path: '/voluntarios/gestao', icon: <Users className="h-4 w-4" /> },
-          { label: 'Dashboard', path: '/', icon: <Home className="h-4 w-4" /> }
-        ]
+        navigationButtons: [] // Removido - usando PageActionBar
       };
     }
     
