@@ -122,6 +122,11 @@ const AnimalBI = () => {
   }
 
   const fotoUrl = animal.foto_url ? convertGoogleDriveUrl(animal.foto_url) : null;
+  
+  // Debug da foto
+  console.log('🖼️ Foto URL original:', animal.foto_url);
+  console.log('🖼️ Foto URL convertida:', fotoUrl);
+  console.log('🔢 Chip/Transponder:', animal.chip, animal.transponder);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-blue-50 to-indigo-100">
@@ -186,10 +191,18 @@ const AnimalBI = () => {
                         src={fotoUrl} 
                         alt={animal.nome}
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          console.error('❌ Erro ao carregar foto:', fotoUrl);
+                          e.currentTarget.style.display = 'none';
+                        }}
+                        onLoad={() => console.log('✅ Foto carregada com sucesso!')}
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <PawPrint className="h-24 w-24 text-gray-400" />
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-100 to-blue-200">
+                        <div className="text-center">
+                          <PawPrint className="h-24 w-24 text-blue-400 mx-auto mb-2" />
+                          <p className="text-sm text-gray-600">Sem foto</p>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -283,16 +296,16 @@ const AnimalBI = () => {
                     </div>
                   )}
 
-                  {/* Chip */}
-                  {animal.chip && (
-                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1 flex items-center gap-1">
-                        <Shield className="h-3 w-3" />
-                        Nº Chip
-                      </p>
-                      <p className="text-lg font-semibold text-gray-800">{animal.chip}</p>
-                    </div>
-                  )}
+                  {/* Chip/Transponder - SEMPRE MOSTRAR */}
+                  <div className="bg-amber-50 p-4 rounded-lg border-2 border-amber-300">
+                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-1 flex items-center gap-1">
+                      <Shield className="h-3 w-3" />
+                      Nº Chip / Transponder
+                    </p>
+                    <p className="text-lg font-bold text-gray-800">
+                      {animal.chip || animal.transponder || 'NÃO IDENTIFICADO'}
+                    </p>
+                  </div>
                 </div>
 
                 {/* Localização Atual */}
