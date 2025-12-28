@@ -94,6 +94,18 @@ const Dashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <EnhancedHeader />
+      
+      <PageActionBar
+        breadcrumbs={[
+          { label: 'Dashboard Principal', icon: <Home className="h-4 w-4" /> }
+        ]}
+        primaryActions={
+          <Badge className="bg-green-600 text-white px-3 py-1">
+            <Activity className="h-3 w-3 mr-1 inline" />
+            Sistema Ativo
+          </Badge>
+        }
+      />
 
       {/* Hero Section */}
       <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800">
