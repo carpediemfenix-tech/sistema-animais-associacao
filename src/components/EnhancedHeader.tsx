@@ -220,18 +220,12 @@ const EnhancedHeader = () => {
     '/relatorios': {
       id: 'F01',
       title: 'Relatórios e Análises',
-      navigationButtons: [
-        { label: 'Dashboard', path: '/', icon: <Home className="h-4 w-4" /> },
-        { label: 'Estatísticas', path: '/estatisticas-avancadas', icon: <BarChart3 className="h-4 w-4" /> }
-      ]
+      navigationButtons: [] // Removido - usando PageActionBar
     },
     '/estatisticas-avancadas': {
       id: 'F02',
       title: 'Estatísticas Avançadas',
-      navigationButtons: [
-        { label: 'Dashboard', path: '/', icon: <Home className="h-4 w-4" /> },
-        { label: 'Relatórios', path: '/relatorios', icon: <FileText className="h-4 w-4" /> }
-      ]
+      navigationButtons: [] // Removido - usando PageActionBar
     },
 
     // G## = Configurações
@@ -248,43 +242,27 @@ const EnhancedHeader = () => {
     '/configuracoes/especies': {
       id: 'G02',
       title: 'Gestão de Espécies',
-      navigationButtons: [
-        { label: 'Configurações', path: '/configuracoes', icon: <ArrowLeft className="h-4 w-4" /> },
-        { label: 'Dashboard', path: '/', icon: <Home className="h-4 w-4" /> }
-      ]
+      navigationButtons: [] // Removido - usando PageActionBar
     },
     '/configuracoes/localizacoes': {
       id: 'G03',
       title: 'Gestão de Localizações',
-      navigationButtons: [
-        { label: 'Configurações', path: '/configuracoes', icon: <ArrowLeft className="h-4 w-4" /> },
-        { label: 'Dashboard', path: '/', icon: <Home className="h-4 w-4" /> }
-      ]
+      navigationButtons: [] // Removido - usando PageActionBar
     },
     '/configuracoes/categorias': {
       id: 'G04',
       title: 'Gestão de Categorias',
-      navigationButtons: [
-        { label: 'Configurações', path: '/configuracoes', icon: <ArrowLeft className="h-4 w-4" /> },
-        { label: 'Dashboard', path: '/', icon: <Home className="h-4 w-4" /> }
-      ]
+      navigationButtons: [] // Removido - usando PageActionBar
     },
     '/configuracoes/clinicas': {
       id: 'G05',
       title: 'Gestão de Clínicas',
-      navigationButtons: [
-        { label: 'Configurações', path: '/configuracoes', icon: <ArrowLeft className="h-4 w-4" /> },
-        { label: 'Módulo Clínicas', path: '/modulo-clinicas', icon: <Building2 className="h-4 w-4" /> },
-        { label: 'Dashboard', path: '/', icon: <Home className="h-4 w-4" /> }
-      ]
+      navigationButtons: [] // Removido - usando PageActionBar
     },
     '/configuracoes/responsabilidades': {
       id: 'G06',
       title: 'Gestão de Responsabilidades',
-      navigationButtons: [
-        { label: 'Dashboard', path: '/', icon: <Home className="h-4 w-4" /> },
-        { label: 'Configurações', path: '/configuracoes', icon: <Settings className="h-4 w-4" /> }
-      ]
+      navigationButtons: [] // Removido - usando PageActionBar
     },
 
     // H## = Histórico e Logs
@@ -310,11 +288,7 @@ const EnhancedHeader = () => {
     '/grupos': {
       id: 'I02',
       title: 'Gestão de Grupos',
-      navigationButtons: [
-        { label: 'Módulo Animais', path: '/modulo-animais', icon: <PawPrint className="h-4 w-4" /> },
-        { label: 'Desativados', path: '/grupos-arquivados', icon: <Archive className="h-4 w-4" /> },
-        { label: 'Dashboard Principal', path: '/', icon: <Home className="h-4 w-4" /> }
-      ]
+      navigationButtons: [] // Removido - usando PageActionBar
     },
     '/grupos-arquivados': {
       id: 'I03',
@@ -411,20 +385,12 @@ const EnhancedHeader = () => {
     '/financeiro': {
       id: 'K01',
       title: 'Dashboard Financeiro',
-      navigationButtons: [
-        { label: 'Dashboard', path: '/', icon: <Home className="h-4 w-4" /> },
-        { label: 'Novo Movimento', path: '/financeiro/movimentos/novo', icon: <Plus className="h-4 w-4" /> },
-        { label: 'Ver Movimentos', path: '/financeiro/movimentos', icon: <FileText className="h-4 w-4" /> }
-      ]
+      navigationButtons: [] // Removido - usando PageActionBar
     },
     '/financeiro/movimentos': {
       id: 'K02',
       title: 'Gestão de Movimentos Financeiros',
-      navigationButtons: [
-        { label: 'Dashboard Financeiro', path: '/financeiro', icon: <DollarSign className="h-4 w-4" /> },
-        { label: 'Novo Movimento', path: '/financeiro/movimentos/novo', icon: <Plus className="h-4 w-4" /> },
-        { label: 'Dashboard', path: '/', icon: <Home className="h-4 w-4" /> }
-      ]
+      navigationButtons: [] // Removido - usando PageActionBar
     },
     '/financeiro/movimentos/novo': {
       id: 'K03',
@@ -512,14 +478,9 @@ const EnhancedHeader = () => {
     
     if (path.startsWith('/animal/') && !path.includes('/novo')) {
       return {
-        id: 'B05', // ID único para ficha completa do animal
+        id: 'B05',
         title: 'Ficha Completa do Animal',
-        navigationButtons: [
-          { label: 'Lista Animais', path: '/animais', icon: <PawPrint className="h-4 w-4" /> },
-          { label: 'Editar Animal', path: `${path}/editar`, icon: <Edit className="h-4 w-4" /> },
-          { label: 'Histórico Nomes', path: `/animal/${path.split('/')[2]}/historico-nomes`, icon: <History className="h-4 w-4" /> },
-          { label: 'Dashboard', path: '/', icon: <Home className="h-4 w-4" /> }
-        ]
+        navigationButtons: [] // Removido - usando PageActionBar
       };
     }
     

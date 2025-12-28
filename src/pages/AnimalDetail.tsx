@@ -242,6 +242,12 @@ const AnimalDetail = () => {
                     Editar
                   </Button>
                 </Link>
+                <Link to={`/animal/${id}/historico-nomes`}>
+                  <Button variant="outline" className="h-9">
+                    <History className="h-4 w-4 mr-2" />
+                    Histórico Nomes
+                  </Button>
+                </Link>
               </>
             )}
           </>
