@@ -14,7 +14,9 @@ import {
   Calendar,
   Shield,
   Heart,
-  Stethoscope
+  Stethoscope,
+  Users,
+  Clock
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Animal } from "@/types/animal";
@@ -57,21 +59,30 @@ const AnimalBI = () => {
       console.log('🐾 Dados do animal carregados:', animalData);
       setAnimal(animalData);
 
-      // Buscar localização atual
-      const { data: localizacaoData } = await supabase
-        .from('localizacoes')
-        .select(`
-          *,
-          tipo_localizacao (nome)
-        `)
+      // Buscar localização atual (mesma lógica do AnimalDetail)
+      const { data: localizacaoData, error: localizacaoError } = await supabase
+        .from('localizacoes_animal')
+        .select('*')
         .eq('animal_id', id)
         .eq('ativo', true)
-        .order('data_inicio', { ascending: false })
-        .limit(1)
         .single();
-
-      if (localizacaoData) {
+      
+      if (localizacaoData && !localizacaoError) {
+        // Buscar localização separadamente
+        const { data: localizacaoInfo } = await supabase
+          .from('localizacoes')
+          .select('nome, descricao')
+          .eq('id', localizacaoData.localizacao_id)
+          .single();
+        
+        if (localizacaoInfo) {
+          localizacaoData.localizacao = localizacaoInfo;
+        }
+        
+        console.log('📍 Localização carregada:', localizacaoData);
         setLocalizacaoAtual(localizacaoData);
+      } else {
+        console.log('⚠️ Nenhuma localização ativa encontrada');
       }
 
     } catch (error: any) {
@@ -337,7 +348,7 @@ const AnimalBI = () => {
                       Localização Atual
                     </p>
                     <p className="text-xl font-bold text-green-800">
-                      {localizacaoAtual.tipo_localizacao?.nome || 'N/A'}
+                      {localizacaoAtual.localizacao?.nome || 'N/A'}
                     </p>
                     {localizacaoAtual.observacoes && (
                       <p className="text-sm text-gray-600 mt-1">{localizacaoAtual.observacoes}</p>
@@ -498,8 +509,13 @@ const AnimalBI = () => {
                   Localização Atual
                 </p>
                 <p className="text-2xl font-bold text-green-800 mb-2">
-                  {localizacaoAtual.tipo_localizacao?.nome || 'N/A'}
+                  {localizacaoAtual.localizacao?.nome || 'N/A'}
                 </p>
+                {localizacaoAtual.localizacao?.descricao && (
+                  <p className="text-sm text-gray-600 mb-2">
+                    {localizacaoAtual.localizacao.descricao}
+                  </p>
+                )}
                 {localizacaoAtual.observacoes && (
                   <p className="text-sm text-gray-700 mt-2 italic">
                     "{localizacaoAtual.observacoes}"
