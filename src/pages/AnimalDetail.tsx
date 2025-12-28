@@ -18,8 +18,9 @@ import {
   Edit,
   Archive,
   Clock,
-User,
-  Shield
+  User,
+  Shield,
+  History
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Animal } from "@/types/animal";
