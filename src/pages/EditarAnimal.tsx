@@ -68,6 +68,7 @@ const EditarAnimal = () => {
   const [grupos, setGrupos] = useState<any[]>([]);
   const [grupoAtual, setGrupoAtual] = useState<any>(null);
   const [voluntarios, setVoluntarios] = useState<any[]>([]);
+  const [tiposEstado, setTiposEstado] = useState<any[]>([]);
   const [incompatibilityAlert, setIncompatibilityAlert] = useState<{show: boolean, message: string}>({show: false, message: ""});
 
   useEffect(() => {
@@ -77,6 +78,7 @@ const EditarAnimal = () => {
       fetchSexos();
       fetchGrupos();
       fetchVoluntarios();
+      fetchTiposEstado();
     }
   }, [id]);
 
@@ -202,6 +204,21 @@ const EditarAnimal = () => {
       setVoluntarios(data || []);
     } catch (error: any) {
       console.error('Erro ao carregar voluntários:', error);
+    }
+  };
+
+  const fetchTiposEstado = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('tipos_estado')
+        .select('id, nome, cor, ativo')
+        .eq('ativo', true)
+        .order('ordem');
+
+      if (error) throw error;
+      setTiposEstado(data || []);
+    } catch (error: any) {
+      console.error('Erro ao carregar tipos de estado:', error);
     }
   };
 
@@ -685,10 +702,17 @@ const EditarAnimal = () => {
                       <SelectValue placeholder="Selecione o estado" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Ativo">Ativo</SelectItem>
-                      <SelectItem value="Adotado">Adotado</SelectItem>
-                      <SelectItem value="Óbito">Óbito</SelectItem>
-                      <SelectItem value="Não Adotável">Não Adotável</SelectItem>
+                      {tiposEstado.map((tipo) => (
+                        <SelectItem key={tipo.id} value={tipo.nome}>
+                          <div className="flex items-center gap-2">
+                            <div 
+                              className="w-3 h-3 rounded-full" 
+                              style={{ backgroundColor: tipo.cor }}
+                            />
+                            {tipo.nome}
+                          </div>
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
