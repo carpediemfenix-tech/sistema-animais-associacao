@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -137,12 +137,66 @@ const AnimalBI = () => {
     );
   }
 
-  const fotoUrl = animal.foto_url ? convertGoogleDriveUrl(animal.foto_url) : null;
+  // Corrigir campo da foto - usar url_fotografia em vez de foto_url
+  const fotoUrl = animal.url_fotografia ? convertGoogleDriveUrl(animal.url_fotografia) : null;
   
   // Debug da foto
-  console.log('🖼️ Foto URL original:', animal.foto_url);
+  console.log('🖼️ Foto URL original (url_fotografia):', animal.url_fotografia);
+  console.log('🖼️ Foto URL original (foto_url):', animal.foto_url);
   console.log('🖼️ Foto URL convertida:', fotoUrl);
   console.log('🔢 Chip/Transponder:', animal.chip, animal.transponder);
+
+  // Adicionar estilos CSS para impressão A6
+  React.useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      @media print {
+        @page {
+          size: A6;
+          margin: 0.5cm;
+        }
+        body {
+          font-size: 8pt;
+          line-height: 1.2;
+        }
+        .print\\:text-xs {
+          font-size: 6pt !important;
+        }
+        .print\\:text-sm {
+          font-size: 7pt !important;
+        }
+        .print\\:text-base {
+          font-size: 8pt !important;
+        }
+        .print\\:text-lg {
+          font-size: 9pt !important;
+        }
+        .print\\:text-xl {
+          font-size: 10pt !important;
+        }
+        .print\\:text-2xl {
+          font-size: 12pt !important;
+        }
+        .print\\:p-2 {
+          padding: 0.25rem !important;
+        }
+        .print\\:p-4 {
+          padding: 0.5rem !important;
+        }
+        .print\\:gap-2 {
+          gap: 0.25rem !important;
+        }
+        .print\\:h-8 {
+          height: 1.5rem !important;
+        }
+        .print\\:w-8 {
+          width: 1.5rem !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+    return () => document.head.removeChild(style);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-blue-50 to-indigo-100">
@@ -196,12 +250,17 @@ const AnimalBI = () => {
           <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 text-white px-8 py-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="bg-white p-3 rounded-full">
-                  <PawPrint className="h-8 w-8 text-blue-900" />
+                <div className="bg-white p-2 rounded-full">
+                  <img 
+                    src="./images/BackgroundEraser_20250411_205630024.png" 
+                    alt="Logótipo Valentão" 
+                    className="h-12 w-12 object-contain"
+                  />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold tracking-wide">ASSOCIAÇÃO VALENTÃO</h2>
+                  <h2 className="text-xl font-bold tracking-wide">ASSOCIAÇÃO VALENTÃO AO RESGATE</h2>
                   <p className="text-blue-200 text-sm">Bilhete de Identidade Animal</p>
+                  <p className="text-blue-300 text-xs">Valentão Operacionais</p>
                 </div>
               </div>
               <div className="text-right">
@@ -386,7 +445,7 @@ const AnimalBI = () => {
             <div className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-2">
                 <Heart className="h-4 w-4" />
-                <span>Documento emitido pela Associação Valentão</span>
+                <span>Documento emitido pela Associação Valentão ao Resgate</span>
               </div>
               <div>
                 <span>Emitido em: {new Date().toLocaleDateString('pt-PT')}</span>
@@ -403,12 +462,17 @@ const AnimalBI = () => {
           <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 text-white px-8 py-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="bg-white p-3 rounded-full">
-                  <PawPrint className="h-8 w-8 text-blue-900" />
+                <div className="bg-white p-2 rounded-full">
+                  <img 
+                    src="./images/BackgroundEraser_20250411_205630024.png" 
+                    alt="Logótipo Valentão" 
+                    className="h-12 w-12 object-contain"
+                  />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold tracking-wide">ASSOCIAÇÃO VALENTÃO</h2>
+                  <h2 className="text-xl font-bold tracking-wide">ASSOCIAÇÃO VALENTÃO AO RESGATE</h2>
                   <p className="text-blue-200 text-sm">Bilhete de Identidade Animal - Verso</p>
+                  <p className="text-blue-300 text-xs">Valentão Operacionais</p>
                 </div>
               </div>
             </div>
@@ -557,7 +621,7 @@ const AnimalBI = () => {
             <div className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-2">
                 <Heart className="h-4 w-4" />
-                <span>Associação Valentão - Proteção e Bem-Estar Animal</span>
+                <span>Associação Valentão ao Resgate - Proteção e Bem-Estar Animal</span>
               </div>
               <div>
                 <span>Página 2/2</span>
