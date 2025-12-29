@@ -38,7 +38,10 @@ import {
   RefreshCw,
   Zap,
   Heart,
-  Star
+  Star,
+  Plus,
+  Minus,
+  Loader2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -85,6 +88,16 @@ const MissaoDetailOtimizada = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Estados para dados das abas
+  const [participacoes, setParticipacoes] = useState<any[]>([]);
+  const [animais, setAnimais] = useState<any[]>([]);
+  const [movimentosFinanceiros, setMovimentosFinanceiros] = useState<any[]>([]);
+  const [loadingTabs, setLoadingTabs] = useState({
+    participacoes: false,
+    animais: false,
+    financeiro: false
+  });
 
   // Carregar dados
   useEffect(() => {
@@ -92,6 +105,15 @@ const MissaoDetailOtimizada = () => {
       loadData();
     }
   }, [id]);
+
+  // Carregar dados das abas quando a missão é carregada
+  useEffect(() => {
+    if (missao && id) {
+      loadParticipacoes();
+      loadAnimais();
+      loadMovimentosFinanceiros();
+    }
+  }, [missao, id]);
 
   const loadData = async () => {
     try {
@@ -251,6 +273,86 @@ const MissaoDetailOtimizada = () => {
       title: "Configurações",
       description: "Painel de configurações será implementado em breve",
     });
+  };
+
+  // Funções para carregar dados das abas
+  const loadParticipacoes = async () => {
+    try {
+      setLoadingTabs(prev => ({ ...prev, participacoes: true }));
+      
+      const { data, error } = await supabase
+        .from('participacoes_missoes_2025_12_29_07_00')
+        .select(`
+          *,
+          voluntario:voluntarios(
+            id,
+            nome,
+            email,
+            telefone
+          )
+        `)
+        .eq('missao_id', id)
+        .order('data_participacao', { ascending: false });
+
+      if (error) throw error;
+      setParticipacoes(data || []);
+    } catch (error) {
+      console.error('❌ Erro ao carregar participações:', error);
+    } finally {
+      setLoadingTabs(prev => ({ ...prev, participacoes: false }));
+    }
+  };
+
+  const loadAnimais = async () => {
+    try {
+      setLoadingTabs(prev => ({ ...prev, animais: true }));
+      
+      const { data, error } = await supabase
+        .from('missoes_animais_2025_12_29_07_00')
+        .select(`
+          *,
+          animal:animais(
+            id,
+            nome,
+            especie,
+            numero_processo,
+            url_fotografia
+          )
+        `)
+        .eq('missao_id', id)
+        .order('data_vinculacao', { ascending: false });
+
+      if (error) throw error;
+      setAnimais(data || []);
+    } catch (error) {
+      console.error('❌ Erro ao carregar animais:', error);
+    } finally {
+      setLoadingTabs(prev => ({ ...prev, animais: false }));
+    }
+  };
+
+  const loadMovimentosFinanceiros = async () => {
+    try {
+      setLoadingTabs(prev => ({ ...prev, financeiro: true }));
+      
+      // Verificar se existe tabela de movimentos financeiros
+      const { data, error } = await supabase
+        .from('movimentos_financeiros_2025_12_29_07_00')
+        .select('*')
+        .eq('missao_id', id)
+        .order('data_movimento', { ascending: false });
+
+      if (error && !error.message.includes('does not exist')) {
+        throw error;
+      }
+      
+      setMovimentosFinanceiros(data || []);
+    } catch (error) {
+      console.error('❌ Erro ao carregar movimentos financeiros:', error);
+      setMovimentosFinanceiros([]);
+    } finally {
+      setLoadingTabs(prev => ({ ...prev, financeiro: false }));
+    }
   };
   if (loading) {
     return (
@@ -596,66 +698,584 @@ const MissaoDetailOtimizada = () => {
               </TabsContent>
               
               <TabsContent value="participacoes" className="mt-6">
-                <div className="text-center py-8">
-                  <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
-                    Gestão de Participações
-                  </h3>
-                  <p className="text-gray-600 mb-4">
-                    Gerir voluntários e suas funções nesta missão.
-                  </p>
-                  <Button onClick={() => navigate(`/missao/${id}/participacoes`)}>
-                    <Users className="h-4 w-4 mr-2" />
-                    Abrir Gestão de Participações
-                  </Button>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-semibold">Participações da Missão</h3>
+                    <div className="flex space-x-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={loadParticipacoes}
+                        disabled={loadingTabs.participacoes}
+                      >
+                        {loadingTabs.participacoes ? (
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        ) : (
+                          <RefreshCw className="h-4 w-4 mr-2" />
+                        )}
+                        Atualizar
+                      </Button>
+                      <Button 
+                        size="sm"
+                        onClick={() => navigate(`/missao/${id}/participacoes`)}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Adicionar Participação
+                      </Button>
+                    </div>
+                  </div>
+
+                  {loadingTabs.participacoes ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+                      <span className="ml-2">Carregando participações...</span>
+                    </div>
+                  ) : participacoes.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <h4 className="text-lg font-medium text-gray-900 mb-2">
+                        Nenhuma participação encontrada
+                      </h4>
+                      <p className="text-gray-600 mb-4">
+                        Adicione voluntários para começar a gerir esta missão.
+                      </p>
+                      <Button onClick={() => navigate(`/missao/${id}/participacoes`)}>
+                        <Users className="h-4 w-4 mr-2" />
+                        Adicionar Primeira Participação
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="grid gap-4">
+                      {participacoes.map((participacao) => (
+                        <Card key={participacao.id} className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-4">
+                              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                <User className="h-5 w-5 text-blue-600" />
+                              </div>
+                              <div>
+                                <h4 className="font-medium">
+                                  {participacao.voluntario?.nome || 'Voluntário não encontrado'}
+                                </h4>
+                                <p className="text-sm text-gray-600">
+                                  {participacao.funcao} • {participacao.horas_dedicadas || 0}h dedicadas
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  Desde {new Date(participacao.data_participacao).toLocaleDateString('pt-PT')}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Badge variant={participacao.status_participacao === 'ativa' ? 'default' : 'secondary'}>
+                                {participacao.status_participacao}
+                              </Badge>
+                              <span className="text-sm font-medium text-green-600">
+                                {participacao.pontos_atribuidos || 0} pts
+                              </span>
+                            </div>
+                          </div>
+                        </Card>
+                      ))}
+                      
+                      <div className="text-center pt-4">
+                        <Button 
+                          variant="outline"
+                          onClick={() => navigate(`/missao/${id}/participacoes`)}
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          Ver Gestão Completa
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </TabsContent>
               
               <TabsContent value="animais" className="mt-6">
-                <div className="text-center py-8">
-                  <PawPrint className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
-                    Gestão de Animais
-                  </h3>
-                  <p className="text-gray-600 mb-4">
-                    Vincular e gerir animais envolvidos nesta missão.
-                  </p>
-                  <Button onClick={() => navigate(`/missao/${id}/animais`)}>
-                    <PawPrint className="h-4 w-4 mr-2" />
-                    Abrir Gestão de Animais
-                  </Button>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-semibold">Animais da Missão</h3>
+                    <div className="flex space-x-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={loadAnimais}
+                        disabled={loadingTabs.animais}
+                      >
+                        {loadingTabs.animais ? (
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        ) : (
+                          <RefreshCw className="h-4 w-4 mr-2" />
+                        )}
+                        Atualizar
+                      </Button>
+                      <Button 
+                        size="sm"
+                        onClick={() => navigate(`/missao/${id}/animais`)}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Vincular Animal
+                      </Button>
+                    </div>
+                  </div>
+
+                  {loadingTabs.animais ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+                      <span className="ml-2">Carregando animais...</span>
+                    </div>
+                  ) : animais.length === 0 ? (
+                    <div className="text-center py-8">
+                      <PawPrint className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <h4 className="text-lg font-medium text-gray-900 mb-2">
+                        Nenhum animal vinculado
+                      </h4>
+                      <p className="text-gray-600 mb-4">
+                        Vincule animais para começar a gerir esta missão.
+                      </p>
+                      <Button onClick={() => navigate(`/missao/${id}/animais`)}>
+                        <PawPrint className="h-4 w-4 mr-2" />
+                        Vincular Primeiro Animal
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="grid gap-4">
+                      {animais.map((animalMissao) => (
+                        <Card key={animalMissao.id} className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-4">
+                              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center overflow-hidden">
+                                {animalMissao.animal?.url_fotografia ? (
+                                  <img 
+                                    src={animalMissao.animal.url_fotografia} 
+                                    alt={animalMissao.animal.nome}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <PawPrint className="h-6 w-6 text-green-600" />
+                                )}
+                              </div>
+                              <div>
+                                <h4 className="font-medium">
+                                  {animalMissao.animal?.nome || 'Animal não encontrado'}
+                                </h4>
+                                <p className="text-sm text-gray-600">
+                                  {animalMissao.animal?.especie} • {animalMissao.funcao_animal}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  Processo: {animalMissao.animal?.numero_processo || 'N/A'}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  Vinculado em {new Date(animalMissao.data_vinculacao).toLocaleDateString('pt-PT')}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Badge variant={animalMissao.status_participacao === 'ativa' ? 'default' : 'secondary'}>
+                                {animalMissao.status_participacao}
+                              </Badge>
+                            </div>
+                          </div>
+                        </Card>
+                      ))}
+                      
+                      <div className="text-center pt-4">
+                        <Button 
+                          variant="outline"
+                          onClick={() => navigate(`/missao/${id}/animais`)}
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          Ver Gestão Completa
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </TabsContent>
               
               <TabsContent value="financeiro" className="mt-6">
-                <div className="text-center py-8">
-                  <DollarSign className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
-                    Controle Financeiro
-                  </h3>
-                  <p className="text-gray-600 mb-4">
-                    Gerir orçamento, receitas e despesas da missão.
-                  </p>
-                  <Button onClick={() => navigate(`/missao/${id}/financeiro`)}>
-                    <DollarSign className="h-4 w-4 mr-2" />
-                    Abrir Controle Financeiro
-                  </Button>
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-semibold">Controle Financeiro</h3>
+                    <div className="flex space-x-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={loadMovimentosFinanceiros}
+                        disabled={loadingTabs.financeiro}
+                      >
+                        {loadingTabs.financeiro ? (
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        ) : (
+                          <RefreshCw className="h-4 w-4 mr-2" />
+                        )}
+                        Atualizar
+                      </Button>
+                      <Button 
+                        size="sm"
+                        onClick={() => navigate(`/missao/${id}/financeiro`)}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Novo Movimento
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Resumo Financeiro */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Card className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-gray-600">Orçamento Previsto</p>
+                          <p className="text-2xl font-bold text-blue-600">
+                            €{missao?.orcamento_previsto?.toFixed(2) || '0.00'}
+                          </p>
+                        </div>
+                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                          <Target className="h-5 w-5 text-blue-600" />
+                        </div>
+                      </div>
+                    </Card>
+
+                    <Card className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-gray-600">Gasto Atual</p>
+                          <p className="text-2xl font-bold text-red-600">
+                            €{missao?.orcamento_gasto?.toFixed(2) || '0.00'}
+                          </p>
+                        </div>
+                        <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                          <DollarSign className="h-5 w-5 text-red-600" />
+                        </div>
+                      </div>
+                    </Card>
+
+                    <Card className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-gray-600">Saldo Restante</p>
+                          <p className={`text-2xl font-bold ${
+                            (missao?.orcamento_previsto || 0) - (missao?.orcamento_gasto || 0) >= 0 
+                              ? 'text-green-600' 
+                              : 'text-red-600'
+                          }`}>
+                            €{((missao?.orcamento_previsto || 0) - (missao?.orcamento_gasto || 0)).toFixed(2)}
+                          </p>
+                        </div>
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                          (missao?.orcamento_previsto || 0) - (missao?.orcamento_gasto || 0) >= 0 
+                            ? 'bg-green-100' 
+                            : 'bg-red-100'
+                        }`}>
+                          <Euro className={`h-5 w-5 ${
+                            (missao?.orcamento_previsto || 0) - (missao?.orcamento_gasto || 0) >= 0 
+                              ? 'text-green-600' 
+                              : 'text-red-600'
+                          }`} />
+                        </div>
+                      </div>
+                    </Card>
+                  </div>
+
+                  {/* Progresso do Orçamento */}
+                  {missao?.orcamento_previsto && missao.orcamento_previsto > 0 && (
+                    <Card className="p-4">
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span>Progresso do Orçamento</span>
+                          <span>{((missao.orcamento_gasto / missao.orcamento_previsto) * 100).toFixed(1)}%</span>
+                        </div>
+                        <Progress 
+                          value={(missao.orcamento_gasto / missao.orcamento_previsto) * 100} 
+                          className="h-2"
+                        />
+                      </div>
+                    </Card>
+                  )}
+
+                  {/* Movimentos Financeiros */}
+                  {loadingTabs.financeiro ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+                      <span className="ml-2">Carregando movimentos...</span>
+                    </div>
+                  ) : movimentosFinanceiros.length === 0 ? (
+                    <div className="text-center py-8">
+                      <DollarSign className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <h4 className="text-lg font-medium text-gray-900 mb-2">
+                        Nenhum movimento financeiro
+                      </h4>
+                      <p className="text-gray-600 mb-4">
+                        Registre receitas e despesas para controlar o orçamento.
+                      </p>
+                      <Button onClick={() => navigate(`/missao/${id}/financeiro`)}>
+                        <DollarSign className="h-4 w-4 mr-2" />
+                        Registar Primeiro Movimento
+                      </Button>
+                    </div>
+                  ) : (
+                    <Card className="p-4">
+                      <h4 className="font-medium mb-4">Movimentos Recentes</h4>
+                      <div className="space-y-3">
+                        {movimentosFinanceiros.slice(0, 5).map((movimento) => (
+                          <div key={movimento.id} className="flex items-center justify-between py-2 border-b last:border-b-0">
+                            <div className="flex items-center space-x-3">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                                movimento.tipo === 'receita' ? 'bg-green-100' : 'bg-red-100'
+                              }`}>
+                                {movimento.tipo === 'receita' ? (
+                                  <Plus className={`h-4 w-4 text-green-600`} />
+                                ) : (
+                                  <Minus className={`h-4 w-4 text-red-600`} />
+                                )}
+                              </div>
+                              <div>
+                                <p className="font-medium">{movimento.descricao}</p>
+                                <p className="text-sm text-gray-600">
+                                  {new Date(movimento.data_movimento).toLocaleDateString('pt-PT')}
+                                </p>
+                              </div>
+                            </div>
+                            <span className={`font-medium ${
+                              movimento.tipo === 'receita' ? 'text-green-600' : 'text-red-600'
+                            }`}>
+                              {movimento.tipo === 'receita' ? '+' : '-'}€{movimento.valor.toFixed(2)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      <div className="text-center pt-4">
+                        <Button 
+                          variant="outline"
+                          onClick={() => navigate(`/missao/${id}/financeiro`)}
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          Ver Controle Completo
+                        </Button>
+                      </div>
+                    </Card>
+                  )}
                 </div>
               </TabsContent>
               
               <TabsContent value="relatorios" className="mt-6">
-                <div className="text-center py-8">
-                  <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
-                    Relatórios e Análises
-                  </h3>
-                  <p className="text-gray-600 mb-4">
-                    Visualizar estatísticas e gerar relatórios da missão.
-                  </p>
-                  <Button variant="outline">
-                    <BarChart3 className="h-4 w-4 mr-2" />
-                    Em Desenvolvimento
-                  </Button>
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-semibold">Relatórios e Análises</h3>
+                    <div className="flex space-x-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          loadParticipacoes();
+                          loadAnimais();
+                          loadMovimentosFinanceiros();
+                        }}
+                      >
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Atualizar Dados
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          toast({
+                            title: "Exportar Relatório",
+                            description: "Funcionalidade de exportação será implementada em breve",
+                          });
+                        }}
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Exportar PDF
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Estatísticas Gerais */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <Card className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-gray-600">Duração</p>
+                          <p className="text-2xl font-bold text-blue-600">
+                            {missao?.data_inicio && missao?.data_fim 
+                              ? Math.ceil((new Date(missao.data_fim).getTime() - new Date(missao.data_inicio).getTime()) / (1000 * 60 * 60 * 24))
+                              : 'N/A'
+                            } dias
+                          </p>
+                        </div>
+                        <Calendar className="h-8 w-8 text-blue-600" />
+                      </div>
+                    </Card>
+
+                    <Card className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-gray-600">Participantes</p>
+                          <p className="text-2xl font-bold text-green-600">
+                            {participacoes.length}
+                          </p>
+                        </div>
+                        <Users className="h-8 w-8 text-green-600" />
+                      </div>
+                    </Card>
+
+                    <Card className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-gray-600">Animais</p>
+                          <p className="text-2xl font-bold text-purple-600">
+                            {animais.length}
+                          </p>
+                        </div>
+                        <PawPrint className="h-8 w-8 text-purple-600" />
+                      </div>
+                    </Card>
+
+                    <Card className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-gray-600">Eficiência</p>
+                          <p className="text-2xl font-bold text-orange-600">
+                            {missao?.orcamento_previsto && missao.orcamento_previsto > 0
+                              ? `${(100 - (missao.orcamento_gasto / missao.orcamento_previsto) * 100).toFixed(0)}%`
+                              : 'N/A'
+                            }
+                          </p>
+                        </div>
+                        <BarChart3 className="h-8 w-8 text-orange-600" />
+                      </div>
+                    </Card>
+                  </div>
+
+                  {/* Análise de Participações */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <Card className="p-4">
+                      <h4 className="font-medium mb-4">Distribuição por Função</h4>
+                      <div className="space-y-3">
+                        {participacoes.reduce((acc: any[], participacao) => {
+                          const funcao = participacao.funcao || 'Não definida';
+                          const existing = acc.find(item => item.funcao === funcao);
+                          if (existing) {
+                            existing.count++;
+                            existing.horas += participacao.horas_dedicadas || 0;
+                          } else {
+                            acc.push({
+                              funcao,
+                              count: 1,
+                              horas: participacao.horas_dedicadas || 0
+                            });
+                          }
+                          return acc;
+                        }, []).map((item, index) => (
+                          <div key={index} className="flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                              <span className="text-sm">{item.funcao}</span>
+                            </div>
+                            <div className="text-right">
+                              <span className="text-sm font-medium">{item.count} pessoas</span>
+                              <p className="text-xs text-gray-500">{item.horas}h dedicadas</p>
+                            </div>
+                          </div>
+                        ))}
+                        {participacoes.length === 0 && (
+                          <p className="text-gray-500 text-center py-4">Nenhuma participação registada</p>
+                        )}
+                      </div>
+                    </Card>
+
+                    <Card className="p-4">
+                      <h4 className="font-medium mb-4">Animais por Espécie</h4>
+                      <div className="space-y-3">
+                        {animais.reduce((acc: any[], animalMissao) => {
+                          const especie = animalMissao.animal?.especie || 'Não definida';
+                          const existing = acc.find(item => item.especie === especie);
+                          if (existing) {
+                            existing.count++;
+                          } else {
+                            acc.push({
+                              especie,
+                              count: 1
+                            });
+                          }
+                          return acc;
+                        }, []).map((item, index) => (
+                          <div key={index} className="flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                              <span className="text-sm">{item.especie}</span>
+                            </div>
+                            <span className="text-sm font-medium">{item.count} animais</span>
+                          </div>
+                        ))}
+                        {animais.length === 0 && (
+                          <p className="text-gray-500 text-center py-4">Nenhum animal vinculado</p>
+                        )}
+                      </div>
+                    </Card>
+                  </div>
+
+                  {/* Resumo da Missão */}
+                  <Card className="p-6">
+                    <h4 className="font-medium mb-4">Resumo Executivo</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <h5 className="font-medium text-gray-900 mb-2">Informações Gerais</h5>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Status:</span>
+                            <span>{getStatusBadge(missao?.status || 'rascunho')}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Prioridade:</span>
+                            <span>{getPrioridadeBadge(missao?.prioridade || 'media')}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Local:</span>
+                            <span>{missao?.local_principal || 'Não definido'}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Responsável:</span>
+                            <span>{missao?.responsavel_id || 'Não atribuído'}</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <h5 className="font-medium text-gray-900 mb-2">Métricas de Performance</h5>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Total de Horas:</span>
+                            <span className="font-medium">
+                              {participacoes.reduce((total, p) => total + (p.horas_dedicadas || 0), 0)}h
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Pontos Atribuídos:</span>
+                            <span className="font-medium">
+                              {participacoes.reduce((total, p) => total + (p.pontos_atribuidos || 0), 0)} pts
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Custo por Animal:</span>
+                            <span className="font-medium">
+                              {animais.length > 0 && missao?.orcamento_gasto 
+                                ? `€${(missao.orcamento_gasto / animais.length).toFixed(2)}`
+                                : 'N/A'
+                              }
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Progresso:</span>
+                            <span className="font-medium">{estatisticas.progresso}%</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
                 </div>
               </TabsContent>
             </Tabs>
