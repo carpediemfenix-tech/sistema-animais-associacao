@@ -138,19 +138,7 @@ const AnimalEstados: React.FC = () => {
     }
 
     try {
-      // 1. Primeiro, desativar todos os estados ativos deste animal
-      const { error: updateError } = await supabase
-        .from('estados_animal')
-        .update({ 
-          ativo: false, 
-          data_fim: novoEstado.data_inicio 
-        })
-        .eq('animal_id', id)
-        .eq('ativo', true);
-
-      if (updateError) throw updateError;
-
-      // 2. Inserir o novo estado
+      // 1. Inserir o novo estado (o trigger vai desativar os anteriores)
       const { error: insertError } = await supabase
         .from('estados_animal')
         .insert({
@@ -164,25 +152,26 @@ const AnimalEstados: React.FC = () => {
 
       if (insertError) throw insertError;
 
-      // 3. Obter o nome do novo tipo de estado
+      // 2. Obter o nome do novo tipo de estado para sincronização
       const { data: tipoEstado, error: tipoError } = await supabase
         .from('tipos_estado')
         .select('nome')
         .eq('id', novoEstado.tipo_estado_id)
         .single();
 
-      if (tipoError) throw tipoError;
-
-      // 4. Atualizar o campo estado na tabela animais (sem constraint)
-      // Vamos tentar, mas se falhar, não é crítico
-      try {
-        await supabase
-          .from('animais')
-          .update({ estado: tipoEstado.nome })
-          .eq('id', id);
-      } catch (syncError) {
-        console.warn('Aviso: Não foi possível sincronizar o campo estado:', syncError);
-        // Não falha a operação principal
+      if (tipoError) {
+        console.warn('Aviso: Não foi possível obter nome do tipo de estado:', tipoError);
+      } else {
+        // 3. Atualizar o campo estado na tabela animais (opcional)
+        try {
+          await supabase
+            .from('animais')
+            .update({ estado: tipoEstado.nome })
+            .eq('id', id);
+        } catch (syncError) {
+          console.warn('Aviso: Não foi possível sincronizar o campo estado:', syncError);
+          // Não falha a operação principal
+        }
       }
 
       toast({
