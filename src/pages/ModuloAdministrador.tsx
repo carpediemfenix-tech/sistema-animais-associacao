@@ -27,7 +27,8 @@ import {
   BarChart3,
   FileText,
   Briefcase,
-  Home
+  Home,
+  Activity
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -139,6 +140,16 @@ const ModuloAdministrador = () => {
       cor: "from-indigo-600 to-indigo-700",
       corBorda: "border-indigo-500",
       total: stats.totalGrupos,
+      status: "operacional"
+    },
+    {
+      titulo: "Estados dos Animais",
+      descricao: "Gerir tipos de estado (Ativo/Adotado/etc.)",
+      icone: Activity,
+      rota: "/configuracoes/estados",
+      cor: "from-teal-600 to-teal-700",
+      corBorda: "border-teal-500",
+      total: 7, // Estados padrão criados
       status: "operacional"
     }
   ];

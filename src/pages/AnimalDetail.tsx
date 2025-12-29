@@ -20,7 +20,8 @@ import {
   Clock,
   User,
   Shield,
-  History
+  History,
+  Activity
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Animal } from "@/types/animal";
@@ -567,6 +568,24 @@ const AnimalDetail = () => {
                         <p className="text-xs sm:text-sm text-purple-600 truncate">Histórico de transferências</p>
                       </div>
                       <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-purple-600 flex-shrink-0" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+              
+              {/* Estados */}
+              <Link to={`/animal/${id}/estados`}>
+                <Card className="hover:shadow-lg transition-shadow cursor-pointer border-teal-200 bg-gradient-to-br from-teal-50 to-teal-100">
+                  <CardContent className="p-3 sm:p-4">
+                    <div className="flex items-center space-x-2 sm:space-x-3">
+                      <div className="bg-teal-600 p-1.5 sm:p-2 rounded-full flex-shrink-0">
+                        <Activity className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-teal-800 text-sm sm:text-base truncate">Estados</h3>
+                        <p className="text-xs sm:text-sm text-teal-600 truncate">Histórico de estados</p>
+                      </div>
+                      <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4 text-teal-600 flex-shrink-0" />
                     </div>
                   </CardContent>
                 </Card>

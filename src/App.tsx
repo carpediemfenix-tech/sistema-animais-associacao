@@ -66,6 +66,8 @@ import ModuloEquipamentos from "./pages/ModuloEquipamentos";
 import ModuloClinicas from "./pages/ModuloClinicas";
 import EstatisticasAvancadas from "./pages/EstatisticasAvancadas";
 import VerificacaoBI from "./pages/VerificacaoBI";
+import AnimalEstados from "./pages/AnimalEstados";
+import GestaoEstados from "./pages/GestaoEstados";
 // Páginas de Equipamentos
 import EquipamentosNavigation from "./pages/equipamentos/EquipamentosNavigation";
 import EquipamentosDashboard from "./pages/equipamentos/EquipamentosDashboard";
@@ -111,6 +113,7 @@ const App = () => (
             <Route path="/animal/:id/intervencoes" element={<ProtectedRoute><AnimalIntervencoes /></ProtectedRoute>} />
             <Route path="/animal/:id/eventos" element={<ProtectedRoute><AnimalEventos /></ProtectedRoute>} />
 <Route path="/animal/:id/localizacoes" element={<ProtectedRoute><AnimalLocalizacoes /></ProtectedRoute>} />
+            <Route path="/animal/:id/estados" element={<ProtectedRoute><AnimalEstados /></ProtectedRoute>} />
             <Route path="/animal/:id/intervencoes-autoridades" element={<ProtectedRoute><IntervencoesAutoridades /></ProtectedRoute>} />
             <Route path="/animal/:id/responsabilidades" element={<ProtectedRoute><AnimalResponsabilidades /></ProtectedRoute>} />
             <Route path="/animal/:id/financeiro" element={<ProtectedRoute><AnimalFinanceiro /></ProtectedRoute>} />
@@ -186,6 +189,7 @@ const App = () => (
             <Route path="/configuracoes/clinicas" element={<ProtectedRoute><GestaoClinicas /></ProtectedRoute>} />
             <Route path="/configuracoes/responsabilidades" element={<ProtectedRoute><GestaoResponsabilidades /></ProtectedRoute>} />
             <Route path="/configuracoes/intervencoes" element={<ProtectedRoute><ConfiguracaoIntervencoes /></ProtectedRoute>} />
+            <Route path="/configuracoes/estados" element={<ProtectedRoute><GestaoEstados /></ProtectedRoute>} />
             <Route path="/historico-nomes" element={<ProtectedRoute><HistoricoNomesAnimais /></ProtectedRoute>} />
             <Route path="/animal/:animalId/historico-nomes" element={<ProtectedRoute><HistoricoNomesAnimais /></ProtectedRoute>} />
             <Route path="/utilizadores" element={<ProtectedRoute><GestaoUtilizadores /></ProtectedRoute>} />
