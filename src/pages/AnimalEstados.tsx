@@ -138,7 +138,20 @@ const AnimalEstados: React.FC = () => {
     }
 
     try {
-      const { error } = await supabase
+      // 1. Primeiro, desativar todos os estados ativos deste animal
+      const { error: updateError } = await supabase
+        .from('estados_animal')
+        .update({ 
+          ativo: false, 
+          data_fim: novoEstado.data_inicio 
+        })
+        .eq('animal_id', id)
+        .eq('ativo', true);
+
+      if (updateError) throw updateError;
+
+      // 2. Inserir o novo estado
+      const { error: insertError } = await supabase
         .from('estados_animal')
         .insert({
           animal_id: id,
@@ -149,7 +162,28 @@ const AnimalEstados: React.FC = () => {
           usuario_id: 'admin' // TODO: Usar usuário atual
         });
 
-      if (error) throw error;
+      if (insertError) throw insertError;
+
+      // 3. Obter o nome do novo tipo de estado
+      const { data: tipoEstado, error: tipoError } = await supabase
+        .from('tipos_estado')
+        .select('nome')
+        .eq('id', novoEstado.tipo_estado_id)
+        .single();
+
+      if (tipoError) throw tipoError;
+
+      // 4. Atualizar o campo estado na tabela animais (sem constraint)
+      // Vamos tentar, mas se falhar, não é crítico
+      try {
+        await supabase
+          .from('animais')
+          .update({ estado: tipoEstado.nome })
+          .eq('id', id);
+      } catch (syncError) {
+        console.warn('Aviso: Não foi possível sincronizar o campo estado:', syncError);
+        // Não falha a operação principal
+      }
 
       toast({
         title: "Sucesso",
@@ -170,7 +204,7 @@ const AnimalEstados: React.FC = () => {
       console.error('Erro ao adicionar estado:', error);
       toast({
         title: "Erro",
-        description: "Erro ao adicionar estado",
+        description: "Erro ao adicionar estado: " + (error.message || 'Erro desconhecido'),
         variant: "destructive",
       });
     }
