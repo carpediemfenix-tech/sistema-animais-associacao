@@ -370,13 +370,20 @@ const ModuloMissoesOtimizado = () => {
         {/* PageActionBar */}
         <PageActionBar
           breadcrumbs={[
-            { label: 'Dashboard', href: '/dashboard' },
             { label: 'Módulo de Missões' }
           ]}
           primaryActions={
             <>
-              <Button variant="outline" onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}>
-                {viewMode === 'grid' ? <List className="h-4 w-4" /> : <Grid className="h-4 w-4" />}
+              <Button 
+                variant="outline" 
+                onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+                title={viewMode === 'grid' ? 'Visualização em Lista' : 'Visualização em Grade'}
+              >
+                {viewMode === 'grid' ? (
+                  <List className="h-4 w-4" />
+                ) : (
+                  <Grid className="h-4 w-4" />
+                )}
               </Button>
               <Button variant="outline" onClick={loadData}>
                 <RefreshCw className="h-4 w-4 mr-2" />
@@ -393,6 +400,11 @@ const ModuloMissoesOtimizado = () => {
               label: 'Sistema de Pontos',
               onClick: () => navigate('/dashboard-pontos'),
               icon: <Trophy className="h-4 w-4" />
+            },
+            {
+              label: 'Voltar ao Dashboard',
+              onClick: () => navigate('/dashboard'),
+              icon: <Home className="h-4 w-4" />
             }
           ]}
           showBackToDashboard={false}
