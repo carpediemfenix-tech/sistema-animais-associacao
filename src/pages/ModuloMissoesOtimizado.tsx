@@ -179,7 +179,7 @@ const ModuloMissoesOtimizado = () => {
     console.log('🎯 Carregando missões...');
     
     const { data, error } = await supabase
-      .from('missoes_2025_12_21_19_00')
+      .from('missoes_2025_12_29_07_00')
       .select('*')
       .order('created_at', { ascending: false })
       .limit(100);
@@ -196,7 +196,7 @@ const ModuloMissoesOtimizado = () => {
   const loadEstatisticas = async () => {
     try {
       const { data, error } = await supabase
-        .from('missoes_2025_12_21_19_00')
+        .from('missoes_2025_12_29_07_00')
         .select('status, orcamento_previsto');
 
       if (error) throw error;
@@ -248,7 +248,7 @@ const ModuloMissoesOtimizado = () => {
       console.log('📝 Criando missão:', missaoData);
 
       const { error } = await supabase
-        .from('missoes_2025_12_21_19_00')
+        .from('missoes_2025_12_29_07_00')
         .insert(missaoData);
 
       if (error) throw error;

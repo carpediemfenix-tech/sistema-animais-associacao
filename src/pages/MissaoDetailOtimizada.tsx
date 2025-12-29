@@ -114,7 +114,7 @@ const MissaoDetailOtimizada = () => {
     console.log('🎯 Carregando missão:', id);
     
     const { data, error } = await supabase
-      .from('missoes_2025_12_21_19_00')
+      .from('missoes_2025_12_29_07_00')
       .select('*')
       .eq('id', id)
       .single();
@@ -203,6 +203,55 @@ const MissaoDetailOtimizada = () => {
     );
   };
 
+  // Funções de ação
+  const handleEditMissao = () => {
+    // TODO: Implementar edição inline ou modal
+    toast({
+      title: "Funcionalidade em desenvolvimento",
+      description: "A edição de missões será implementada em breve",
+    });
+  };
+
+  const handleArchiveMissao = async () => {
+    if (!window.confirm('Tem certeza que deseja arquivar esta missão?')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('missoes_2025_12_29_07_00')
+        .update({ 
+          status: 'cancelada',
+          updated_at: new Date().toISOString(),
+          updated_by: 'admin'
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Missão arquivada",
+        description: "A missão foi arquivada com sucesso",
+      });
+
+      // Recarregar dados
+      loadData();
+    } catch (error: any) {
+      console.error('❌ Erro ao arquivar missão:', error);
+      toast({
+        title: "Erro ao arquivar",
+        description: error.message || "Erro inesperado",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleConfigureMissao = () => {
+    toast({
+      title: "Configurações",
+      description: "Painel de configurações será implementado em breve",
+    });
+  };
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -270,11 +319,11 @@ const MissaoDetailOtimizada = () => {
             </div>
           </div>
           <div className="flex space-x-2">
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => toast({title: "Partilhar", description: "Funcionalidade em desenvolvimento"})}>
               <Share2 className="h-4 w-4 mr-2" />
               Partilhar
             </Button>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => toast({title: "Exportar", description: "Funcionalidade em desenvolvimento"})}>
               <Download className="h-4 w-4 mr-2" />
               Exportar
             </Button>
@@ -282,7 +331,7 @@ const MissaoDetailOtimizada = () => {
               <RefreshCw className="h-4 w-4 mr-2" />
               Atualizar
             </Button>
-            <Button size="sm">
+            <Button size="sm" onClick={handleEditMissao}>
               <Edit className="h-4 w-4 mr-2" />
               Editar
             </Button>
@@ -452,9 +501,19 @@ const MissaoDetailOtimizada = () => {
               <Button 
                 className="w-full justify-start" 
                 variant="outline"
+                onClick={handleConfigureMissao}
               >
                 <Settings className="h-4 w-4 mr-2" />
                 Configurações
+              </Button>
+              
+              <Button 
+                className="w-full justify-start" 
+                variant="outline"
+                onClick={handleArchiveMissao}
+              >
+                <Archive className="h-4 w-4 mr-2" />
+                Arquivar Missão
               </Button>
             </CardContent>
           </Card>
