@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import EnhancedHeader from "@/components/EnhancedHeader";
 import { 
   ArrowLeft, 
@@ -53,6 +54,7 @@ interface Animal {
 const AnimalEstados: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
+  const { user, isAuthenticated } = useAuth();
   const [animal, setAnimal] = useState<Animal | null>(null);
   const [estados, setEstados] = useState<EstadoAnimal[]>([]);
   const [tiposEstado, setTiposEstado] = useState<TipoEstado[]>([]);
@@ -137,8 +139,34 @@ const AnimalEstados: React.FC = () => {
       return;
     }
 
+    // Verificar autenticação
+    if (!isAuthenticated || !user) {
+      toast({
+        title: "Erro de Autenticação",
+        description: "É necessário estar autenticado para adicionar estados. Por favor, faça login.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
-      // 1. Inserir o novo estado (o trigger vai desativar os anteriores)
+      console.log('🔐 [ESTADOS] Usuário autenticado:', user.username, 'Perfil:', user.perfil);
+      
+      // 1. Primeiro, desativar estados anteriores manualmente
+      const { error: updateError } = await supabase
+        .from('estados_animal')
+        .update({ 
+          ativo: false, 
+          data_fim: novoEstado.data_inicio 
+        })
+        .eq('animal_id', id)
+        .eq('ativo', true);
+
+      if (updateError) {
+        console.warn('⚠️ [ESTADOS] Aviso ao desativar estados anteriores:', updateError);
+      }
+
+      // 2. Inserir o novo estado com dados do usuário autenticado
       const { error: insertError } = await supabase
         .from('estados_animal')
         .insert({
@@ -147,7 +175,7 @@ const AnimalEstados: React.FC = () => {
           data_inicio: novoEstado.data_inicio,
           observacoes: novoEstado.observacoes || null,
           ativo: true,
-          usuario_id: 'admin' // TODO: Usar usuário atual
+          usuario_id: user.username || user.id
         });
 
       if (insertError) throw insertError;
@@ -174,9 +202,10 @@ const AnimalEstados: React.FC = () => {
         }
       }
 
+      console.log('✅ [ESTADOS] Estado adicionado com sucesso!');
       toast({
         title: "Sucesso",
-        description: "Estado adicionado com sucesso",
+        description: `Estado "${tipoEstado?.nome || 'novo estado'}" adicionado com sucesso`,
       });
 
       // Reset form
@@ -190,10 +219,28 @@ const AnimalEstados: React.FC = () => {
       carregarDados();
 
     } catch (error: any) {
-      console.error('Erro ao adicionar estado:', error);
+      console.error('❌ [ESTADOS] Erro ao adicionar estado:', error);
+      
+      // Mensagem de erro mais específica baseada no código
+      let errorMessage = "Erro ao adicionar estado";
+      let errorTitle = "Erro";
+      
+      if (error.code === '42501') {
+        errorTitle = "Erro de Permissão";
+        errorMessage = "Sem permissão para adicionar estados. Verifique se está autenticado como administrador.";
+      } else if (error.code === '23505') {
+        errorTitle = "Erro de Duplicação";
+        errorMessage = "Já existe um estado ativo para este animal na mesma data.";
+      } else if (error.code === '23503') {
+        errorTitle = "Erro de Referência";
+        errorMessage = "Tipo de estado ou animal não encontrado.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
-        title: "Erro",
-        description: "Erro ao adicionar estado: " + (error.message || 'Erro desconhecido'),
+        title: errorTitle,
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -266,6 +313,16 @@ const AnimalEstados: React.FC = () => {
               <p className="text-gray-600">
                 {animal.nome} - {animal.numero_processo}
               </p>
+              {user && (
+                <p className="text-sm text-green-600 font-medium">
+                  ✅ Autenticado como: {user.nome || user.username} ({user.perfil})
+                </p>
+              )}
+              {!isAuthenticated && (
+                <p className="text-sm text-red-600 font-medium">
+                  ❌ Não autenticado - Faça login para adicionar estados
+                </p>
+              )}
             </div>
           </div>
 
