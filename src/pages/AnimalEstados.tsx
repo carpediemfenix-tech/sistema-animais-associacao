@@ -100,7 +100,7 @@ const AnimalEstados: React.FC = () => {
       if (animalError) throw animalError;
       setAnimal(animalData);
 
-      // Carregar histórico de estados
+      // Carregar histórico de estados - ordenar por ativo primeiro, depois por data
       const { data: estadosData, error: estadosError } = await supabase
         .from('estados_animal')
         .select(`
@@ -114,10 +114,20 @@ const AnimalEstados: React.FC = () => {
           )
         `)
         .eq('animal_id', id)
-        .order('data_inicio', { ascending: false });
+        .order('ativo', { ascending: false })  // Estados ativos primeiro
+        .order('data_inicio', { ascending: false }); // Depois por data mais recente
 
       if (estadosError) throw estadosError;
-      setEstados(estadosData || []);
+      
+      // Organizar estados: ativo primeiro, depois histórico por data
+      const estadosOrganizados = estadosData || [];
+      const estadoAtivo = estadosOrganizados.find(e => e.ativo);
+      const estadosInativos = estadosOrganizados.filter(e => !e.ativo)
+        .sort((a, b) => new Date(b.data_inicio).getTime() - new Date(a.data_inicio).getTime());
+      
+      // Colocar estado ativo no topo, seguido do histórico
+      const estadosFinais = estadoAtivo ? [estadoAtivo, ...estadosInativos] : estadosInativos;
+      setEstados(estadosFinais);
 
       // Carregar tipos de estado disponíveis
       const { data: tiposData, error: tiposError } = await supabase
@@ -538,23 +548,25 @@ const AnimalEstados: React.FC = () => {
         </div>
 
         {/* Estado Atual */}
-        {estados.length > 0 && (
-          <Card className="mb-6 border-2 border-green-300 bg-gradient-to-r from-green-50 to-emerald-50 shadow-lg">
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-3 text-xl">
-                <Activity className="h-6 w-6 text-green-600" />
-                <span className="text-green-800 font-bold">Estado Atual</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="flex flex-col md:flex-row md:items-center gap-6">
+        {(() => {
+          const estadoAtivo = estados.find(e => e.ativo);
+          return estadoAtivo ? (
+            <Card className="mb-6 border-2 border-green-300 bg-gradient-to-r from-green-50 to-emerald-50 shadow-lg">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-3 text-xl">
+                  <Activity className="h-6 w-6 text-green-600" />
+                  <span className="text-green-800 font-bold">Estado Atual</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="flex flex-col md:flex-row md:items-center gap-6">
                 {/* Badge do Estado - Destaque Principal */}
                 <div className="flex-shrink-0">
                   <Badge 
-                    style={getEstadoBadgeColor(estados[0].tipos_estado.cor)}
+                    style={getEstadoBadgeColor(estadoAtivo.tipos_estado.cor)}
                     className="text-2xl md:text-3xl px-6 py-3 font-bold shadow-md border-2"
                   >
-                    {estados[0].tipos_estado.nome.toUpperCase()}
+                    {estadoAtivo.tipos_estado.nome.toUpperCase()}
                   </Badge>
                 </div>
                 
@@ -563,26 +575,26 @@ const AnimalEstados: React.FC = () => {
                   <div className="flex items-center gap-2 text-lg">
                     <Calendar className="h-5 w-5 text-green-600" />
                     <span className="font-semibold text-gray-800">
-                      Desde: <span className="text-green-700">{formatarData(estados[0].data_inicio)}</span>
+                      Desde: <span className="text-green-700">{formatarData(estadoAtivo.data_inicio)}</span>
                     </span>
                   </div>
                   
-                  {estados[0].usuario_id && (
+                  {estadoAtivo.usuario_id && (
                     <div className="flex items-center gap-2 text-base">
                       <User className="h-4 w-4 text-green-600" />
                       <span className="text-gray-700">
-                        Definido por: <span className="font-medium">{estados[0].usuario_id}</span>
+                        Definido por: <span className="font-medium">{estadoAtivo.usuario_id}</span>
                       </span>
                     </div>
                   )}
                   
-                  {estados[0].observacoes && (
+                  {estadoAtivo.observacoes && (
                     <div className="mt-4 p-4 bg-white rounded-lg border-l-4 border-green-400 shadow-sm">
                       <div className="flex items-start gap-2">
                         <FileText className="h-5 w-5 text-green-600 mt-0.5" />
                         <div>
                           <p className="text-sm font-semibold text-gray-800 mb-1">Observações:</p>
-                          <p className="text-base text-gray-700 italic font-medium">"{estados[0].observacoes}"</p>
+                          <p className="text-base text-gray-700 italic font-medium">"{estadoAtivo.observacoes}"</p>
                         </div>
                       </div>
                     </div>
@@ -591,7 +603,22 @@ const AnimalEstados: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-        )}
+          ) : (
+            <Card className="mb-6 border-2 border-orange-300 bg-gradient-to-r from-orange-50 to-yellow-50 shadow-lg">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-3 text-xl">
+                  <AlertCircle className="h-6 w-6 text-orange-600" />
+                  <span className="text-orange-800 font-bold">Nenhum Estado Ativo</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <p className="text-orange-700 text-lg">
+                  Este animal não possui um estado ativo definido. Adicione um novo estado para definir o status atual.
+                </p>
+              </CardContent>
+            </Card>
+          );
+        })()}
 
         {/* Histórico de Estados */}
         <Card>
