@@ -23,6 +23,7 @@ import { Animal } from "@/types/animal";
 import { useToast } from "@/hooks/use-toast";
 import EnhancedHeader from "@/components/EnhancedHeader";
 import { convertGoogleDriveUrl } from "@/lib/utils";
+import '../styles/bi-print.css';
 
 const AnimalBI = () => {
   const { id } = useParams();
@@ -146,70 +147,6 @@ const AnimalBI = () => {
   console.log('🖼️ Foto URL convertida:', fotoUrl);
   console.log('🔢 Chip/Transponder:', animal.chip, animal.transponder);
 
-  // Adicionar estilos CSS para impressão A6
-  useEffect(() => {
-    const style = document.createElement('style');
-    style.id = 'bi-print-styles';
-    style.textContent = `
-      @media print {
-        @page {
-          size: A6;
-          margin: 0.5cm;
-        }
-        body {
-          font-size: 8pt;
-          line-height: 1.2;
-        }
-        .text-xs {
-          font-size: 6pt !important;
-        }
-        .text-sm {
-          font-size: 7pt !important;
-        }
-        .text-base {
-          font-size: 8pt !important;
-        }
-        .text-lg {
-          font-size: 9pt !important;
-        }
-        .text-xl {
-          font-size: 10pt !important;
-        }
-        .text-2xl {
-          font-size: 12pt !important;
-        }
-        .p-2 {
-          padding: 0.25rem !important;
-        }
-        .p-4 {
-          padding: 0.5rem !important;
-        }
-        .gap-2 {
-          gap: 0.25rem !important;
-        }
-        .h-8 {
-          height: 1.5rem !important;
-        }
-        .w-8 {
-          width: 1.5rem !important;
-        }
-      }
-    `;
-    
-    // Verificar se já existe antes de adicionar
-    const existingStyle = document.getElementById('bi-print-styles');
-    if (!existingStyle) {
-      document.head.appendChild(style);
-    }
-    
-    return () => {
-      const styleToRemove = document.getElementById('bi-print-styles');
-      if (styleToRemove && styleToRemove.parentNode) {
-        styleToRemove.parentNode.removeChild(styleToRemove);
-      }
-    };
-  }, []);
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-blue-50 to-indigo-100">
       <div className="print:hidden">
@@ -257,9 +194,9 @@ const AnimalBI = () => {
       <div className="max-w-5xl mx-auto px-6 py-12">
         {/* FRENTE DO CARTÃO */}
         {!mostrarVerso && (
-        <Card className="overflow-hidden shadow-2xl border-4 border-blue-900 bg-gradient-to-br from-blue-50 to-white">
+        <Card className="bi-card overflow-hidden shadow-2xl border-4 border-blue-900 bg-gradient-to-br from-blue-50 to-white">
           {/* Cabeçalho Institucional */}
-          <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 text-white px-8 py-6">
+          <div className="bi-header bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 text-white px-8 py-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="bg-white p-2 rounded-full">
@@ -283,7 +220,7 @@ const AnimalBI = () => {
           </div>
 
           {/* Corpo do Documento */}
-          <div className="p-8">
+          <div className="bi-body p-8">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {/* Coluna Esquerda - Foto */}
               <div className="md:col-span-1">
@@ -453,7 +390,7 @@ const AnimalBI = () => {
           </div>
 
           {/* Rodapé Institucional */}
-          <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 text-white px-8 py-4">
+          <div className="bi-footer bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 text-white px-8 py-4">
             <div className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-2">
                 <Heart className="h-4 w-4" />
@@ -469,9 +406,9 @@ const AnimalBI = () => {
 
         {/* VERSO DO CARTÃO */}
         {mostrarVerso && (
-        <Card className="overflow-hidden shadow-2xl border-4 border-blue-900 bg-gradient-to-br from-blue-50 to-white">
+        <Card className="bi-card overflow-hidden shadow-2xl border-4 border-blue-900 bg-gradient-to-br from-blue-50 to-white">
           {/* Cabeçalho Institucional */}
-          <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 text-white px-8 py-6">
+          <div className="bi-header bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 text-white px-8 py-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="bg-white p-2 rounded-full">
@@ -491,7 +428,7 @@ const AnimalBI = () => {
           </div>
 
           {/* Corpo do Verso */}
-          <div className="p-8 space-y-6">
+          <div className="bi-body p-8 space-y-6">
             {/* Informações Médicas e Históricas */}
             <div className="border-b-2 border-blue-200 pb-4">
               <h3 className="text-2xl font-bold text-blue-900 mb-4">Informações Complementares</h3>
@@ -629,7 +566,7 @@ const AnimalBI = () => {
           </div>
 
           {/* Rodapé Institucional */}
-          <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 text-white px-8 py-4">
+          <div className="bi-footer bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 text-white px-8 py-4">
             <div className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-2">
                 <Heart className="h-4 w-4" />

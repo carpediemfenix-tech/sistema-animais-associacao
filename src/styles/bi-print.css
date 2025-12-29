@@ -1,0 +1,84 @@
+/* Estilos específicos para impressão do Bilhete de Identidade Animal */
+/* Tamanho A6 otimizado */
+
+@media print {
+  @page {
+    size: A6;
+    margin: 0.5cm;
+  }
+  
+  body {
+    font-size: 8pt;
+    line-height: 1.2;
+  }
+  
+  /* Ajustes de texto para A6 */
+  .bi-text-xs {
+    font-size: 6pt !important;
+  }
+  
+  .bi-text-sm {
+    font-size: 7pt !important;
+  }
+  
+  .bi-text-base {
+    font-size: 8pt !important;
+  }
+  
+  .bi-text-lg {
+    font-size: 9pt !important;
+  }
+  
+  .bi-text-xl {
+    font-size: 10pt !important;
+  }
+  
+  .bi-text-2xl {
+    font-size: 12pt !important;
+  }
+  
+  /* Ajustes de espaçamento para A6 */
+  .bi-p-2 {
+    padding: 0.25rem !important;
+  }
+  
+  .bi-p-4 {
+    padding: 0.5rem !important;
+  }
+  
+  .bi-gap-2 {
+    gap: 0.25rem !important;
+  }
+  
+  .bi-h-8 {
+    height: 1.5rem !important;
+  }
+  
+  .bi-w-8 {
+    width: 1.5rem !important;
+  }
+  
+  /* Otimizações específicas para o B.I. */
+  .bi-card {
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  .bi-header {
+    padding: 0.5rem !important;
+  }
+  
+  .bi-body {
+    padding: 0.5rem !important;
+  }
+  
+  .bi-footer {
+    padding: 0.25rem !important;
+  }
+  
+  /* Ocultar elementos desnecessários na impressão */
+  .print\\:hidden {
+    display: none !important;
+  }
+}
