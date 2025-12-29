@@ -134,7 +134,7 @@ const MissaoParticipacoes = () => {
   const loadParticipacoes = async () => {
     console.log('👥 Carregando participações para missão ID:', id);
     const { data, error } = await supabase
-      .from('participacoes_missoes_2025_12_21_20_00')
+      .from('participacoes_missoes_2025_12_29_07_00')
       .select('*')
       .eq('missao_id', id)
       .order('data_participacao', { ascending: false });
@@ -180,7 +180,7 @@ const MissaoParticipacoes = () => {
       };
 
       const { data: participacaoResult, error } = await supabase
-        .from('participacoes_missoes_2025_12_21_20_00')
+        .from('participacoes_missoes_2025_12_29_07_00')
         .insert(participacaoData)
         .select()
         .single();
@@ -232,7 +232,7 @@ const MissaoParticipacoes = () => {
       };
 
       const { error } = await supabase
-        .from('participacoes_missoes_2025_12_21_20_00')
+        .from('participacoes_missoes_2025_12_29_07_00')
         .update(participacaoData)
         .eq('id', editingParticipacao.id);
 
@@ -263,7 +263,7 @@ const MissaoParticipacoes = () => {
 
     try {
       const { error } = await supabase
-        .from('participacoes_missoes_2025_12_21_20_00')
+        .from('participacoes_missoes_2025_12_29_07_00')
         .delete()
         .eq('id', participacaoId);
 
