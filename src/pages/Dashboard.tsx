@@ -26,7 +26,9 @@ import {
   Home,
   FileText,
   Briefcase,
-  Shield
+  Shield,
+  AlertTriangle,
+  Zap
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -41,7 +43,7 @@ interface DashboardStats {
 }
 
 const Dashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { user, hasPermission } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -129,6 +131,25 @@ const Dashboard: React.FC = () => {
               Gestão completa e profissional para proteção animal
             </p>
             
+            {/* Botão de Denúncia Tático */}
+            {hasPermission('admin') && (
+              <div className="mb-8">
+                <Link to="/wizard-denuncia">
+                  <Button 
+                    size="lg" 
+                    className="bg-red-600 hover:bg-red-700 text-white font-bold px-8 py-4 text-lg shadow-2xl border-2 border-red-400 hover:border-red-300 transition-all duration-300 hover:scale-105"
+                  >
+                    <AlertTriangle className="h-6 w-6 mr-3 animate-pulse" />
+                    🚨 NOVA DENÚNCIA
+                    <Zap className="h-6 w-6 ml-3" />
+                  </Button>
+                </Link>
+                <p className="text-blue-100 text-sm mt-2 font-medium">
+                  Sistema Tático de Resgate Animal
+                </p>
+              </div>
+            )}
+
             {/* Quick Stats */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 max-w-4xl mx-auto">
               <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-lg p-4 border border-white border-opacity-20">
