@@ -65,6 +65,7 @@ import ModuloAgenda from "./pages/ModuloAgenda";
 import ModuloEquipamentos from "./pages/ModuloEquipamentos";
 import ModuloClinicas from "./pages/ModuloClinicas";
 import EstatisticasAvancadas from "./pages/EstatisticasAvancadas";
+import VerificacaoBI from "./pages/VerificacaoBI";
 // Páginas de Equipamentos
 import EquipamentosNavigation from "./pages/equipamentos/EquipamentosNavigation";
 import EquipamentosDashboard from "./pages/equipamentos/EquipamentosDashboard";
@@ -97,8 +98,9 @@ const App = () => (
         <Sonner />
         <HashRouter>
           <Routes>
-            {/* Rota pública de login */}
+            {/* Rotas públicas */}
             <Route path="/login" element={<Login />} />
+            <Route path="/verificar/:animalId/:hash" element={<VerificacaoBI />} />
             
             {/* Rotas protegidas */}
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />

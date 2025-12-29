@@ -23,6 +23,8 @@ import { Animal } from "@/types/animal";
 import { useToast } from "@/hooks/use-toast";
 import EnhancedHeader from "@/components/EnhancedHeader";
 import { convertGoogleDriveUrl } from "@/lib/utils";
+import { generateVerificationUrl } from "@/lib/verification";
+import QRCode from "@/components/QRCode";
 import '../styles/bi-print.css';
 
 const AnimalBI = () => {
@@ -147,6 +149,11 @@ const AnimalBI = () => {
   console.log('🖼️ Foto URL convertida:', fotoUrl);
   console.log('🔢 Chip/Transponder:', animal.chip, animal.transponder);
 
+  // Gerar URL de verificação para QR Code
+  const baseUrl = window.location.origin;
+  const verificationUrl = generateVerificationUrl(animal, baseUrl);
+  console.log('🔍 URL de verificação:', verificationUrl);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-blue-50 to-indigo-100">
       <div className="print:hidden">
@@ -260,10 +267,15 @@ const AnimalBI = () => {
                   </div>
                 </div>
 
-                {/* QR Code Placeholder */}
+                {/* QR Code de Verificação */}
                 <div className="mt-6 bg-white p-4 rounded-lg border-2 border-blue-200 text-center">
-                  <QrCode className="h-24 w-24 mx-auto text-blue-900 mb-2" />
-                  <p className="text-xs text-gray-600">Código de Acesso Rápido</p>
+                  <QRCode 
+                    value={verificationUrl} 
+                    size={96} 
+                    className="mx-auto mb-2"
+                  />
+                  <p className="text-xs text-gray-600 font-semibold">Verificação de Autenticidade</p>
+                  <p className="text-xs text-gray-500 mt-1">Digitalize para verificar</p>
                 </div>
               </div>
 
