@@ -105,7 +105,7 @@ const MissaoFinanceiro = () => {
 
   const loadMissao = async () => {
     const { data, error } = await supabase
-      .from('missoes_2025_12_21_19_00')
+      .from('missoes_2025_12_29_07_00')
       .select('id, codigo, titulo, data_inicio, data_fim, status, orcamento_previsto')
       .eq('id', id)
       .single();

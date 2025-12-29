@@ -122,7 +122,7 @@ const MissaoParticipacoes = () => {
   const loadMissao = async () => {
     console.log('🎯 Carregando missão com ID:', id);
     const { data, error } = await supabase
-      .from('missoes_2025_12_21_19_00')
+      .from('missoes_2025_12_29_07_00')
       .select('id, codigo, titulo, data_inicio, data_fim, status')
       .eq('id', id)
       .single();
