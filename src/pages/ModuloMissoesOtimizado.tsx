@@ -55,7 +55,8 @@ import {
   List,
   SortAsc,
   SortDesc,
-  Trophy
+  Trophy,
+  Home
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -366,34 +367,35 @@ const ModuloMissoesOtimizado = () => {
       <EnhancedHeader />
       
       <div className="container mx-auto px-4 py-8">
-        {/* Cabeçalho */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">
-              Módulo de Missões
-            </h1>
-            <p className="text-gray-600">
-              Gestão completa e inteligente de missões da associação
-            </p>
-          </div>
-          <div className="flex space-x-3">
-            <Button variant="outline" onClick={() => navigate('/dashboard-pontos')}>
-              <Trophy className="h-4 w-4 mr-2" />
-              Sistema de Pontos
-            </Button>
-            <Button variant="outline" onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}>
-              {viewMode === 'grid' ? <List className="h-4 w-4" /> : <Grid className="h-4 w-4" />}
-            </Button>
-            <Button variant="outline" onClick={loadData}>
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Atualizar
-            </Button>
-            <Button onClick={() => setMissaoDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Nova Missão
-            </Button>
-          </div>
-        </div>
+        {/* PageActionBar */}
+        <PageActionBar
+          breadcrumbs={[
+            { label: 'Dashboard', href: '/dashboard' },
+            { label: 'Módulo de Missões' }
+          ]}
+          primaryActions={
+            <>
+              <Button variant="outline" onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}>
+                {viewMode === 'grid' ? <List className="h-4 w-4" /> : <Grid className="h-4 w-4" />}
+              </Button>
+              <Button variant="outline" onClick={loadData}>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Atualizar
+              </Button>
+              <Button onClick={() => setMissaoDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Nova Missão
+              </Button>
+            </>
+          }
+          secondaryActions={[
+            {
+              label: 'Sistema de Pontos',
+              onClick: () => navigate('/dashboard-pontos'),
+              icon: <Trophy className="h-4 w-4" />
+            }
+          ]}
+        />
 
         {/* Estatísticas */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
