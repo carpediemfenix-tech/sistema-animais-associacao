@@ -539,25 +539,53 @@ const AnimalEstados: React.FC = () => {
 
         {/* Estado Atual */}
         {estados.length > 0 && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="h-5 w-5" />
-                Estado Atual
+          <Card className="mb-6 border-2 border-green-300 bg-gradient-to-r from-green-50 to-emerald-50 shadow-lg">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-3 text-xl">
+                <Activity className="h-6 w-6 text-green-600" />
+                <span className="text-green-800 font-bold">Estado Atual</span>
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-4">
-                <Badge 
-                  style={getEstadoBadgeColor(estados[0].tipos_estado.cor)}
-                  className="text-lg px-4 py-2"
-                >
-                  {estados[0].tipos_estado.nome}
-                </Badge>
-                <div className="text-sm text-gray-600">
-                  <p>Desde: {formatarData(estados[0].data_inicio)}</p>
+            <CardContent className="pt-0">
+              <div className="flex flex-col md:flex-row md:items-center gap-6">
+                {/* Badge do Estado - Destaque Principal */}
+                <div className="flex-shrink-0">
+                  <Badge 
+                    style={getEstadoBadgeColor(estados[0].tipos_estado.cor)}
+                    className="text-2xl md:text-3xl px-6 py-3 font-bold shadow-md border-2"
+                  >
+                    {estados[0].tipos_estado.nome.toUpperCase()}
+                  </Badge>
+                </div>
+                
+                {/* Informações Complementares */}
+                <div className="flex-1 space-y-3">
+                  <div className="flex items-center gap-2 text-lg">
+                    <Calendar className="h-5 w-5 text-green-600" />
+                    <span className="font-semibold text-gray-800">
+                      Desde: <span className="text-green-700">{formatarData(estados[0].data_inicio)}</span>
+                    </span>
+                  </div>
+                  
+                  {estados[0].usuario_id && (
+                    <div className="flex items-center gap-2 text-base">
+                      <User className="h-4 w-4 text-green-600" />
+                      <span className="text-gray-700">
+                        Definido por: <span className="font-medium">{estados[0].usuario_id}</span>
+                      </span>
+                    </div>
+                  )}
+                  
                   {estados[0].observacoes && (
-                    <p className="mt-1 italic">"{estados[0].observacoes}"</p>
+                    <div className="mt-4 p-4 bg-white rounded-lg border-l-4 border-green-400 shadow-sm">
+                      <div className="flex items-start gap-2">
+                        <FileText className="h-5 w-5 text-green-600 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-semibold text-gray-800 mb-1">Observações:</p>
+                          <p className="text-base text-gray-700 italic font-medium">"{estados[0].observacoes}"</p>
+                        </div>
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
