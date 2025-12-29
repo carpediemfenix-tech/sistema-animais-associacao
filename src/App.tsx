@@ -61,6 +61,7 @@ import MissaoFinanceiro from "./pages/MissaoFinanceiro";
 import MissaoEquipamentos from "./pages/MissaoEquipamentos";
 import DashboardPontos from "./pages/DashboardPontos";
 import MissoesArquivadas from "./pages/MissoesArquivadas";
+import EditarMissao from "./pages/EditarMissao";
 import ConfiguracaoEspecialidades from "./pages/ConfiguracaoEspecialidades";
 import ModuloAgenda from "./pages/ModuloAgenda";
 import ModuloEquipamentos from "./pages/ModuloEquipamentos";
@@ -162,6 +163,7 @@ const App = () => (
             <Route path="/missoes" element={<ProtectedRoute><ModuloMissoesOtimizado /></ProtectedRoute>} />
             <Route path="/missoes-arquivadas" element={<ProtectedRoute><MissoesArquivadas /></ProtectedRoute>} />
             <Route path="/missao/:id" element={<ProtectedRoute><MissaoDetailOtimizada /></ProtectedRoute>} />
+            <Route path="/missao/:id/editar" element={<ProtectedRoute><EditarMissao /></ProtectedRoute>} />
             <Route path="/missao/:id/participacoes" element={<ProtectedRoute><MissaoParticipacoes /></ProtectedRoute>} />
             <Route path="/missao/:id/animais" element={<ProtectedRoute><MissaoAnimais /></ProtectedRoute>} />
             <Route path="/missao/:id/financeiro" element={<ProtectedRoute><MissaoFinanceiro /></ProtectedRoute>} />

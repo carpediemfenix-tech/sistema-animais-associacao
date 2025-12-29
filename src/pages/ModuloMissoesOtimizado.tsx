@@ -659,7 +659,8 @@ const ModuloMissoesOtimizado = () => {
                           <Button
                             size="sm"
                             variant="outline"
-                            className="h-8 w-8 p-0"
+                            onClick={() => navigate(`/missao/${missao.id}/editar`)}
+                            className="h-8 w-8 p-0 text-orange-600 hover:text-orange-700"
                             title="Editar missão"
                           >
                             <Edit className="h-3 w-3" />

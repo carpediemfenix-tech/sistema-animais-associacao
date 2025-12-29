@@ -227,11 +227,7 @@ const MissaoDetailOtimizada = () => {
 
   // Funções de ação
   const handleEditMissao = () => {
-    // TODO: Implementar edição inline ou modal
-    toast({
-      title: "Funcionalidade em desenvolvimento",
-      description: "A edição de missões será implementada em breve",
-    });
+    navigate(`/missao/${id}/editar`);
   };
 
   const handleArchiveMissao = async () => {
