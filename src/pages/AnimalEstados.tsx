@@ -20,7 +20,11 @@ import {
   Activity,
   Clock,
   User,
-  AlertCircle
+  AlertCircle,
+  Edit,
+  Trash2,
+  Save,
+  X
 } from "lucide-react";
 
 interface TipoEstado {
@@ -60,11 +64,19 @@ const AnimalEstados: React.FC = () => {
   const [tiposEstado, setTiposEstado] = useState<TipoEstado[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingEstado, setEditingEstado] = useState<string | null>(null);
   
   // Form state
   const [novoEstado, setNovoEstado] = useState({
     tipo_estado_id: "",
     data_inicio: new Date().toISOString().split('T')[0],
+    observacoes: ""
+  });
+
+  // Edit form state
+  const [editForm, setEditForm] = useState({
+    tipo_estado_id: "",
+    data_inicio: "",
     observacoes: ""
   });
 
@@ -246,6 +258,129 @@ const AnimalEstados: React.FC = () => {
     }
   };
 
+  const iniciarEdicao = (estado: EstadoAnimal) => {
+    setEditingEstado(estado.id);
+    setEditForm({
+      tipo_estado_id: estado.tipo_estado_id,
+      data_inicio: estado.data_inicio,
+      observacoes: estado.observacoes || ""
+    });
+  };
+
+  const cancelarEdicao = () => {
+    setEditingEstado(null);
+    setEditForm({
+      tipo_estado_id: "",
+      data_inicio: "",
+      observacoes: ""
+    });
+  };
+
+  const salvarEdicao = async (estadoId: string) => {
+    if (!isAuthenticated || !user) {
+      toast({
+        title: "Erro de Autenticação",
+        description: "É necessário estar autenticado para editar estados",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      console.log('✏️ [ESTADOS] Editando estado:', estadoId);
+
+      const { error } = await supabase
+        .from('estados_animal')
+        .update({
+          tipo_estado_id: editForm.tipo_estado_id,
+          data_inicio: editForm.data_inicio,
+          observacoes: editForm.observacoes || null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', estadoId);
+
+      if (error) throw error;
+
+      // Se este é o estado ativo, atualizar também o campo estado na tabela animais
+      const estadoEditado = estados.find(e => e.id === estadoId);
+      if (estadoEditado?.ativo) {
+        try {
+          const { data: tipoEstado } = await supabase
+            .from('tipos_estado')
+            .select('nome')
+            .eq('id', editForm.tipo_estado_id)
+            .single();
+
+          if (tipoEstado) {
+            await supabase
+              .from('animais')
+              .update({ estado: tipoEstado.nome })
+              .eq('id', id);
+          }
+        } catch (syncError) {
+          console.warn('Aviso: Não foi possível sincronizar campo estado:', syncError);
+        }
+      }
+
+      toast({
+        title: "Sucesso",
+        description: "Estado editado com sucesso",
+      });
+
+      setEditingEstado(null);
+      carregarDados();
+
+    } catch (error: any) {
+      console.error('❌ [ESTADOS] Erro ao editar estado:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao editar estado: " + (error.message || 'Erro desconhecido'),
+        variant: "destructive",
+      });
+    }
+  };
+
+  const eliminarEstado = async (estadoId: string, estadoNome: string) => {
+    if (!isAuthenticated || !user) {
+      toast({
+        title: "Erro de Autenticação",
+        description: "É necessário estar autenticado para eliminar estados",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Confirmar eliminação
+    if (!window.confirm(`Tem certeza que deseja eliminar o estado "${estadoNome}"? Esta ação não pode ser desfeita.`)) {
+      return;
+    }
+
+    try {
+      console.log('🗑️ [ESTADOS] Eliminando estado:', estadoId);
+
+      const { error } = await supabase
+        .from('estados_animal')
+        .delete()
+        .eq('id', estadoId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: `Estado "${estadoNome}" eliminado com sucesso`,
+      });
+
+      carregarDados();
+
+    } catch (error: any) {
+      console.error('❌ [ESTADOS] Erro ao eliminar estado:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao eliminar estado: " + (error.message || 'Erro desconhecido'),
+        variant: "destructive",
+      });
+    }
+  };
   const formatarData = (data: string) => {
     return new Date(data).toLocaleDateString('pt-PT');
   };
@@ -462,19 +597,105 @@ const AnimalEstados: React.FC = () => {
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <Badge 
-                            style={getEstadoBadgeColor(estado.tipos_estado.cor)}
-                            className="font-semibold"
-                          >
-                            {estado.tipos_estado.nome}
-                          </Badge>
-                          {estado.ativo && (
-                            <Badge variant="default" className="bg-green-600">
-                              Atual
-                            </Badge>
-                          )}
-                        </div>
+                        {editingEstado === estado.id ? (
+                          // Modo de edição
+                          <div className="space-y-4">
+                            <div className="flex items-center gap-3 mb-2">
+                              <Badge variant="outline" className="bg-blue-50 border-blue-200 text-blue-700">
+                                Editando Estado
+                              </Badge>
+                              {estado.ativo && (
+                                <Badge variant="default" className="bg-green-600">
+                                  Atual
+                                </Badge>
+                              )}
+                            </div>
+
+                            {/* Formulário de edição */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <Label htmlFor={`edit-tipo-${estado.id}`}>Tipo de Estado</Label>
+                                <Select 
+                                  value={editForm.tipo_estado_id} 
+                                  onValueChange={(value) => setEditForm({...editForm, tipo_estado_id: value})}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Selecione o tipo" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {tiposEstado.map((tipo) => (
+                                      <SelectItem key={tipo.id} value={tipo.id}>
+                                        <div className="flex items-center gap-2">
+                                          <div 
+                                            className="w-3 h-3 rounded-full" 
+                                            style={{ backgroundColor: tipo.cor }}
+                                          />
+                                          {tipo.nome}
+                                        </div>
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
+                              <div>
+                                <Label htmlFor={`edit-data-${estado.id}`}>Data de Início</Label>
+                                <Input
+                                  id={`edit-data-${estado.id}`}
+                                  type="date"
+                                  value={editForm.data_inicio}
+                                  onChange={(e) => setEditForm({...editForm, data_inicio: e.target.value})}
+                                />
+                              </div>
+                            </div>
+
+                            <div>
+                              <Label htmlFor={`edit-obs-${estado.id}`}>Observações</Label>
+                              <Textarea
+                                id={`edit-obs-${estado.id}`}
+                                placeholder="Observações sobre o estado..."
+                                value={editForm.observacoes}
+                                onChange={(e) => setEditForm({...editForm, observacoes: e.target.value})}
+                                rows={2}
+                              />
+                            </div>
+
+                            {/* Botões de ação da edição */}
+                            <div className="flex gap-2 pt-2">
+                              <Button 
+                                size="sm" 
+                                onClick={() => salvarEdicao(estado.id)}
+                                className="bg-green-600 hover:bg-green-700"
+                              >
+                                <Save className="h-4 w-4 mr-1" />
+                                Salvar
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                onClick={cancelarEdicao}
+                              >
+                                <X className="h-4 w-4 mr-1" />
+                                Cancelar
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          // Modo de visualização
+                          <>
+                            <div className="flex items-center gap-3 mb-2">
+                              <Badge 
+                                style={getEstadoBadgeColor(estado.tipos_estado.cor)}
+                                className="font-semibold"
+                              >
+                                {estado.tipos_estado.nome}
+                              </Badge>
+                              {estado.ativo && (
+                                <Badge variant="default" className="bg-green-600">
+                                  Atual
+                                </Badge>
+                              )}
+                            </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                           <div className="flex items-center gap-2">
@@ -521,7 +742,33 @@ const AnimalEstados: React.FC = () => {
                             </div>
                           </div>
                         )}
+                          </>
+                        )}
                       </div>
+
+                      {/* Botões de ação (apenas no modo visualização) */}
+                      {editingEstado !== estado.id && isAuthenticated && (
+                        <div className="flex flex-col gap-2 ml-4">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => iniciarEdicao(estado)}
+                            className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                          >
+                            <Edit className="h-4 w-4 mr-1" />
+                            Editar
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => eliminarEstado(estado.id, estado.tipos_estado.nome)}
+                            className="text-red-600 border-red-200 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Eliminar
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
