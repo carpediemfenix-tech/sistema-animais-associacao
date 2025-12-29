@@ -69,6 +69,7 @@ const EditarAnimal = () => {
   const [grupoAtual, setGrupoAtual] = useState<any>(null);
   const [voluntarios, setVoluntarios] = useState<any[]>([]);
   const [tiposEstado, setTiposEstado] = useState<any[]>([]);
+  const [estadoOriginal, setEstadoOriginal] = useState<string>("");
   const [incompatibilityAlert, setIncompatibilityAlert] = useState<{show: boolean, message: string}>({show: false, message: ""});
 
   useEffect(() => {
@@ -133,6 +134,9 @@ const EditarAnimal = () => {
         grupo_id: data.grupo_id || "",
         url_fotografia: data.url_fotografia || "" // URL da fotografia
       });
+
+      // Armazenar estado original para detectar mudanças
+      setEstadoOriginal(data.estado || "");
 
     } catch (error: any) {
       console.error('Erro ao carregar animal:', error);
@@ -359,6 +363,47 @@ const EditarAnimal = () => {
         .eq('id', id);
 
       if (error) throw error;
+
+      // Se o estado mudou, criar registro no histórico de estados
+      if (formData.estado !== estadoOriginal && formData.estado) {
+        try {
+          // 1. Buscar o ID do tipo de estado
+          const { data: tipoEstado, error: tipoError } = await supabase
+            .from('tipos_estado')
+            .select('id')
+            .eq('nome', formData.estado)
+            .single();
+
+          if (tipoError) {
+            console.warn('Aviso: Não foi possível encontrar tipo de estado:', tipoError);
+          } else {
+            // 2. Desativar estados anteriores
+            await supabase
+              .from('estados_animal')
+              .update({ 
+                ativo: false, 
+                data_fim: new Date().toISOString().split('T')[0]
+              })
+              .eq('animal_id', id)
+              .eq('ativo', true);
+
+            // 3. Criar novo registro de estado
+            await supabase
+              .from('estados_animal')
+              .insert({
+                animal_id: id,
+                tipo_estado_id: tipoEstado.id,
+                data_inicio: new Date().toISOString().split('T')[0],
+                ativo: true,
+                observacoes: `Estado alterado via edição do animal`,
+                usuario_id: 'admin' // TODO: Usar usuário atual
+              });
+          }
+        } catch (estadoError) {
+          console.warn('Aviso: Não foi possível atualizar histórico de estados:', estadoError);
+          // Não falha a operação principal
+        }
+      }
 
       toast({
         title: "Animal atualizado com sucesso!",
