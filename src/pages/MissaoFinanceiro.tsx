@@ -116,7 +116,7 @@ const MissaoFinanceiro = () => {
 
   const loadMovimentos = async () => {
     const { data, error } = await supabase
-      .from('movimentos_financeiros_2025_12_22_03_00')
+      .from('movimentos_financeiros_2025_12_29_07_00')
       .select('*')
       .eq('missao_id', id)
       .order('data_movimento', { ascending: false });
@@ -156,7 +156,7 @@ const MissaoFinanceiro = () => {
       if (editingMovimento) {
         // Atualizar movimento existente
         const { error: updateError } = await supabase
-          .from('movimentos_financeiros_2025_12_22_03_00')
+          .from('movimentos_financeiros_2025_12_29_07_00')
           .update(movimentoData)
           .eq('id', editingMovimento.id);
 
@@ -169,7 +169,7 @@ const MissaoFinanceiro = () => {
       } else {
         // Inserir novo movimento
         const { error: insertError } = await supabase
-          .from('movimentos_financeiros_2025_12_22_03_00')
+          .from('movimentos_financeiros_2025_12_29_07_00')
           .insert([movimentoData]);
 
         if (insertError) throw insertError;
@@ -225,7 +225,7 @@ const MissaoFinanceiro = () => {
 
     try {
       const { error } = await supabase
-        .from('movimentos_financeiros_2025_12_22_03_00')
+        .from('movimentos_financeiros_2025_12_29_07_00')
         .delete()
         .eq('id', movimento.id);
 

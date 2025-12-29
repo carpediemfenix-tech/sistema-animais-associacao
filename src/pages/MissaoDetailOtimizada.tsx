@@ -243,7 +243,9 @@ const MissaoDetailOtimizada = () => {
       const { error } = await supabase
         .from('missoes_2025_12_29_07_00')
         .update({ 
-          status: 'cancelada',
+          arquivada: true,
+          data_arquivamento: new Date().toISOString(),
+          arquivada_por: 'admin',
           updated_at: new Date().toISOString(),
           updated_by: 'admin'
         })

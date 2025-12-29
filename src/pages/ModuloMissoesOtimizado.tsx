@@ -182,6 +182,7 @@ const ModuloMissoesOtimizado = () => {
     const { data, error } = await supabase
       .from('missoes_2025_12_29_07_00')
       .select('*')
+      .eq('arquivada', false)
       .order('created_at', { ascending: false })
       .limit(100);
 
@@ -396,6 +397,11 @@ const ModuloMissoesOtimizado = () => {
             </>
           }
           secondaryActions={[
+            {
+              label: 'Missões Arquivadas',
+              onClick: () => navigate('/missoes-arquivadas'),
+              icon: <Archive className="h-4 w-4" />
+            },
             {
               label: 'Sistema de Pontos',
               onClick: () => navigate('/dashboard-pontos'),
