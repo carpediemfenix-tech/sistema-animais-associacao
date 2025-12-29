@@ -21,7 +21,8 @@ import {
   Trash2,
   Shield,
   Heart,
-  Eye
+  Eye,
+  Target
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";

@@ -619,14 +619,14 @@ const VoluntarioProfile = () => {
   const loadMissoesParticipadas = async () => {
     try {
       const { data, error } = await supabase
-        .from('participacoes_missoes_2025_12_21_20_00')
+        .from('participacoes_missoes_2025_12_29_07_00')
         .select(`
           id,
           funcao,
           data_participacao,
           horas_dedicadas,
           status_participacao,
-          missao:missoes_2025_12_21_19_00(
+          missao:missoes_2025_12_29_07_00(
             id,
             codigo,
             titulo,

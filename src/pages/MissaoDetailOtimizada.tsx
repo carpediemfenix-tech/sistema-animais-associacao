@@ -129,13 +129,13 @@ const MissaoDetailOtimizada = () => {
     try {
       // Carregar participantes
       const { data: participantes } = await supabase
-        .from('participacoes_missoes_2025_12_21_20_00')
+        .from('participacoes_missoes_2025_12_29_07_00')
         .select('id')
         .eq('missao_id', id);
 
       // Carregar animais
       const { data: animais } = await supabase
-        .from('missoes_animais_2025_12_21_20_00')
+        .from('missoes_animais_2025_12_29_07_00')
         .select('id')
         .eq('missao_id', id);
 
