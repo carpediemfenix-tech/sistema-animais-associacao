@@ -44,6 +44,15 @@ export function generateVerificationUrl(animal: Animal, baseUrl: string): string
  */
 export function verifyHash(animal: Animal, providedHash: string): boolean {
   const expectedHash = generateVerificationHash(animal);
+  console.log('🔐 [HASH] Dados para verificação:', {
+    animalId: animal.id,
+    nome: animal.nome,
+    especie: animal.especie,
+    numero_processo: animal.numero_processo,
+    expectedHash,
+    providedHash: providedHash.toUpperCase(),
+    match: expectedHash === providedHash.toUpperCase()
+  });
   return expectedHash === providedHash.toUpperCase();
 }
 

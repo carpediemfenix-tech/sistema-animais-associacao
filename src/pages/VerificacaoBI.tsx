@@ -26,7 +26,10 @@ const VerificacaoBI: React.FC = () => {
 
   useEffect(() => {
     const verificarAutenticidade = async () => {
+      console.log('🔍 [VERIFICAÇÃO] Parâmetros recebidos:', { animalId, hash });
+      
       if (!animalId || !hash) {
+        console.error('❌ [VERIFICAÇÃO] Parâmetros inválidos');
         setError("Parâmetros de verificação inválidos");
         setLoading(false);
         return;
@@ -34,11 +37,14 @@ const VerificacaoBI: React.FC = () => {
 
       try {
         // Buscar animal pelo ID parcial
+        console.log('🔍 [VERIFICAÇÃO] Buscando animal com ID:', animalId);
         const { data: animais, error: searchError } = await supabase
           .from('animais')
           .select('*')
           .ilike('id', `${animalId}%`)
           .limit(1);
+        
+        console.log('🔍 [VERIFICAÇÃO] Resultado da busca:', { animais, searchError });
 
         if (searchError) throw searchError;
 
@@ -49,14 +55,25 @@ const VerificacaoBI: React.FC = () => {
         }
 
         const animalData = animais[0];
+        console.log('🐶 [VERIFICAÇÃO] Animal encontrado:', {
+          id: animalData.id,
+          nome: animalData.nome,
+          especie: animalData.especie,
+          numero_processo: animalData.numero_processo
+        });
         setAnimal(animalData);
 
         // Verificar hash
+        console.log('🔐 [VERIFICAÇÃO] Verificando hash:', { hashRecebido: hash });
         const hashValido = verifyHash(animalData, hash);
+        console.log('🔐 [VERIFICAÇÃO] Hash válido:', hashValido);
         setIsValid(hashValido);
 
         if (!hashValido) {
+          console.error('❌ [VERIFICAÇÃO] Hash inválido!');
           setError("Hash de verificação inválido - Documento pode ser falsificado");
+        } else {
+          console.log('✅ [VERIFICAÇÃO] Documento autêntico!');
         }
 
       } catch (error: any) {
