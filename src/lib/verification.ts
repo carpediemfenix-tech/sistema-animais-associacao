@@ -35,7 +35,8 @@ export function generateVerificationHash(animal: Animal): string {
 export function generateVerificationUrl(animal: Animal, baseUrl: string): string {
   const hash = generateVerificationHash(animal);
   const shortId = animal.id.slice(0, 8);
-  return `${baseUrl}/verificar/${shortId}/${hash}`;
+  // Usar hash routing para compatibilidade com hosting estático
+  return `${baseUrl}/#/verificar/${shortId}/${hash}`;
 }
 
 /**
