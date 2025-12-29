@@ -147,8 +147,9 @@ const AnimalBI = () => {
   console.log('🔢 Chip/Transponder:', animal.chip, animal.transponder);
 
   // Adicionar estilos CSS para impressão A6
-  React.useEffect(() => {
+  useEffect(() => {
     const style = document.createElement('style');
+    style.id = 'bi-print-styles';
     style.textContent = `
       @media print {
         @page {
@@ -159,43 +160,54 @@ const AnimalBI = () => {
           font-size: 8pt;
           line-height: 1.2;
         }
-        .print\\:text-xs {
+        .text-xs {
           font-size: 6pt !important;
         }
-        .print\\:text-sm {
+        .text-sm {
           font-size: 7pt !important;
         }
-        .print\\:text-base {
+        .text-base {
           font-size: 8pt !important;
         }
-        .print\\:text-lg {
+        .text-lg {
           font-size: 9pt !important;
         }
-        .print\\:text-xl {
+        .text-xl {
           font-size: 10pt !important;
         }
-        .print\\:text-2xl {
+        .text-2xl {
           font-size: 12pt !important;
         }
-        .print\\:p-2 {
+        .p-2 {
           padding: 0.25rem !important;
         }
-        .print\\:p-4 {
+        .p-4 {
           padding: 0.5rem !important;
         }
-        .print\\:gap-2 {
+        .gap-2 {
           gap: 0.25rem !important;
         }
-        .print\\:h-8 {
+        .h-8 {
           height: 1.5rem !important;
         }
-        .print\\:w-8 {
+        .w-8 {
           width: 1.5rem !important;
         }
       }
     `;
-    document.head.appendChild(style);
-    return () => document.head.removeChild(style);
+    
+    // Verificar se já existe antes de adicionar
+    const existingStyle = document.getElementById('bi-print-styles');
+    if (!existingStyle) {
+      document.head.appendChild(style);
+    }
+    
+    return () => {
+      const styleToRemove = document.getElementById('bi-print-styles');
+      if (styleToRemove && styleToRemove.parentNode) {
+        styleToRemove.parentNode.removeChild(styleToRemove);
+      }
+    };
   }, []);
 
   return (
