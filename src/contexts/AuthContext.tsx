@@ -319,10 +319,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }, 4300); // Aumentado de 2300ms para 4300ms para sincronizar com a mensagem de 4 segundos
   };
 
-  // MODO DESENVOLVIMENTO: Permissões totais para todos os usuários autenticados
+  // 🚨 CORREÇÃO CRÍTICA: Função hasPermission corrigida
   const hasPermission = (action: 'create' | 'update' | 'delete' | 'admin'): boolean => {
-    // Se o usuário está logado, tem todas as permissões
-    return !!user && user.ativo;
+    // Verificar se o usuário está logado e ativo
+    if (!user || !user.ativo) {
+      return false;
+    }
+    
+    // Para ação 'admin', verificar se é administrador
+    if (action === 'admin') {
+      console.log('🔍 [AUTH] Verificando permissão admin para:', user.username, 'Perfil:', user.perfil);
+      return user.perfil === 'administrador';
+    }
+    
+    // Para outras ações, qualquer usuário logado tem permissão
+    return true;
   };
 
   const isAuthenticated = !!user && user.ativo;

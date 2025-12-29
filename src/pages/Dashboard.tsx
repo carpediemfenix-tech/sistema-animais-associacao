@@ -50,7 +50,11 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     loadDashboardData();
-  }, []);
+    
+    // 🚨 DEBUG: Log para verificar permissões
+    console.log('🔍 [DASHBOARD] User:', user);
+    console.log('🔍 [DASHBOARD] hasPermission(admin):', hasPermission('admin'));
+  }, [user, hasPermission]);
 
   const loadDashboardData = async () => {
     try {
@@ -131,24 +135,30 @@ const Dashboard: React.FC = () => {
               Gestão completa e profissional para proteção animal
             </p>
             
-            {/* Botão de Denúncia Tático */}
-            {hasPermission('admin') && (
-              <div className="mb-8">
-                <Link to="/wizard-denuncia">
-                  <Button 
-                    size="lg" 
-                    className="bg-red-600 hover:bg-red-700 text-white font-bold px-8 py-4 text-lg shadow-2xl border-2 border-red-400 hover:border-red-300 transition-all duration-300 hover:scale-105"
-                  >
-                    <AlertTriangle className="h-6 w-6 mr-3 animate-pulse" />
-                    🚨 NOVA DENÚNCIA
-                    <Zap className="h-6 w-6 ml-3" />
-                  </Button>
-                </Link>
-                <p className="text-blue-100 text-sm mt-2 font-medium">
-                  Sistema Tático de Resgate Animal
-                </p>
+            {/* 🚨 BOTÃO DE DENÚNCIA TÁTICO - SEMPRE VISÍVEL PARA DEBUG */}
+            <div className="mb-8">
+              {/* Debug Info */}
+              <div className="mb-4 p-2 bg-black bg-opacity-20 rounded text-white text-sm">
+                <p>🔍 DEBUG: User: {user?.username || 'null'}</p>
+                <p>🔍 DEBUG: Perfil: {user?.perfil || 'null'}</p>
+                <p>🔍 DEBUG: hasPermission('admin'): {hasPermission('admin').toString()}</p>
               </div>
-            )}
+              
+              {/* Botão sempre visível para teste */}
+              <Link to="/wizard-denuncia">
+                <Button 
+                  size="lg" 
+                  className="bg-red-600 hover:bg-red-700 text-white font-bold px-8 py-4 text-lg shadow-2xl border-2 border-red-400 hover:border-red-300 transition-all duration-300 hover:scale-105"
+                >
+                  <AlertTriangle className="h-6 w-6 mr-3 animate-pulse" />
+                  🚨 NOVA DENÚNCIA
+                  <Zap className="h-6 w-6 ml-3" />
+                </Button>
+              </Link>
+              <p className="text-blue-100 text-sm mt-2 font-medium">
+                Sistema Tático de Resgate Animal
+              </p>
+            </div>
 
             {/* Quick Stats */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 max-w-4xl mx-auto">
@@ -222,34 +232,34 @@ const Dashboard: React.FC = () => {
             </Link>
 
             {/* Missões */}
-            <Link to="/missoes" className="group">
+            <Link to="/modulo-missoes" className="group">
               <Card className="h-full transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-0 bg-gradient-to-br from-green-50 to-emerald-50 group-hover:from-green-100 group-hover:to-emerald-100">
                 <CardContent className="p-6 text-center">
                   <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                     <Target className="h-8 w-8 text-white" />
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Missões</h3>
-                  <p className="text-sm text-gray-600 mb-4">Operações e resgates</p>
+                  <p className="text-sm text-gray-600 mb-4">Operações e projetos</p>
                   <div className="flex justify-center space-x-2">
                     <Badge variant="secondary" className="text-xs">Ativas</Badge>
-                    <Badge variant="outline" className="text-xs">Histórico</Badge>
+                    <Badge variant="outline" className="text-xs">Planejar</Badge>
                   </div>
                 </CardContent>
               </Card>
             </Link>
 
-            {/* Intervenções */}
-            <Link to="/intervencoes" className="group">
+            {/* Clínicas */}
+            <Link to="/modulo-clinicas" className="group">
               <Card className="h-full transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-0 bg-gradient-to-br from-purple-50 to-violet-50 group-hover:from-purple-100 group-hover:to-violet-100">
                 <CardContent className="p-6 text-center">
                   <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-purple-500 to-violet-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                     <Stethoscope className="h-8 w-8 text-white" />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Intervenções</h3>
-                  <p className="text-sm text-gray-600 mb-4">Cuidados médicos</p>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Clínicas</h3>
+                  <p className="text-sm text-gray-600 mb-4">Parceiros veterinários</p>
                   <div className="flex justify-center space-x-2">
-                    <Badge variant="secondary" className="text-xs">Médicas</Badge>
-                    <Badge variant="outline" className="text-xs">Relatórios</Badge>
+                    <Badge variant="secondary" className="text-xs">Parceiros</Badge>
+                    <Badge variant="outline" className="text-xs">Contactos</Badge>
                   </div>
                 </CardContent>
               </Card>
@@ -257,16 +267,33 @@ const Dashboard: React.FC = () => {
 
             {/* Financeiro */}
             <Link to="/dashboard-financeiro" className="group">
-              <Card className="h-full transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-0 bg-gradient-to-br from-orange-50 to-amber-50 group-hover:from-orange-100 group-hover:to-amber-100">
+              <Card className="h-full transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-0 bg-gradient-to-br from-yellow-50 to-orange-50 group-hover:from-yellow-100 group-hover:to-orange-100">
                 <CardContent className="p-6 text-center">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-orange-500 to-amber-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                     <DollarSign className="h-8 w-8 text-white" />
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Financeiro</h3>
-                  <p className="text-sm text-gray-600 mb-4">Gestão financeira</p>
+                  <p className="text-sm text-gray-600 mb-4">Gestão de recursos</p>
                   <div className="flex justify-center space-x-2">
-                    <Badge variant="secondary" className="text-xs">Dashboard</Badge>
-                    <Badge variant="outline" className="text-xs">Relatórios</Badge>
+                    <Badge variant="secondary" className="text-xs">Receitas</Badge>
+                    <Badge variant="outline" className="text-xs">Despesas</Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+
+            {/* Equipamentos */}
+            <Link to="/modulo-equipamentos" className="group">
+              <Card className="h-full transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-0 bg-gradient-to-br from-gray-50 to-slate-50 group-hover:from-gray-100 group-hover:to-slate-100">
+                <CardContent className="p-6 text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-gray-500 to-slate-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <Settings className="h-8 w-8 text-white" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Equipamentos</h3>
+                  <p className="text-sm text-gray-600 mb-4">Inventário e manutenção</p>
+                  <div className="flex justify-center space-x-2">
+                    <Badge variant="secondary" className="text-xs">Inventário</Badge>
+                    <Badge variant="outline" className="text-xs">Manutenção</Badge>
                   </div>
                 </CardContent>
               </Card>
@@ -289,57 +316,22 @@ const Dashboard: React.FC = () => {
               </Card>
             </Link>
 
-            {/* Formação */}
-            <Link to="/formacao" className="group">
+            {/* Administração */}
+            <Link to="/modulo-administrador" className="group">
               <Card className="h-full transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-0 bg-gradient-to-br from-rose-50 to-pink-50 group-hover:from-rose-100 group-hover:to-pink-100">
                 <CardContent className="p-6 text-center">
                   <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-rose-500 to-pink-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                    <Award className="h-8 w-8 text-white" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Formação</h3>
-                  <p className="text-sm text-gray-600 mb-4">Cursos e certificações</p>
-                  <div className="flex justify-center space-x-2">
-                    <Badge variant="secondary" className="text-xs">Cursos</Badge>
-                    <Badge variant="outline" className="text-xs">Certificados</Badge>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-
-            {/* Módulo Administrador */}
-            <Link to="/modulo-administrador" className="group">
-              <Card className="h-full transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-0 bg-gradient-to-br from-slate-800 to-slate-900 group-hover:from-slate-700 group-hover:to-slate-800">
-                <CardContent className="p-6 text-center">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
                     <Shield className="h-8 w-8 text-white" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-white mb-2">Administrador</h3>
-                  <p className="text-sm text-slate-300 mb-4">Centro de comando tático</p>
-                  <div className="flex justify-center space-x-2">
-                    <Badge className="bg-orange-500/20 text-orange-400 border border-orange-500/30 text-xs">NÍVEL 5</Badge>
-                    <Badge className="bg-green-500/20 text-green-400 border border-green-500/30 text-xs">ATIVO</Badge>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-
-            {/* Administração */}
-            <Link to="/administracao" className="group">
-              <Card className="h-full transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-0 bg-gradient-to-br from-gray-50 to-slate-50 group-hover:from-gray-100 group-hover:to-slate-100">
-                <CardContent className="p-6 text-center">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-gray-600 to-slate-700 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                    <Settings className="h-8 w-8 text-white" />
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Administração</h3>
                   <p className="text-sm text-gray-600 mb-4">Configurações do sistema</p>
                   <div className="flex justify-center space-x-2">
                     <Badge variant="secondary" className="text-xs">Configurar</Badge>
-                    <Badge variant="outline" className="text-xs">Utilizadores</Badge>
+                    <Badge variant="outline" className="text-xs">Gerir</Badge>
                   </div>
                 </CardContent>
               </Card>
             </Link>
-
           </div>
         </div>
 
@@ -353,64 +345,138 @@ const Dashboard: React.FC = () => {
           </p>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            
             <Link to="/novo-animal">
-              <Button className="w-full h-20 bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                <div className="flex flex-col items-center space-y-2">
-                  <Plus className="h-6 w-6" />
-                  <span className="text-sm font-medium">Novo Animal</span>
-                </div>
+              <Button className="w-full h-16 text-lg bg-red-600 hover:bg-red-700 text-white">
+                <Plus className="h-6 w-6 mr-2" />
+                Novo Animal
               </Button>
             </Link>
-
-            <Link to="/novo-voluntario">
-              <Button className="w-full h-20 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                <div className="flex flex-col items-center space-y-2">
-                  <UserCheck className="h-6 w-6" />
-                  <span className="text-sm font-medium">Novo Voluntário</span>
-                </div>
+            
+            <Link to="/voluntarios/novo">
+              <Button className="w-full h-16 text-lg bg-blue-600 hover:bg-blue-700 text-white">
+                <UserCheck className="h-6 w-6 mr-2" />
+                Novo Voluntário
               </Button>
             </Link>
-
-            <Link to="/dashboard-pontos">
-              <Button className="w-full h-20 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                <div className="flex flex-col items-center space-y-2">
-                  <TrendingUp className="h-6 w-6" />
-                  <span className="text-sm font-medium">Sistema Pontos</span>
-                </div>
+            
+            <Link to="/animais-adotados">
+              <Button className="w-full h-16 text-lg bg-green-600 hover:bg-green-700 text-white">
+                <Heart className="h-6 w-6 mr-2" />
+                Adoções
               </Button>
             </Link>
-
-            <Link to="/equipamentos">
-              <Button className="w-full h-20 bg-gradient-to-r from-purple-500 to-violet-600 hover:from-purple-600 hover:to-violet-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                <div className="flex flex-col items-center space-y-2">
-                  <Briefcase className="h-6 w-6" />
-                  <span className="text-sm font-medium">Equipamentos</span>
-                </div>
+            
+            <Link to="/estatisticas-avancadas">
+              <Button className="w-full h-16 text-lg bg-purple-600 hover:bg-purple-700 text-white">
+                <TrendingUp className="h-6 w-6 mr-2" />
+                Estatísticas
               </Button>
             </Link>
-
           </div>
         </div>
 
-        {/* Footer Info */}
-        <div className="text-center py-8 border-t border-gray-200">
-          <div className="flex justify-center items-center space-x-2 mb-4">
-            <img 
-              src="/images/media-_3_.gif" 
-              alt="Valentão ao Resgate" 
-              className="h-8 w-8 object-contain"
-            />
-            <h3 className="text-xl font-bold text-gray-900">Associação Valentão ao Resgate</h3>
+        {/* Recent Activity */}
+        <div className="mb-12">
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-8 text-center">
+            Atividade Recente
+          </h2>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Activity className="h-5 w-5 mr-2" />
+                  Últimas Intervenções
+                </CardTitle>
+                <CardDescription>
+                  Intervenções médicas recentes nos animais
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="font-medium">Consulta de rotina</p>
+                      <p className="text-sm text-gray-600">Animal: MAX-001</p>
+                    </div>
+                    <Badge variant="outline">Hoje</Badge>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="font-medium">Vacinação</p>
+                      <p className="text-sm text-gray-600">Animal: LUNA-002</p>
+                    </div>
+                    <Badge variant="outline">Ontem</Badge>
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <Link to="/intervencoes">
+                    <Button variant="outline" className="w-full">
+                      <Eye className="h-4 w-4 mr-2" />
+                      Ver Todas
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Calendar className="h-5 w-5 mr-2" />
+                  Próximos Eventos
+                </CardTitle>
+                <CardDescription>
+                  Eventos e atividades programadas
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="font-medium">Feira de Adoção</p>
+                      <p className="text-sm text-gray-600">Parque da Cidade</p>
+                    </div>
+                    <Badge className="bg-green-600">Sábado</Badge>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="font-medium">Formação Voluntários</p>
+                      <p className="text-sm text-gray-600">Sede da Associação</p>
+                    </div>
+                    <Badge className="bg-blue-600">Domingo</Badge>
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <Link to="/eventos">
+                    <Button variant="outline" className="w-full">
+                      <Eye className="h-4 w-4 mr-2" />
+                      Ver Todos
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
           </div>
-          <p className="text-gray-600 mb-2">
-            Sistema de Gestão Completo para Proteção Animal
-          </p>
-          <p className="text-sm text-gray-500">
-            Desenvolvido com ❤️ para os nossos amigos de quatro patas
-          </p>
         </div>
 
+        {/* System Status */}
+        <div className="text-center">
+          <Card className="inline-block">
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                  <span className="text-sm font-medium">Sistema Operacional</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Award className="h-4 w-4 text-yellow-500" />
+                  <span className="text-sm font-medium">Valentão ao Resgate</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       <EnhancedFooter />
