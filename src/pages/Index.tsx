@@ -110,7 +110,7 @@ const Index: React.FC = () => {
           {/* Debug Info Destacado */}
           <div className="mb-6 p-4 bg-black bg-opacity-30 rounded-lg text-white">
             <p className="text-lg">🔍 DEBUG: User: {user?.username || 'NENHUM USUÁRIO LOGADO'}</p>
-            <p className="text-lg">🔍 DEBUG: Perfil: {user?.perfil || 'SEM PERFIL'}</p>
+            <p className="text-lg">🔍 DEBUG: Perfil: {user?.perfil_acesso || 'SEM PERFIL'}</p>
             <p className="text-lg">🔍 DEBUG: hasPermission('admin'): {hasPermission('admin').toString()}</p>
             <p className="text-lg">🔍 DEBUG: User Ativo: {user?.ativo?.toString() || 'false'}</p>
             <p className="text-lg">🔍 DEBUG: Página: INDEX.TSX (Rota: /)</p>

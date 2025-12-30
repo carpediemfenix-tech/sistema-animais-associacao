@@ -249,8 +249,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       console.log('✅ [AUTH] Login bem-sucedido para:', userData.username);
       console.log('🔍 [AUTH] Dados completos do usuário:', userData);
-      console.log('💼 [AUTH] Perfil do usuário:', userData.perfil);
-      console.log('🔑 [AUTH] Verificando permissão admin:', userData.perfil === 'administrador');
+      console.log('💼 [AUTH] Perfil do usuário:', userData.perfil_acesso);
+      console.log('🔑 [AUTH] Verificando permissão admin:', userData.perfil_acesso === 'administrador');
 
       // Definir utilizador no estado
       setUser(userData);
@@ -327,7 +327,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     console.log('🔍 [AUTH] hasPermission chamada:', {
       action,
       user: user?.username,
-      perfil: user?.perfil,
+      perfil_acesso: user?.perfil_acesso,
       ativo: user?.ativo,
       userCompleto: user
     });
@@ -340,8 +340,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     
     // Para ação 'admin', verificar se é administrador
     if (action === 'admin') {
-      console.log('🔍 [AUTH] Verificando permissão admin para:', user.username, 'Perfil:', user.perfil);
-      const isAdmin = user.perfil === 'administrador';
+      console.log('🔍 [AUTH] Verificando permissão admin para:', user.username, 'Perfil:', user.perfil_acesso);
+      const isAdmin = user.perfil_acesso === 'administrador';
       console.log('💼 [AUTH] É administrador?', isAdmin);
       return isAdmin;
     }
