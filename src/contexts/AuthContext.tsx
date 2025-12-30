@@ -248,6 +248,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       };
       
       console.log('✅ [AUTH] Login bem-sucedido para:', userData.username);
+      console.log('🔍 [AUTH] Dados completos do usuário:', userData);
+      console.log('💼 [AUTH] Perfil do usuário:', userData.perfil);
+      console.log('🔑 [AUTH] Verificando permissão admin:', userData.perfil === 'administrador');
 
       // Definir utilizador no estado
       setUser(userData);
@@ -321,18 +324,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // 🚨 CORREÇÃO CRÍTICA: Função hasPermission corrigida
   const hasPermission = (action: 'create' | 'update' | 'delete' | 'admin'): boolean => {
+    console.log('🔍 [AUTH] hasPermission chamada:', {
+      action,
+      user: user?.username,
+      perfil: user?.perfil,
+      ativo: user?.ativo,
+      userCompleto: user
+    });
+    
     // Verificar se o usuário está logado e ativo
     if (!user || !user.ativo) {
+      console.log('❌ [AUTH] Usuário não logado ou inativo');
       return false;
     }
     
     // Para ação 'admin', verificar se é administrador
     if (action === 'admin') {
       console.log('🔍 [AUTH] Verificando permissão admin para:', user.username, 'Perfil:', user.perfil);
-      return user.perfil === 'administrador';
+      const isAdmin = user.perfil === 'administrador';
+      console.log('💼 [AUTH] É administrador?', isAdmin);
+      return isAdmin;
     }
     
     // Para outras ações, qualquer usuário logado tem permissão
+    console.log('✅ [AUTH] Permissão concedida para ação:', action);
     return true;
   };
 
