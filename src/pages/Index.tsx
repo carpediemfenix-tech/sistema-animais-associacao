@@ -20,7 +20,9 @@ import {
   TrendingUp,
   Activity,
   Stethoscope,
-  Shield
+  Shield,
+  AlertTriangle,
+  Zap
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -35,14 +37,18 @@ interface DashboardStats {
 }
 
 const Index: React.FC = () => {
-  const { user } = useAuth();
+  const { user, hasPermission } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<DashboardStats | null>(null);
 
   useEffect(() => {
     loadDashboardData();
-  }, []);
+    
+    // 🚨 DEBUG: Log para verificar permissões
+    console.log('🔍 [INDEX] User:', user);
+    console.log('🔍 [INDEX] hasPermission(admin):', hasPermission('admin'));
+  }, [user, hasPermission]);
 
   const loadDashboardData = async () => {
     try {
@@ -88,6 +94,45 @@ const Index: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <EnhancedHeader />
+
+      {/* 🚨 BOTÃO DE DENÚNCIA MEGA DESTACADO - SEMPRE VISÍVEL */}
+      <div className="bg-red-600 py-8 border-t-4 border-red-800 border-b-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="mb-4">
+            <h2 className="text-3xl font-bold text-white mb-2">
+              🚨 SISTEMA DE EMERGÊNCIA ANIMAL 🚨
+            </h2>
+            <p className="text-red-100 text-lg">
+              Operação Resgate - Somos a voz dos que não podem falar
+            </p>
+          </div>
+          
+          {/* Debug Info Destacado */}
+          <div className="mb-6 p-4 bg-black bg-opacity-30 rounded-lg text-white">
+            <p className="text-lg">🔍 DEBUG: User: {user?.username || 'NENHUM USUÁRIO LOGADO'}</p>
+            <p className="text-lg">🔍 DEBUG: Perfil: {user?.perfil || 'SEM PERFIL'}</p>
+            <p className="text-lg">🔍 DEBUG: hasPermission('admin'): {hasPermission('admin').toString()}</p>
+            <p className="text-lg">🔍 DEBUG: User Ativo: {user?.ativo?.toString() || 'false'}</p>
+            <p className="text-lg">🔍 DEBUG: Página: INDEX.TSX (Rota: /)</p>
+          </div>
+          
+          {/* BOTÃO MEGA DESTACADO */}
+          <Link to="/wizard-denuncia">
+            <Button 
+              size="lg" 
+              className="bg-yellow-500 hover:bg-yellow-400 text-black font-black px-12 py-6 text-2xl shadow-2xl border-4 border-yellow-300 hover:border-yellow-200 transition-all duration-300 hover:scale-110 animate-bounce"
+            >
+              <AlertTriangle className="h-8 w-8 mr-4 animate-pulse" />
+              🚨 NOVA DENÚNCIA - TESTE 🚨
+              <Zap className="h-8 w-8 ml-4 animate-pulse" />
+            </Button>
+          </Link>
+          
+          <p className="text-white text-xl mt-4 font-bold animate-pulse">
+            ⬆️ CLIQUE AQUI PARA TESTAR O WIZARD ⬆️
+          </p>
+        </div>
+      </div>
 
       {/* Hero Section */}
       <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800">
