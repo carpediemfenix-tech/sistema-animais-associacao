@@ -397,7 +397,7 @@ const WizardDenuncia: React.FC = () => {
         voluntario_responsavel_id: formData.voluntario_responsavel_id,
         voluntarios_participantes: formData.voluntarios_participantes || [],
         observacoes_equipe: formData.observacoes_equipe || null,
-        created_by: user?.username || 'admin'
+        created_by: user?.id || null
       };
       
       console.log('📦 [WIZARD] Payload da denúncia:', denunciaPayload);
@@ -438,8 +438,8 @@ const WizardDenuncia: React.FC = () => {
         observacoes: animal.observacoes || `Animal resgatado via denúncia ${codigoDenuncia}`,
         responsavel_id: formData.voluntario_responsavel_id,
         ativo: true,
-        created_by: user?.username || 'admin',
-        updated_by: user?.username || 'admin'
+        created_by: user?.id || null, // Usar ID do usuário em vez de username
+        updated_by: user?.id || null
       }));
 
       console.log('📝 [WIZARD] Dados dos animais a criar:', animaisToCreate);
@@ -473,7 +473,7 @@ const WizardDenuncia: React.FC = () => {
           status: 'ativa',
           responsavel_id: formData.voluntario_responsavel_id,
           observacoes: `Criada automaticamente pelo Wizard de Denúncias. ${formData.observacoes_equipe}`,
-          created_by: user?.username || 'admin'
+          created_by: user?.id || null
         }])
         .select()
         .single();
@@ -502,7 +502,7 @@ const WizardDenuncia: React.FC = () => {
             horas_dedicadas: 0,
             pontos_atribuidos: 0,
             observacoes: 'Responsável pela operação de resgate',
-            created_by: user?.username || 'admin'
+            created_by: user?.id || null
           });
           
           // Adicionar membros da equipe
@@ -517,7 +517,7 @@ const WizardDenuncia: React.FC = () => {
                   horas_dedicadas: 0,
                   pontos_atribuidos: 0,
                   observacoes: 'Membro da equipe de resgate',
-                  created_by: user?.username || 'admin'
+                  created_by: user?.id || null
                 });
               }
             });
@@ -544,7 +544,7 @@ const WizardDenuncia: React.FC = () => {
               animal_id: animal.id,
               data_associacao: formData.data_denuncia,
               observacoes: `Animal resgatado na operação ${codigoDenuncia}`,
-              created_by: user?.username || 'admin'
+              created_by: user?.id || null
             }));
             
             const { error: animaisMissaoError } = await supabase
