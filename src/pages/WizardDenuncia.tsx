@@ -737,18 +737,479 @@ const WizardDenuncia: React.FC = () => {
               </div>
             )}
 
-            {/* Outras etapas permanecem iguais... */}
-            {/* Por brevidade, mantendo apenas a Etapa 1 aqui */}
-            {/* As outras etapas (2-5) são idênticas ao código anterior */}
-            
-            {currentStep > 1 && (
-              <div className="text-center py-12">
-                <p className="text-lg text-gray-600 mb-4">
-                  🚧 Etapas 2-5 em desenvolvimento
-                </p>
-                <p className="text-sm text-gray-500">
-                  Por favor, teste a navegação e a Etapa 1 por enquanto
-                </p>
+            {/* Etapa 2: Alvos da Operação (Animais) */}
+            {currentStep === 2 && (
+              <div className="space-y-6">
+                <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-6">
+                  <h3 className="text-lg font-semibold text-blue-800 mb-4 flex items-center">
+                    <Target className="h-5 w-5 mr-2" />
+                    Quantificação de Alvos
+                  </h3>
+                  
+                  <div>
+                    <Label htmlFor="quantidade_animais" className="text-base font-semibold text-blue-700">
+                      🎯 Quantidade de Animais *
+                    </Label>
+                    <Select 
+                      value={formData.quantidade_animais.toString()} 
+                      onValueChange={(value) => updateQuantidadeAnimais(parseInt(value))}
+                    >
+                      <SelectTrigger className="mt-2 h-12 border-2 border-blue-300 focus:border-blue-500">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[1,2,3,4,5,6,7,8,9,10,15,20,25,30].map(num => (
+                          <SelectItem key={num} value={num.toString()}>
+                            {num} {num === 1 ? 'Animal' : 'Animais'}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  {formData.animais.map((animal, index) => (
+                    <Card key={index} className="border-2 border-green-200 bg-green-50">
+                      <CardHeader className="bg-green-100 border-b border-green-200">
+                        <CardTitle className="text-lg text-green-800 flex items-center">
+                          <Target className="h-5 w-5 mr-2" />
+                          ALVO #{index + 1} - {formData.data_denuncia ? `DEN${formData.data_denuncia.slice(2,4)}${String(index + 1).padStart(3, '0')}-ANIM${String(index + 1).padStart(2, '0')}` : `ANIM${String(index + 1).padStart(2, '0')}`}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <Label className="text-base font-semibold text-green-700">
+                              🐾 Espécie *
+                            </Label>
+                            <Select 
+                              value={animal.especie} 
+                              onValueChange={(value) => updateAnimal(index, 'especie', value)}
+                            >
+                              <SelectTrigger className="mt-2 h-12 border-green-300 focus:border-green-500">
+                                <SelectValue placeholder="Selecione a espécie" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {especies.map(especie => (
+                                  <SelectItem key={especie.id} value={especie.nome}>
+                                    {especie.nome}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div>
+                            <Label className="text-base font-semibold text-green-700">
+                              ⚥ Sexo *
+                            </Label>
+                            <Select 
+                              value={animal.sexo} 
+                              onValueChange={(value) => updateAnimal(index, 'sexo', value)}
+                            >
+                              <SelectTrigger className="mt-2 h-12 border-green-300 focus:border-green-500">
+                                <SelectValue placeholder="Selecione o sexo" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Macho">♂️ Macho</SelectItem>
+                                <SelectItem value="Fêmea">♀️ Fêmea</SelectItem>
+                                <SelectItem value="Indeterminado">❓ Indeterminado</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div>
+                            <Label className="text-base font-semibold text-green-700">
+                              📅 Idade Estimada
+                            </Label>
+                            <Select 
+                              value={animal.idade_estimada} 
+                              onValueChange={(value) => updateAnimal(index, 'idade_estimada', value)}
+                            >
+                              <SelectTrigger className="mt-2 h-12 border-green-300 focus:border-green-500">
+                                <SelectValue placeholder="Selecione a idade" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Filhote">🍼 Filhote (0-6 meses)</SelectItem>
+                                <SelectItem value="Jovem">🐕 Jovem (6 meses - 2 anos)</SelectItem>
+                                <SelectItem value="Adulto">🦮 Adulto (2-7 anos)</SelectItem>
+                                <SelectItem value="Idoso">👴 Idoso (7+ anos)</SelectItem>
+                                <SelectItem value="Indeterminado">❓ Indeterminado</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div>
+                            <Label className="text-base font-semibold text-green-700">
+                              🏥 Estado Aparente *
+                            </Label>
+                            <Select 
+                              value={animal.estado_aparente} 
+                              onValueChange={(value) => updateAnimal(index, 'estado_aparente', value)}
+                            >
+                              <SelectTrigger className="mt-2 h-12 border-green-300 focus:border-green-500">
+                                <SelectValue placeholder="Selecione o estado" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Bom">✅ Bom</SelectItem>
+                                <SelectItem value="Regular">⚠️ Regular</SelectItem>
+                                <SelectItem value="Mau">❌ Mau</SelectItem>
+                                <SelectItem value="Crítico">🚨 Crítico</SelectItem>
+                                <SelectItem value="Ferido">🩹 Ferido</SelectItem>
+                                <SelectItem value="Doente">🤒 Doente</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+                        <div className="mt-4">
+                          <Label className="text-base font-semibold text-green-700">
+                            📝 Observações do Alvo
+                          </Label>
+                          <Textarea
+                            value={animal.observacoes}
+                            onChange={(e) => updateAnimal(index, 'observacoes', e.target.value)}
+                            placeholder="Descreva características físicas, comportamento, ferimentos, etc."
+                            className="mt-2 border-green-300 focus:border-green-500"
+                            rows={3}
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Etapa 3: Intervenção das Autoridades */}
+            {currentStep === 3 && (
+              <div className="space-y-6">
+                <div className="bg-purple-50 border-2 border-purple-200 rounded-lg p-6">
+                  <h3 className="text-lg font-semibold text-purple-800 mb-4 flex items-center">
+                    <Shield className="h-5 w-5 mr-2" />
+                    Coordenação com Autoridades
+                  </h3>
+                  
+                  <div className="mb-6">
+                    <label className="flex items-center space-x-3">
+                      <input
+                        type="checkbox"
+                        checked={formData.autoridades_contactadas}
+                        onChange={(e) => setFormData({...formData, autoridades_contactadas: e.target.checked})}
+                        className="w-5 h-5 text-purple-600"
+                      />
+                      <span className="text-base font-semibold text-purple-800">
+                        🚔 Autoridades foram contactadas
+                      </span>
+                    </label>
+                  </div>
+
+                  {formData.autoridades_contactadas && (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label className="text-base font-semibold text-purple-700">
+                            🏛️ Tipo de Autoridade
+                          </Label>
+                          <Select 
+                            value={formData.autoridade_tipo} 
+                            onValueChange={(value) => setFormData({...formData, autoridade_tipo: value})}
+                          >
+                            <SelectTrigger className="mt-2 h-12 border-purple-300 focus:border-purple-500">
+                              <SelectValue placeholder="Selecione o tipo" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="PSP">🚔 PSP - Polícia de Segurança Pública</SelectItem>
+                              <SelectItem value="GNR">🚓 GNR - Guarda Nacional Republicana</SelectItem>
+                              <SelectItem value="SEPNA">🌿 SEPNA - Proteção da Natureza</SelectItem>
+                              <SelectItem value="Bombeiros">🚒 Bombeiros</SelectItem>
+                              <SelectItem value="Câmara Municipal">🏛️ Câmara Municipal</SelectItem>
+                              <SelectItem value="DGAV">🏥 DGAV - Direção Geral de Veterinária</SelectItem>
+                              <SelectItem value="Outro">❓ Outro</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div>
+                          <Label className="text-base font-semibold text-purple-700">
+                            👮 Nome do Agente/Responsável
+                          </Label>
+                          <Input
+                            value={formData.autoridade_nome}
+                            onChange={(e) => setFormData({...formData, autoridade_nome: e.target.value})}
+                            placeholder="Nome do agente ou responsável"
+                            className="mt-2 h-12 border-purple-300 focus:border-purple-500"
+                          />
+                        </div>
+
+                        <div>
+                          <Label className="text-base font-semibold text-purple-700">
+                            📞 Contacto da Autoridade
+                          </Label>
+                          <Input
+                            value={formData.autoridade_contacto}
+                            onChange={(e) => setFormData({...formData, autoridade_contacto: e.target.value})}
+                            placeholder="Telefone ou e-mail"
+                            className="mt-2 h-12 border-purple-300 focus:border-purple-500"
+                          />
+                        </div>
+
+                        <div>
+                          <Label className="text-base font-semibold text-purple-700">
+                            📋 Número da Ocorrência
+                          </Label>
+                          <Input
+                            value={formData.numero_ocorrencia}
+                            onChange={(e) => setFormData({...formData, numero_ocorrencia: e.target.value})}
+                            placeholder="Número de processo ou ocorrência"
+                            className="mt-2 h-12 border-purple-300 focus:border-purple-500"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label className="text-base font-semibold text-purple-700">
+                          📝 Observações sobre Intervenção das Autoridades
+                        </Label>
+                        <Textarea
+                          value={formData.observacoes_autoridades}
+                          onChange={(e) => setFormData({...formData, observacoes_autoridades: e.target.value})}
+                          placeholder="Descreva a intervenção das autoridades, decisões tomadas, etc."
+                          className="mt-2 border-purple-300 focus:border-purple-500"
+                          rows={4}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Etapa 4: Suporte Médico Veterinário */}
+            {currentStep === 4 && (
+              <div className="space-y-6">
+                <div className="bg-teal-50 border-2 border-teal-200 rounded-lg p-6">
+                  <h3 className="text-lg font-semibold text-teal-800 mb-4 flex items-center">
+                    <Stethoscope className="h-5 w-5 mr-2" />
+                    Suporte Médico Veterinário
+                  </h3>
+                  
+                  <div className="mb-6">
+                    <label className="flex items-center space-x-3">
+                      <input
+                        type="checkbox"
+                        checked={formData.intervencao_veterinaria}
+                        onChange={(e) => setFormData({...formData, intervencao_veterinaria: e.target.checked})}
+                        className="w-5 h-5 text-teal-600"
+                      />
+                      <span className="text-base font-semibold text-teal-800">
+                        🏥 Houve intervenção veterinária
+                      </span>
+                    </label>
+                  </div>
+
+                  {formData.intervencao_veterinaria && (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label className="text-base font-semibold text-teal-700">
+                            📅 Data da Intervenção
+                          </Label>
+                          <Input
+                            type="date"
+                            value={formData.intervencao_veterinaria_data}
+                            onChange={(e) => setFormData({...formData, intervencao_veterinaria_data: e.target.value})}
+                            className="mt-2 h-12 border-teal-300 focus:border-teal-500"
+                          />
+                        </div>
+
+                        <div>
+                          <Label className="text-base font-semibold text-teal-700">
+                            🕐 Hora da Intervenção
+                          </Label>
+                          <Input
+                            type="time"
+                            value={formData.intervencao_veterinaria_hora}
+                            onChange={(e) => setFormData({...formData, intervencao_veterinaria_hora: e.target.value})}
+                            className="mt-2 h-12 border-teal-300 focus:border-teal-500"
+                          />
+                        </div>
+
+                        <div>
+                          <Label className="text-base font-semibold text-teal-700">
+                            🏥 Clínica Veterinária
+                          </Label>
+                          <Select 
+                            value={formData.clinica_id} 
+                            onValueChange={(value) => setFormData({...formData, clinica_id: value})}
+                          >
+                            <SelectTrigger className="mt-2 h-12 border-teal-300 focus:border-teal-500">
+                              <SelectValue placeholder="Selecione a clínica" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {clinicas.map(clinica => (
+                                <SelectItem key={clinica.id} value={clinica.id}>
+                                  {clinica.nome} - {clinica.endereco}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div>
+                          <Label className="text-base font-semibold text-teal-700">
+                            👨‍⚕️ Nome do Veterinário
+                          </Label>
+                          <Input
+                            value={formData.veterinario_nome}
+                            onChange={(e) => setFormData({...formData, veterinario_nome: e.target.value})}
+                            placeholder="Nome do veterinário responsável"
+                            className="mt-2 h-12 border-teal-300 focus:border-teal-500"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label className="text-base font-semibold text-teal-700">
+                          🔬 Diagnóstico Inicial
+                        </Label>
+                        <Textarea
+                          value={formData.diagnostico_inicial}
+                          onChange={(e) => setFormData({...formData, diagnostico_inicial: e.target.value})}
+                          placeholder="Diagnóstico inicial do veterinário"
+                          className="mt-2 border-teal-300 focus:border-teal-500"
+                          rows={3}
+                        />
+                      </div>
+
+                      <div>
+                        <Label className="text-base font-semibold text-teal-700">
+                          💊 Tratamentos Aplicados
+                        </Label>
+                        <Textarea
+                          value={formData.tratamentos_aplicados}
+                          onChange={(e) => setFormData({...formData, tratamentos_aplicados: e.target.value})}
+                          placeholder="Descreva os tratamentos, medicamentos e procedimentos aplicados"
+                          className="mt-2 border-teal-300 focus:border-teal-500"
+                          rows={4}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Etapa 5: Equipe Tática Designada */}
+            {currentStep === 5 && (
+              <div className="space-y-6">
+                <div className="bg-indigo-50 border-2 border-indigo-200 rounded-lg p-6">
+                  <h3 className="text-lg font-semibold text-indigo-800 mb-4 flex items-center">
+                    <Users className="h-5 w-5 mr-2" />
+                    Designação da Equipe Tática
+                  </h3>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <Label className="text-base font-semibold text-indigo-700">
+                        👨‍💼 Comandante da Operação (Responsável) *
+                      </Label>
+                      <Select 
+                        value={formData.voluntario_responsavel_id} 
+                        onValueChange={(value) => setFormData({...formData, voluntario_responsavel_id: value})}
+                      >
+                        <SelectTrigger className="mt-2 h-12 border-indigo-300 focus:border-indigo-500">
+                          <SelectValue placeholder="Selecione o voluntário responsável" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {voluntarios.map(voluntario => (
+                            <SelectItem key={voluntario.id} value={voluntario.id}>
+                              {voluntario.nome} {voluntario.especialidades?.length > 0 && `(${voluntario.especialidades.join(', ')})`}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label className="text-base font-semibold text-indigo-700">
+                        👥 Equipe de Apoio (Voluntários Participantes)
+                      </Label>
+                      <div className="mt-2 space-y-2 max-h-48 overflow-y-auto border-2 border-indigo-200 rounded-lg p-4">
+                        {voluntarios
+                          .filter(v => v.id !== formData.voluntario_responsavel_id)
+                          .map(voluntario => (
+                          <label key={voluntario.id} className="flex items-center space-x-3">
+                            <input
+                              type="checkbox"
+                              checked={formData.voluntarios_participantes.includes(voluntario.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setFormData({
+                                    ...formData,
+                                    voluntarios_participantes: [...formData.voluntarios_participantes, voluntario.id]
+                                  });
+                                } else {
+                                  setFormData({
+                                    ...formData,
+                                    voluntarios_participantes: formData.voluntarios_participantes.filter(id => id !== voluntario.id)
+                                  });
+                                }
+                              }}
+                              className="w-4 h-4 text-indigo-600"
+                            />
+                            <span className="text-sm text-indigo-700">
+                              {voluntario.nome} {voluntario.especialidades?.length > 0 && `(${voluntario.especialidades.join(', ')})`}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label className="text-base font-semibold text-indigo-700">
+                        📝 Observações da Equipe
+                      </Label>
+                      <Textarea
+                        value={formData.observacoes_equipe}
+                        onChange={(e) => setFormData({...formData, observacoes_equipe: e.target.value})}
+                        placeholder="Instruções especiais, estratégia da operação, recursos necessários, etc."
+                        className="mt-2 border-indigo-300 focus:border-indigo-500"
+                        rows={4}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Resumo da Operação */}
+                <div className="bg-gray-50 border-2 border-gray-200 rounded-lg p-6">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <FileText className="h-5 w-5 mr-2" />
+                    Resumo da Operação
+                  </h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <strong>📅 Data/Hora:</strong> {formData.data_denuncia} às {formData.hora_denuncia}
+                    </div>
+                    <div>
+                      <strong>📞 Canal:</strong> {formData.canal_denuncia}
+                    </div>
+                    <div>
+                      <strong>📍 Local:</strong> {formData.local_encontrado}
+                    </div>
+                    <div>
+                      <strong>🎯 Animais:</strong> {formData.quantidade_animais}
+                    </div>
+                    <div>
+                      <strong>🚔 Autoridades:</strong> {formData.autoridades_contactadas ? 'Sim' : 'Não'}
+                    </div>
+                    <div>
+                      <strong>🏥 Veterinário:</strong> {formData.intervencao_veterinaria ? 'Sim' : 'Não'}
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </CardContent>
