@@ -191,6 +191,7 @@ const WizardDenuncia: React.FC = () => {
       console.log('📊 [WIZARD] Carregando dados iniciais...');
 
       // Carregar voluntários
+      console.log('🔄 [WIZARD] Carregando voluntários...');
       const { data: voluntariosData, error: voluntariosError } = await supabase
         .from('voluntarios')
         .select('id, nome, especialidades')
@@ -202,23 +203,37 @@ const WizardDenuncia: React.FC = () => {
         console.log('✅ [WIZARD] Voluntários carregados:', voluntariosData.length);
       } else {
         console.error('❌ [WIZARD] Erro ao carregar voluntários:', voluntariosError);
+        setVoluntarios([]); // Fallback para array vazio
       }
 
       // Carregar clínicas
+      console.log('🔄 [WIZARD] Carregando clínicas...');
       const { data: clinicasData, error: clinicasError } = await supabase
         .from('clinicas')
-        .select('id, nome, endereco')
+        .select('id, nome, endereco, telefone, responsavel_veterinario')
         .eq('ativo', true)
         .order('nome');
 
+      console.log('🔍 [WIZARD] Resposta clínicas:', { data: clinicasData, error: clinicasError });
+      
       if (!clinicasError && clinicasData) {
         setClinicas(clinicasData);
         console.log('✅ [WIZARD] Clínicas carregadas:', clinicasData.length);
+        console.log('📋 [WIZARD] Lista de clínicas:', clinicasData.map(c => c.nome));
       } else {
         console.error('❌ [WIZARD] Erro ao carregar clínicas:', clinicasError);
+        setClinicas([]); // Fallback para array vazio
+        
+        // Toast específico para erro de clínicas
+        toast({
+          title: "⚠️ Aviso",
+          description: "Não foi possível carregar as clínicas. Você pode prosseguir sem selecionar uma clínica.",
+          variant: "default",
+        });
       }
 
       // Carregar espécies
+      console.log('🔄 [WIZARD] Carregando espécies...');
       const { data: especiesData, error: especiesError } = await supabase
         .from('especies')
         .select('id, nome')
@@ -230,9 +245,16 @@ const WizardDenuncia: React.FC = () => {
         console.log('✅ [WIZARD] Espécies carregadas:', especiesData.length);
       } else {
         console.error('❌ [WIZARD] Erro ao carregar espécies:', especiesError);
+        setEspecies([]); // Fallback para array vazio
       }
 
-      console.log('✅ [WIZARD] Todos os dados carregados com sucesso');
+      console.log('✅ [WIZARD] Carregamento concluído!');
+      console.log('📊 [WIZARD] Resumo:', {
+        voluntarios: voluntarios.length,
+        clinicas: clinicas.length,
+        especies: especies.length
+      });
+      
     } catch (error) {
       console.error('❌ [WIZARD] Erro inesperado ao carregar dados:', error);
       toast({
@@ -1041,20 +1063,32 @@ const WizardDenuncia: React.FC = () => {
                             🏥 Clínica Veterinária
                           </Label>
                           <Select 
-                            value={formData.clinica_id} 
-                            onValueChange={(value) => setFormData({...formData, clinica_id: value})}
+                            value={formData.clinica_id || "none"} 
+                            onValueChange={(value) => setFormData({...formData, clinica_id: value === "none" ? "" : value})}
                           >
                             <SelectTrigger className="mt-2 h-12 border-teal-300 focus:border-teal-500">
                               <SelectValue placeholder="Selecione a clínica" />
                             </SelectTrigger>
                             <SelectContent>
-                              {clinicas.map(clinica => (
-                                <SelectItem key={clinica.id} value={clinica.id}>
-                                  {clinica.nome} - {clinica.endereco}
+                              <SelectItem value="none">🚫 Nenhuma clínica selecionada</SelectItem>
+                              {clinicas.length > 0 ? (
+                                clinicas.map(clinica => (
+                                  <SelectItem key={clinica.id} value={clinica.id}>
+                                    🏥 {clinica.nome} - {clinica.endereco}
+                                  </SelectItem>
+                                ))
+                              ) : (
+                                <SelectItem value="loading" disabled>
+                                  🔄 Carregando clínicas...
                                 </SelectItem>
-                              ))}
+                              )}
                             </SelectContent>
                           </Select>
+                          {clinicas.length === 0 && (
+                            <p className="text-sm text-teal-600 mt-2">
+                              ⚠️ Nenhuma clínica disponível. Você pode prosseguir sem selecionar uma clínica.
+                            </p>
+                          )}
                         </div>
 
                         <div>
