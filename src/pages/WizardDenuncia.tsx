@@ -425,31 +425,43 @@ const WizardDenuncia: React.FC = () => {
       console.log('✅ [WIZARD] Denúncia criada:', codigoDenuncia);
 
       // 2. Criar animais automaticamente
+      console.log('🐕 [WIZARD] Criando animais...');
       const animaisToCreate = formData.animais.map((animal, index) => ({
         nome: `${codigoDenuncia}-ANIM${String(index + 1).padStart(2, '0')}`,
-        especie: animal.especie,
+        especie_id: animal.especie, // Usar especie_id se for UUID
         sexo: animal.sexo,
-        idade_estimada: animal.idade_estimada,
+        idade_estimada: animal.idade_estimada || 'Desconhecida',
         estado: 'Em Resgate',
         local_encontrado: formData.local_encontrado,
+        local_completo: formData.local_encontrado,
         data_entrada: formData.data_denuncia,
-        observacoes: animal.observacoes,
+        observacoes: animal.observacoes || `Animal resgatado via denúncia ${codigoDenuncia}`,
         responsavel_id: formData.voluntario_responsavel_id,
-        created_by: user?.username || 'admin'
+        ativo: true,
+        created_by: user?.username || 'admin',
+        updated_by: user?.username || 'admin'
       }));
 
-      const { error: animaisError } = await supabase
+      console.log('📝 [WIZARD] Dados dos animais a criar:', animaisToCreate);
+
+      const { data: animaisData, error: animaisError } = await supabase
         .from('animais')
-        .insert(animaisToCreate);
+        .insert(animaisToCreate)
+        .select();
 
       if (animaisError) {
         console.error('❌ [WIZARD] Erro ao criar animais:', animaisError);
+        console.error('❌ [WIZARD] Código do erro:', animaisError.code);
+        console.error('❌ [WIZARD] Mensagem:', animaisError.message);
+        console.error('❌ [WIZARD] Detalhes:', animaisError.details);
       } else {
-        console.log('✅ [WIZARD] Animais criados:', animaisToCreate.length);
+        console.log('✅ [WIZARD] Animais criados com sucesso:', animaisData?.length || animaisToCreate.length);
+        console.log('📝 [WIZARD] IDs dos animais criados:', animaisData?.map(a => a.id));
       }
 
       // 3. Criar missão automaticamente
-      const { error: missaoError } = await supabase
+      console.log('🚑 [WIZARD] Criando missão...');
+      const { data: missaoData, error: missaoError } = await supabase
         .from('missoes_2025_12_29_07_00')
         .insert([{
           codigo: `MIS-${codigoDenuncia}`,
@@ -462,12 +474,90 @@ const WizardDenuncia: React.FC = () => {
           responsavel_id: formData.voluntario_responsavel_id,
           observacoes: `Criada automaticamente pelo Wizard de Denúncias. ${formData.observacoes_equipe}`,
           created_by: user?.username || 'admin'
-        }]);
+        }])
+        .select()
+        .single();
 
       if (missaoError) {
         console.error('❌ [WIZARD] Erro ao criar missão:', missaoError);
+        console.error('❌ [WIZARD] Código do erro:', missaoError.code);
+        console.error('❌ [WIZARD] Mensagem:', missaoError.message);
       } else {
         console.log('✅ [WIZARD] Missão criada: MIS-' + codigoDenuncia);
+        console.log('📝 [WIZARD] ID da missão:', missaoData?.id);
+        
+        // 4. Criar participações da missão
+        if (missaoData?.id) {
+          console.log('👥 [WIZARD] Criando participações da missão...');
+          
+          // Criar participação do responsável
+          const participacoesToCreate = [];
+          
+          // Adicionar responsável
+          participacoesToCreate.push({
+            missao_id: missaoData.id,
+            voluntario_id: formData.voluntario_responsavel_id,
+            funcao: 'Comandante da Operação',
+            data_participacao: formData.data_denuncia,
+            horas_dedicadas: 0,
+            pontos_atribuidos: 0,
+            observacoes: 'Responsável pela operação de resgate',
+            created_by: user?.username || 'admin'
+          });
+          
+          // Adicionar membros da equipe
+          if (formData.voluntarios_participantes && formData.voluntarios_participantes.length > 0) {
+            formData.voluntarios_participantes.forEach(voluntarioId => {
+              if (voluntarioId !== formData.voluntario_responsavel_id) {
+                participacoesToCreate.push({
+                  missao_id: missaoData.id,
+                  voluntario_id: voluntarioId,
+                  funcao: 'Membro da Equipe',
+                  data_participacao: formData.data_denuncia,
+                  horas_dedicadas: 0,
+                  pontos_atribuidos: 0,
+                  observacoes: 'Membro da equipe de resgate',
+                  created_by: user?.username || 'admin'
+                });
+              }
+            });
+          }
+          
+          console.log('📝 [WIZARD] Participações a criar:', participacoesToCreate.length);
+          
+          const { error: participacoesError } = await supabase
+            .from('participacoes_missoes_2025_12_29_07_00')
+            .insert(participacoesToCreate);
+          
+          if (participacoesError) {
+            console.error('❌ [WIZARD] Erro ao criar participações:', participacoesError);
+          } else {
+            console.log('✅ [WIZARD] Participações criadas:', participacoesToCreate.length);
+          }
+          
+          // 5. Associar animais à missão
+          if (animaisData && animaisData.length > 0) {
+            console.log('🐕 [WIZARD] Associando animais à missão...');
+            
+            const animaisMissaoToCreate = animaisData.map(animal => ({
+              missao_id: missaoData.id,
+              animal_id: animal.id,
+              data_associacao: formData.data_denuncia,
+              observacoes: `Animal resgatado na operação ${codigoDenuncia}`,
+              created_by: user?.username || 'admin'
+            }));
+            
+            const { error: animaisMissaoError } = await supabase
+              .from('missoes_animais_2025_12_29_07_00')
+              .insert(animaisMissaoToCreate);
+            
+            if (animaisMissaoError) {
+              console.error('❌ [WIZARD] Erro ao associar animais à missão:', animaisMissaoError);
+            } else {
+              console.log('✅ [WIZARD] Animais associados à missão:', animaisMissaoToCreate.length);
+            }
+          }
+        }
       }
 
       toast({
