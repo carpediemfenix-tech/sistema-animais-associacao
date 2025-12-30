@@ -373,6 +373,7 @@ const WizardDenuncia: React.FC = () => {
         data_denuncia: formData.data_denuncia,
         hora_denuncia: formData.hora_denuncia,
         local_encontrado: formData.local_encontrado,
+        local_completo: formData.local_encontrado, // Usar o mesmo valor
         descricao_situacao: formData.descricao_situacao,
         canal_denuncia: formData.canal_denuncia,
         denunciante_anonimo: formData.denunciante_anonimo,
