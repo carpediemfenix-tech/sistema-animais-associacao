@@ -409,7 +409,14 @@ const WizardDenuncia: React.FC = () => {
         .select()
         .single();
 
+      console.log('🔍 [WIZARD] Resposta da inserção:', { data: denunciaData, error: denunciaError });
+
       if (denunciaError) {
+        console.error('❌ [WIZARD] Erro detalhado:', denunciaError);
+        console.error('❌ [WIZARD] Código do erro:', denunciaError.code);
+        console.error('❌ [WIZARD] Mensagem:', denunciaError.message);
+        console.error('❌ [WIZARD] Detalhes:', denunciaError.details);
+        console.error('❌ [WIZARD] Hint:', denunciaError.hint);
         throw denunciaError;
       }
 
