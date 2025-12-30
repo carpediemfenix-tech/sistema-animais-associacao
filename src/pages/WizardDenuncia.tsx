@@ -209,8 +209,8 @@ const WizardDenuncia: React.FC = () => {
       // Carregar clínicas
       console.log('🔄 [WIZARD] Carregando clínicas...');
       const { data: clinicasData, error: clinicasError } = await supabase
-        .from('clinicas')
-        .select('id, nome, endereco, telefone, responsavel_veterinario')
+        .from('clinicas_veterinarias')
+        .select('id, nome, endereco, telefone, especialidades')
         .eq('ativo', true)
         .order('nome');
 
