@@ -113,6 +113,44 @@ const Dashboard: React.FC = () => {
         }
       />
 
+      {/* 🚨 BOTÃO DE DENÚNCIA MEGA DESTACADO - SEMPRE VISÍVEL */}
+      <div className="bg-red-600 py-8 border-t-4 border-red-800 border-b-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="mb-4">
+            <h2 className="text-3xl font-bold text-white mb-2">
+              🚨 SISTEMA DE EMERGÊNCIA ANIMAL 🚨
+            </h2>
+            <p className="text-red-100 text-lg">
+              Operação Resgate - Somos a voz dos que não podem falar
+            </p>
+          </div>
+          
+          {/* Debug Info Destacado */}
+          <div className="mb-6 p-4 bg-black bg-opacity-30 rounded-lg text-white">
+            <p className="text-lg">🔍 DEBUG: User: {user?.username || 'NENHUM USUÁRIO LOGADO'}</p>
+            <p className="text-lg">🔍 DEBUG: Perfil: {user?.perfil || 'SEM PERFIL'}</p>
+            <p className="text-lg">🔍 DEBUG: hasPermission('admin'): {hasPermission('admin').toString()}</p>
+            <p className="text-lg">🔍 DEBUG: User Ativo: {user?.ativo?.toString() || 'false'}</p>
+          </div>
+          
+          {/* BOTÃO MEGA DESTACADO */}
+          <Link to="/wizard-denuncia">
+            <Button 
+              size="lg" 
+              className="bg-yellow-500 hover:bg-yellow-400 text-black font-black px-12 py-6 text-2xl shadow-2xl border-4 border-yellow-300 hover:border-yellow-200 transition-all duration-300 hover:scale-110 animate-bounce"
+            >
+              <AlertTriangle className="h-8 w-8 mr-4 animate-pulse" />
+              🚨 NOVA DENÚNCIA - TESTE 🚨
+              <Zap className="h-8 w-8 ml-4 animate-pulse" />
+            </Button>
+          </Link>
+          
+          <p className="text-white text-xl mt-4 font-bold animate-pulse">
+            ⬆️ CLIQUE AQUI PARA TESTAR O WIZARD ⬆️
+          </p>
+        </div>
+      </div>
+
       {/* Hero Section */}
       <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800">
         <div className="absolute inset-0 bg-black opacity-10"></div>
@@ -134,31 +172,6 @@ const Dashboard: React.FC = () => {
             <p className="text-lg sm:text-xl text-blue-100 mb-8 max-w-3xl mx-auto">
               Gestão completa e profissional para proteção animal
             </p>
-            
-            {/* 🚨 BOTÃO DE DENÚNCIA TÁTICO - SEMPRE VISÍVEL PARA DEBUG */}
-            <div className="mb-8">
-              {/* Debug Info */}
-              <div className="mb-4 p-2 bg-black bg-opacity-20 rounded text-white text-sm">
-                <p>🔍 DEBUG: User: {user?.username || 'null'}</p>
-                <p>🔍 DEBUG: Perfil: {user?.perfil || 'null'}</p>
-                <p>🔍 DEBUG: hasPermission('admin'): {hasPermission('admin').toString()}</p>
-              </div>
-              
-              {/* Botão sempre visível para teste */}
-              <Link to="/wizard-denuncia">
-                <Button 
-                  size="lg" 
-                  className="bg-red-600 hover:bg-red-700 text-white font-bold px-8 py-4 text-lg shadow-2xl border-2 border-red-400 hover:border-red-300 transition-all duration-300 hover:scale-105"
-                >
-                  <AlertTriangle className="h-6 w-6 mr-3 animate-pulse" />
-                  🚨 NOVA DENÚNCIA
-                  <Zap className="h-6 w-6 ml-3" />
-                </Button>
-              </Link>
-              <p className="text-blue-100 text-sm mt-2 font-medium">
-                Sistema Tático de Resgate Animal
-              </p>
-            </div>
 
             {/* Quick Stats */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 max-w-4xl mx-auto">
