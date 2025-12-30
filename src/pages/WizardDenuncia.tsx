@@ -1150,20 +1150,36 @@ const WizardDenuncia: React.FC = () => {
                         👨‍💼 Comandante da Operação (Responsável) *
                       </Label>
                       <Select 
-                        value={formData.voluntario_responsavel_id} 
-                        onValueChange={(value) => setFormData({...formData, voluntario_responsavel_id: value})}
+                        value={formData.voluntario_responsavel_id || "none"} 
+                        onValueChange={(value) => setFormData({...formData, voluntario_responsavel_id: value === "none" ? "" : value})}
                       >
                         <SelectTrigger className="mt-2 h-12 border-indigo-300 focus:border-indigo-500">
                           <SelectValue placeholder="Selecione o voluntário responsável" />
                         </SelectTrigger>
                         <SelectContent>
-                          {voluntarios.map(voluntario => (
-                            <SelectItem key={voluntario.id} value={voluntario.id}>
-                              {voluntario.nome} {voluntario.especialidades?.length > 0 && `(${voluntario.especialidades.join(', ')})`}
+                          {voluntarios.length > 0 ? (
+                            voluntarios.map(voluntario => (
+                              <SelectItem key={voluntario.id} value={voluntario.id}>
+                                👨‍💼 {voluntario.nome} {voluntario.especialidades?.length > 0 && `(${voluntario.especialidades.join(', ')})`}
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <SelectItem value="none" disabled>
+                              🔄 Carregando voluntários...
                             </SelectItem>
-                          ))}
+                          )}
                         </SelectContent>
                       </Select>
+                      {voluntarios.length === 0 && (
+                        <p className="text-sm text-indigo-600 mt-2">
+                          ⚠️ Nenhum voluntário disponível. Verifique se existem voluntários ativos no sistema.
+                        </p>
+                      )}
+                      {voluntarios.length > 0 && (
+                        <p className="text-sm text-indigo-600 mt-2">
+                          ✅ {voluntarios.length} voluntários disponíveis
+                        </p>
+                      )}
                     </div>
 
                     <div>
@@ -1171,34 +1187,53 @@ const WizardDenuncia: React.FC = () => {
                         👥 Equipe de Apoio (Voluntários Participantes)
                       </Label>
                       <div className="mt-2 space-y-2 max-h-48 overflow-y-auto border-2 border-indigo-200 rounded-lg p-4">
-                        {voluntarios
-                          .filter(v => v.id !== formData.voluntario_responsavel_id)
-                          .map(voluntario => (
-                          <label key={voluntario.id} className="flex items-center space-x-3">
-                            <input
-                              type="checkbox"
-                              checked={formData.voluntarios_participantes.includes(voluntario.id)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setFormData({
-                                    ...formData,
-                                    voluntarios_participantes: [...formData.voluntarios_participantes, voluntario.id]
-                                  });
-                                } else {
-                                  setFormData({
-                                    ...formData,
-                                    voluntarios_participantes: formData.voluntarios_participantes.filter(id => id !== voluntario.id)
-                                  });
-                                }
-                              }}
-                              className="w-4 h-4 text-indigo-600"
-                            />
-                            <span className="text-sm text-indigo-700">
-                              {voluntario.nome} {voluntario.especialidades?.length > 0 && `(${voluntario.especialidades.join(', ')})`}
-                            </span>
-                          </label>
-                        ))}
+                        {voluntarios.length > 0 ? (
+                          voluntarios
+                            .filter(v => v.id !== formData.voluntario_responsavel_id)
+                            .length > 0 ? (
+                            voluntarios
+                              .filter(v => v.id !== formData.voluntario_responsavel_id)
+                              .map(voluntario => (
+                              <label key={voluntario.id} className="flex items-center space-x-3">
+                                <input
+                                  type="checkbox"
+                                  checked={formData.voluntarios_participantes.includes(voluntario.id)}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setFormData({
+                                        ...formData,
+                                        voluntarios_participantes: [...formData.voluntarios_participantes, voluntario.id]
+                                      });
+                                    } else {
+                                      setFormData({
+                                        ...formData,
+                                        voluntarios_participantes: formData.voluntarios_participantes.filter(id => id !== voluntario.id)
+                                      });
+                                    }
+                                  }}
+                                  className="w-4 h-4 text-indigo-600"
+                                />
+                                <span className="text-sm text-indigo-700">
+                                  👥 {voluntario.nome} {voluntario.especialidades?.length > 0 && `(${voluntario.especialidades.join(', ')})`}
+                                </span>
+                              </label>
+                            ))
+                          ) : (
+                            <p className="text-sm text-indigo-600 text-center py-4">
+                              👨‍💼 Selecione primeiro um comandante para ver a equipe de apoio disponível
+                            </p>
+                          )
+                        ) : (
+                          <p className="text-sm text-indigo-600 text-center py-4">
+                            🔄 Carregando voluntários...
+                          </p>
+                        )}
                       </div>
+                      {voluntarios.length > 0 && formData.voluntarios_participantes.length > 0 && (
+                        <p className="text-sm text-indigo-600 mt-2">
+                          ✅ {formData.voluntarios_participantes.length} voluntários selecionados para a equipe
+                        </p>
+                      )}
                     </div>
 
                     <div>
