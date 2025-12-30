@@ -457,6 +457,22 @@ const WizardDenuncia: React.FC = () => {
       } else {
         console.log('✅ [WIZARD] Animais criados com sucesso:', animaisData?.length || animaisToCreate.length);
         console.log('📝 [WIZARD] IDs dos animais criados:', animaisData?.map(a => a.id));
+        console.log('📝 [WIZARD] Dados completos dos animais criados:', animaisData);
+        
+        // Verificar se os animais foram realmente inseridos
+        if (animaisData && animaisData.length > 0) {
+          console.log('✅ [WIZARD] Confirmação: Animais inseridos no banco de dados');
+          animaisData.forEach((animal, index) => {
+            console.log(`🐕 [WIZARD] Animal ${index + 1}:`, {
+              id: animal.id,
+              nome: animal.nome,
+              estado: animal.estado,
+              responsavel_id: animal.responsavel_id
+            });
+          });
+        } else {
+          console.warn('⚠️ [WIZARD] ATENÇÃO: animaisData está vazio ou nulo!');
+        }
       }
 
       // 3. Criar missão automaticamente
