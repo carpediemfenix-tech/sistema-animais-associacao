@@ -365,39 +365,47 @@ const WizardDenuncia: React.FC = () => {
     try {
       setSubmitting(true);
       console.log('🚀 [WIZARD] Iniciando submissão...');
+      console.log('📋 [WIZARD] Dados do formulário:', formData);
+      console.log('👤 [WIZARD] Usuário atual:', user);
+
+      // Preparar dados para inserção
+      const denunciaPayload = {
+        data_denuncia: formData.data_denuncia,
+        hora_denuncia: formData.hora_denuncia,
+        local_encontrado: formData.local_encontrado,
+        descricao_situacao: formData.descricao_situacao,
+        canal_denuncia: formData.canal_denuncia,
+        denunciante_anonimo: formData.denunciante_anonimo,
+        denunciante_nome: formData.denunciante_nome || null,
+        denunciante_contato: formData.denunciante_contato || null,
+        denunciante_observacoes: formData.denunciante_observacoes || null,
+        quantidade_animais: formData.quantidade_animais,
+        autoridades_contactadas: formData.autoridades_contactadas,
+        autoridade_tipo: formData.autoridade_tipo || null,
+        autoridade_nome: formData.autoridade_nome || null,
+        autoridade_contacto: formData.autoridade_contacto || null,
+        numero_ocorrencia: formData.numero_ocorrencia || null,
+        observacoes_autoridades: formData.observacoes_autoridades || null,
+        intervencao_veterinaria: formData.intervencao_veterinaria,
+        intervencao_veterinaria_data: formData.intervencao_veterinaria_data || null,
+        intervencao_veterinaria_hora: formData.intervencao_veterinaria_hora || null,
+        clinica_id: formData.clinica_id || null,
+        veterinario_nome: formData.veterinario_nome || null,
+        diagnostico_inicial: formData.diagnostico_inicial || null,
+        tratamentos_aplicados: formData.tratamentos_aplicados || null,
+        voluntario_responsavel_id: formData.voluntario_responsavel_id,
+        voluntarios_participantes: formData.voluntarios_participantes || [],
+        observacoes_equipe: formData.observacoes_equipe || null,
+        created_by: user?.username || 'admin'
+      };
+      
+      console.log('📦 [WIZARD] Payload da denúncia:', denunciaPayload);
 
       // 1. Criar denúncia
+      console.log('📝 [WIZARD] Inserindo denúncia na tabela denuncias_2025_12_29_23_00...');
       const { data: denunciaData, error: denunciaError } = await supabase
         .from('denuncias_2025_12_29_23_00')
-        .insert([{
-          data_denuncia: formData.data_denuncia,
-          hora_denuncia: formData.hora_denuncia,
-          local_encontrado: formData.local_encontrado,
-          descricao_situacao: formData.descricao_situacao,
-          canal_denuncia: formData.canal_denuncia,
-          denunciante_anonimo: formData.denunciante_anonimo,
-          denunciante_nome: formData.denunciante_nome,
-          denunciante_contato: formData.denunciante_contato,
-          denunciante_observacoes: formData.denunciante_observacoes,
-          quantidade_animais: formData.quantidade_animais,
-          autoridades_contactadas: formData.autoridades_contactadas,
-          autoridade_tipo: formData.autoridade_tipo,
-          autoridade_nome: formData.autoridade_nome,
-          autoridade_contacto: formData.autoridade_contacto,
-          numero_ocorrencia: formData.numero_ocorrencia,
-          observacoes_autoridades: formData.observacoes_autoridades,
-          intervencao_veterinaria: formData.intervencao_veterinaria,
-          intervencao_veterinaria_data: formData.intervencao_veterinaria_data,
-          intervencao_veterinaria_hora: formData.intervencao_veterinaria_hora,
-          clinica_id: formData.clinica_id || null,
-          veterinario_nome: formData.veterinario_nome,
-          diagnostico_inicial: formData.diagnostico_inicial,
-          tratamentos_aplicados: formData.tratamentos_aplicados,
-          voluntario_responsavel_id: formData.voluntario_responsavel_id,
-          voluntarios_participantes: formData.voluntarios_participantes,
-          observacoes_equipe: formData.observacoes_equipe,
-          created_by: user?.username || 'admin'
-        }])
+        .insert([denunciaPayload])
         .select()
         .single();
 
