@@ -430,7 +430,7 @@ const WizardDenuncia: React.FC = () => {
         nome: `${codigoDenuncia}-ANIM${String(index + 1).padStart(2, '0')}`,
         numero_processo: `${codigoDenuncia}-P${String(index + 1).padStart(2, '0')}`, // Número único
         especie: animal.especie, // Campo obrigatório
-        especie_id: animal.especie, // Usar especie_id se for UUID
+        // especie_id removido - causava erro UUID
         sexo: animal.sexo,
         idade_estimada: animal.idade_estimada || 'Desconhecida',
         estado: 'Em Resgate',
