@@ -432,7 +432,7 @@ const WizardDenuncia: React.FC = () => {
         especie: animal.especie, // Campo obrigatório
         // especie_id removido - causava erro UUID
         sexo: animal.sexo,
-        idade_estimada: animal.idade_estimada || 'Desconhecida',
+        // idade_estimada removido - campo INTEGER causava erro com strings
         estado: 'Em Resgate',
         local_encontrado: formData.local_encontrado,
         local_completo: formData.local_encontrado,
