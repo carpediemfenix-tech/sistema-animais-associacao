@@ -40,6 +40,7 @@ interface Denuncia {
   canal_denuncia: string;
   canal_denuncia_outro?: string;
   local_completo: string;
+  local_encontrado: string;
   descricao_situacao: string;
   denunciante_anonimo: boolean;
   denunciante_nome?: string;
@@ -48,6 +49,13 @@ interface Denuncia {
   quantidade_animais: number;
   intervencao_policial: boolean;
   dados_intervencao_policial?: any;
+  // Novos campos de gestão
+  status_denuncia: string;
+  prioridade: string;
+  data_conclusao?: string;
+  observacoes_gestao?: string;
+  responsavel_gestao_id?: string;
+  arquivada: boolean;
   intervencao_veterinaria: boolean;
   dados_intervencao_veterinaria?: any;
   voluntario_responsavel_id?: string;

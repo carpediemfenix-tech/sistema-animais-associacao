@@ -117,16 +117,27 @@ const Index: React.FC = () => {
           </div>
           
           {/* BOTÃO MEGA DESTACADO */}
-          <Link to="/wizard-denuncia">
-            <Button 
-              size="lg" 
-              className="bg-yellow-500 hover:bg-yellow-400 text-black font-black px-12 py-6 text-2xl shadow-2xl border-4 border-yellow-300 hover:border-yellow-200 transition-all duration-300 hover:scale-110 animate-bounce"
-            >
-              <AlertTriangle className="h-8 w-8 mr-4 animate-pulse" />
-              🚨 NOVA DENÚNCIA - TESTE 🚨
-              <Zap className="h-8 w-8 ml-4 animate-pulse" />
-            </Button>
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Link to="/wizard-denuncia">
+              <Button 
+                size="lg" 
+                className="bg-yellow-500 hover:bg-yellow-400 text-black font-black px-8 py-4 text-xl shadow-2xl border-4 border-yellow-300 hover:border-yellow-200 transition-all duration-300 hover:scale-105"
+              >
+                <Plus className="h-6 w-6 mr-3" />
+                🚨 NOVA DENÚNCIA
+              </Button>
+            </Link>
+            
+            <Link to="/modulo-denuncias">
+              <Button 
+                size="lg" 
+                className="bg-red-600 hover:bg-red-500 text-white font-bold px-8 py-4 text-xl shadow-2xl border-4 border-red-400 hover:border-red-300 transition-all duration-300 hover:scale-105"
+              >
+                <Shield className="h-6 w-6 mr-3" />
+                📋 GERIR DENÚNCIAS
+              </Button>
+            </Link>
+          </div>
           
           <p className="text-white text-xl mt-4 font-bold animate-pulse">
             ⬆️ CLIQUE AQUI PARA TESTAR O WIZARD ⬆️

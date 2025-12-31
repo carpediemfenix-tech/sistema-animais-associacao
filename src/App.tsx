@@ -93,6 +93,8 @@ import GruposArquivados from "./pages/GruposArquivados";
 import LogsAcesso from "./pages/LogsAcesso";
 import WizardDenuncia from "./pages/WizardDenuncia";
 import DenunciaDetail from "./pages/DenunciaDetail";
+import ModuloDenuncias from "./pages/ModuloDenuncias";
+import EditarDenuncia from "./pages/EditarDenuncia";
 
 const queryClient = new QueryClient();
 
@@ -114,7 +116,9 @@ const App = () => (
             
             {/* 🚨 OPERAÇÃO RESGATE - Wizard de Denúncias */}
             <Route path="/wizard-denuncia" element={<ProtectedRoute><WizardDenuncia /></ProtectedRoute>} />
+            <Route path="/modulo-denuncias" element={<ProtectedRoute><ModuloDenuncias /></ProtectedRoute>} />
             <Route path="/denuncia/:codigo" element={<ProtectedRoute><DenunciaDetail /></ProtectedRoute>} />
+            <Route path="/denuncia/:codigo/editar" element={<ProtectedRoute><EditarDenuncia /></ProtectedRoute>} />
             <Route path="/animais" element={<ProtectedRoute><AnimaisList /></ProtectedRoute>} />
             <Route path="/animal/:id" element={<ProtectedRoute><AnimalDetail /></ProtectedRoute>} />
             <Route path="/animal/:id/bi" element={<ProtectedRoute><AnimalBI /></ProtectedRoute>} />
