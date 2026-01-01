@@ -292,6 +292,11 @@ const EditarDenuncia: React.FC = () => {
     return icons[status as keyof typeof icons] || AlertTriangle;
   };
 
+  const renderStatusIcon = (status: string) => {
+    const IconComponent = getStatusIcon(status);
+    return <IconComponent className="h-5 w-5 text-blue-600" />;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center">
@@ -556,9 +561,7 @@ const EditarDenuncia: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="flex items-center gap-2 mb-3">
-                  {React.createElement(getStatusIcon(denuncia.status_denuncia), { 
-                    className: "h-5 w-5 text-blue-600" 
-                  })}
+                  {renderStatusIcon(denuncia.status_denuncia)}
                   <span className="font-medium">{denuncia.status_denuncia}</span>
                 </div>
                 <div className="text-sm text-gray-600">
