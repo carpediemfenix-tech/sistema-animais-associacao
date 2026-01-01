@@ -18,7 +18,8 @@ import {
   CheckCircle,
   Edit,
   History,
-  User
+  User,
+  ArrowLeft
 } from 'lucide-react';
 
 interface Denuncia {
@@ -53,8 +54,7 @@ const EditarDenuncia: React.FC = () => {
     status_denuncia: '',
     prioridade: '',
     quantidade_animais: 0,
-    observacoes_gestao: '',
-    responsavel_gestao_id: ''
+    observacoes_gestao: ''
   });
 
   // Verificar permissões
@@ -100,12 +100,12 @@ const EditarDenuncia: React.FC = () => {
         local_encontrado: data.local_encontrado || '',
         local_completo: data.local_completo || '',
         descricao_situacao: data.descricao_situacao || '',
-        status_denuncia: data.status_denuncia || 'nova',
-        prioridade: data.prioridade || 'normal',
+        status_denuncia: data.status_denuncia || '',
+        prioridade: data.prioridade || '',
         quantidade_animais: data.quantidade_animais || 0,
-        observacoes_gestao: data.observacoes_gestao || '',
-        responsavel_gestao_id: data.responsavel_gestao_id || user?.id || ''
+        observacoes_gestao: data.observacoes_gestao || ''
       });
+      
     } catch (error) {
       console.error('❌ [EDITAR] Erro:', error);
       toast({
@@ -122,12 +122,31 @@ const EditarDenuncia: React.FC = () => {
   const handleSave = async () => {
     if (!denuncia) return;
 
+    // Validações básicas
+    if (!formData.local_encontrado.trim()) {
+      toast({
+        title: "Campo obrigatório",
+        description: "Por favor, preencha o local encontrado.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.descricao_situacao.trim()) {
+      toast({
+        title: "Campo obrigatório",
+        description: "Por favor, preencha a descrição da situação.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setSaving(true);
       console.log('💾 [EDITAR] Salvando alterações...');
 
-      // Verificar se o status mudou para criar histórico
-      const statusMudou = formData.status_denuncia !== denuncia.status_denuncia;
+      // Verificar se status mudou para criar histórico
+      const statusMudou = denuncia.status_denuncia !== formData.status_denuncia;
 
       // Atualizar denúncia
       const { error: updateError } = await supabase
@@ -140,8 +159,9 @@ const EditarDenuncia: React.FC = () => {
           prioridade: formData.prioridade,
           quantidade_animais: formData.quantidade_animais,
           observacoes_gestao: formData.observacoes_gestao,
-          responsavel_gestao_id: formData.responsavel_gestao_id,
-          updated_by: user?.id
+          responsavel_gestao_id: user?.id,
+          updated_by: user?.id,
+          updated_at: new Date().toISOString()
         })
         .eq('id', denuncia.id);
 
@@ -150,24 +170,19 @@ const EditarDenuncia: React.FC = () => {
         throw updateError;
       }
 
-      // Criar histórico se status mudou
+      // Criar entrada na timeline se status mudou
       if (statusMudou) {
-        console.log('📝 [EDITAR] Criando histórico de status...');
+        console.log('📝 [EDITAR] Criando entrada na timeline...');
         
-        const { error: historicoError } = await supabase
-          .from('historico_denuncias_2025_12_31_02_00')
-          .insert([{
-            denuncia_id: denuncia.id,
-            status_anterior: denuncia.status_denuncia,
-            status_novo: formData.status_denuncia,
-            observacoes: `Status alterado via edição. ${formData.observacoes_gestao ? 'Observações: ' + formData.observacoes_gestao : ''}`,
-            alterado_por: user?.id
-          }]);
-
-        if (historicoError) {
-          console.error('⚠️ [EDITAR] Erro ao criar histórico:', historicoError);
-          // Não falhar por causa do histórico
-        }
+        await supabase.rpc('criar_timeline_denuncia', {
+          p_denuncia_id: denuncia.id,
+          p_tipo_acao: 'edicao',
+          p_descricao: `Denúncia editada. ${statusMudou ? `Status alterado de "${denuncia.status_denuncia}" para "${formData.status_denuncia}".` : ''} ${formData.observacoes_gestao ? `Observações: ${formData.observacoes_gestao}` : ''}`,
+          p_acao_anterior: statusMudou ? denuncia.status_denuncia : null,
+          p_acao_nova: statusMudou ? formData.status_denuncia : null,
+          p_usuario_id: user?.id,
+          p_usuario_nome: user?.username || user?.email || 'Administrador'
+        });
       }
 
       console.log('✅ [EDITAR] Denúncia atualizada com sucesso');
@@ -175,7 +190,6 @@ const EditarDenuncia: React.FC = () => {
       toast({
         title: "Denúncia atualizada",
         description: "As alterações foram salvas com sucesso.",
-        variant: "default",
       });
 
       // Voltar para detalhes
@@ -211,7 +225,7 @@ const EditarDenuncia: React.FC = () => {
       <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-red-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Carregando denúncia...</p>
+          <p className="text-gray-600">Carregando dados da denúncia...</p>
         </div>
       </div>
     );
@@ -222,7 +236,7 @@ const EditarDenuncia: React.FC = () => {
       <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center">
         <div className="text-center">
           <AlertTriangle className="h-16 w-16 text-red-600 mx-auto mb-4" />
-          <p className="text-gray-600">Denúncia não encontrada</p>
+          <p className="text-gray-600">Denúncia não encontrada.</p>
         </div>
       </div>
     );
@@ -231,28 +245,41 @@ const EditarDenuncia: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50">
       <PageActionBar
-        title={`Editar Denúncia ${denuncia.codigo}`}
         breadcrumbs={[
           { label: 'Dashboard', href: '/dashboard' },
           { label: 'Denúncias', href: '/modulo-denuncias' },
           { label: denuncia.codigo, href: `/denuncia/${codigo}` },
-          { label: 'Editar', href: `/denuncia/${codigo}/editar` }
+          { label: 'Editar' }
         ]}
-        primaryActions={[
-          {
-            label: 'Salvar',
-            onClick: handleSave,
-            icon: Save,
-            variant: 'default',
-            disabled: saving
-          },
-          {
-            label: 'Cancelar',
-            onClick: handleCancel,
-            icon: X,
-            variant: 'outline'
-          }
-        ]}
+        primaryActions={
+          <div className="flex gap-2">
+            <Button 
+              onClick={handleSave}
+              disabled={saving}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {saving ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Salvando...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Salvar
+                </>
+              )}
+            </Button>
+            <Button 
+              onClick={handleCancel}
+              variant="outline"
+              disabled={saving}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Voltar
+            </Button>
+          </div>
+        }
         secondaryActions={[
           {
             label: 'Ver Detalhes',
@@ -297,13 +324,12 @@ const EditarDenuncia: React.FC = () => {
                       placeholder="Local onde os animais foram encontrados"
                     />
                   </div>
-                  
                   <div>
-                    <Label htmlFor="quantidade_animais">Quantidade de Animais *</Label>
+                    <Label htmlFor="quantidade_animais">Quantidade de Animais</Label>
                     <Input
                       id="quantidade_animais"
                       type="number"
-                      min="1"
+                      min="0"
                       value={formData.quantidade_animais}
                       onChange={(e) => setFormData(prev => ({ ...prev, quantidade_animais: parseInt(e.target.value) || 0 }))}
                     />
@@ -316,7 +342,7 @@ const EditarDenuncia: React.FC = () => {
                     id="local_completo"
                     value={formData.local_completo}
                     onChange={(e) => setFormData(prev => ({ ...prev, local_completo: e.target.value }))}
-                    placeholder="Endereço completo e detalhado"
+                    placeholder="Endereço completo do local"
                   />
                 </div>
 
@@ -326,28 +352,28 @@ const EditarDenuncia: React.FC = () => {
                     id="descricao_situacao"
                     value={formData.descricao_situacao}
                     onChange={(e) => setFormData(prev => ({ ...prev, descricao_situacao: e.target.value }))}
-                    placeholder="Descreva detalhadamente a situação encontrada"
+                    placeholder="Descreva detalhadamente a situação encontrada..."
                     rows={4}
                   />
                 </div>
               </CardContent>
             </Card>
 
-            {/* Gestão e Status */}
+            {/* Gestão */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <User className="h-5 w-5" />
-                  Gestão e Acompanhamento
+                  Gestão da Denúncia
                 </CardTitle>
                 <CardDescription>
-                  Status e observações de gestão
+                  Status, prioridade e observações administrativas
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="status_denuncia">Status da Denúncia *</Label>
+                    <Label htmlFor="status_denuncia">Status</Label>
                     <Select 
                       value={formData.status_denuncia} 
                       onValueChange={(value) => setFormData(prev => ({ ...prev, status_denuncia: value }))}
@@ -403,7 +429,7 @@ const EditarDenuncia: React.FC = () => {
                     id="observacoes_gestao"
                     value={formData.observacoes_gestao}
                     onChange={(e) => setFormData(prev => ({ ...prev, observacoes_gestao: e.target.value }))}
-                    placeholder="Observações internas sobre o acompanhamento da denúncia"
+                    placeholder="Observações administrativas sobre a denúncia..."
                     rows={3}
                   />
                 </div>
@@ -411,47 +437,53 @@ const EditarDenuncia: React.FC = () => {
             </Card>
           </div>
 
-          {/* Sidebar com Informações */}
+          {/* Informações Laterais */}
           <div className="space-y-6">
             {/* Informações da Denúncia */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm">Informações da Denúncia</CardTitle>
+                <CardTitle className="text-lg">Informações Originais</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3 text-sm">
+              <CardContent className="space-y-3">
                 <div>
-                  <span className="font-medium">Código:</span>
-                  <div className="text-lg font-bold text-red-600">{denuncia.codigo}</div>
+                  <Label className="text-sm font-medium text-gray-600">Código</Label>
+                  <p className="text-sm font-mono">{denuncia.codigo}</p>
                 </div>
                 <div>
-                  <span className="font-medium">Data:</span>
-                  <div>{new Date(denuncia.data_denuncia).toLocaleDateString('pt-PT')}</div>
+                  <Label className="text-sm font-medium text-gray-600">Data da Denúncia</Label>
+                  <p className="text-sm">{new Date(denuncia.data_denuncia).toLocaleDateString('pt-PT')}</p>
                 </div>
                 <div>
-                  <span className="font-medium">Canal:</span>
-                  <div className="capitalize">{denuncia.canal_denuncia}</div>
+                  <Label className="text-sm font-medium text-gray-600">Canal</Label>
+                  <p className="text-sm">{denuncia.canal_denuncia}</p>
                 </div>
                 <div>
-                  <span className="font-medium">Denunciante:</span>
-                  <div>{denuncia.denunciante_anonimo ? 'Anônimo' : denuncia.denunciante_nome || 'Não informado'}</div>
+                  <Label className="text-sm font-medium text-gray-600">Tipo</Label>
+                  <p className="text-sm">{denuncia.denunciante_anonimo ? 'Anônima' : 'Identificada'}</p>
                 </div>
+                {!denuncia.denunciante_anonimo && denuncia.denunciante_nome && (
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Denunciante</Label>
+                    <p className="text-sm">{denuncia.denunciante_nome}</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
             {/* Status Atual */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm">Status Atual</CardTitle>
+                <CardTitle className="text-lg">Status Atual</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-2 mb-3">
                   {React.createElement(getStatusIcon(denuncia.status_denuncia), { 
-                    className: "h-6 w-6 text-gray-600" 
+                    className: "h-5 w-5 text-blue-600" 
                   })}
-                  <div>
-                    <div className="font-medium capitalize">{denuncia.status_denuncia.replace('_', ' ')}</div>
-                    <div className="text-sm text-gray-500">Status atual</div>
-                  </div>
+                  <span className="font-medium">{denuncia.status_denuncia}</span>
+                </div>
+                <div className="text-sm text-gray-600">
+                  <p>Prioridade: <span className="font-medium">{denuncia.prioridade}</span></p>
                 </div>
               </CardContent>
             </Card>
@@ -459,7 +491,7 @@ const EditarDenuncia: React.FC = () => {
             {/* Ações Rápidas */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm">Ações Rápidas</CardTitle>
+                <CardTitle className="text-lg">Ações Rápidas</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
                 <Button 
@@ -469,41 +501,22 @@ const EditarDenuncia: React.FC = () => {
                   onClick={() => navigate(`/denuncia/${codigo}`)}
                 >
                   <History className="h-4 w-4 mr-2" />
-                  Ver Histórico
+                  Ver Timeline
                 </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="w-full justify-start"
-                  onClick={() => toast({ title: 'Em desenvolvimento', description: 'Funcionalidade em desenvolvimento.' })}
-                >
-                  <AlertTriangle className="h-4 w-4 mr-2" />
-                  Gerar Relatório
-                </Button>
+                {denuncia.status_denuncia !== 'concluida' && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full justify-start"
+                    onClick={() => navigate(`/denuncia/${codigo}/concluir`)}
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Concluir Denúncia
+                  </Button>
+                )}
               </CardContent>
             </Card>
           </div>
-        </div>
-
-        {/* Botões de Ação */}
-        <div className="flex justify-end gap-4 mt-8 pt-6 border-t">
-          <Button variant="outline" onClick={handleCancel}>
-            <X className="h-4 w-4 mr-2" />
-            Cancelar
-          </Button>
-          <Button onClick={handleSave} disabled={saving}>
-            {saving ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                Salvando...
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4 mr-2" />
-                Salvar Alterações
-              </>
-            )}
-          </Button>
         </div>
       </div>
     </div>
