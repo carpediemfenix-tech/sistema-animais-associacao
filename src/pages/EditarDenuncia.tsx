@@ -357,13 +357,16 @@ const EditarDenuncia: React.FC = () => {
             </Button>
           </div>
         }
-        secondaryActions={[
-          {
-            label: 'Ver Detalhes',
-            onClick: () => navigate(`/denuncia/${codigo}`),
-            icon: History
-          }
-        ]}
+        secondaryActions={
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => navigate(`/denuncia/${codigo}`)}
+          >
+            <History className="h-4 w-4 mr-2" />
+            Ver Detalhes
+          </Button>
+        }
       />
 
       <div className="container mx-auto px-4 py-8">
