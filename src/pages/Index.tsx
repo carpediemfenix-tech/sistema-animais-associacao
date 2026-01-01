@@ -208,7 +208,7 @@ const Index: React.FC = () => {
             </Link>
 
             {/* 4. Missões */}
-            <Link to="/missoes" className="group">
+            <Link to="/modulo-missoes" className="group">
               <Card className="h-full transition-all duration-300 hover:shadow-xl hover:-translate-y-2 border-0 bg-gradient-to-br from-purple-50 to-violet-50 group-hover:from-purple-100 group-hover:to-violet-100">
                 <CardContent className="p-6 text-center">
                   <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-purple-500 to-violet-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
