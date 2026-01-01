@@ -348,6 +348,25 @@ const EditarDenuncia: React.FC = () => {
               )}
             </Button>
             <Button 
+              onClick={() => navigate(`/denuncia/${codigo}`)}
+              variant="outline"
+              disabled={saving}
+            >
+              <History className="h-4 w-4 mr-2" />
+              Ver Detalhes
+            </Button>
+            {denuncia && denuncia.status_denuncia !== 'concluida' && (
+              <Button 
+                onClick={() => navigate(`/denuncia/${codigo}/concluir`)}
+                variant="outline"
+                disabled={saving}
+                className="text-green-600 border-green-600 hover:bg-green-50"
+              >
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Concluir
+              </Button>
+            )}
+            <Button 
               onClick={handleCancel}
               variant="outline"
               disabled={saving}
@@ -356,16 +375,6 @@ const EditarDenuncia: React.FC = () => {
               Voltar
             </Button>
           </div>
-        }
-        secondaryActions={
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => navigate(`/denuncia/${codigo}`)}
-          >
-            <History className="h-4 w-4 mr-2" />
-            Ver Detalhes
-          </Button>
         }
       />
 
