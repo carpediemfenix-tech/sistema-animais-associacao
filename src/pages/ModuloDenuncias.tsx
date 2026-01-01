@@ -225,18 +225,26 @@ const ModuloDenuncias: React.FC = () => {
             Nova Denúncia
           </Button>
         }
-        secondaryActions={[
-          {
-            label: 'Relatórios',
-            onClick: () => toast({ title: 'Em desenvolvimento', description: 'Funcionalidade em desenvolvimento.' }),
-            icon: BarChart3
-          },
-          {
-            label: 'Arquivadas',
-            onClick: () => navigate('/denuncias-arquivadas'),
-            icon: Archive
-          }
-        ]}
+        secondaryActions={
+          <>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => toast({ title: 'Em desenvolvimento', description: 'Funcionalidade em desenvolvimento.' })}
+            >
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Relatórios
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => navigate('/denuncias-arquivadas')}
+            >
+              <Archive className="h-4 w-4 mr-2" />
+              Arquivadas
+            </Button>
+          </>
+        }
       />
 
       <div className="container mx-auto px-4 py-8">

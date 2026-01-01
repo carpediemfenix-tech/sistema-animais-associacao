@@ -201,13 +201,16 @@ const MissoesArquivadas: React.FC = () => {
               </Button>
             </>
           }
-          secondaryActions={[
-            {
-              label: 'Voltar ao Dashboard',
-              onClick: () => navigate('/dashboard'),
-              icon: <Home className="h-4 w-4" />
-            }
-          ]}
+          secondaryActions={
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => navigate('/dashboard')}
+            >
+              <Home className="h-4 w-4 mr-2" />
+              Voltar ao Dashboard
+            </Button>
+          }
           showBackToDashboard={false}
         />
 

@@ -356,21 +356,29 @@ const DenunciaDetail: React.FC = () => {
             )}
           </div>
         }
-        secondaryActions={hasPermission('admin') ? [
-          ...(denuncia.arquivada ? [
-            {
-              label: 'Restaurar',
-              onClick: handleRestaurar,
-              icon: RotateCcw
-            }
-          ] : [
-            {
-              label: 'Arquivar',
-              onClick: handleArquivar,
-              icon: Archive
-            }
-          ])
-        ] : []}
+        secondaryActions={
+          hasPermission('admin') ? (
+            denuncia.arquivada ? (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleRestaurar}
+              >
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Restaurar
+              </Button>
+            ) : (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleArquivar}
+              >
+                <Archive className="h-4 w-4 mr-2" />
+                Arquivar
+              </Button>
+            )
+          ) : null
+        }
       />
 
       <div className="container mx-auto px-4 py-8">
