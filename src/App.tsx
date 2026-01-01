@@ -91,143 +91,152 @@ import GestaoSocios from "./pages/GestaoSocios";
 import ConfiguracaoIntervencoes from "./pages/ConfiguracaoIntervencoes";
 import GruposArquivados from "./pages/GruposArquivados";
 import LogsAcesso from "./pages/LogsAcesso";
+
+// Módulo de Denúncias - Fase 2
 import WizardDenuncia from "./pages/WizardDenuncia";
 import DenunciaDetail from "./pages/DenunciaDetail";
 import ModuloDenuncias from "./pages/ModuloDenuncias";
 import EditarDenuncia from "./pages/EditarDenuncia";
+import ConcluirDenuncia from "./pages/ConcluirDenuncia";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
         <Sonner />
         <HashRouter>
-          <Routes>
-            {/* Rotas públicas */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/verificar/:animalId/:hash" element={<VerificacaoBI />} />
-            
-            {/* Rotas protegidas */}
-            <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            
-            {/* 🚨 OPERAÇÃO RESGATE - Wizard de Denúncias */}
-            <Route path="/wizard-denuncia" element={<ProtectedRoute><WizardDenuncia /></ProtectedRoute>} />
-            <Route path="/modulo-denuncias" element={<ProtectedRoute><ModuloDenuncias /></ProtectedRoute>} />
-            <Route path="/denuncia/:codigo" element={<ProtectedRoute><DenunciaDetail /></ProtectedRoute>} />
-            <Route path="/denuncia/:codigo/editar" element={<ProtectedRoute><EditarDenuncia /></ProtectedRoute>} />
-            <Route path="/animais" element={<ProtectedRoute><AnimaisList /></ProtectedRoute>} />
-            <Route path="/animal/:id" element={<ProtectedRoute><AnimalDetail /></ProtectedRoute>} />
-            <Route path="/animal/:id/bi" element={<ProtectedRoute><AnimalBI /></ProtectedRoute>} />
-            <Route path="/animal/:id/intervencoes" element={<ProtectedRoute><AnimalIntervencoes /></ProtectedRoute>} />
-            <Route path="/animal/:id/eventos" element={<ProtectedRoute><AnimalEventos /></ProtectedRoute>} />
-<Route path="/animal/:id/localizacoes" element={<ProtectedRoute><AnimalLocalizacoes /></ProtectedRoute>} />
-            <Route path="/animal/:id/estados" element={<ProtectedRoute><AnimalEstados /></ProtectedRoute>} />
-            <Route path="/animal/:id/intervencoes-autoridades" element={<ProtectedRoute><IntervencoesAutoridades /></ProtectedRoute>} />
-            <Route path="/animal/:id/responsabilidades" element={<ProtectedRoute><AnimalResponsabilidades /></ProtectedRoute>} />
-            <Route path="/animal/:id/financeiro" element={<ProtectedRoute><AnimalFinanceiro /></ProtectedRoute>} />
-            <Route path="/animal/:id/editar" element={<ProtectedRoute><EditarAnimal /></ProtectedRoute>} />
-            <Route path="/novo-animal" element={<ProtectedRoute><NovoAnimal /></ProtectedRoute>} />
-            <Route path="/animais-adotados" element={<ProtectedRoute><AnimaisAdotados /></ProtectedRoute>} />
-            <Route path="/intervencoes" element={<ProtectedRoute><IntervencoesPage /></ProtectedRoute>} />
-            <Route path="/eventos" element={<ProtectedRoute><EventosPage /></ProtectedRoute>} />
-            {/* Rotas do Sistema de Voluntários Valentão */}
-            {/* PÁGINA PRINCIPAL - Gestão Unificada (USAR ESTA!) */}
-            <Route path="/gestao-voluntarios" element={<ProtectedRoute><GestaoVoluntariosUnificada /></ProtectedRoute>} />
-            
-            {/* REDIRECIONAMENTOS - Rotas antigas que apontam para a nova página unificada */}
-            <Route path="/voluntarios" element={<ProtectedRoute><GestaoVoluntariosUnificada /></ProtectedRoute>} />
-            <Route path="/modulo-voluntarios" element={<ProtectedRoute><GestaoVoluntariosUnificada /></ProtectedRoute>} />
-            <Route path="/voluntarios/dashboard" element={<ProtectedRoute><GestaoVoluntariosUnificada /></ProtectedRoute>} />
-            
-            {/* PÁGINA LEGADA - Gestão Completa (manter por compatibilidade) */}
-            <Route path="/voluntarios/gestao" element={<ProtectedRoute><GestaoVoluntarios /></ProtectedRoute>} />
-            <Route path="/gestao-voluntarios-completa" element={<ProtectedRoute><GestaoVoluntarios /></ProtectedRoute>} />
-            <Route path="/voluntarios/novo" element={<ProtectedRoute><NovoVoluntario /></ProtectedRoute>} />
-            <Route path="/voluntarios/editar/:id" element={<ProtectedRoute><EditarVoluntario /></ProtectedRoute>} />
-            <Route path="/voluntarios/perfil/:id" element={<ProtectedRoute><VoluntarioProfile /></ProtectedRoute>} />
-            <Route path="/voluntarios/:id/formacoes" element={<ProtectedRoute><FormacoesFrequentadas /></ProtectedRoute>} />
-            <Route path="/sistema-formacao" element={<ProtectedRoute><SistemaFormacao /></ProtectedRoute>} />
-            <Route path="/formacao" element={<ProtectedRoute><SistemaFormacao /></ProtectedRoute>} />
-            <Route path="/voluntarios/relatorios" element={<ProtectedRoute><RelatoriosVoluntarios /></ProtectedRoute>} />
-            {/* Novos Módulos Dedicados */}
-            <Route path="/modulo-animais" element={<ProtectedRoute><ModuloAnimais /></ProtectedRoute>} />
-            <Route path="/modulo-formacao" element={<ProtectedRoute><ModuloFormacao /></ProtectedRoute>} />
-            <Route path="/modulo-administrador" element={<ProtectedRoute><ModuloAdministrador /></ProtectedRoute>} />
-            <Route path="/administrador" element={<ProtectedRoute><ModuloAdministrador /></ProtectedRoute>} />
-            <Route path="/modulo-equipamentos" element={<ProtectedRoute><ModuloEquipamentos /></ProtectedRoute>} />
-            {/* Rotas do Módulo Equipamentos */}
-            <Route path="/equipamentos" element={<ProtectedRoute><EquipamentosNavigation /></ProtectedRoute>} />
-            <Route path="/equipamentos/dashboard" element={<ProtectedRoute><EquipamentosDashboard /></ProtectedRoute>} />
-            <Route path="/equipamentos/inventario" element={<ProtectedRoute><EquipamentosInventario /></ProtectedRoute>} />
-            <Route path="/equipamentos/atribuicoes" element={<ProtectedRoute><EquipamentosAtribuicoes /></ProtectedRoute>} />
-            <Route path="/equipamentos/manutencoes" element={<ProtectedRoute><EquipamentosManutencoes /></ProtectedRoute>} />
-            <Route path="/equipamentos/alertas" element={<ProtectedRoute><EquipamentosAlertas /></ProtectedRoute>} />
-            <Route path="/equipamentos/relatorios" element={<ProtectedRoute><EquipamentosRelatorios /></ProtectedRoute>} />
-            <Route path="/modulo-clinicas" element={<ProtectedRoute><ModuloClinicas /></ProtectedRoute>} />
-            <Route path="/clinicas" element={<ProtectedRoute><ModuloClinicas /></ProtectedRoute>} />
-            <Route path="/modulo-missoes" element={<ProtectedRoute><ModuloMissoesOtimizado /></ProtectedRoute>} />
-            <Route path="/missoes" element={<ProtectedRoute><ModuloMissoesOtimizado /></ProtectedRoute>} />
-            <Route path="/missoes-arquivadas" element={<ProtectedRoute><MissoesArquivadas /></ProtectedRoute>} />
-            <Route path="/missao/:id" element={<ProtectedRoute><MissaoDetailOtimizada /></ProtectedRoute>} />
-            <Route path="/missao/:id/editar" element={<ProtectedRoute><EditarMissao /></ProtectedRoute>} />
-            <Route path="/missao/:id/participacoes" element={<ProtectedRoute><MissaoParticipacoes /></ProtectedRoute>} />
-            <Route path="/missao/:id/animais" element={<ProtectedRoute><MissaoAnimais /></ProtectedRoute>} />
-            <Route path="/missao/:id/financeiro" element={<ProtectedRoute><MissaoFinanceiro /></ProtectedRoute>} />
-            <Route path="/missao/:id/equipamentos" element={<ProtectedRoute><MissaoEquipamentos /></ProtectedRoute>} />
-            <Route path="/dashboard-pontos" element={<ProtectedRoute><DashboardPontos /></ProtectedRoute>} />
-            <Route path="/configuracoes/especialidades" element={<ProtectedRoute><ConfiguracaoEspecialidades /></ProtectedRoute>} />
-            <Route path="/modulo-agenda" element={<ProtectedRoute><ModuloAgenda /></ProtectedRoute>} />
-            <Route path="/agenda" element={<ProtectedRoute><ModuloAgenda /></ProtectedRoute>} />
-            <Route path="/estatisticas-avancadas" element={<ProtectedRoute><EstatisticasAvancadas /></ProtectedRoute>} />
-            <Route path="/dashboard-executivo" element={<ProtectedRoute><DashboardExecutivo /></ProtectedRoute>} />
-            <Route path="/voluntario/:id" element={<ProtectedRoute><VoluntarioDetail /></ProtectedRoute>} />
-            <Route path="/gestao-financeira" element={<ProtectedRoute><GestaoFinanceira /></ProtectedRoute>} />
-            {/* Módulo Financeiro Profissional - F01 a F06 */}
-            <Route path="/financeiro" element={<ProtectedRoute><DashboardFinanceiro /></ProtectedRoute>} />
-            <Route path="/financeiro/movimentos" element={<ProtectedRoute><GestaoMovimentos /></ProtectedRoute>} />
-            <Route path="/financeiro/movimentos/novo" element={<ProtectedRoute><NovoMovimento /></ProtectedRoute>} />
-            <Route path="/financeiro/contas" element={<ProtectedRoute><GestaoContas /></ProtectedRoute>} />
-            <Route path="/financeiro/configuracoes" element={<ProtectedRoute><ConfiguracoesFinanceiras /></ProtectedRoute>} />
-            <Route path="/financeiro/relatorios" element={<ProtectedRoute><RelatoriosFinanceiros /></ProtectedRoute>} />
-            <Route path="/relatorios" element={<ProtectedRoute><Relatorios /></ProtectedRoute>} />
-            <Route path="/configuracoes" element={<ProtectedRoute><Configuracoes /></ProtectedRoute>} />
-            <Route path="/socios" element={<ProtectedRoute><GestaoSocios /></ProtectedRoute>} />
-            <Route path="/configuracoes/especies" element={<ProtectedRoute><GestaoEspecies /></ProtectedRoute>} />
-            <Route path="/configuracoes/grupos" element={<ProtectedRoute><GestaoGrupos /></ProtectedRoute>} />
-            <Route path="/configuracoes/localizacoes" element={<ProtectedRoute><GestaoLocalizacoes /></ProtectedRoute>} />
-            <Route path="/configuracoes/categorias" element={<ProtectedRoute><GestaoCategorias /></ProtectedRoute>} />
-            <Route path="/configuracoes/clinicas" element={<ProtectedRoute><GestaoClinicas /></ProtectedRoute>} />
-            <Route path="/configuracoes/responsabilidades" element={<ProtectedRoute><GestaoResponsabilidades /></ProtectedRoute>} />
-            <Route path="/configuracoes/intervencoes" element={<ProtectedRoute><ConfiguracaoIntervencoes /></ProtectedRoute>} />
-            <Route path="/configuracoes/estados" element={<ProtectedRoute><GestaoEstados /></ProtectedRoute>} />
-            <Route path="/historico-nomes" element={<ProtectedRoute><HistoricoNomesAnimais /></ProtectedRoute>} />
-            <Route path="/animal/:animalId/historico-nomes" element={<ProtectedRoute><HistoricoNomesAnimais /></ProtectedRoute>} />
-            <Route path="/utilizadores" element={<ProtectedRoute><GestaoUtilizadores /></ProtectedRoute>} />
-            <Route path="/logs-acesso" element={<ProtectedRoute><LogsAcesso /></ProtectedRoute>} />
-            <Route path="/animais-arquivados" element={<ProtectedRoute><AnimaisArquivados /></ProtectedRoute>} />
-            <Route path="/grupos" element={<ProtectedRoute><GestaoGrupos /></ProtectedRoute>} />
-            <Route path="/grupos-arquivados" element={<ProtectedRoute><GruposArquivados /></ProtectedRoute>} />
-            <Route path="/grupo/:id" element={<ProtectedRoute><GrupoDetail /></ProtectedRoute>} />
-            <Route path="/manual" element={<ProtectedRoute><ManualUtilizador /></ProtectedRoute>} />
-            
-            <Route path="/modulo-agenda" element={<ProtectedRoute><ModuloAgenda /></ProtectedRoute>} />
-<Route path="/modulo-equipamentos" element={<ProtectedRoute><ModuloEquipamentos /></ProtectedRoute>} />
-            {/* Rotas removidas - páginas vazias redirecionadas */}
-            {/* /analytics, /monitoramento, /workflow removidos - eram placeholders vazios */}
-            {/* /relatorios agora redireciona para dashboard de relatórios */}
-            <Route path="/relatorios" element={<ProtectedRoute><RelatoriosVoluntarios /></ProtectedRoute>} />
-            
-            {/* Rota 404 */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <AuthProvider>
+            <Routes>
+              {/* Rota pública de login */}
+              <Route path="/login" element={<Login />} />
+              
+              {/* Rota pública de verificação de BI */}
+              <Route path="/verificar/:shortId/:hash" element={<VerificacaoBI />} />
+              
+              {/* Rotas protegidas */}
+              <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+              <Route path="/dashboard-executivo" element={<ProtectedRoute><DashboardExecutivo /></ProtectedRoute>} />
+              
+              {/* Módulo de Animais */}
+              <Route path="/modulo-animais" element={<ProtectedRoute><ModuloAnimais /></ProtectedRoute>} />
+              <Route path="/animais" element={<ProtectedRoute><AnimaisList /></ProtectedRoute>} />
+              <Route path="/animal/:id" element={<ProtectedRoute><AnimalDetail /></ProtectedRoute>} />
+              <Route path="/animal/:id/bi" element={<ProtectedRoute><AnimalBI /></ProtectedRoute>} />
+              <Route path="/animal/:id/intervencoes" element={<ProtectedRoute><AnimalIntervencoes /></ProtectedRoute>} />
+              <Route path="/animal/:id/eventos" element={<ProtectedRoute><AnimalEventos /></ProtectedRoute>} />
+              <Route path="/animal/:id/localizacoes" element={<ProtectedRoute><AnimalLocalizacoes /></ProtectedRoute>} />
+              <Route path="/animal/:id/responsabilidades" element={<ProtectedRoute><AnimalResponsabilidades /></ProtectedRoute>} />
+              <Route path="/animal/:id/financeiro" element={<ProtectedRoute><AnimalFinanceiro /></ProtectedRoute>} />
+              <Route path="/animal/:id/estados" element={<ProtectedRoute><AnimalEstados /></ProtectedRoute>} />
+              <Route path="/animal/:id/editar" element={<ProtectedRoute><EditarAnimal /></ProtectedRoute>} />
+              <Route path="/novo-animal" element={<ProtectedRoute><NovoAnimal /></ProtectedRoute>} />
+              <Route path="/animais-arquivados" element={<ProtectedRoute><AnimaisArquivados /></ProtectedRoute>} />
+              <Route path="/animais-adotados" element={<ProtectedRoute><AnimaisAdotados /></ProtectedRoute>} />
+              <Route path="/historico-nomes" element={<ProtectedRoute><HistoricoNomesAnimais /></ProtectedRoute>} />
+              
+              {/* Módulo de Voluntários */}
+              <Route path="/modulo-voluntarios" element={<ProtectedRoute><ModuloVoluntarios /></ProtectedRoute>} />
+              <Route path="/voluntarios" element={<ProtectedRoute><GestaoVoluntarios /></ProtectedRoute>} />
+              <Route path="/voluntarios-dashboard" element={<ProtectedRoute><VoluntariosDashboard /></ProtectedRoute>} />
+              <Route path="/voluntario/:id" element={<ProtectedRoute><VoluntarioDetail /></ProtectedRoute>} />
+              <Route path="/voluntario/:id/profile" element={<ProtectedRoute><VoluntarioProfile /></ProtectedRoute>} />
+              <Route path="/novo-voluntario" element={<ProtectedRoute><NovoVoluntario /></ProtectedRoute>} />
+              <Route path="/editar-voluntario/:id" element={<ProtectedRoute><EditarVoluntario /></ProtectedRoute>} />
+              <Route path="/gestao-voluntarios-unificada" element={<ProtectedRoute><GestaoVoluntariosUnificada /></ProtectedRoute>} />
+              <Route path="/relatorios-voluntarios" element={<ProtectedRoute><RelatoriosVoluntarios /></ProtectedRoute>} />
+              <Route path="/dashboard-pontos" element={<ProtectedRoute><DashboardPontos /></ProtectedRoute>} />
+              
+              {/* Módulo de Formação */}
+              <Route path="/modulo-formacao" element={<ProtectedRoute><ModuloFormacao /></ProtectedRoute>} />
+              <Route path="/sistema-formacao" element={<ProtectedRoute><SistemaFormacao /></ProtectedRoute>} />
+              <Route path="/formacoes-frequentadas" element={<ProtectedRoute><FormacoesFrequentadas /></ProtectedRoute>} />
+              
+              {/* Módulo de Missões */}
+              <Route path="/modulo-missoes" element={<ProtectedRoute><ModuloMissoesOtimizado /></ProtectedRoute>} />
+              <Route path="/missao/:id" element={<ProtectedRoute><MissaoDetailOtimizada /></ProtectedRoute>} />
+              <Route path="/missao/:id/editar" element={<ProtectedRoute><EditarMissao /></ProtectedRoute>} />
+              <Route path="/missao/:id/participacoes" element={<ProtectedRoute><MissaoParticipacoes /></ProtectedRoute>} />
+              <Route path="/missao/:id/animais" element={<ProtectedRoute><MissaoAnimais /></ProtectedRoute>} />
+              <Route path="/missao/:id/financeiro" element={<ProtectedRoute><MissaoFinanceiro /></ProtectedRoute>} />
+              <Route path="/missao/:id/equipamentos" element={<ProtectedRoute><MissaoEquipamentos /></ProtectedRoute>} />
+              <Route path="/missoes-arquivadas" element={<ProtectedRoute><MissoesArquivadas /></ProtectedRoute>} />
+              
+              {/* Módulo de Denúncias - Fase 2 */}
+              <Route path="/modulo-denuncias" element={<ProtectedRoute><ModuloDenuncias /></ProtectedRoute>} />
+              <Route path="/wizard-denuncia" element={<ProtectedRoute><WizardDenuncia /></ProtectedRoute>} />
+              <Route path="/denuncia/:codigo" element={<ProtectedRoute><DenunciaDetail /></ProtectedRoute>} />
+              <Route path="/denuncia/:codigo/editar" element={<ProtectedRoute><EditarDenuncia /></ProtectedRoute>} />
+              <Route path="/denuncia/:codigo/concluir" element={<ProtectedRoute><ConcluirDenuncia /></ProtectedRoute>} />
+              
+              {/* Módulo Financeiro */}
+              <Route path="/dashboard-financeiro" element={<ProtectedRoute><DashboardFinanceiro /></ProtectedRoute>} />
+              <Route path="/gestao-financeira" element={<ProtectedRoute><GestaoFinanceira /></ProtectedRoute>} />
+              <Route path="/gestao-movimentos" element={<ProtectedRoute><GestaoMovimentos /></ProtectedRoute>} />
+              <Route path="/novo-movimento" element={<ProtectedRoute><NovoMovimento /></ProtectedRoute>} />
+              <Route path="/gestao-contas" element={<ProtectedRoute><GestaoContas /></ProtectedRoute>} />
+              <Route path="/configuracoes-financeiras" element={<ProtectedRoute><ConfiguracoesFinanceiras /></ProtectedRoute>} />
+              <Route path="/relatorios-financeiros" element={<ProtectedRoute><RelatoriosFinanceiros /></ProtectedRoute>} />
+              <Route path="/gestao-socios" element={<ProtectedRoute><GestaoSocios /></ProtectedRoute>} />
+              
+              {/* Módulo de Equipamentos */}
+              <Route path="/modulo-equipamentos" element={<ProtectedRoute><ModuloEquipamentos /></ProtectedRoute>} />
+              <Route path="/equipamentos" element={<ProtectedRoute><EquipamentosNavigation /></ProtectedRoute>} />
+              <Route path="/equipamentos/dashboard" element={<ProtectedRoute><EquipamentosDashboard /></ProtectedRoute>} />
+              <Route path="/equipamentos/inventario" element={<ProtectedRoute><EquipamentosInventario /></ProtectedRoute>} />
+              <Route path="/equipamentos/atribuicoes" element={<ProtectedRoute><EquipamentosAtribuicoes /></ProtectedRoute>} />
+              <Route path="/equipamentos/manutencoes" element={<ProtectedRoute><EquipamentosManutencoes /></ProtectedRoute>} />
+              <Route path="/equipamentos/alertas" element={<ProtectedRoute><EquipamentosAlertas /></ProtectedRoute>} />
+              <Route path="/equipamentos/relatorios" element={<ProtectedRoute><EquipamentosRelatorios /></ProtectedRoute>} />
+              
+              {/* Módulo de Clínicas */}
+              <Route path="/modulo-clinicas" element={<ProtectedRoute><ModuloClinicas /></ProtectedRoute>} />
+              
+              {/* Módulo de Agenda */}
+              <Route path="/modulo-agenda" element={<ProtectedRoute><ModuloAgenda /></ProtectedRoute>} />
+              
+              {/* Módulo Administrador */}
+              <Route path="/modulo-administrador" element={<ProtectedRoute><ModuloAdministrador /></ProtectedRoute>} />
+              <Route path="/gestao-utilizadores" element={<ProtectedRoute><GestaoUtilizadores /></ProtectedRoute>} />
+              <Route path="/gestao-grupos" element={<ProtectedRoute><GestaoGrupos /></ProtectedRoute>} />
+              <Route path="/grupo/:id" element={<ProtectedRoute><GrupoDetail /></ProtectedRoute>} />
+              <Route path="/grupos-arquivados" element={<ProtectedRoute><GruposArquivados /></ProtectedRoute>} />
+              <Route path="/logs-acesso" element={<ProtectedRoute><LogsAcesso /></ProtectedRoute>} />
+              <Route path="/gestao-estados" element={<ProtectedRoute><GestaoEstados /></ProtectedRoute>} />
+              
+              {/* Configurações */}
+              <Route path="/configuracoes" element={<ProtectedRoute><Configuracoes /></ProtectedRoute>} />
+              <Route path="/configuracoes/especies" element={<ProtectedRoute><GestaoEspecies /></ProtectedRoute>} />
+              <Route path="/configuracoes/localizacoes" element={<ProtectedRoute><GestaoLocalizacoes /></ProtectedRoute>} />
+              <Route path="/configuracoes/categorias" element={<ProtectedRoute><GestaoCategorias /></ProtectedRoute>} />
+              <Route path="/configuracoes/clinicas" element={<ProtectedRoute><GestaoClinicas /></ProtectedRoute>} />
+              <Route path="/configuracoes/responsabilidades" element={<ProtectedRoute><GestaoResponsabilidades /></ProtectedRoute>} />
+              <Route path="/configuracao-especialidades" element={<ProtectedRoute><ConfiguracaoEspecialidades /></ProtectedRoute>} />
+              <Route path="/configuracao-intervencoes" element={<ProtectedRoute><ConfiguracaoIntervencoes /></ProtectedRoute>} />
+              
+              {/* Intervenções e Eventos */}
+              <Route path="/intervencoes" element={<ProtectedRoute><IntervencoesPage /></ProtectedRoute>} />
+              <Route path="/eventos" element={<ProtectedRoute><EventosPage /></ProtectedRoute>} />
+              <Route path="/intervencoes-autoridades" element={<ProtectedRoute><IntervencoesAutoridades /></ProtectedRoute>} />
+              
+              {/* Relatórios e Estatísticas */}
+              <Route path="/relatorios" element={<ProtectedRoute><Relatorios /></ProtectedRoute>} />
+              <Route path="/estatisticas-avancadas" element={<ProtectedRoute><EstatisticasAvancadas /></ProtectedRoute>} />
+              
+              {/* Manual */}
+              <Route path="/manual" element={<ProtectedRoute><ManualUtilizador /></ProtectedRoute>} />
+              
+              {/* Rota 404 */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AuthProvider>
         </HashRouter>
       </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
-);
+    </QueryClientProvider>
+  );
+}
 
 export default App;

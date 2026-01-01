@@ -215,19 +215,16 @@ const ModuloDenuncias: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50">
       <PageActionBar
-        title="Módulo de Gestão de Denúncias"
         breadcrumbs={[
           { label: 'Dashboard', href: '/dashboard' },
           { label: 'Gestão de Denúncias', href: '/modulo-denuncias' }
         ]}
-        primaryActions={[
-          {
-            label: 'Nova Denúncia',
-            onClick: handleNovaDenuncia,
-            icon: Plus,
-            variant: 'destructive'
-          }
-        ]}
+        primaryActions={
+          <Button onClick={handleNovaDenuncia} variant="destructive">
+            <Plus className="h-4 w-4 mr-2" />
+            Nova Denúncia
+          </Button>
+        }
         secondaryActions={[
           {
             label: 'Relatórios',

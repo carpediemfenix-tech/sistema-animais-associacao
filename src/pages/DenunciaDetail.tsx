@@ -4,10 +4,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import PageActionBar from '@/components/PageActionBar';
+import TimelineDenuncia from '@/components/TimelineDenuncia';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   AlertTriangle,
   Shield,
@@ -30,7 +32,12 @@ import {
   HelpCircle,
   ArrowRight,
   Calendar,
-  Briefcase
+  Briefcase,
+  Edit,
+  Archive,
+  RotateCcw,
+  DollarSign,
+  Award
 } from 'lucide-react';
 
 interface Denuncia {
@@ -48,43 +55,56 @@ interface Denuncia {
   denunciante_observacoes?: string;
   quantidade_animais: number;
   intervencao_policial: boolean;
-  dados_intervencao_policial?: any;
-  // Novos campos de gestão
+  intervencao_bombeiros: boolean;
+  intervencao_veterinaria: boolean;
+  autoridade_contacto?: string;
+  autoridade_nome?: string;
+  autoridade_telefone?: string;
+  autoridades_contactadas?: string;
+  veterinario_responsavel?: string;
+  clinica_veterinaria?: string;
+  observacoes_veterinarias?: string;
+  voluntario_responsavel?: string;
+  voluntarios_participantes?: string;
+  observacoes_equipe?: string;
   status_denuncia: string;
   prioridade: string;
   data_conclusao?: string;
   observacoes_gestao?: string;
   responsavel_gestao_id?: string;
   arquivada: boolean;
-  intervencao_veterinaria: boolean;
-  dados_intervencao_veterinaria?: any;
-  voluntario_responsavel_id?: string;
-  voluntarios_participantes: string[];
-  missao_id?: string;
-  status: string;
-  created_by: string;
+  data_arquivamento?: string;
+  arquivada_por?: string;
+  motivo_arquivamento?: string;
+  pode_ser_restaurada: boolean;
+  // Campos da Fase 2
+  data_inicio_operacao?: string;
+  data_fim_operacao?: string;
+  tempo_total_horas?: number;
+  custo_estimado?: number;
+  custo_real?: number;
+  resultado_final?: string;
+  tem_relatorio_conclusao: boolean;
   created_at: string;
   updated_at: string;
 }
 
-interface Animal {
+interface RelatorioConlusao {
   id: string;
-  nome: string;
-  especie: string;
-  sexo: string;
-  estado: string;
-}
-
-interface Missao {
-  id: string;
-  codigo: string;
-  titulo: string;
-  status: string;
-}
-
-interface Voluntario {
-  id: string;
-  nome: string;
+  resultado_operacao: string;
+  animais_resgatados: number;
+  animais_tratados: number;
+  animais_adotados: number;
+  animais_obito: number;
+  custo_total: number;
+  tempo_operacao_horas: number;
+  voluntarios_envolvidos: number;
+  acoes_tomadas: string;
+  resultados_obtidos: string;
+  licoes_aprendidas?: string;
+  recomendacoes?: string;
+  responsavel_relatorio_nome: string;
+  data_conclusao: string;
 }
 
 const DenunciaDetail: React.FC = () => {
@@ -92,175 +112,202 @@ const DenunciaDetail: React.FC = () => {
   const navigate = useNavigate();
   const { user, hasPermission } = useAuth();
   const { toast } = useToast();
-
-  const [loading, setLoading] = useState(true);
+  
   const [denuncia, setDenuncia] = useState<Denuncia | null>(null);
-  const [animais, setAnimais] = useState<Animal[]>([]);
-  const [missao, setMissao] = useState<Missao | null>(null);
-  const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
+  const [relatorioConlusao, setRelatorioConlusao] = useState<RelatorioConlusao | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('detalhes');
 
   useEffect(() => {
-    if (!hasPermission('admin')) {
-      toast({
-        title: "🚫 Acesso Negado",
-        description: "Apenas administradores podem ver denúncias.",
-        variant: "destructive",
-      });
-      navigate('/');
-      return;
-    }
-
     if (codigo) {
-      loadDenunciaData();
+      loadDenuncia();
     }
   }, [codigo]);
 
-  const loadDenunciaData = async () => {
+  const loadDenuncia = async () => {
     try {
-      setLoading(true);
-
-      // Carregar denúncia
-      const { data: denunciaData, error: denunciaError } = await supabase
+      console.log('🔍 [DENUNCIA_DETAIL] Carregando denúncia:', codigo);
+      
+      const { data, error } = await supabase
         .from('denuncias_2025_12_29_23_00')
         .select('*')
         .eq('codigo', codigo)
         .single();
 
-      if (denunciaError) {
-        throw new Error('Denúncia não encontrada');
+      if (error) {
+        console.error('❌ [DENUNCIA_DETAIL] Erro ao carregar:', error);
+        throw error;
       }
 
-      setDenuncia(denunciaData);
+      console.log('✅ [DENUNCIA_DETAIL] Denúncia carregada:', data.codigo);
+      setDenuncia(data);
 
-      // Carregar animais da denúncia
-      const { data: animaisData, error: animaisError } = await supabase
-        .from('denuncias_animais_sequencia')
-        .select(`
-          animal_id,
-          sequencia,
-          nome_gerado,
-          animais (
-            id,
-            nome,
-            especie,
-            sexo,
-            estado
-          )
-        `)
-        .eq('denuncia_codigo', codigo);
-
-      if (!animaisError && animaisData) {
-        const animaisFormatados = animaisData.map(item => ({
-          id: item.animais.id,
-          nome: item.animais.nome,
-          especie: item.animais.especie,
-          sexo: item.animais.sexo,
-          estado: item.animais.estado
-        }));
-        setAnimais(animaisFormatados);
+      // Se tem relatório de conclusão, carregar
+      if (data.tem_relatorio_conclusao) {
+        loadRelatorioConlusao(data.id);
       }
-
-      // Carregar missão se existir
-      if (denunciaData.missao_id) {
-        const { data: missaoData, error: missaoError } = await supabase
-          .from('missoes_2025_12_29_07_00')
-          .select('id, codigo, titulo, status')
-          .eq('id', denunciaData.missao_id)
-          .single();
-
-        if (!missaoError && missaoData) {
-          setMissao(missaoData);
-        }
-      }
-
-      // Carregar voluntários
-      if (denunciaData.voluntarios_participantes && denunciaData.voluntarios_participantes.length > 0) {
-        const { data: voluntariosData, error: voluntariosError } = await supabase
-          .from('voluntarios')
-          .select('id, nome')
-          .in('id', denunciaData.voluntarios_participantes);
-
-        if (!voluntariosError && voluntariosData) {
-          setVoluntarios(voluntariosData);
-        }
-      }
-
+      
     } catch (error) {
-      console.error('Erro ao carregar denúncia:', error);
+      console.error('❌ [DENUNCIA_DETAIL] Erro:', error);
       toast({
-        title: "❌ Erro",
-        description: error instanceof Error ? error.message : "Erro ao carregar denúncia",
+        title: "Erro ao carregar denúncia",
+        description: "Não foi possível carregar os dados da denúncia.",
         variant: "destructive",
       });
-      navigate('/');
+      navigate('/modulo-denuncias');
     } finally {
       setLoading(false);
     }
   };
 
+  const loadRelatorioConlusao = async (denunciaId: string) => {
+    try {
+      console.log('📋 [DENUNCIA_DETAIL] Carregando relatório de conclusão...');
+      
+      const { data, error } = await supabase
+        .from('relatorios_conclusao_2025_12_31_23_00')
+        .select('*')
+        .eq('denuncia_id', denunciaId)
+        .single();
+
+      if (error) {
+        console.error('❌ [DENUNCIA_DETAIL] Erro ao carregar relatório:', error);
+        return;
+      }
+
+      console.log('✅ [DENUNCIA_DETAIL] Relatório carregado');
+      setRelatorioConlusao(data);
+    } catch (error) {
+      console.error('❌ [DENUNCIA_DETAIL] Erro ao carregar relatório:', error);
+    }
+  };
+
+  const handleArquivar = async () => {
+    if (!denuncia || !hasPermission('admin')) return;
+
+    try {
+      const { error } = await supabase
+        .from('denuncias_2025_12_29_23_00')
+        .update({
+          arquivada: true,
+          data_arquivamento: new Date().toISOString(),
+          arquivada_por: user?.id,
+          motivo_arquivamento: 'Arquivada manualmente pelo administrador',
+          updated_by: user?.id
+        })
+        .eq('id', denuncia.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Denúncia arquivada",
+        description: "A denúncia foi arquivada com sucesso.",
+      });
+
+      loadDenuncia(); // Recarregar dados
+    } catch (error) {
+      console.error('❌ [DENUNCIA_DETAIL] Erro ao arquivar:', error);
+      toast({
+        title: "Erro ao arquivar",
+        description: "Não foi possível arquivar a denúncia.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRestaurar = async () => {
+    if (!denuncia || !hasPermission('admin')) return;
+
+    try {
+      const { error } = await supabase
+        .from('denuncias_2025_12_29_23_00')
+        .update({
+          arquivada: false,
+          data_arquivamento: null,
+          arquivada_por: null,
+          motivo_arquivamento: null,
+          updated_by: user?.id
+        })
+        .eq('id', denuncia.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Denúncia restaurada",
+        description: "A denúncia foi restaurada do arquivo.",
+      });
+
+      loadDenuncia(); // Recarregar dados
+    } catch (error) {
+      console.error('❌ [DENUNCIA_DETAIL] Erro ao restaurar:', error);
+      toast({
+        title: "Erro ao restaurar",
+        description: "Não foi possível restaurar a denúncia.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Componentes de status
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'aberta':
-        return <Badge className="bg-red-600">🚨 ABERTA</Badge>;
-      case 'em_andamento':
-        return <Badge className="bg-yellow-600">⚡ EM ANDAMENTO</Badge>;
-      case 'concluida':
-        return <Badge className="bg-green-600">✅ CONCLUÍDA</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
+    const statusConfig = {
+      'nova': { label: 'Nova', variant: 'destructive' as const, icon: AlertTriangle },
+      'em_andamento': { label: 'Em Andamento', variant: 'default' as const, icon: Clock },
+      'concluida': { label: 'Concluída', variant: 'secondary' as const, icon: CheckCircle }
+    };
+
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.nova;
+    const Icon = config.icon;
+
+    return (
+      <Badge variant={config.variant} className="flex items-center gap-1">
+        <Icon className="h-3 w-3" />
+        {config.label}
+      </Badge>
+    );
   };
 
-  const getCanalIcon = (canal: string) => {
-    switch (canal) {
-      case 'telefone':
-        return <Phone className="h-4 w-4" />;
-      case 'site':
-        return <Globe className="h-4 w-4" />;
-      case 'pessoalmente':
-        return <User className="h-4 w-4" />;
-      case 'autoridades':
-        return <Shield className="h-4 w-4" />;
-      case 'email':
-        return <Mail className="h-4 w-4" />;
-      case 'redes_sociais':
-        return <Share2 className="h-4 w-4" />;
-      default:
-        return <HelpCircle className="h-4 w-4" />;
-    }
+  const getPrioridadeBadge = (prioridade: string) => {
+    const prioridadeConfig = {
+      'baixa': { label: 'Baixa', className: 'bg-green-100 text-green-800' },
+      'normal': { label: 'Normal', className: 'bg-blue-100 text-blue-800' },
+      'alta': { label: 'Alta', className: 'bg-orange-100 text-orange-800' },
+      'urgente': { label: 'Urgente', className: 'bg-red-100 text-red-800' }
+    };
+
+    const config = prioridadeConfig[prioridade as keyof typeof prioridadeConfig] || prioridadeConfig.normal;
+
+    return (
+      <Badge className={config.className}>
+        {config.label}
+      </Badge>
+    );
   };
 
-  const getCanalLabel = (canal: string) => {
-    switch (canal) {
-      case 'telefone':
-        return 'Telefone';
-      case 'site':
-        return 'Site/Online';
-      case 'pessoalmente':
-        return 'Pessoalmente';
-      case 'autoridades':
-        return 'A pedido das autoridades';
-      case 'email':
-        return 'Email';
-      case 'redes_sociais':
-        return 'Redes sociais';
-      case 'outro':
-        return 'Outro';
-      default:
-        return canal;
-    }
+  const getResultadoBadge = (resultado: string) => {
+    const resultadoConfig = {
+      'sucesso_total': { label: 'Sucesso Total', className: 'bg-green-100 text-green-800' },
+      'sucesso_parcial': { label: 'Sucesso Parcial', className: 'bg-yellow-100 text-yellow-800' },
+      'sem_sucesso': { label: 'Sem Sucesso', className: 'bg-red-100 text-red-800' },
+      'falso_alarme': { label: 'Falso Alarme', className: 'bg-gray-100 text-gray-800' }
+    };
+
+    const config = resultadoConfig[resultado as keyof typeof resultadoConfig];
+    if (!config) return null;
+
+    return (
+      <Badge className={config.className}>
+        {config.label}
+      </Badge>
+    );
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-900 via-red-800 to-orange-900 flex items-center justify-center">
-        <div className="text-center text-white">
-          <div className="relative">
-            <Activity className="h-16 w-16 animate-spin mx-auto mb-4" />
-            <div className="absolute inset-0 h-16 w-16 animate-ping mx-auto rounded-full bg-red-400 opacity-20"></div>
-          </div>
-          <p className="text-xl font-bold">CARREGANDO OPERAÇÃO...</p>
-          <p className="text-red-200 mt-2">Acessando dados da denúncia</p>
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-red-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Carregando detalhes da denúncia...</p>
         </div>
       </div>
     );
@@ -268,353 +315,477 @@ const DenunciaDetail: React.FC = () => {
 
   if (!denuncia) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-900 via-red-800 to-orange-900 flex items-center justify-center">
-        <div className="text-center text-white">
-          <AlertTriangle className="h-16 w-16 mx-auto mb-4" />
-          <p className="text-xl font-bold">OPERAÇÃO NÃO ENCONTRADA</p>
-          <p className="text-red-200 mt-2">Denúncia {codigo} não existe</p>
-          <Button onClick={() => navigate('/')} className="mt-4 bg-white text-red-800">
-            Voltar ao Dashboard
-          </Button>
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center">
+        <div className="text-center">
+          <AlertTriangle className="h-16 w-16 text-red-600 mx-auto mb-4" />
+          <p className="text-gray-600">Denúncia não encontrada.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-900 via-red-800 to-orange-900">
+    <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50">
       <PageActionBar
         breadcrumbs={[
-          { label: 'Dashboard', href: '/' },
-          { label: 'Operação Resgate', icon: <AlertTriangle className="h-4 w-4" /> },
+          { label: 'Dashboard', href: '/dashboard' },
+          { label: 'Denúncias', href: '/modulo-denuncias' },
           { label: denuncia.codigo }
         ]}
         primaryActions={
-          <div className="flex items-center space-x-2">
-            {getStatusBadge(denuncia.status)}
-            <Badge className="bg-blue-600 text-white">
-              <Clock className="h-3 w-3 mr-1" />
-              {new Date(denuncia.data_denuncia).toLocaleDateString('pt-PT')}
-            </Badge>
+          <div className="flex gap-2">
+            {hasPermission('admin') && (
+              <>
+                {denuncia.status_denuncia !== 'concluida' && !denuncia.arquivada && (
+                  <Button 
+                    onClick={() => navigate(`/denuncia/${codigo}/concluir`)}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Concluir
+                  </Button>
+                )}
+                <Button 
+                  onClick={() => navigate(`/denuncia/${codigo}/editar`)}
+                  variant="outline"
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Editar
+                </Button>
+              </>
+            )}
           </div>
         }
+        secondaryActions={hasPermission('admin') ? [
+          ...(denuncia.arquivada ? [
+            {
+              label: 'Restaurar',
+              onClick: handleRestaurar,
+              icon: RotateCcw
+            }
+          ] : [
+            {
+              label: 'Arquivar',
+              onClick: handleArquivar,
+              icon: Archive
+            }
+          ])
+        ] : []}
       />
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header da Operação */}
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-            <div className="relative">
-              <div className="w-20 h-20 bg-red-600 rounded-full flex items-center justify-center border-4 border-white shadow-lg">
-                <AlertTriangle className="h-10 w-10 text-white" />
+      <div className="container mx-auto px-4 py-8">
+        {/* Cabeçalho */}
+        <div className="mb-8">
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
+                <AlertTriangle className="h-8 w-8 text-red-600" />
+                Denúncia {denuncia.codigo}
+              </h1>
+              <div className="flex items-center gap-3">
+                {getStatusBadge(denuncia.status_denuncia)}
+                {getPrioridadeBadge(denuncia.prioridade)}
+                {denuncia.arquivada && (
+                  <Badge variant="outline" className="bg-gray-100 text-gray-700">
+                    <Archive className="h-3 w-3 mr-1" />
+                    Arquivada
+                  </Badge>
+                )}
+                {denuncia.resultado_final && getResultadoBadge(denuncia.resultado_final)}
               </div>
-              <div className="absolute -inset-2 bg-red-400 rounded-full opacity-20 animate-pulse"></div>
+            </div>
+            
+            {/* Métricas rápidas */}
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div className="bg-white p-3 rounded-lg shadow-sm">
+                <div className="text-2xl font-bold text-blue-600">{denuncia.quantidade_animais}</div>
+                <div className="text-xs text-gray-500">Animais</div>
+              </div>
+              {denuncia.tempo_total_horas && (
+                <div className="bg-white p-3 rounded-lg shadow-sm">
+                  <div className="text-2xl font-bold text-green-600">{denuncia.tempo_total_horas}h</div>
+                  <div className="text-xs text-gray-500">Duração</div>
+                </div>
+              )}
+              {denuncia.custo_real && (
+                <div className="bg-white p-3 rounded-lg shadow-sm">
+                  <div className="text-2xl font-bold text-orange-600">€{denuncia.custo_real}</div>
+                  <div className="text-xs text-gray-500">Custo</div>
+                </div>
+              )}
             </div>
           </div>
-          <h1 className="text-4xl font-bold text-white mb-2">
-            OPERAÇÃO {denuncia.codigo}
-          </h1>
-          <p className="text-xl text-red-100">
-            Sistema Tático de Resgate Animal
-          </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Coluna Principal */}
-          <div className="lg:col-span-2 space-y-6">
-            
-            {/* Identificação da Operação */}
-            <Card className="border-2 border-red-300">
-              <CardHeader className="bg-red-50">
-                <CardTitle className="flex items-center text-xl">
-                  <AlertTriangle className="h-6 w-6 mr-3" />
-                  IDENTIFICAÇÃO DA OPERAÇÃO
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="detalhes">Detalhes</TabsTrigger>
+            <TabsTrigger value="timeline">Timeline</TabsTrigger>
+            {denuncia.tem_relatorio_conclusao && (
+              <TabsTrigger value="relatorio">Relatório</TabsTrigger>
+            )}
+            <TabsTrigger value="gestao">Gestão</TabsTrigger>
+          </TabsList>
+
+          {/* Tab: Detalhes */}
+          <TabsContent value="detalhes" className="space-y-6">
+            {/* Informações da Denúncia */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Informações da Denúncia
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pt-6">
+              <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label className="font-semibold flex items-center">
-                      <Clock className="h-4 w-4 mr-2" />
-                      Data e Hora
-                    </Label>
-                    <p className="text-lg">
-                      {new Date(denuncia.data_denuncia).toLocaleString('pt-PT')}
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <Label className="font-semibold flex items-center">
-                      {getCanalIcon(denuncia.canal_denuncia)}
-                      <span className="ml-2">Canal de Intel</span>
-                    </Label>
-                    <p className="text-lg">
-                      {getCanalLabel(denuncia.canal_denuncia)}
-                      {denuncia.canal_denuncia === 'outro' && denuncia.canal_denuncia_outro && (
-                        <span className="text-gray-600"> - {denuncia.canal_denuncia_outro}</span>
-                      )}
-                    </p>
-                  </div>
-                </div>
-
-                <Separator className="my-4" />
-
-                <div>
-                  <Label className="font-semibold flex items-center">
-                    <MapPin className="h-4 w-4 mr-2" />
-                    Coordenadas da Operação
-                  </Label>
-                  <p className="text-lg mt-1">{denuncia.local_completo}</p>
-                </div>
-
-                <Separator className="my-4" />
-
-                <div>
-                  <Label className="font-semibold flex items-center">
-                    <FileText className="h-4 w-4 mr-2" />
-                    Relatório da Situação
-                  </Label>
-                  <p className="text-lg mt-1 whitespace-pre-wrap">{denuncia.descricao_situacao}</p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Informante */}
-            <Card className="border-2 border-blue-300">
-              <CardHeader className="bg-blue-50">
-                <CardTitle className="flex items-center text-xl">
-                  <User className="h-6 w-6 mr-3" />
-                  DADOS DO INFORMANTE
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-6">
-                {denuncia.denunciante_anonimo ? (
-                  <div className="flex items-center p-4 bg-blue-900 text-white rounded-lg">
-                    <EyeOff className="h-5 w-5 mr-3" />
-                    <div>
-                      <p className="font-bold">OPERAÇÃO CLASSIFICADA</p>
-                      <p className="text-blue-200">Identidade do informante protegida</p>
+                    <Label>Data da Denúncia</Label>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Calendar className="h-4 w-4 text-gray-500" />
+                      {new Date(denuncia.data_denuncia).toLocaleDateString('pt-PT')}
                     </div>
                   </div>
-                ) : (
-                  <div className="space-y-3">
-                    {denuncia.denunciante_nome && (
-                      <div>
-                        <Label className="font-semibold">Nome</Label>
-                        <p className="text-lg">{denuncia.denunciante_nome}</p>
-                      </div>
-                    )}
-                    {denuncia.denunciante_contato && (
-                      <div>
-                        <Label className="font-semibold">Contacto</Label>
-                        <p className="text-lg">{denuncia.denunciante_contato}</p>
-                      </div>
-                    )}
-                    {denuncia.denunciante_observacoes && (
-                      <div>
-                        <Label className="font-semibold">Observações</Label>
-                        <p className="text-lg">{denuncia.denunciante_observacoes}</p>
-                      </div>
-                    )}
+                  <div>
+                    <Label>Canal de Denúncia</Label>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Phone className="h-4 w-4 text-gray-500" />
+                      {denuncia.canal_denuncia}
+                      {denuncia.canal_denuncia_outro && ` (${denuncia.canal_denuncia_outro})`}
+                    </div>
                   </div>
-                )}
+                </div>
+
+                <div>
+                  <Label>Local Encontrado</Label>
+                  <div className="flex items-center gap-2 text-sm">
+                    <MapPin className="h-4 w-4 text-gray-500" />
+                    {denuncia.local_encontrado}
+                  </div>
+                </div>
+
+                <div>
+                  <Label>Descrição da Situação</Label>
+                  <p className="text-sm text-gray-700 leading-relaxed">
+                    {denuncia.descricao_situacao}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Quantidade de Animais</Label>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Heart className="h-4 w-4 text-gray-500" />
+                      {denuncia.quantidade_animais} animal(is)
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
-            {/* Alvos da Operação */}
-            <Card className="border-2 border-orange-300">
-              <CardHeader className="bg-orange-50">
-                <CardTitle className="flex items-center text-xl">
-                  <Target className="h-6 w-6 mr-3" />
-                  ALVOS DA OPERAÇÃO ({denuncia.quantidade_animais} ANIMAIS)
+            {/* Informações do Denunciante */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  Informações do Denunciante
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pt-6">
-                {animais.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {animais.map((animal, index) => (
-                      <Link key={animal.id} to={`/animal/${animal.id}`}>
-                        <Card className="border border-orange-200 hover:border-orange-400 transition-colors cursor-pointer">
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-between mb-2">
-                              <Badge className="bg-orange-600">
-                                ALVO #{String(index + 1).padStart(2, '0')}
-                              </Badge>
-                              <Badge variant="outline">{animal.estado}</Badge>
-                            </div>
-                            <h4 className="font-bold text-lg">{animal.nome}</h4>
-                            <p className="text-gray-600">{animal.especie} • {animal.sexo}</p>
-                          </CardContent>
-                        </Card>
-                      </Link>
-                    ))}
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Tipo de Denúncia</Label>
+                    <div className="flex items-center gap-2 text-sm">
+                      {denuncia.denunciante_anonimo ? (
+                        <>
+                          <EyeOff className="h-4 w-4 text-gray-500" />
+                          Anônima
+                        </>
+                      ) : (
+                        <>
+                          <Eye className="h-4 w-4 text-gray-500" />
+                          Identificada
+                        </>
+                      )}
+                    </div>
                   </div>
-                ) : (
-                  <p className="text-gray-500">Nenhum animal encontrado</p>
+                  {!denuncia.denunciante_anonimo && denuncia.denunciante_nome && (
+                    <div>
+                      <Label>Nome do Denunciante</Label>
+                      <div className="text-sm">{denuncia.denunciante_nome}</div>
+                    </div>
+                  )}
+                </div>
+
+                {!denuncia.denunciante_anonimo && denuncia.denunciante_contato && (
+                  <div>
+                    <Label>Contacto</Label>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Phone className="h-4 w-4 text-gray-500" />
+                      {denuncia.denunciante_contato}
+                    </div>
+                  </div>
+                )}
+
+                {denuncia.denunciante_observacoes && (
+                  <div>
+                    <Label>Observações do Denunciante</Label>
+                    <p className="text-sm text-gray-700">{denuncia.denunciante_observacoes}</p>
+                  </div>
                 )}
               </CardContent>
             </Card>
 
             {/* Intervenções */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Autoridades */}
-              <Card className="border-2 border-blue-300">
-                <CardHeader className="bg-blue-50">
-                  <CardTitle className="flex items-center">
-                    <Shield className="h-5 w-5 mr-2" />
-                    AUTORIDADES
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-4">
-                  {denuncia.intervencao_policial ? (
-                    <div className="space-y-2">
-                      <Badge className="bg-blue-600">✅ INTERVENÇÃO REGISTRADA</Badge>
-                      {denuncia.dados_intervencao_policial && (
-                        <div className="text-sm space-y-1">
-                          <p><strong>Tipo:</strong> {denuncia.dados_intervencao_policial.tipo_autoridade}</p>
-                          {denuncia.dados_intervencao_policial.numero_ocorrencia && (
-                            <p><strong>Ocorrência:</strong> {denuncia.dados_intervencao_policial.numero_ocorrencia}</p>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <Badge variant="outline">❌ SEM INTERVENÇÃO</Badge>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Veterinário */}
-              <Card className="border-2 border-green-300">
-                <CardHeader className="bg-green-50">
-                  <CardTitle className="flex items-center">
-                    <Stethoscope className="h-5 w-5 mr-2" />
-                    VETERINÁRIO
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-4">
-                  {denuncia.intervencao_veterinaria ? (
-                    <div className="space-y-2">
-                      <Badge className="bg-green-600">✅ INTERVENÇÃO REGISTRADA</Badge>
-                      {denuncia.dados_intervencao_veterinaria && (
-                        <div className="text-sm space-y-1">
-                          {denuncia.dados_intervencao_veterinaria.veterinario_nome && (
-                            <p><strong>Veterinário:</strong> {denuncia.dados_intervencao_veterinaria.veterinario_nome}</p>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <Badge variant="outline">❌ SEM INTERVENÇÃO</Badge>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            
-            {/* Status da Operação */}
-            <Card className="border-2 border-purple-300">
-              <CardHeader className="bg-purple-50">
-                <CardTitle className="flex items-center">
-                  <Activity className="h-5 w-5 mr-2" />
-                  STATUS
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="h-5 w-5" />
+                  Intervenções e Autoridades
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pt-4 text-center">
-                {getStatusBadge(denuncia.status)}
-                <p className="text-sm text-gray-600 mt-2">
-                  Criada em {new Date(denuncia.created_at).toLocaleDateString('pt-PT')}
-                </p>
-                <p className="text-sm text-gray-600">
-                  por {denuncia.created_by}
-                </p>
-              </CardContent>
-            </Card>
-
-            {/* Missão Associada */}
-            {missao && (
-              <Card className="border-2 border-green-300">
-                <CardHeader className="bg-green-50">
-                  <CardTitle className="flex items-center">
-                    <Briefcase className="h-5 w-5 mr-2" />
-                    MISSÃO
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-4">
-                  <Link to={`/missao/${missao.id}`}>
-                    <Button variant="outline" className="w-full justify-start">
-                      <ArrowRight className="h-4 w-4 mr-2" />
-                      {missao.codigo}
-                    </Button>
-                  </Link>
-                  <p className="text-sm text-gray-600 mt-2">{missao.titulo}</p>
-                  <Badge className="mt-2" variant={missao.status === 'ativa' ? 'default' : 'outline'}>
-                    {missao.status}
-                  </Badge>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Equipe Tática */}
-            <Card className="border-2 border-purple-300">
-              <CardHeader className="bg-purple-50">
-                <CardTitle className="flex items-center">
-                  <Users className="h-5 w-5 mr-2" />
-                  EQUIPE TÁTICA
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-4">
-                {voluntarios.length > 0 ? (
-                  <div className="space-y-2">
-                    {voluntarios.map(voluntario => (
-                      <div key={voluntario.id} className="flex items-center justify-between">
-                        <span className="text-sm">{voluntario.nome}</span>
-                        {voluntario.id === denuncia.voluntario_responsavel_id && (
-                          <Badge className="bg-purple-600 text-xs">COMANDANTE</Badge>
-                        )}
-                      </div>
-                    ))}
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="flex items-center gap-2">
+                    <Shield className={`h-4 w-4 ${denuncia.intervencao_policial ? 'text-blue-600' : 'text-gray-400'}`} />
+                    <span className={`text-sm ${denuncia.intervencao_policial ? 'text-blue-600 font-medium' : 'text-gray-500'}`}>
+                      Polícia {denuncia.intervencao_policial ? 'Sim' : 'Não'}
+                    </span>
                   </div>
-                ) : (
-                  <p className="text-gray-500 text-sm">Nenhuma equipe designada</p>
+                  <div className="flex items-center gap-2">
+                    <Target className={`h-4 w-4 ${denuncia.intervencao_bombeiros ? 'text-red-600' : 'text-gray-400'}`} />
+                    <span className={`text-sm ${denuncia.intervencao_bombeiros ? 'text-red-600 font-medium' : 'text-gray-500'}`}>
+                      Bombeiros {denuncia.intervencao_bombeiros ? 'Sim' : 'Não'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Stethoscope className={`h-4 w-4 ${denuncia.intervencao_veterinaria ? 'text-green-600' : 'text-gray-400'}`} />
+                    <span className={`text-sm ${denuncia.intervencao_veterinaria ? 'text-green-600 font-medium' : 'text-gray-500'}`}>
+                      Veterinário {denuncia.intervencao_veterinaria ? 'Sim' : 'Não'}
+                    </span>
+                  </div>
+                </div>
+
+                {(denuncia.autoridade_nome || denuncia.autoridade_contacto) && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {denuncia.autoridade_nome && (
+                      <div>
+                        <Label>Autoridade Contactada</Label>
+                        <div className="text-sm">{denuncia.autoridade_nome}</div>
+                      </div>
+                    )}
+                    {denuncia.autoridade_contacto && (
+                      <div>
+                        <Label>Contacto da Autoridade</Label>
+                        <div className="text-sm">{denuncia.autoridade_contacto}</div>
+                      </div>
+                    )}
+                  </div>
                 )}
               </CardContent>
             </Card>
 
-            {/* Ações Rápidas */}
-            <Card className="border-2 border-gray-300">
-              <CardHeader className="bg-gray-50">
-                <CardTitle className="flex items-center">
-                  <CheckCircle className="h-5 w-5 mr-2" />
-                  AÇÕES
+            {/* Equipe e Veterinário */}
+            {(denuncia.veterinario_responsavel || denuncia.voluntario_responsavel) && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="h-5 w-5" />
+                    Equipe e Veterinário
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {denuncia.veterinario_responsavel && (
+                      <div>
+                        <Label>Veterinário Responsável</Label>
+                        <div className="text-sm">{denuncia.veterinario_responsavel}</div>
+                      </div>
+                    )}
+                    {denuncia.clinica_veterinaria && (
+                      <div>
+                        <Label>Clínica Veterinária</Label>
+                        <div className="text-sm">{denuncia.clinica_veterinaria}</div>
+                      </div>
+                    )}
+                  </div>
+
+                  {denuncia.voluntario_responsavel && (
+                    <div>
+                      <Label>Responsável da Operação</Label>
+                      <div className="text-sm">{denuncia.voluntario_responsavel}</div>
+                    </div>
+                  )}
+
+                  {denuncia.voluntarios_participantes && (
+                    <div>
+                      <Label>Voluntários Participantes</Label>
+                      <div className="text-sm">{denuncia.voluntarios_participantes}</div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          {/* Tab: Timeline */}
+          <TabsContent value="timeline">
+            <TimelineDenuncia denunciaId={denuncia.id} denunciaCodigo={denuncia.codigo} />
+          </TabsContent>
+
+          {/* Tab: Relatório de Conclusão */}
+          {denuncia.tem_relatorio_conclusao && relatorioConlusao && (
+            <TabsContent value="relatorio" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Award className="h-5 w-5" />
+                    Relatório de Conclusão
+                  </CardTitle>
+                  <CardDescription>
+                    Relatório final da operação de resgate - {new Date(relatorioConlusao.data_conclusao).toLocaleDateString('pt-PT')}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Resultado e Métricas */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="bg-green-50 p-4 rounded-lg text-center">
+                      <div className="text-2xl font-bold text-green-600">{relatorioConlusao.animais_resgatados}</div>
+                      <div className="text-sm text-green-700">Resgatados</div>
+                    </div>
+                    <div className="bg-blue-50 p-4 rounded-lg text-center">
+                      <div className="text-2xl font-bold text-blue-600">{relatorioConlusao.animais_tratados}</div>
+                      <div className="text-sm text-blue-700">Tratados</div>
+                    </div>
+                    <div className="bg-purple-50 p-4 rounded-lg text-center">
+                      <div className="text-2xl font-bold text-purple-600">{relatorioConlusao.animais_adotados}</div>
+                      <div className="text-sm text-purple-700">Adotados</div>
+                    </div>
+                    <div className="bg-orange-50 p-4 rounded-lg text-center">
+                      <div className="text-2xl font-bold text-orange-600">€{relatorioConlusao.custo_total}</div>
+                      <div className="text-sm text-orange-700">Custo Total</div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <Label>Ações Tomadas</Label>
+                      <p className="text-sm text-gray-700 leading-relaxed mt-2">
+                        {relatorioConlusao.acoes_tomadas}
+                      </p>
+                    </div>
+                    <div>
+                      <Label>Resultados Obtidos</Label>
+                      <p className="text-sm text-gray-700 leading-relaxed mt-2">
+                        {relatorioConlusao.resultados_obtidos}
+                      </p>
+                    </div>
+                  </div>
+
+                  {relatorioConlusao.licoes_aprendidas && (
+                    <div>
+                      <Label>Lições Aprendidas</Label>
+                      <p className="text-sm text-gray-700 leading-relaxed mt-2">
+                        {relatorioConlusao.licoes_aprendidas}
+                      </p>
+                    </div>
+                  )}
+
+                  {relatorioConlusao.recomendacoes && (
+                    <div>
+                      <Label>Recomendações</Label>
+                      <p className="text-sm text-gray-700 leading-relaxed mt-2">
+                        {relatorioConlusao.recomendacoes}
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between pt-4 border-t">
+                    <div className="text-sm text-gray-500">
+                      Relatório criado por: {relatorioConlusao.responsavel_relatorio_nome}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {getResultadoBadge(relatorioConlusao.resultado_operacao)}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
+
+          {/* Tab: Gestão */}
+          <TabsContent value="gestao" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Briefcase className="h-5 w-5" />
+                  Informações de Gestão
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pt-4 space-y-2">
-                <Button variant="outline" className="w-full justify-start" disabled>
-                  <FileText className="h-4 w-4 mr-2" />
-                  Relatório Completo
-                </Button>
-                <Button variant="outline" className="w-full justify-start" disabled>
-                  <Calendar className="h-4 w-4 mr-2" />
-                  Cronologia
-                </Button>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Status</Label>
+                    <div>{getStatusBadge(denuncia.status_denuncia)}</div>
+                  </div>
+                  <div>
+                    <Label>Prioridade</Label>
+                    <div>{getPrioridadeBadge(denuncia.prioridade)}</div>
+                  </div>
+                </div>
+
+                {denuncia.data_conclusao && (
+                  <div>
+                    <Label>Data de Conclusão</Label>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Calendar className="h-4 w-4 text-gray-500" />
+                      {new Date(denuncia.data_conclusao).toLocaleDateString('pt-PT')}
+                    </div>
+                  </div>
+                )}
+
+                {denuncia.observacoes_gestao && (
+                  <div>
+                    <Label>Observações de Gestão</Label>
+                    <p className="text-sm text-gray-700">{denuncia.observacoes_gestao}</p>
+                  </div>
+                )}
+
+                {denuncia.arquivada && (
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <Label>Informações de Arquivamento</Label>
+                    <div className="space-y-2 mt-2">
+                      {denuncia.data_arquivamento && (
+                        <div className="text-sm">
+                          <strong>Data:</strong> {new Date(denuncia.data_arquivamento).toLocaleDateString('pt-PT')}
+                        </div>
+                      )}
+                      {denuncia.motivo_arquivamento && (
+                        <div className="text-sm">
+                          <strong>Motivo:</strong> {denuncia.motivo_arquivamento}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <div className="text-xs text-gray-500 pt-4 border-t">
+                  <div>Criada em: {new Date(denuncia.created_at).toLocaleString('pt-PT')}</div>
+                  <div>Última atualização: {new Date(denuncia.updated_at).toLocaleString('pt-PT')}</div>
+                </div>
               </CardContent>
             </Card>
-          </div>
-        </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
 };
 
-// Componente Label simples
-const Label: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = "" }) => (
-  <label className={`text-sm font-medium text-gray-700 ${className}`}>
-    {children}
-  </label>
+// Componente auxiliar para labels
+const Label: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div className="text-sm font-medium text-gray-700 mb-1">{children}</div>
 );
 
 export default DenunciaDetail;
