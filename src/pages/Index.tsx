@@ -95,55 +95,7 @@ const Index: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <EnhancedHeader />
 
-      {/* 🚨 BOTÃO DE DENÚNCIA MEGA DESTACADO - SEMPRE VISÍVEL */}
-      <div className="bg-red-600 py-8 border-t-4 border-red-800 border-b-4">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="mb-4">
-            <h2 className="text-3xl font-bold text-white mb-2">
-              🚨 SISTEMA DE EMERGÊNCIA ANIMAL 🚨
-            </h2>
-            <p className="text-red-100 text-lg">
-              Operação Resgate - Somos a voz dos que não podem falar
-            </p>
-          </div>
-          
-          {/* Debug Info Destacado */}
-          <div className="mb-6 p-4 bg-black bg-opacity-30 rounded-lg text-white">
-            <p className="text-lg">🔍 DEBUG: User: {user?.username || 'NENHUM USUÁRIO LOGADO'}</p>
-            <p className="text-lg">🔍 DEBUG: Perfil: {user?.perfil_acesso || 'SEM PERFIL'}</p>
-            <p className="text-lg">🔍 DEBUG: hasPermission('admin'): {hasPermission('admin').toString()}</p>
-            <p className="text-lg">🔍 DEBUG: User Ativo: {user?.ativo?.toString() || 'false'}</p>
-            <p className="text-lg">🔍 DEBUG: Página: INDEX.TSX (Rota: /)</p>
-          </div>
-          
-          {/* BOTÃO MEGA DESTACADO */}
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Link to="/wizard-denuncia">
-              <Button 
-                size="lg" 
-                className="bg-yellow-500 hover:bg-yellow-400 text-black font-black px-8 py-4 text-xl shadow-2xl border-4 border-yellow-300 hover:border-yellow-200 transition-all duration-300 hover:scale-105"
-              >
-                <Plus className="h-6 w-6 mr-3" />
-                🚨 NOVA DENÚNCIA
-              </Button>
-            </Link>
-            
-            <Link to="/modulo-denuncias">
-              <Button 
-                size="lg" 
-                className="bg-red-600 hover:bg-red-500 text-white font-bold px-8 py-4 text-xl shadow-2xl border-4 border-red-400 hover:border-red-300 transition-all duration-300 hover:scale-105"
-              >
-                <Shield className="h-6 w-6 mr-3" />
-                📋 GERIR DENÚNCIAS
-              </Button>
-            </Link>
-          </div>
-          
-          <p className="text-white text-xl mt-4 font-bold animate-pulse">
-            ⬆️ CLIQUE AQUI PARA TESTAR O WIZARD ⬆️
-          </p>
-        </div>
-      </div>
+
 
       {/* Hero Section */}
       <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800">
@@ -221,7 +173,24 @@ const Index: React.FC = () => {
               </Card>
             </Link>
 
-            {/* 2. Voluntários */}
+            {/* 2. Denúncias */}
+            <Link to="/modulo-denuncias" className="group">
+              <Card className="h-full transition-all duration-300 hover:shadow-xl hover:-translate-y-2 border-0 bg-gradient-to-br from-red-50 to-orange-50 group-hover:from-red-100 group-hover:to-orange-100">
+                <CardContent className="p-6 text-center">
+                  <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-red-600 to-orange-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                    <AlertTriangle className="h-10 w-10 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">Denúncias</h3>
+                  <p className="text-sm text-gray-600 mb-4">Sistema de denúncias e emergência animal</p>
+                  <div className="flex justify-center space-x-2">
+                    <Badge variant="secondary" className="text-xs bg-red-100 text-red-700">Emergência</Badge>
+                    <Badge variant="outline" className="text-xs">Resgate</Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+
+            {/* 3. Voluntários */}
             <Link to="/voluntarios" className="group">
               <Card className="h-full transition-all duration-300 hover:shadow-xl hover:-translate-y-2 border-0 bg-gradient-to-br from-blue-50 to-indigo-50 group-hover:from-blue-100 group-hover:to-indigo-100">
                 <CardContent className="p-6 text-center">
@@ -238,7 +207,7 @@ const Index: React.FC = () => {
               </Card>
             </Link>
 
-            {/* 3. Missões */}
+            {/* 4. Missões */}
             <Link to="/missoes" className="group">
               <Card className="h-full transition-all duration-300 hover:shadow-xl hover:-translate-y-2 border-0 bg-gradient-to-br from-purple-50 to-violet-50 group-hover:from-purple-100 group-hover:to-violet-100">
                 <CardContent className="p-6 text-center">
@@ -255,7 +224,7 @@ const Index: React.FC = () => {
               </Card>
             </Link>
 
-            {/* 4. Agenda */}
+            {/* 5. Agenda */}
             <Link to="/agenda" className="group">
               <Card className="h-full transition-all duration-300 hover:shadow-xl hover:-translate-y-2 border-0 bg-gradient-to-br from-green-50 to-emerald-50 group-hover:from-green-100 group-hover:to-emerald-100">
                 <CardContent className="p-6 text-center">
@@ -272,7 +241,7 @@ const Index: React.FC = () => {
               </Card>
             </Link>
 
-            {/* 5. Equipamentos */}
+            {/* 6. Equipamentos */}
             <Link to="/equipamentos" className="group">
               <Card className="h-full transition-all duration-300 hover:shadow-xl hover:-translate-y-2 border-0 bg-gradient-to-br from-orange-50 to-amber-50 group-hover:from-orange-100 group-hover:to-amber-100">
                 <CardContent className="p-6 text-center">
@@ -289,7 +258,7 @@ const Index: React.FC = () => {
               </Card>
             </Link>
 
-            {/* 6. Estatísticas */}
+            {/* 7. Estatísticas */}
             <Link to="/estatisticas-avancadas" className="group">
               <Card className="h-full transition-all duration-300 hover:shadow-xl hover:-translate-y-2 border-0 bg-gradient-to-br from-teal-50 to-cyan-50 group-hover:from-teal-100 group-hover:to-cyan-100">
                 <CardContent className="p-6 text-center">
