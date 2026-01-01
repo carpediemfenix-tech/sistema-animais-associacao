@@ -225,7 +225,7 @@ const Index: React.FC = () => {
             </Link>
 
             {/* 5. Agenda */}
-            <Link to="/agenda" className="group">
+            <Link to="/modulo-agenda" className="group">
               <Card className="h-full transition-all duration-300 hover:shadow-xl hover:-translate-y-2 border-0 bg-gradient-to-br from-green-50 to-emerald-50 group-hover:from-green-100 group-hover:to-emerald-100">
                 <CardContent className="p-6 text-center">
                   <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
