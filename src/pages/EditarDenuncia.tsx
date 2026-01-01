@@ -27,7 +27,7 @@ interface Denuncia {
   codigo: string;
   data_denuncia: string;
   local_encontrado: string;
-  local_completo: string;
+  local_completo?: string;
   descricao_situacao: string;
   status_denuncia: string;
   prioridade: string;
@@ -100,8 +100,8 @@ const EditarDenuncia: React.FC = () => {
         local_encontrado: data.local_encontrado || '',
         local_completo: data.local_completo || '',
         descricao_situacao: data.descricao_situacao || '',
-        status_denuncia: data.status_denuncia || '',
-        prioridade: data.prioridade || '',
+        status_denuncia: data.status_denuncia || 'nova',
+        prioridade: data.prioridade || 'normal',
         quantidade_animais: data.quantidade_animais || 0,
         observacoes_gestao: data.observacoes_gestao || ''
       });
@@ -141,48 +141,120 @@ const EditarDenuncia: React.FC = () => {
       return;
     }
 
+    // Validar status
+    const statusValidos = ['nova', 'em_andamento', 'concluida'];
+    if (!statusValidos.includes(formData.status_denuncia)) {
+      toast({
+        title: "Status inválido",
+        description: "Por favor, selecione um status válido.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validar prioridade
+    const prioridadesValidas = ['baixa', 'normal', 'alta', 'urgente'];
+    if (!prioridadesValidas.includes(formData.prioridade)) {
+      toast({
+        title: "Prioridade inválida",
+        description: "Por favor, selecione uma prioridade válida.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setSaving(true);
       console.log('💾 [EDITAR] Salvando alterações...');
+      console.log('📝 [EDITAR] Dados a serem salvos:', {
+        local_encontrado: formData.local_encontrado,
+        local_completo: formData.local_completo || null,
+        descricao_situacao: formData.descricao_situacao,
+        status_denuncia: formData.status_denuncia,
+        prioridade: formData.prioridade,
+        quantidade_animais: formData.quantidade_animais,
+        observacoes_gestao: formData.observacoes_gestao || null,
+        responsavel_gestao_id: user?.id || null,
+        updated_by: user?.id || null
+      });
 
       // Verificar se status mudou para criar histórico
       const statusMudou = denuncia.status_denuncia !== formData.status_denuncia;
 
+      // Preparar dados para atualização (sem campos que podem causar problemas)
+      const updateData: any = {
+        local_encontrado: formData.local_encontrado.trim(),
+        descricao_situacao: formData.descricao_situacao.trim(),
+        status_denuncia: formData.status_denuncia,
+        prioridade: formData.prioridade,
+        quantidade_animais: Math.max(0, formData.quantidade_animais)
+      };
+
+      // Adicionar campos opcionais apenas se tiverem valor
+      if (formData.local_completo?.trim()) {
+        updateData.local_completo = formData.local_completo.trim();
+      }
+
+      if (formData.observacoes_gestao?.trim()) {
+        updateData.observacoes_gestao = formData.observacoes_gestao.trim();
+      }
+
+      if (user?.id) {
+        updateData.responsavel_gestao_id = user.id;
+        updateData.updated_by = user.id;
+      }
+
       // Atualizar denúncia
       const { error: updateError } = await supabase
         .from('denuncias_2025_12_29_23_00')
-        .update({
-          local_encontrado: formData.local_encontrado,
-          local_completo: formData.local_completo,
-          descricao_situacao: formData.descricao_situacao,
-          status_denuncia: formData.status_denuncia,
-          prioridade: formData.prioridade,
-          quantidade_animais: formData.quantidade_animais,
-          observacoes_gestao: formData.observacoes_gestao,
-          responsavel_gestao_id: user?.id,
-          updated_by: user?.id,
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', denuncia.id);
 
       if (updateError) {
         console.error('❌ [EDITAR] Erro ao atualizar:', updateError);
-        throw updateError;
+        console.error('❌ [EDITAR] Detalhes do erro:', {
+          message: updateError.message,
+          details: updateError.details,
+          hint: updateError.hint,
+          code: updateError.code
+        });
+        
+        // Mensagem de erro mais específica
+        let errorMessage = "Não foi possível salvar as alterações.";
+        if (updateError.message.includes('check constraint')) {
+          errorMessage = "Valores inválidos detectados. Verifique o status e prioridade.";
+        } else if (updateError.message.includes('foreign key')) {
+          errorMessage = "Erro de referência de dados. Tente novamente.";
+        } else if (updateError.message.includes('not-null')) {
+          errorMessage = "Campos obrigatórios não preenchidos.";
+        }
+        
+        toast({
+          title: "Erro ao salvar",
+          description: errorMessage,
+          variant: "destructive",
+        });
+        return;
       }
 
       // Criar entrada na timeline se status mudou
       if (statusMudou) {
         console.log('📝 [EDITAR] Criando entrada na timeline...');
         
-        await supabase.rpc('criar_timeline_denuncia', {
-          p_denuncia_id: denuncia.id,
-          p_tipo_acao: 'edicao',
-          p_descricao: `Denúncia editada. ${statusMudou ? `Status alterado de "${denuncia.status_denuncia}" para "${formData.status_denuncia}".` : ''} ${formData.observacoes_gestao ? `Observações: ${formData.observacoes_gestao}` : ''}`,
-          p_acao_anterior: statusMudou ? denuncia.status_denuncia : null,
-          p_acao_nova: statusMudou ? formData.status_denuncia : null,
-          p_usuario_id: user?.id,
-          p_usuario_nome: user?.username || user?.email || 'Administrador'
-        });
+        try {
+          await supabase.rpc('criar_timeline_denuncia', {
+            p_denuncia_id: denuncia.id,
+            p_tipo_acao: 'edicao',
+            p_descricao: `Denúncia editada. Status alterado de "${denuncia.status_denuncia}" para "${formData.status_denuncia}". ${formData.observacoes_gestao ? `Observações: ${formData.observacoes_gestao}` : ''}`,
+            p_acao_anterior: denuncia.status_denuncia,
+            p_acao_nova: formData.status_denuncia,
+            p_usuario_id: user?.id,
+            p_usuario_nome: user?.username || user?.email || 'Administrador'
+          });
+        } catch (timelineError) {
+          console.error('⚠️ [EDITAR] Erro ao criar timeline (não crítico):', timelineError);
+          // Não falhar por causa da timeline
+        }
       }
 
       console.log('✅ [EDITAR] Denúncia atualizada com sucesso');
@@ -195,10 +267,10 @@ const EditarDenuncia: React.FC = () => {
       // Voltar para detalhes
       navigate(`/denuncia/${codigo}`);
     } catch (error) {
-      console.error('❌ [EDITAR] Erro ao salvar:', error);
+      console.error('❌ [EDITAR] Erro geral ao salvar:', error);
       toast({
-        title: "Erro ao salvar",
-        description: "Não foi possível salvar as alterações.",
+        title: "Erro inesperado",
+        description: "Ocorreu um erro inesperado. Tente novamente.",
         variant: "destructive",
       });
     } finally {
@@ -322,6 +394,7 @@ const EditarDenuncia: React.FC = () => {
                       value={formData.local_encontrado}
                       onChange={(e) => setFormData(prev => ({ ...prev, local_encontrado: e.target.value }))}
                       placeholder="Local onde os animais foram encontrados"
+                      disabled={saving}
                     />
                   </div>
                   <div>
@@ -332,6 +405,7 @@ const EditarDenuncia: React.FC = () => {
                       min="0"
                       value={formData.quantidade_animais}
                       onChange={(e) => setFormData(prev => ({ ...prev, quantidade_animais: parseInt(e.target.value) || 0 }))}
+                      disabled={saving}
                     />
                   </div>
                 </div>
@@ -343,6 +417,7 @@ const EditarDenuncia: React.FC = () => {
                     value={formData.local_completo}
                     onChange={(e) => setFormData(prev => ({ ...prev, local_completo: e.target.value }))}
                     placeholder="Endereço completo do local"
+                    disabled={saving}
                   />
                 </div>
 
@@ -354,6 +429,7 @@ const EditarDenuncia: React.FC = () => {
                     onChange={(e) => setFormData(prev => ({ ...prev, descricao_situacao: e.target.value }))}
                     placeholder="Descreva detalhadamente a situação encontrada..."
                     rows={4}
+                    disabled={saving}
                   />
                 </div>
               </CardContent>
@@ -377,6 +453,7 @@ const EditarDenuncia: React.FC = () => {
                     <Select 
                       value={formData.status_denuncia} 
                       onValueChange={(value) => setFormData(prev => ({ ...prev, status_denuncia: value }))}
+                      disabled={saving}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione o status" />
@@ -409,6 +486,7 @@ const EditarDenuncia: React.FC = () => {
                     <Select 
                       value={formData.prioridade} 
                       onValueChange={(value) => setFormData(prev => ({ ...prev, prioridade: value }))}
+                      disabled={saving}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione a prioridade" />
@@ -431,6 +509,7 @@ const EditarDenuncia: React.FC = () => {
                     onChange={(e) => setFormData(prev => ({ ...prev, observacoes_gestao: e.target.value }))}
                     placeholder="Observações administrativas sobre a denúncia..."
                     rows={3}
+                    disabled={saving}
                   />
                 </div>
               </CardContent>
@@ -499,6 +578,7 @@ const EditarDenuncia: React.FC = () => {
                   size="sm" 
                   className="w-full justify-start"
                   onClick={() => navigate(`/denuncia/${codigo}`)}
+                  disabled={saving}
                 >
                   <History className="h-4 w-4 mr-2" />
                   Ver Timeline
@@ -509,6 +589,7 @@ const EditarDenuncia: React.FC = () => {
                     size="sm" 
                     className="w-full justify-start"
                     onClick={() => navigate(`/denuncia/${codigo}/concluir`)}
+                    disabled={saving}
                   >
                     <CheckCircle className="h-4 w-4 mr-2" />
                     Concluir Denúncia
