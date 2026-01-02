@@ -80,9 +80,7 @@ import EquipamentosAlertas from "./pages/equipamentos/EquipamentosAlertas";
 import EquipamentosRelatorios from "./pages/equipamentos/EquipamentosRelatorios";
 import DashboardExecutivo from "./pages/DashboardExecutivo";
 
-// Módulo Financeiro
-import DashboardFinanceiro from "./pages/DashboardFinanceiro";
-import GestaoMovimentos from "./pages/GestaoMovimentos";
+// Módulo Financeiro - Componentes adicionais
 import NovoMovimento from "./pages/NovoMovimento";
 import GestaoContas from "./pages/GestaoContas";
 import ConfiguracoesFinanceiras from "./pages/ConfiguracoesFinanceiras";
@@ -166,6 +164,7 @@ function App() {
               <Route path="/missao/:id/animais" element={<ProtectedRoute><MissaoAnimais /></ProtectedRoute>} />
               <Route path="/missao/:id/financeiro" element={<ProtectedRoute><MissaoFinanceiro /></ProtectedRoute>} />
               <Route path="/missao/:id/equipamentos" element={<ProtectedRoute><MissaoEquipamentos /></ProtectedRoute>} />
+              <Route path="/editar-missao/:id" element={<ProtectedRoute><EditarMissao /></ProtectedRoute>} />
               <Route path="/missoes-arquivadas" element={<ProtectedRoute><MissoesArquivadas /></ProtectedRoute>} />
               
               {/* Módulo de Denúncias - Fase 2 */}
