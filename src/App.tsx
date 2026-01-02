@@ -132,6 +132,7 @@ function App() {
               <Route path="/animal/:id/responsabilidades" element={<ProtectedRoute><AnimalResponsabilidades /></ProtectedRoute>} />
               <Route path="/animal/:id/financeiro" element={<ProtectedRoute><AnimalFinanceiro /></ProtectedRoute>} />
               <Route path="/animal/:id/estados" element={<ProtectedRoute><AnimalEstados /></ProtectedRoute>} />
+              <Route path="/animal/:id/intervencoes-autoridades" element={<ProtectedRoute><IntervencoesAutoridades /></ProtectedRoute>} />
               <Route path="/animal/:id/editar" element={<ProtectedRoute><EditarAnimal /></ProtectedRoute>} />
               <Route path="/novo-animal" element={<ProtectedRoute><NovoAnimal /></ProtectedRoute>} />
               <Route path="/animais-arquivados" element={<ProtectedRoute><AnimaisArquivados /></ProtectedRoute>} />
