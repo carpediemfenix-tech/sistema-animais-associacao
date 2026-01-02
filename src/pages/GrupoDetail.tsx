@@ -923,10 +923,35 @@ const GrupoDetail = () => {
                         {animais.map((animal) => (
                           <TableRow key={animal.id}>
                             <TableCell>
-                              <div>
-                                <div className="font-medium">{animal.nome}</div>
-                                <div className="text-sm text-gray-500">
-                                  Processo: {animal.numero_processo}
+                              <div className="flex items-center space-x-3">
+                                {/* Fotografia do Animal */}
+                                <div className="flex-shrink-0">
+                                  {animal.url_convertido ? (
+                                    <img 
+                                      src={animal.url_convertido} 
+                                      alt={`Foto de ${animal.nome}`}
+                                      className="w-12 h-12 rounded-full object-cover border-2 border-gray-200 shadow-sm"
+                                      onError={(e) => {
+                                        e.currentTarget.style.display = 'none';
+                                        e.currentTarget.nextElementSibling.style.display = 'flex';
+                                      }}
+                                    />
+                                  ) : null}
+                                  {/* Placeholder quando não há foto */}
+                                  <div 
+                                    className={`w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-sm ${
+                                      animal.url_convertido ? 'hidden' : 'flex'
+                                    }`}
+                                  >
+                                    {animal.nome.charAt(0).toUpperCase()}
+                                  </div>
+                                </div>
+                                {/* Informações do Animal */}
+                                <div>
+                                  <div className="font-medium">{animal.nome}</div>
+                                  <div className="text-sm text-gray-500">
+                                    Processo: {animal.numero_processo}
+                                  </div>
                                 </div>
                               </div>
                             </TableCell>
