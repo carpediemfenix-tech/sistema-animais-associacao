@@ -35,7 +35,7 @@ import PageActionBar from "@/components/PageActionBar";
 
 interface ConfiguracaoNotificacao {
   id?: string;
-  user_id: string;
+  username: string;
   categoria: string;
   ativo: boolean;
   som_ativo: boolean;
@@ -101,17 +101,18 @@ const ConfiguracoesNotificacoes = () => {
     try {
       setLoading(true);
 
+      // Usar a nova tabela compatível com sistema de autenticação personalizado
       const { data, error } = await supabase
-        .from('configuracoes_notificacoes_2026_01_02_04_00')
+        .from('configuracoes_notificacoes_username_2026_01_02_05_00')
         .select('*')
-        .eq('user_id', user.id);
+        .eq('username', user.username);
 
       if (error) throw error;
 
       // Se não há configurações, criar padrões
       if (!data || data.length === 0) {
         const configsPadrao = categoriasDisponiveis.map(categoria => ({
-          user_id: user.id,
+          username: user.username,
           categoria: categoria.id,
           ativo: true,
           som_ativo: true,
@@ -146,16 +147,23 @@ const ConfiguracoesNotificacoes = () => {
 
       // Deletar configurações existentes
       await supabase
-        .from('configuracoes_notificacoes_2026_01_02_04_00')
+        .from('configuracoes_notificacoes_username_2026_01_02_05_00')
         .delete()
-        .eq('user_id', user.id);
+        .eq('username', user.username);
 
       // Inserir novas configurações
       const { error } = await supabase
-        .from('configuracoes_notificacoes_2026_01_02_04_00')
+        .from('configuracoes_notificacoes_username_2026_01_02_05_00')
         .insert(configuracoes.map(config => ({
-          ...config,
-          user_id: user.id,
+          username: user.username,
+          categoria: config.categoria,
+          ativo: config.ativo,
+          som_ativo: config.som_ativo,
+          prioridade_minima: config.prioridade_minima,
+          frequencia_email: config.frequencia_email,
+          horario_silencioso_inicio: config.horario_silencioso_inicio,
+          horario_silencioso_fim: config.horario_silencioso_fim,
+          dias_semana_ativo: config.dias_semana_ativo,
           updated_at: new Date().toISOString()
         })));
 
@@ -201,7 +209,7 @@ const ConfiguracoesNotificacoes = () => {
   const restaurarPadroes = () => {
     if (window.confirm('Tem certeza que deseja restaurar as configurações padrão? Todas as personalizações serão perdidas.')) {
       const configsPadrao = categoriasDisponiveis.map(categoria => ({
-        user_id: user?.id || '',
+        username: user?.username || '',
         categoria: categoria.id,
         ativo: true,
         som_ativo: true,
@@ -362,7 +370,7 @@ const ConfiguracoesNotificacoes = () => {
         <div className="space-y-6">
           {categoriasDisponiveis.map((categoria) => {
             const config = configuracoes.find(c => c.categoria === categoria.id) || {
-              user_id: user?.id || '',
+              username: user?.username || '',
               categoria: categoria.id,
               ativo: true,
               som_ativo: true,
