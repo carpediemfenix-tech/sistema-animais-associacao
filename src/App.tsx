@@ -98,6 +98,7 @@ import DenunciaDetail from "./pages/DenunciaDetail";
 import ModuloDenuncias from "./pages/ModuloDenuncias";
 import EditarDenuncia from "./pages/EditarDenuncia";
 import ConcluirDenuncia from "./pages/ConcluirDenuncia";
+import ConfiguracoesNotificacoes from "./pages/ConfiguracoesNotificacoes";
 
 const queryClient = new QueryClient();
 
@@ -219,6 +220,7 @@ function App() {
               <Route path="/configuracoes/responsabilidades" element={<ProtectedRoute><GestaoResponsabilidades /></ProtectedRoute>} />
               <Route path="/configuracao-especialidades" element={<ProtectedRoute><ConfiguracaoEspecialidades /></ProtectedRoute>} />
               <Route path="/configuracao-intervencoes" element={<ProtectedRoute><ConfiguracaoIntervencoes /></ProtectedRoute>} />
+              <Route path="/configuracoes-notificacoes" element={<ProtectedRoute><ConfiguracoesNotificacoes /></ProtectedRoute>} />
               
               {/* Intervenções e Eventos */}
               <Route path="/intervencoes" element={<ProtectedRoute><IntervencoesPage /></ProtectedRoute>} />

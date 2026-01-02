@@ -296,26 +296,79 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
           </div>
 
           {/* Ações em Lote */}
-          {stats.naoLidas > 0 && (
-            <div className="flex justify-between items-center mb-4 p-3 bg-blue-50 rounded-lg">
-              <span className="text-sm text-blue-700">
-                {stats.naoLidas} notificação{stats.naoLidas > 1 ? 'ões' : ''} não lida{stats.naoLidas > 1 ? 's' : ''}
-              </span>
+          <div className="flex flex-col sm:flex-row gap-3 mb-4">
+            {stats.naoLidas > 0 && (
+              <div className="flex-1 p-3 bg-blue-50 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-blue-700">
+                    {stats.naoLidas} notificação{stats.naoLidas > 1 ? 'ões' : ''} não lida{stats.naoLidas > 1 ? 's' : ''}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={marcarTodasComoLidas}
+                    className="text-blue-600 hover:text-blue-700"
+                  >
+                    <Check className="h-4 w-4 mr-2" />
+                    Marcar Todas como Lidas
+                  </Button>
+                </div>
+              </div>
+            )}
+            
+            {/* Botões de Ação Global */}
+            <div className="flex gap-2">
+              {stats.total > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    if (window.confirm('Tem certeza que deseja apagar TODAS as notificações? Esta ação não pode ser desfeita.')) {
+                      try {
+                        // Eliminar todas as notificações uma por uma
+                        for (const notif of notificacoes) {
+                          await eliminarNotificacao(notif.id);
+                        }
+                        toast({
+                          title: '✅ Notificações Eliminadas',
+                          description: 'Todas as notificações foram eliminadas com sucesso.',
+                        });
+                      } catch (error) {
+                        toast({
+                          title: '❌ Erro',
+                          description: 'Erro ao eliminar notificações.',
+                          variant: 'destructive',
+                        });
+                      }
+                    }
+                  }}
+                  className="text-red-600 hover:text-red-700 border-red-200 hover:border-red-300"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Apagar Todas
+                </Button>
+              )}
+              
               <Button
                 variant="outline"
                 size="sm"
-                onClick={marcarTodasComoLidas}
-                className="text-blue-600 hover:text-blue-700"
+                onClick={() => {
+                  // Navegar para configurações de notificações
+                  onClose();
+                  window.location.hash = '/configuracoes-notificacoes';
+                }}
+                className="text-gray-600 hover:text-gray-700"
               >
-                <Check className="h-4 w-4 mr-2" />
-                Marcar Todas como Lidas
+                <Settings className="h-4 w-4 mr-2" />
+                Configurações
               </Button>
             </div>
-          )}
+          </div>
         </div>
 
         {/* Lista de Notificações */}
-        <ScrollArea className="flex-1 px-6 pb-6">
+        <div className="px-6 pb-6">
+          <ScrollArea className="h-96 pr-4">
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <RefreshCw className="h-6 w-6 animate-spin text-blue-500" />
@@ -420,7 +473,8 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
               ))}
             </div>
           )}
-        </ScrollArea>
+          </ScrollArea>
+        </div>
       </DialogContent>
     </Dialog>
   );
