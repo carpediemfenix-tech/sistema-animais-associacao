@@ -39,6 +39,7 @@ import { useToast } from "@/hooks/use-toast";
 import LogotipoValentao from "@/components/LogotipoValentao";
 import EnhancedHeader from "@/components/EnhancedHeader";
 import EnhancedFooter from "@/components/EnhancedFooter";
+import { convertGoogleDriveUrl } from "@/lib/utils";
 
 const GrupoDetail = () => {
   const { id } = useParams();
@@ -926,9 +927,9 @@ const GrupoDetail = () => {
                               <div className="flex items-center space-x-3">
                                 {/* Fotografia do Animal */}
                                 <div className="flex-shrink-0">
-                                  {animal.url_convertido ? (
+                                  {animal.url_fotografia ? (
                                     <img 
-                                      src={animal.url_convertido} 
+                                      src={convertGoogleDriveUrl(animal.url_fotografia)} 
                                       alt={`Foto de ${animal.nome}`}
                                       className="w-12 h-12 rounded-full object-cover border-2 border-gray-200 shadow-sm"
                                       onError={(e) => {
@@ -940,7 +941,7 @@ const GrupoDetail = () => {
                                   {/* Placeholder quando não há foto */}
                                   <div 
                                     className={`w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-sm ${
-                                      animal.url_convertido ? 'hidden' : 'flex'
+                                      animal.url_fotografia ? 'hidden' : 'flex'
                                     }`}
                                   >
                                     {animal.nome.charAt(0).toUpperCase()}
