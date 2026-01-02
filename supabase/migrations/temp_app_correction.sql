@@ -1,0 +1,2 @@
+-- Este é um arquivo temporário para criar o App.tsx corrigido
+-- Será usado para substituir o arquivo atual

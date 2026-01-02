@@ -59,7 +59,7 @@ interface EstatisticasAvancadas {
   crescimentoMensal: number;
 }
 
-const EstatisticasAvancadasPage = () => {
+const EstatisticasAvancadas = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [estatisticas, setEstatisticas] = useState<EstatisticasAvancadas>({
@@ -438,4 +438,4 @@ const EstatisticasAvancadasPage = () => {
   );
 };
 
-export default EstatisticasAvancadasPage;
+export default EstatisticasAvancadas;
