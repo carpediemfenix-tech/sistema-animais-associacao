@@ -203,6 +203,7 @@ function App() {
               <Route path="/modulo-administrador" element={<ProtectedRoute><ModuloAdministrador /></ProtectedRoute>} />
               <Route path="/gestao-utilizadores" element={<ProtectedRoute><GestaoUtilizadores /></ProtectedRoute>} />
               <Route path="/gestao-grupos" element={<ProtectedRoute><GestaoGrupos /></ProtectedRoute>} />
+              <Route path="/grupos" element={<Navigate to="/gestao-grupos" replace />} />
               <Route path="/grupo/:id" element={<ProtectedRoute><GrupoDetail /></ProtectedRoute>} />
               <Route path="/grupos-arquivados" element={<ProtectedRoute><GruposArquivados /></ProtectedRoute>} />
               <Route path="/logs-acesso" element={<ProtectedRoute><LogsAcesso /></ProtectedRoute>} />
