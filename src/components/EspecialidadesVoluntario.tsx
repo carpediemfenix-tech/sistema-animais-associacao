@@ -156,19 +156,65 @@ const EspecialidadesVoluntario: React.FC<EspecialidadesVoluntarioProps> = ({
     try {
       setSubmitting(true);
 
+      // 1. Verificar se a especialidade já existe para este voluntário
+      const { data: existingData } = await supabase
+        .from('voluntario_especialidades_2025_12_21_22_00')
+        .select('id')
+        .eq('voluntario_id', voluntarioId)
+        .eq('especialidade_id', novaEspecialidade.especialidade_id)
+        .maybeSingle();
+
+      if (existingData) {
+        toast({
+          title: "Aviso",
+          description: "Esta especialidade já foi atribuída a este voluntário",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // 2. Preparar dados para inserção (apenas campos com valor)
+      const insertData: any = {
+        voluntario_id: voluntarioId,
+        especialidade_id: novaEspecialidade.especialidade_id,
+        nivel_experiencia: novaEspecialidade.nivel_experiencia || 'iniciante',
+        ativo: true
+      };
+
+      // Adicionar campos opcionais apenas se tiverem valor válido
+      if (novaEspecialidade.data_certificacao && novaEspecialidade.data_certificacao.trim() !== '') {
+        insertData.data_certificacao = novaEspecialidade.data_certificacao;
+      }
+      
+      if (novaEspecialidade.certificado_valido_ate && novaEspecialidade.certificado_valido_ate.trim() !== '') {
+        insertData.certificado_valido_ate = novaEspecialidade.certificado_valido_ate;
+      }
+      
+      if (novaEspecialidade.observacoes && novaEspecialidade.observacoes.trim() !== '') {
+        insertData.observacoes = novaEspecialidade.observacoes;
+      }
+
+      console.log('🔍 [DEBUG] Dados a inserir:', insertData);
+
+      // 3. Inserir dados
       const { error } = await supabase
         .from('voluntario_especialidades_2025_12_21_22_00')
-        .insert({
-          voluntario_id: voluntarioId,
-          especialidade_id: novaEspecialidade.especialidade_id,
-          nivel_experiencia: novaEspecialidade.nivel_experiencia,
-          data_certificacao: novaEspecialidade.data_certificacao || null,
-          certificado_valido_ate: novaEspecialidade.certificado_valido_ate || null,
-          observacoes: novaEspecialidade.observacoes || null,
-          ativo: true
-        });
+        .insert(insertData);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ [ERROR] Erro detalhado do Supabase:', error);
+        
+        // Tratar erros específicos
+        if (error.code === '23505') {
+          throw new Error('Esta especialidade já foi atribuída a este voluntário');
+        } else if (error.code === '23503') {
+          throw new Error('Especialidade inválida selecionada');
+        } else {
+          throw new Error(error.message || 'Erro ao adicionar especialidade');
+        }
+      }
+
+      console.log('✅ [SUCCESS] Especialidade adicionada com sucesso');
 
       toast({
         title: "Sucesso",
@@ -186,7 +232,7 @@ const EspecialidadesVoluntario: React.FC<EspecialidadesVoluntarioProps> = ({
       
       await loadData();
     } catch (error: any) {
-      console.error('Erro ao adicionar especialidade:', error);
+      console.error('❌ [ERROR] Erro ao adicionar especialidade:', error);
       toast({
         title: "Erro",
         description: error.message || "Erro ao adicionar especialidade",
