@@ -264,15 +264,19 @@ const VoluntarioDetail = () => {
 
       // Buscar participações em missões
       const { data: participacoesData, error: participacoesError } = await supabase
-        .from('participacoes_missoes_2025_12_18_14_15')
+        .from('participacoes_missoes_2025_12_29_07_00')
         .select(`
           *,
-          missoes_2025_12_18_14_15(
+          missao:missoes_2025_12_18_14_15(
+            id,
             titulo,
             codigo,
             status,
             data_inicio,
             data_fim,
+            local_principal,
+            prioridade,
+            orcamento_previsto,
             tipos_missoes_2025_12_18_14_15(
               nome,
               categoria,
@@ -281,7 +285,7 @@ const VoluntarioDetail = () => {
           )
         `)
         .eq('voluntario_id', id)
-        .order('created_at', { ascending: false });
+        .order('data_participacao', { ascending: false });
 
       if (participacoesError) {
         console.error('Erro ao buscar participações em missões:', participacoesError);
@@ -1007,27 +1011,30 @@ const VoluntarioDetail = () => {
           </div>
         </div>
 
-        {/* Seção de Missões */}
-        <Card className="mission-card">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2 text-indigo-800">
-              <Target className="h-5 w-5 text-indigo-500" />
-              <span>Participações em Missões</span>
-            </CardTitle>
-            <CardDescription>
-              Histórico de participações em missões e eventos da associação
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+        {/* Participações em Missões - Design Moderno */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+          <div className="p-6">
+            <div className="flex items-center space-x-3 mb-6">
+              <div className="bg-indigo-100 p-2 rounded-lg">
+                <Target className="h-6 w-6 text-indigo-600" />
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Participações em Missões</h2>
+                <p className="text-sm text-gray-600">Histórico de participações em missões e eventos da associação</p>
+              </div>
+            </div>
             {participacoesMissoes.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <Target className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p>Nenhuma participação em missões registada</p>
+              <div className="text-center py-8">
+                <Target className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500">Nenhuma participação em missões registada</p>
+                <p className="text-sm text-gray-400 mt-2">
+                  Este voluntário ainda não participou em missões
+                </p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {/* Estatísticas das Missões */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="p-4 bg-indigo-50 rounded-lg border border-indigo-200">
                     <div className="flex items-center space-x-3">
                       <div className="p-2 bg-indigo-100 rounded-lg">
@@ -1070,19 +1077,21 @@ const VoluntarioDetail = () => {
                 </div>
 
                 {/* Lista de Participações */}
-                <div className="space-y-3">
+                <div className="grid grid-cols-1 gap-4">
                   {participacoesMissoes.map((participacao) => {
                     const getStatusBadge = (status: string) => {
                       const statusConfig = {
-                        'pendente': { color: 'bg-yellow-100 text-yellow-800', icon: Clock, label: 'Pendente' },
-                        'em_curso': { color: 'bg-blue-100 text-blue-800', icon: PlayCircle, label: 'Em Curso' },
-                        'concluida': { color: 'bg-green-100 text-green-800', icon: CheckCircle, label: 'Concluída' },
+                        'rascunho': { color: 'bg-gray-100 text-gray-800', icon: Edit, label: 'Rascunho' },
+                        'planejada': { color: 'bg-blue-100 text-blue-800', icon: Calendar, label: 'Planejada' },
+                        'ativa': { color: 'bg-green-100 text-green-800', icon: PlayCircle, label: 'Ativa' },
+                        'pausada': { color: 'bg-yellow-100 text-yellow-800', icon: Clock, label: 'Pausada' },
+                        'concluida': { color: 'bg-emerald-100 text-emerald-800', icon: CheckCircle, label: 'Concluída' },
                         'cancelada': { color: 'bg-red-100 text-red-800', icon: XCircle, label: 'Cancelada' }
                       };
-                      const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pendente;
+                      const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.rascunho;
                       const Icon = config.icon;
                       return (
-                        <Badge className={`${config.color} flex items-center space-x-1`}>
+                        <Badge className={`${config.color} flex items-center space-x-1 text-xs`}>
                           <Icon className="h-3 w-3" />
                           <span>{config.label}</span>
                         </Badge>
@@ -1100,52 +1109,81 @@ const VoluntarioDetail = () => {
                       return iconesConfig[categoria as keyof typeof iconesConfig] || Target;
                     };
 
-                    const IconeCategoria = getIconeCategoria(participacao.missoes_2025_12_18_14_15?.tipos_missoes_2025_12_18_14_15?.categoria || 'evento');
+                    const IconeCategoria = getIconeCategoria(participacao.missao?.tipos_missoes_2025_12_18_14_15?.categoria || 'evento');
 
                     return (
-                      <div key={participacao.id} className="flex items-center justify-between p-4 bg-indigo-50 rounded-lg border border-indigo-200 hover:bg-indigo-100 transition-colors">
-                        <div className="flex items-center space-x-4">
-                          <div className="p-2 bg-indigo-100 rounded-lg">
-                            <IconeCategoria className="h-4 w-4 text-indigo-600" />
+                      <div key={participacao.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow bg-gradient-to-r from-indigo-50 to-blue-50">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start space-x-3">
+                            <div className="bg-indigo-100 p-2 rounded-lg flex-shrink-0">
+                              <IconeCategoria className="h-5 w-5 text-indigo-600" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center space-x-2 mb-2">
+                                <h4 className="font-semibold text-gray-900 truncate">
+                                  {participacao.missao?.titulo || 'Missão N/A'}
+                                </h4>
+                                {participacao.missao?.status && getStatusBadge(participacao.missao.status)}
+                              </div>
+                              <div className="space-y-1">
+                                <div className="flex items-center text-sm text-gray-600">
+                                  <span className="font-medium">Código:</span>
+                                  <span className="ml-2">{participacao.missao?.codigo}</span>
+                                </div>
+                                <div className="flex items-center text-sm text-gray-600">
+                                  <span className="font-medium">Função:</span>
+                                  <span className="ml-2">{participacao.funcao}</span>
+                                </div>
+                                <div className="flex items-center text-sm text-gray-600">
+                                  <Calendar className="h-3 w-3 mr-1" />
+                                  <span className="font-medium">Participação:</span>
+                                  <span className="ml-2">{new Date(participacao.data_participacao).toLocaleDateString('pt-PT')}</span>
+                                </div>
+                                {participacao.missao?.tipos_missoes_2025_12_18_14_15?.nome && (
+                                  <div className="flex items-center text-sm text-gray-600">
+                                    <span className="font-medium">Tipo:</span>
+                                    <span className="ml-2">{participacao.missao.tipos_missoes_2025_12_18_14_15.nome}</span>
+                                  </div>
+                                )}
+                                {participacao.missao?.local_principal && (
+                                  <div className="flex items-center text-sm text-gray-600">
+                                    <MapPin className="h-3 w-3 mr-1" />
+                                    <span className="font-medium">Local:</span>
+                                    <span className="ml-2">{participacao.missao.local_principal}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
                           </div>
-                          <div>
-                            <div className="font-medium text-indigo-900">
-                              {participacao.missoes_2025_12_18_14_15?.titulo || 'Missão N/A'}
-                            </div>
-                            <div className="text-sm text-indigo-600">
-                              {participacao.missoes_2025_12_18_14_15?.codigo} • {participacao.funcao}
-                            </div>
-                            <div className="text-xs text-indigo-500 mt-1">
-                              {new Date(participacao.data_participacao).toLocaleDateString('pt-PT')}
-                              {participacao.missoes_2025_12_18_14_15?.tipos_missoes_2025_12_18_14_15?.nome && (
-                                <> • {participacao.missoes_2025_12_18_14_15.tipos_missoes_2025_12_18_14_15.nome}</>
+                          <div className="flex flex-col items-end space-y-2">
+                            {/* Métricas */}
+                            <div className="flex items-center space-x-3 text-sm">
+                              {participacao.horas_dedicadas > 0 && (
+                                <div className="flex items-center space-x-1 text-green-600 bg-green-100 px-2 py-1 rounded">
+                                  <Clock className="h-3 w-3" />
+                                  <span>{participacao.horas_dedicadas}h</span>
+                                </div>
+                              )}
+                              {participacao.pontos_atribuidos > 0 && (
+                                <div className="flex items-center space-x-1 text-yellow-600 bg-yellow-100 px-2 py-1 rounded">
+                                  <Star className="h-3 w-3" />
+                                  <span>{participacao.pontos_atribuidos}</span>
+                                </div>
+                              )}
+                              {participacao.avaliacao && (
+                                <div className="flex items-center space-x-1 text-purple-600 bg-purple-100 px-2 py-1 rounded">
+                                  <Award className="h-3 w-3" />
+                                  <span>{participacao.avaliacao}/5</span>
+                                </div>
                               )}
                             </div>
-                          </div>
-                        </div>
-                        <div className="text-right space-y-2">
-                          {participacao.missoes_2025_12_18_14_15?.status && 
-                            getStatusBadge(participacao.missoes_2025_12_18_14_15.status)
-                          }
-                          <div className="flex items-center space-x-4 text-sm">
-                            {participacao.horas_dedicadas > 0 && (
-                              <div className="flex items-center space-x-1 text-green-600">
-                                <Clock className="h-3 w-3" />
-                                <span>{participacao.horas_dedicadas}h</span>
-                              </div>
-                            )}
-                            {participacao.pontos_atribuidos > 0 && (
-                              <div className="flex items-center space-x-1 text-yellow-600">
-                                <Star className="h-3 w-3" />
-                                <span>{participacao.pontos_atribuidos}</span>
-                              </div>
-                            )}
-                            {participacao.avaliacao && (
-                              <div className="flex items-center space-x-1 text-purple-600">
-                                <Award className="h-3 w-3" />
-                                <span>{participacao.avaliacao}/5</span>
-                              </div>
-                            )}
+                            {/* Botão Ver Missão */}
+                            <Link to={`/missao/${participacao.missao?.id}`}>
+                              <Button size="sm" variant="outline" className="text-xs">
+                                <Eye className="h-3 w-3 mr-1" />
+                                Ver Missão
+                              </Button>
+                            </Link>
                           </div>
                         </div>
                       </div>
@@ -1154,8 +1192,8 @@ const VoluntarioDetail = () => {
                 </div>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
       
       <EnhancedFooter />
