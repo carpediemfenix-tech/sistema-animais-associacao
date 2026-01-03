@@ -19,6 +19,7 @@ import AnimalResponsabilidades from "./pages/AnimalResponsabilidades";
 import AnimalFinanceiro from "./pages/AnimalFinanceiro";
 import NovoAnimal from "./pages/NovoAnimal";
 import EditarAnimal from "./pages/EditarAnimal";
+import EditarAnimalFuturistic from "./pages/EditarAnimalFuturistic";
 import IntervencoesPage from "./pages/IntervencoesPage";
 import EventosPage from "./pages/EventosPage";
 import GestaoVoluntarios from "./pages/GestaoVoluntarios";
@@ -170,7 +171,8 @@ function App() {
               <Route path="/animal/:id/intervencoes-autoridades" element={<ProtectedRoute><IntervencoesAutoridades /></ProtectedRoute>} />
               <Route path="/animal/:id/historico-nomes" element={<ProtectedRoute><HistoricoNomesAnimais /></ProtectedRoute>} />
               <Route path="/novo-animal" element={<ProtectedRoute><NovoAnimal /></ProtectedRoute>} />
-              <Route path="/editar-animal/:id" element={<ProtectedRoute><EditarAnimal /></ProtectedRoute>} />
+              <Route path="/editar-animal/:id" element={<ProtectedRoute><EditarAnimalFuturistic /></ProtectedRoute>} />
+              <Route path="/editar-animal/:id/classic" element={<ProtectedRoute><EditarAnimal /></ProtectedRoute>} />
               <Route path="/animais-arquivados" element={<ProtectedRoute><AnimaisArquivados /></ProtectedRoute>} />
               <Route path="/animais-adotados" element={<ProtectedRoute><AnimaisAdotados /></ProtectedRoute>} />
               
