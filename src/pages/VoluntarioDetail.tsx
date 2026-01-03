@@ -109,7 +109,7 @@ interface ParticipacaoMissao {
   data_participacao: string;
   horas_dedicadas: number;
   pontos_atribuidos: number;
-  avaliacao?: number;
+
   missoes_2025_12_18_14_15?: {
     titulo: string;
     codigo: string;
@@ -290,6 +290,8 @@ const VoluntarioDetail = () => {
       if (participacoesError) {
         console.error('Erro ao buscar participações em missões:', participacoesError);
       } else {
+        console.log('DEBUG - Participações carregadas:', participacoesData);
+        console.log('DEBUG - Número de participações:', participacoesData?.length || 0);
         setParticipacoesMissoes(participacoesData || []);
       }
 
@@ -1170,12 +1172,7 @@ const VoluntarioDetail = () => {
                                   <span>{participacao.pontos_atribuidos}</span>
                                 </div>
                               )}
-                              {participacao.avaliacao && (
-                                <div className="flex items-center space-x-1 text-purple-600 bg-purple-100 px-2 py-1 rounded">
-                                  <Award className="h-3 w-3" />
-                                  <span>{participacao.avaliacao}/5</span>
-                                </div>
-                              )}
+
                             </div>
                             {/* Botão Ver Missão */}
                             <Link to={`/missao/${participacao.missao?.id}`}>
