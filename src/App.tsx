@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
+import { HashRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Index from "./pages/Index";
@@ -100,6 +100,39 @@ import ConfiguracoesNotificacoes from "./pages/ConfiguracoesNotificacoes";
 
 const queryClient = new QueryClient();
 
+// Componente de redirecionamento para voluntários perfil
+const RedirectVoluntarioPerfil = () => {
+  const { id } = useParams<{ id: string }>();
+  
+  if (!id) {
+    return <Navigate to="/voluntarios" replace />;
+  }
+  
+  return <Navigate to={`/voluntario/${id}`} replace />;
+};
+
+// Componente de redirecionamento para voluntários editar
+const RedirectVoluntarioEditar = () => {
+  const { id } = useParams<{ id: string }>();
+  
+  if (!id) {
+    return <Navigate to="/voluntarios" replace />;
+  }
+  
+  return <Navigate to={`/editar-voluntario/${id}`} replace />;
+};
+
+// Componente de redirecionamento para animais editar
+const RedirectAnimalEditar = () => {
+  const { id } = useParams<{ id: string }>();
+  
+  if (!id) {
+    return <Navigate to="/animais" replace />;
+  }
+  
+  return <Navigate to={`/editar-animal/${id}`} replace />;
+};
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -144,11 +177,11 @@ function App() {
               {/* Redirecionamentos para rotas antigas de voluntários */}
               <Route path="/voluntarios/gestao" element={<Navigate to="/gestao-voluntarios-unificada" replace />} />
               <Route path="/voluntarios/relatorios" element={<Navigate to="/relatorios-voluntarios" replace />} />
-              <Route path="/voluntarios/editar/:id" element={<Navigate to="/editar-voluntario/:id" replace />} />
-              <Route path="/voluntarios/perfil/:id" element={<Navigate to="/voluntario/:id" replace />} />
+              <Route path="/voluntarios/editar/:id" element={<RedirectVoluntarioEditar />} />
+              <Route path="/voluntarios/perfil/:id" element={<RedirectVoluntarioPerfil />} />
               <Route path="/voluntarios/novo" element={<Navigate to="/novo-voluntario" replace />} />
               {/* Redirecionamentos para rotas antigas de animais */}
-              <Route path="/animal/:id/editar" element={<Navigate to="/editar-animal/:id" replace />} />
+              <Route path="/animal/:id/editar" element={<RedirectAnimalEditar />} />
               <Route path="/animais/novo" element={<Navigate to="/novo-animal" replace />} />
               <Route path="/voluntarios-dashboard" element={<ProtectedRoute><VoluntariosDashboard /></ProtectedRoute>} />
               <Route path="/voluntario/:id" element={<ProtectedRoute><VoluntarioDetail /></ProtectedRoute>} />
