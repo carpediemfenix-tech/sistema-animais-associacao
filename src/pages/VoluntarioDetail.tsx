@@ -45,6 +45,25 @@ interface Voluntario {
   created_at: string;
 }
 
+interface EspecialidadeVoluntario {
+  id: string;
+  especialidade: {
+    id: string;
+    nome: string;
+    descricao: string;
+    categoria: string;
+    cor: string;
+    icone: string;
+    pontos_bonus: number;
+    requer_certificacao: boolean;
+  };
+  nivel_experiencia: string;
+  data_certificacao?: string;
+  certificado_valido_ate?: string;
+  observacoes?: string;
+  ativo: boolean;
+}
+
 interface ResponsabilidadeAtiva {
   id: string;
   animal_id: string;
@@ -108,6 +127,7 @@ const VoluntarioDetail = () => {
   const [intervencoes, setIntervencoes] = useState<IntervencaoHistorico[]>([]);
   const [responsabilidadesHistorico, setResponsabilidadesHistorico] = useState<ResponsabilidadeHistorico[]>([]);
   const [participacoesMissoes, setParticipacoesMissoes] = useState<ParticipacaoMissao[]>([]);
+  const [especialidades, setEspecialidades] = useState<EspecialidadeVoluntario[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -261,6 +281,22 @@ const VoluntarioDetail = () => {
         setParticipacoesMissoes(participacoesData || []);
       }
 
+      // Buscar especialidades do voluntário
+      const { data: especialidadesData, error: especialidadesError } = await supabase
+        .from('voluntario_especialidades_2025_12_21_22_00')
+        .select(`
+          *,
+          especialidade:especialidades_voluntarios_2025_12_21_22_00(*)
+        `)
+        .eq('voluntario_id', id)
+        .eq('ativo', true);
+
+      if (especialidadesError) {
+        console.error('Erro ao buscar especialidades:', especialidadesError);
+      } else {
+        setEspecialidades(especialidadesData || []);
+      }
+
     } catch (error: any) {
       console.error('Erro ao carregar dados do voluntário:', error);
       setError(error.message || 'Erro ao carregar dados do voluntário');
@@ -272,6 +308,45 @@ const VoluntarioDetail = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Função para renderizar ícones das especialidades com cores
+  const renderEspecialidadeIcon = (icone: string, cor: string) => {
+    const iconProps = { size: 20, className: `text-${cor}-600` };
+    
+    switch (icone) {
+      case 'Shield': return <Shield {...iconProps} />;
+      case 'Heart': return <Heart {...iconProps} />;
+      case 'Brain': return <Activity {...iconProps} />;
+      case 'Truck': return <Users {...iconProps} />;
+      case 'Calendar': return <Calendar {...iconProps} />;
+      case 'Camera': return <Star {...iconProps} />;
+      case 'Share': return <Megaphone {...iconProps} />;
+      case 'FileText': return <Clipboard {...iconProps} />;
+      case 'DollarSign': return <Target {...iconProps} />;
+      case 'BookOpen': return <PlayCircle {...iconProps} />;
+      case 'Stethoscope': return <Stethoscope {...iconProps} />;
+      case 'Plus': return <CheckCircle {...iconProps} />;
+      default: return <Star {...iconProps} />;
+    }
+  };
+
+  // Função para obter cor do badge baseada na cor da especialidade
+  const getBadgeColor = (cor: string) => {
+    const colorMap: { [key: string]: string } = {
+      'red': 'bg-red-100 text-red-800 border-red-200',
+      'green': 'bg-green-100 text-green-800 border-green-200',
+      'purple': 'bg-purple-100 text-purple-800 border-purple-200',
+      'blue': 'bg-blue-100 text-blue-800 border-blue-200',
+      'yellow': 'bg-yellow-100 text-yellow-800 border-yellow-200',
+      'pink': 'bg-pink-100 text-pink-800 border-pink-200',
+      'cyan': 'bg-cyan-100 text-cyan-800 border-cyan-200',
+      'gray': 'bg-gray-100 text-gray-800 border-gray-200',
+      'orange': 'bg-orange-100 text-orange-800 border-orange-200',
+      'teal': 'bg-teal-100 text-teal-800 border-teal-200',
+      'emerald': 'bg-emerald-100 text-emerald-800 border-emerald-200'
+    };
+    return colorMap[cor] || 'bg-gray-100 text-gray-800 border-gray-200';
   };
 
   if (loading) {
@@ -407,6 +482,103 @@ const VoluntarioDetail = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Seção de Especialidades */}
+        <Card className="animal-card">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2 text-blue-800">
+              <Award className="h-5 w-5 text-blue-500" />
+              <span>Especialidades do Voluntário</span>
+            </CardTitle>
+            <CardDescription>
+              Áreas de especialização e competências do voluntário
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {especialidades.length === 0 ? (
+              <div className="text-center py-8">
+                <Star className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500">Nenhuma especialidade atribuída</p>
+                <p className="text-sm text-gray-400 mt-2">
+                  As especialidades podem ser adicionadas na página de edição
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {especialidades.map((esp) => (
+                  <div key={esp.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-start space-x-3">
+                      <div className="flex-shrink-0">
+                        <div className={`p-2 rounded-lg ${getBadgeColor(esp.especialidade.cor).replace('text-', 'bg-').replace('-800', '-100')}`}>
+                          {renderEspecialidadeIcon(esp.especialidade.icone, esp.especialidade.cor)}
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-semibold text-gray-900 truncate">
+                            {esp.especialidade.nome}
+                          </h4>
+                          <Badge className={`${getBadgeColor(esp.especialidade.cor)} text-xs`}>
+                            {esp.especialidade.categoria}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-gray-600 mb-3">
+                          {esp.especialidade.descricao}
+                        </p>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-gray-500">Nível:</span>
+                            <Badge variant="outline" className="capitalize">
+                              {esp.nivel_experiencia}
+                            </Badge>
+                          </div>
+                          {esp.especialidade.pontos_bonus > 0 && (
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-gray-500">Pontos Bónus:</span>
+                              <span className="font-medium text-green-600">+{esp.especialidade.pontos_bonus}</span>
+                            </div>
+                          )}
+                          {esp.especialidade.requer_certificacao && (
+                            <div className="flex items-center space-x-1 text-xs">
+                              <CheckCircle className="h-3 w-3 text-green-500" />
+                              <span className="text-green-600">Requer Certificação</span>
+                            </div>
+                          )}
+                          {esp.data_certificacao && (
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-gray-500">Certificado em:</span>
+                              <span className="text-gray-700">
+                                {new Date(esp.data_certificacao).toLocaleDateString('pt-PT')}
+                              </span>
+                            </div>
+                          )}
+                          {esp.certificado_valido_ate && (
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-gray-500">Válido até:</span>
+                              <span className={`font-medium ${
+                                new Date(esp.certificado_valido_ate) > new Date() 
+                                  ? 'text-green-600' 
+                                  : 'text-red-600'
+                              }`}>
+                                {new Date(esp.certificado_valido_ate).toLocaleDateString('pt-PT')}
+                              </span>
+                            </div>
+                          )}
+                          {esp.observacoes && (
+                            <div className="mt-2 p-2 bg-gray-50 rounded text-xs">
+                              <span className="text-gray-500">Observações:</span>
+                              <p className="text-gray-700 mt-1">{esp.observacoes}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           

@@ -414,35 +414,97 @@ const EspecialidadesVoluntario: React.FC<EspecialidadesVoluntarioProps> = ({
             )}
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {voluntarioEspecialidades.map((ve) => (
-              <div key={ve.id} className="flex items-center justify-between p-3 border rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <Badge className={`${getEspecialidadeCor(ve.especialidade.cor)} border`}>
-                    {getEspecialidadeIcon(ve.especialidade.icone)}
-                    <span className="ml-2">{ve.especialidade.nome}</span>
-                  </Badge>
-                  <Badge variant="outline" className={nivelMap[ve.nivel_experiencia]?.cor}>
-                    {nivelMap[ve.nivel_experiencia]?.label}
-                  </Badge>
-                  {ve.especialidade.pontos_bonus > 0 && (
-                    <Badge variant="outline" className="bg-amber-50 text-amber-700">
-                      +{ve.especialidade.pontos_bonus} pts
-                    </Badge>
-                  )}
-                  {ve.especialidade.requer_certificacao && (
-                    <CheckCircle className="h-4 w-4 text-green-600" />
+              <div key={ve.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center space-x-3">
+                    <div className={`p-2 rounded-lg ${getEspecialidadeCor(ve.especialidade.cor).replace('text-', 'bg-').replace('-800', '-100')}`}>
+                      {getEspecialidadeIcon(ve.especialidade.icone)}
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900">{ve.especialidade.nome}</h4>
+                      <p className="text-sm text-gray-600">{ve.especialidade.categoria}</p>
+                    </div>
+                  </div>
+                  {!readOnly && (
+                    <div className="flex space-x-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {/* TODO: Implementar edição */}}
+                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                      >
+                        Editar
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleRemoveEspecialidade(ve.id)}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
                   )}
                 </div>
-                {!readOnly && (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => handleRemoveEspecialidade(ve.id)}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+                
+                <p className="text-sm text-gray-600 mb-3">{ve.especialidade.descricao}</p>
+                
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                  <div>
+                    <span className="text-xs text-gray-500">Nível:</span>
+                    <Badge variant="outline" className={`block mt-1 ${nivelMap[ve.nivel_experiencia]?.cor}`}>
+                      {nivelMap[ve.nivel_experiencia]?.label}
+                    </Badge>
+                  </div>
+                  
+                  {ve.especialidade.pontos_bonus > 0 && (
+                    <div>
+                      <span className="text-xs text-gray-500">Pontos Bónus:</span>
+                      <Badge variant="outline" className="block mt-1 bg-amber-50 text-amber-700">
+                        +{ve.especialidade.pontos_bonus} pts
+                      </Badge>
+                    </div>
+                  )}
+                  
+                  {ve.data_certificacao && (
+                    <div>
+                      <span className="text-xs text-gray-500">Certificado em:</span>
+                      <p className="text-sm font-medium mt-1">
+                        {new Date(ve.data_certificacao).toLocaleDateString('pt-PT')}
+                      </p>
+                    </div>
+                  )}
+                  
+                  {ve.certificado_valido_ate && (
+                    <div>
+                      <span className="text-xs text-gray-500">Válido até:</span>
+                      <p className={`text-sm font-medium mt-1 ${
+                        new Date(ve.certificado_valido_ate) > new Date() 
+                          ? 'text-green-600' 
+                          : 'text-red-600'
+                      }`}>
+                        {new Date(ve.certificado_valido_ate).toLocaleDateString('pt-PT')}
+                      </p>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="flex items-center space-x-3 mb-3">
+                  {ve.especialidade.requer_certificacao && (
+                    <div className="flex items-center space-x-1 text-sm">
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      <span className="text-green-600">Requer Certificação</span>
+                    </div>
+                  )}
+                </div>
+                
+                {ve.observacoes && (
+                  <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                    <span className="text-xs text-gray-500 font-medium">Observações:</span>
+                    <p className="text-sm text-gray-700 mt-1">{ve.observacoes}</p>
+                  </div>
                 )}
               </div>
             ))}
