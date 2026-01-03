@@ -492,6 +492,181 @@ const AnimalDetailFuturistic = () => {
                     <div className="text-sm text-green-300">Cor</div>
                   </div>
                 </div>
+
+                {/* Estado Atual e Localização Atual - Seções Destacadas */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                  {/* Estado Atual */}
+                  <div className="relative overflow-hidden rounded-2xl p-6 bg-gradient-to-br from-blue-600/30 to-indigo-600/30 backdrop-blur-lg border border-blue-500/30 shadow-2xl shadow-blue-500/20">
+                    <div className="relative z-10">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-lg font-semibold text-blue-300 flex items-center">
+                          <Activity className="h-5 w-5 mr-2" />
+                          Estado Atual
+                        </h3>
+                        <div className={`w-4 h-4 rounded-full animate-pulse ${
+                          animal.estado?.toLowerCase() === 'ativo' ? 'bg-green-400' :
+                          animal.estado?.toLowerCase() === 'adotado' ? 'bg-blue-400' :
+                          animal.estado?.toLowerCase() === 'tratamento' ? 'bg-yellow-400' :
+                          animal.estado?.toLowerCase() === 'óbito' ? 'bg-red-400' :
+                          'bg-gray-400'
+                        }`}></div>
+                      </div>
+                      <div className={`text-3xl font-bold mb-2 ${
+                        animal.estado?.toLowerCase() === 'ativo' ? 'text-green-300' :
+                        animal.estado?.toLowerCase() === 'adotado' ? 'text-blue-300' :
+                        animal.estado?.toLowerCase() === 'tratamento' ? 'text-yellow-300' :
+                        animal.estado?.toLowerCase() === 'óbito' ? 'text-red-300' :
+                        'text-gray-300'
+                      }`}>
+                        {animal.estado?.toUpperCase()}
+                      </div>
+                      <div className="text-sm text-blue-200 opacity-90">
+                        {animal.estado?.toLowerCase() === 'ativo' && 'Animal disponível e saudável'}
+                        {animal.estado?.toLowerCase() === 'adotado' && (
+                          <div className="space-y-1">
+                            <div>Já tem uma família amorosa</div>
+                            {animal.adotante_nome && (
+                              <div className="text-xs bg-blue-500/20 rounded-lg px-3 py-1 border border-blue-400/30">
+                                Adotante: {animal.adotante_nome}
+                              </div>
+                            )}
+                            {animal.data_adocao && (
+                              <div className="text-xs opacity-75">
+                                Adotado em: {new Date(animal.data_adocao).toLocaleDateString('pt-PT')}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        {animal.estado?.toLowerCase() === 'tratamento' && 'Em cuidados veterinários especializados'}
+                        {animal.estado?.toLowerCase() === 'quarentena' && 'Em período de observação médica'}
+                        {animal.estado?.toLowerCase() === 'óbito' && 'Falecido - descanse em paz'}
+                        {!['ativo', 'adotado', 'tratamento', 'quarentena', 'óbito'].includes(animal.estado?.toLowerCase()) && 'Estado especial monitorado'}
+                      </div>
+                    </div>
+                    <div className="absolute top-0 right-0 -mt-6 -mr-6 w-32 h-32 bg-blue-400/10 rounded-full blur-xl"></div>
+                    <div className="absolute bottom-0 left-0 -mb-6 -ml-6 w-24 h-24 bg-indigo-400/10 rounded-full blur-lg"></div>
+                  </div>
+
+                  {/* Localização Atual */}
+                  <div className="relative overflow-hidden rounded-2xl p-6 bg-gradient-to-br from-emerald-600/30 to-green-600/30 backdrop-blur-lg border border-emerald-500/30 shadow-2xl shadow-emerald-500/20">
+                    <div className="relative z-10">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-lg font-semibold text-emerald-300 flex items-center">
+                          <MapPin className="h-5 w-5 mr-2" />
+                          Localização Atual
+                        </h3>
+                        <div className="w-4 h-4 bg-emerald-400 rounded-full animate-pulse"></div>
+                      </div>
+                      <div className="text-2xl font-bold mb-2 text-emerald-200 break-words">
+                        {localizacaoAtual?.localizacao || 'Localização não definida'}
+                      </div>
+                      <div className="text-sm text-emerald-200 opacity-90 mb-2">
+                        {localizacaoAtual?.descricao || 'Aguardando atualização de localização'}
+                      </div>
+                      {localizacaoAtual?.endereco_detalhes && (
+                        <div className="text-xs bg-emerald-500/20 rounded-lg px-3 py-1 border border-emerald-400/30 mb-2">
+                          📍 {localizacaoAtual.endereco_detalhes}
+                        </div>
+                      )}
+                      {localizacaoAtual?.data_inicio && (
+                        <div className="text-xs text-emerald-300 opacity-75">
+                          📅 Desde: {new Date(localizacaoAtual.data_inicio).toLocaleDateString('pt-PT')}
+                        </div>
+                      )}
+                      {localizacaoAtual?.responsavel && (
+                        <div className="text-xs text-emerald-300 opacity-75 mt-1">
+                          👤 Responsável: {localizacaoAtual.responsavel}
+                        </div>
+                      )}
+                    </div>
+                    <div className="absolute top-0 right-0 -mt-6 -mr-6 w-32 h-32 bg-emerald-400/10 rounded-full blur-xl"></div>
+                    <div className="absolute bottom-0 left-0 -mb-6 -ml-6 w-24 h-24 bg-green-400/10 rounded-full blur-lg"></div>
+                  </div>
+                </div>
+                
+                {/* Informações Técnicas Detalhadas */}
+                <div className="mb-6">
+                  <h3 className="text-xl font-semibold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent mb-4 flex items-center">
+                    <FileText className="h-5 w-5 mr-2 text-cyan-400" />
+                    Informações Técnicas
+                  </h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {/* Número do Processo */}
+                    <div className="bg-slate-800/30 rounded-xl p-4 border border-orange-500/30">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <FileText className="h-4 w-4 text-orange-400" />
+                        <span className="text-sm text-orange-300">Processo</span>
+                      </div>
+                      <div className="text-lg font-bold text-orange-200 break-all">
+                        {animal.numero_processo || 'N/A'}
+                      </div>
+                    </div>
+
+                    {/* Transponder */}
+                    <div className="bg-slate-800/30 rounded-xl p-4 border border-cyan-500/30">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <Cpu className="h-4 w-4 text-cyan-400" />
+                        <span className="text-sm text-cyan-300">Transponder</span>
+                      </div>
+                      <div className="text-lg font-bold text-cyan-200 break-all">
+                        {animal.transponder || 'Não implantado'}
+                      </div>
+                    </div>
+
+                    {/* Raça */}
+                    <div className="bg-slate-800/30 rounded-xl p-4 border border-purple-500/30">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <PawPrint className="h-4 w-4 text-purple-400" />
+                        <span className="text-sm text-purple-300">Raça</span>
+                      </div>
+                      <div className="text-lg font-bold text-purple-200 break-words">
+                        {animal.raca || 'Não especificada'}
+                      </div>
+                    </div>
+
+                    {/* Idade Estimada */}
+                    <div className="bg-slate-800/30 rounded-xl p-4 border border-pink-500/30">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <Clock className="h-4 w-4 text-pink-400" />
+                        <span className="text-sm text-pink-300">Idade Estimada</span>
+                      </div>
+                      <div className="text-lg font-bold text-pink-200">
+                        {animal.idade_estimada ? 
+                          `${Math.floor(animal.idade_estimada / 12)} anos e ${animal.idade_estimada % 12} meses` : 
+                          'Não estimada'
+                        }
+                      </div>
+                    </div>
+
+                    {/* Data de Entrada */}
+                    <div className="bg-slate-800/30 rounded-xl p-4 border border-green-500/30">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <Calendar className="h-4 w-4 text-green-400" />
+                        <span className="text-sm text-green-300">Data Entrada</span>
+                      </div>
+                      <div className="text-lg font-bold text-green-200">
+                        {animal.data_entrada ? 
+                          new Date(animal.data_entrada).toLocaleDateString('pt-PT') : 
+                          'N/A'
+                        }
+                      </div>
+                    </div>
+
+                    {/* Porte */}
+                    {animal.porte && (
+                      <div className="bg-slate-800/30 rounded-xl p-4 border border-yellow-500/30">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <BarChart3 className="h-4 w-4 text-yellow-400" />
+                          <span className="text-sm text-yellow-300">Porte</span>
+                        </div>
+                        <div className="text-lg font-bold text-yellow-200">
+                          {animal.porte}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
                 
                 {/* Additional Info */}
                 <div className="space-y-3">
