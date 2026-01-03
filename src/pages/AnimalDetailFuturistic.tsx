@@ -60,6 +60,23 @@ const AnimalDetailFuturistic = () => {
   const { hasPermission } = useAuth();
   const navigate = useNavigate();
 
+  // Função para calcular idade a partir da data de nascimento
+  const calcularIdade = (dataNascimento: string | null) => {
+    if (!dataNascimento) return null;
+    
+    const hoje = new Date();
+    const nascimento = new Date(dataNascimento);
+    let idade = hoje.getFullYear() - nascimento.getFullYear();
+    const mesAtual = hoje.getMonth();
+    const mesNascimento = nascimento.getMonth();
+    
+    if (mesAtual < mesNascimento || (mesAtual === mesNascimento && hoje.getDate() < nascimento.getDate())) {
+      idade--;
+    }
+    
+    return idade;
+  };
+
   // Função básica para carregar dados do animal
   const fetchAnimalData = async () => {
     if (!id) {
@@ -111,16 +128,36 @@ const AnimalDetailFuturistic = () => {
       // Carregar localização atual
       const { data: localizacaoData, error: localizacaoError } = await supabase
         .from('localizacoes_animal')
-        .select(`
-          *,
-          localizacao:localizacoes(nome, descricao, tipo, endereco),
-          responsavel:voluntarios(nome)
-        `)
+        .select('*')
         .eq('animal_id', id)
         .eq('ativo', true)
         .single();
       
       if (localizacaoData && !localizacaoError) {
+        // Buscar localização separadamente
+        const { data: localizacaoInfo } = await supabase
+          .from('localizacoes')
+          .select('nome, descricao, tipo, endereco')
+          .eq('id', localizacaoData.localizacao_id)
+          .single();
+        
+        if (localizacaoInfo) {
+          localizacaoData.localizacao = localizacaoInfo;
+        }
+        
+        // Buscar responsável se existir
+        if (localizacaoData.responsavel_id) {
+          const { data: responsavelInfo } = await supabase
+            .from('voluntarios')
+            .select('nome')
+            .eq('id', localizacaoData.responsavel_id)
+            .single();
+          
+          if (responsavelInfo) {
+            localizacaoData.responsavel = responsavelInfo;
+          }
+        }
+        
         setLocalizacaoAtual(localizacaoData);
       }
 
@@ -480,7 +517,10 @@ const AnimalDetailFuturistic = () => {
                 {/* Quick Stats */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                   <div className="bg-slate-800/50 rounded-xl p-4 border border-purple-500/30">
-                    <div className="text-2xl font-bold text-purple-400">{animal.idade}</div>
+                    <div className="text-2xl font-bold text-purple-400">
+                      {calcularIdade(animal.data_nascimento) || 
+                       (animal.idade_estimada ? Math.floor(animal.idade_estimada / 12) : 'N/A')}
+                    </div>
                     <div className="text-sm text-purple-300">Anos</div>
                   </div>
                   <div className="bg-slate-800/50 rounded-xl p-4 border border-cyan-500/30">
