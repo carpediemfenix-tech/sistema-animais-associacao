@@ -651,169 +651,307 @@ const VoluntarioDetail = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           
-          {/* Animais Sob Responsabilidade Atual */}
-          <Card className="animal-card">
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2 text-orange-800">
-                <Heart className="h-5 w-5 text-red-500" />
-                <span>Animais Sob Responsabilidade</span>
-              </CardTitle>
-              <CardDescription>
-                Animais atualmente sob os cuidados deste voluntário
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+          {/* Animais Sob Responsabilidade Atual - Design Moderno */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+            <div className="p-6">
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="bg-orange-100 p-2 rounded-lg">
+                  <Heart className="h-6 w-6 text-orange-600" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">Animais Sob Responsabilidade</h2>
+                  <p className="text-sm text-gray-600">Animais atualmente sob os cuidados deste voluntário</p>
+                </div>
+              </div>
               {responsabilidadesAtivas.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <PawPrint className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                  <p>Nenhum animal sob responsabilidade atual</p>
+                <div className="text-center py-8">
+                  <PawPrint className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500">Nenhum animal sob responsabilidade atual</p>
+                  <p className="text-sm text-gray-400 mt-2">
+                    Este voluntário não tem animais atribuídos no momento
+                  </p>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="grid grid-cols-1 gap-4">
                   {responsabilidadesAtivas.map((resp) => (
-                    <div key={resp.id} className="flex items-center justify-between p-3 bg-orange-50 rounded-lg border border-orange-200">
-                      <div className="flex items-center space-x-3">
-                        <PawPrint className="h-4 w-4 text-orange-500" />
-                        <div>
-                          <div className="font-medium text-orange-900">
-                            {resp.animal_nome}
+                    <div key={resp.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow bg-gradient-to-r from-orange-50 to-red-50">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start space-x-3">
+                          <div className="bg-orange-100 p-2 rounded-lg flex-shrink-0">
+                            <PawPrint className="h-5 w-5 text-orange-600" />
                           </div>
-                          <div className="text-sm text-orange-600">
-                            {resp.animal_numero_processo} • {resp.animal_especie}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <h4 className="font-semibold text-gray-900 truncate">
+                                {resp.animal_nome}
+                              </h4>
+                              <Badge variant={resp.animal_estado === 'Ativo' ? 'default' : 'secondary'} className="text-xs">
+                                {resp.animal_estado}
+                              </Badge>
+                            </div>
+                            <div className="space-y-1">
+                              <div className="flex items-center text-sm text-gray-600">
+                                <span className="font-medium">Processo:</span>
+                                <span className="ml-2">{resp.animal_numero_processo}</span>
+                              </div>
+                              <div className="flex items-center text-sm text-gray-600">
+                                <span className="font-medium">Espécie:</span>
+                                <span className="ml-2">{resp.animal_especie}</span>
+                              </div>
+                              <div className="flex items-center text-sm text-gray-600">
+                                <Calendar className="h-3 w-3 mr-1" />
+                                <span className="font-medium">Responsável desde:</span>
+                                <span className="ml-2">{new Date(resp.data_inicio).toLocaleDateString('pt-PT')}</span>
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div className="text-right">
-                        <Badge variant={resp.animal_estado === 'Ativo' ? 'default' : 'secondary'}>
-                          {resp.animal_estado}
-                        </Badge>
-                        <div className="text-xs text-orange-500 mt-1">
-                          Desde {new Date(resp.data_inicio).toLocaleDateString('pt-PT')}
+                        <div className="flex flex-col items-end space-y-2">
+                          <Link to={`/animal/${resp.animal_id}`}>
+                            <Button size="sm" variant="outline" className="text-xs">
+                              <User className="h-3 w-3 mr-1" />
+                              Ver Animal
+                            </Button>
+                          </Link>
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          {/* Intervenções Recentes */}
-          <Card className="animal-card">
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2 text-green-800">
-                <Stethoscope className="h-5 w-5 text-green-500" />
-                <span>Intervenções Recentes</span>
-              </CardTitle>
-              <CardDescription>
-                Últimas intervenções médicas realizadas
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+          {/* Intervenções Acompanhadas - Design Moderno */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+            <div className="p-6">
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="bg-green-100 p-2 rounded-lg">
+                  <Stethoscope className="h-6 w-6 text-green-600" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">Intervenções Acompanhadas</h2>
+                  <p className="text-sm text-gray-600">
+                    Intervenções médicas onde este voluntário esteve envolvido (transporte, acompanhamento, coordenação)
+                  </p>
+                </div>
+              </div>
               {intervencoes.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <Stethoscope className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                  <p>Nenhuma intervenção registada</p>
+                <div className="text-center py-8">
+                  <Stethoscope className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500">Nenhuma intervenção acompanhada</p>
+                  <p className="text-sm text-gray-400 mt-2">
+                    Este voluntário não participou em intervenções médicas recentemente
+                  </p>
                 </div>
               ) : (
-                <div className="space-y-3 max-h-80 overflow-y-auto">
+                <div className="grid grid-cols-1 gap-4 max-h-80 overflow-y-auto">
                   {intervencoes.slice(0, 10).map((int) => (
-                    <div key={int.id} className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
-                      <div className="flex items-center space-x-3">
-                        <Stethoscope className="h-4 w-4 text-green-500" />
-                        <div>
-                          <div className="font-medium text-green-900">
-                            {int.animal_nome}
+                    <div key={int.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow bg-gradient-to-r from-green-50 to-emerald-50">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start space-x-3">
+                          <div className="bg-green-100 p-2 rounded-lg flex-shrink-0">
+                            <Stethoscope className="h-5 w-5 text-green-600" />
                           </div>
-                          <div className="text-sm text-green-600">
-                            {int.tipo_intervencao}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <h4 className="font-semibold text-gray-900 truncate">
+                                {int.animal_nome}
+                              </h4>
+                              <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                                Acompanhou
+                              </Badge>
+                            </div>
+                            <div className="space-y-1">
+                              <div className="flex items-center text-sm text-gray-600">
+                                <span className="font-medium">Tipo:</span>
+                                <span className="ml-2">{int.tipo_intervencao}</span>
+                              </div>
+                              {int.veterinario && (
+                                <div className="flex items-center text-sm text-gray-600">
+                                  <span className="font-medium">Veterinário:</span>
+                                  <span className="ml-2">Dr. {int.veterinario}</span>
+                                </div>
+                              )}
+                              {int.clinica && (
+                                <div className="flex items-center text-sm text-gray-600">
+                                  <span className="font-medium">Clínica:</span>
+                                  <span className="ml-2">{int.clinica}</span>
+                                </div>
+                              )}
+                              <div className="flex items-center text-sm text-gray-600">
+                                <Calendar className="h-3 w-3 mr-1" />
+                                <span className="font-medium">Data:</span>
+                                <span className="ml-2">{new Date(int.data_intervencao).toLocaleDateString('pt-PT')}</span>
+                              </div>
+                            </div>
                           </div>
-                          {int.veterinario && (
-                            <div className="text-xs text-green-500">
-                              Dr. {int.veterinario}
+                        </div>
+                        <div className="flex flex-col items-end space-y-2">
+                          {int.custo && (
+                            <div className="text-sm font-medium text-green-700 bg-green-100 px-2 py-1 rounded">
+                              €{int.custo.toFixed(2)}
                             </div>
                           )}
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        {int.custo && (
-                          <div className="text-sm font-medium text-green-700">
-                            €{int.custo.toFixed(2)}
-                          </div>
-                        )}
-                        <div className="text-xs text-green-500">
-                          {new Date(int.data_intervencao).toLocaleDateString('pt-PT')}
+                          <Link to={`/animal/${int.animal_id}`}>
+                            <Button size="sm" variant="outline" className="text-xs">
+                              <User className="h-3 w-3 mr-1" />
+                              Ver Animal
+                            </Button>
+                          </Link>
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
 
-        {/* Histórico Completo de Responsabilidades */}
-        <Card className="animal-card">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2 text-purple-800">
-              <Activity className="h-5 w-5 text-purple-500" />
-              <span>Histórico Completo de Responsabilidades</span>
-            </CardTitle>
-            <CardDescription>
-              Todos os animais que estiveram sob os cuidados deste voluntário
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+        {/* Histórico Completo de Responsabilidades - Design Moderno */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+          <div className="p-6">
+            <div className="flex items-center space-x-3 mb-6">
+              <div className="bg-purple-100 p-2 rounded-lg">
+                <Activity className="h-6 w-6 text-purple-600" />
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Histórico Completo de Responsabilidades</h2>
+                <p className="text-sm text-gray-600">Todos os animais que estiveram sob os cuidados deste voluntário</p>
+              </div>
+            </div>
             {responsabilidadesHistorico.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p>Nenhum histórico de responsabilidades</p>
+              <div className="text-center py-8">
+                <Users className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500">Nenhum histórico de responsabilidades</p>
+                <p className="text-sm text-gray-400 mt-2">
+                  Este voluntário ainda não teve animais sob sua responsabilidade
+                </p>
               </div>
             ) : (
-              <div className="space-y-3">
-                {responsabilidadesHistorico.map((resp) => (
-                  <div key={resp.id} className="flex items-center justify-between p-4 bg-purple-50 rounded-lg border border-purple-200">
+              <div className="space-y-4">
+                {/* Estatísticas do Histórico */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
                     <div className="flex items-center space-x-3">
-                      <div className={`w-3 h-3 rounded-full ${resp.data_fim ? 'bg-gray-400' : 'bg-green-500'}`}></div>
+                      <div className="p-2 bg-purple-100 rounded-lg">
+                        <Users className="h-4 w-4 text-purple-600" />
+                      </div>
                       <div>
-                        <div className="font-medium text-purple-900">
-                          {resp.animal_nome}
-                        </div>
-                        <div className="text-sm text-purple-600">
-                          {resp.animal_numero_processo} • {resp.animal_especie}
-                        </div>
-                        {resp.motivo_mudanca && (
-                          <div className="text-xs text-purple-500 mt-1">
-                            {resp.motivo_mudanca}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="flex items-center space-x-2">
-                        {resp.data_fim ? (
-                          <CheckCircle className="h-4 w-4 text-gray-500" />
-                        ) : (
-                          <Clock className="h-4 w-4 text-green-500" />
-                        )}
-                        <Badge variant={resp.data_fim ? "secondary" : "default"}>
-                          {resp.data_fim ? "Finalizada" : "Ativa"}
-                        </Badge>
-                      </div>
-                      <div className="text-xs text-purple-500 mt-1">
-                        {new Date(resp.data_inicio).toLocaleDateString('pt-PT')}
-                        {resp.data_fim && (
-                          <> - {new Date(resp.data_fim).toLocaleDateString('pt-PT')}</>
-                        )}
+                        <p className="text-sm font-medium text-purple-700">Total de Animais</p>
+                        <p className="text-2xl font-bold text-purple-900">{responsabilidadesHistorico.length}</p>
                       </div>
                     </div>
                   </div>
-                ))}
+                  <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 bg-green-100 rounded-lg">
+                        <Clock className="h-4 w-4 text-green-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-green-700">Responsabilidades Ativas</p>
+                        <p className="text-2xl font-bold text-green-900">
+                          {responsabilidadesHistorico.filter(r => !r.data_fim).length}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 bg-gray-100 rounded-lg">
+                        <CheckCircle className="h-4 w-4 text-gray-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">Responsabilidades Finalizadas</p>
+                        <p className="text-2xl font-bold text-gray-900">
+                          {responsabilidadesHistorico.filter(r => r.data_fim).length}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Timeline de Responsabilidades */}
+                <div className="space-y-4">
+                  {responsabilidadesHistorico.map((resp, index) => (
+                    <div key={resp.id} className="relative">
+                      {/* Linha da Timeline */}
+                      {index < responsabilidadesHistorico.length - 1 && (
+                        <div className="absolute left-6 top-12 w-0.5 h-16 bg-gray-200"></div>
+                      )}
+                      
+                      <div className="flex items-start space-x-4">
+                        {/* Indicador da Timeline */}
+                        <div className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center ${
+                          resp.data_fim 
+                            ? 'bg-gray-100 border-2 border-gray-300' 
+                            : 'bg-green-100 border-2 border-green-300'
+                        }`}>
+                          {resp.data_fim ? (
+                            <CheckCircle className="h-5 w-5 text-gray-500" />
+                          ) : (
+                            <Clock className="h-5 w-5 text-green-500" />
+                          )}
+                        </div>
+
+                        {/* Conteúdo da Responsabilidade */}
+                        <div className="flex-1 border rounded-lg p-4 hover:shadow-md transition-shadow bg-gradient-to-r from-purple-50 to-indigo-50">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center space-x-2 mb-2">
+                                <h4 className="font-semibold text-gray-900 truncate">
+                                  {resp.animal_nome}
+                                </h4>
+                                <Badge variant={resp.data_fim ? "secondary" : "default"} className="text-xs">
+                                  {resp.data_fim ? "Finalizada" : "Ativa"}
+                                </Badge>
+                              </div>
+                              <div className="space-y-1">
+                                <div className="flex items-center text-sm text-gray-600">
+                                  <span className="font-medium">Processo:</span>
+                                  <span className="ml-2">{resp.animal_numero_processo}</span>
+                                </div>
+                                <div className="flex items-center text-sm text-gray-600">
+                                  <span className="font-medium">Espécie:</span>
+                                  <span className="ml-2">{resp.animal_especie}</span>
+                                </div>
+                                <div className="flex items-center text-sm text-gray-600">
+                                  <Calendar className="h-3 w-3 mr-1" />
+                                  <span className="font-medium">Período:</span>
+                                  <span className="ml-2">
+                                    {new Date(resp.data_inicio).toLocaleDateString('pt-PT')}
+                                    {resp.data_fim && (
+                                      <> - {new Date(resp.data_fim).toLocaleDateString('pt-PT')}</>
+                                    )}
+                                  </span>
+                                </div>
+                                {resp.motivo_mudanca && (
+                                  <div className="mt-2 p-2 bg-yellow-50 rounded text-xs border border-yellow-200">
+                                    <span className="font-medium text-yellow-700">Motivo da mudança:</span>
+                                    <p className="text-yellow-600 mt-1">{resp.motivo_mudanca}</p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex flex-col items-end space-y-2 ml-4">
+                              <Link to={`/animal/${resp.animal_id}`}>
+                                <Button size="sm" variant="outline" className="text-xs">
+                                  <User className="h-3 w-3 mr-1" />
+                                  Ver Animal
+                                </Button>
+                              </Link>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Seção de Missões */}
         <Card className="mission-card">
