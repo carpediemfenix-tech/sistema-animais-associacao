@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import EnhancedHeader from "@/components/EnhancedHeader";
 import EnhancedFooter from "@/components/EnhancedFooter";
+import PageActionBar from "@/components/PageActionBar";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface Voluntario {
@@ -378,123 +379,191 @@ const VoluntarioDetail = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
+    <div className="min-h-screen bg-gray-50">
       <EnhancedHeader />
+      
+      {/* Page Action Bar */}
+      <PageActionBar 
+        title={`Perfil: ${voluntario.nome}`}
+        subtitle="Detalhes completos do voluntário"
+        actions={[
+          {
+            label: "Editar Voluntário",
+            href: `/editar-voluntario/${voluntario.id}`,
+            variant: "default",
+            icon: "edit"
+          },
+          {
+            label: "Voltar",
+            href: "/voluntarios",
+            variant: "outline",
+            icon: "arrow-left"
+          }
+        ]}
+      />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        
-        {/* Botão Voltar */}
-        <Button asChild variant="outline" className="mb-4">
-          <Link to="/voluntarios">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar aos Voluntários
-          </Link>
-        </Button>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
-        {/* Informações do Voluntário */}
-        <Card className="animal-card">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="bg-gradient-to-br from-blue-500 to-purple-500 w-12 h-12 rounded-full flex items-center justify-center">
-                  <User className="h-6 w-6 text-white" />
+        {/* Perfil do Voluntário - Design Moderno */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-8">
+            <div className="flex items-center space-x-4">
+              <div className="bg-white/20 backdrop-blur-sm w-16 h-16 rounded-full flex items-center justify-center">
+                <User className="h-8 w-8 text-white" />
+              </div>
+              <div className="text-white">
+                <h1 className="text-3xl font-bold">{voluntario.nome}</h1>
+                <div className="flex items-center space-x-3 mt-2">
+                  <Badge 
+                    variant={voluntario.ativo ? "default" : "secondary"}
+                    className={voluntario.ativo ? "bg-green-500 hover:bg-green-600" : "bg-gray-500"}
+                  >
+                    {voluntario.ativo ? "Ativo" : "Inativo"}
+                  </Badge>
+                  {voluntario.especialidade && (
+                    <span className="text-blue-100 text-sm">{voluntario.especialidade}</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {voluntario.email && (
+                <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
+                  <div className="bg-blue-100 p-2 rounded-lg">
+                    <Mail className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Email</p>
+                    <p className="font-medium text-gray-900">{voluntario.email}</p>
+                  </div>
+                </div>
+              )}
+              
+              {voluntario.telefone && (
+                <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
+                  <div className="bg-green-100 p-2 rounded-lg">
+                    <Phone className="h-5 w-5 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Telefone</p>
+                    <p className="font-medium text-gray-900">{voluntario.telefone}</p>
+                  </div>
+                </div>
+              )}
+              
+              {voluntario.morada && (
+                <div className="flex items-center space-x-3 p-3 bg-red-50 rounded-lg">
+                  <div className="bg-red-100 p-2 rounded-lg">
+                    <MapPin className="h-5 w-5 text-red-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Morada</p>
+                    <p className="font-medium text-gray-900">{voluntario.morada}</p>
+                  </div>
+                </div>
+              )}
+              
+              <div className="flex items-center space-x-3 p-3 bg-purple-50 rounded-lg">
+                <div className="bg-purple-100 p-2 rounded-lg">
+                  <Calendar className="h-5 w-5 text-purple-600" />
                 </div>
                 <div>
-                  <CardTitle className="text-2xl text-orange-800">{voluntario.nome}</CardTitle>
-                  <CardDescription className="flex items-center space-x-2">
-                    <Badge variant={voluntario.ativo ? "default" : "secondary"}>
-                      {voluntario.ativo ? "Ativo" : "Inativo"}
-                    </Badge>
-                    <span className="text-orange-600">{voluntario.especialidade}</span>
-                  </CardDescription>
+                  <p className="text-sm text-gray-500">Membro desde</p>
+                  <p className="font-medium text-gray-900">
+                    {new Date(voluntario.created_at).toLocaleDateString('pt-PT')}
+                  </p>
                 </div>
               </div>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {voluntario.email && (
-                <div className="flex items-center space-x-2">
-                  <Mail className="h-4 w-4 text-blue-500" />
-                  <span className="text-sm">{voluntario.email}</span>
-                </div>
-              )}
-              {voluntario.telefone && (
-                <div className="flex items-center space-x-2">
-                  <Phone className="h-4 w-4 text-green-500" />
-                  <span className="text-sm">{voluntario.telefone}</span>
-                </div>
-              )}
-              {voluntario.morada && (
-                <div className="flex items-center space-x-2">
-                  <MapPin className="h-4 w-4 text-red-500" />
-                  <span className="text-sm">{voluntario.morada}</span>
-                </div>
-              )}
-              <div className="flex items-center space-x-2">
-                <Calendar className="h-4 w-4 text-purple-500" />
-                <span className="text-sm">
-                  Desde {new Date(voluntario.created_at).toLocaleDateString('pt-PT')}
-                </span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Estatísticas Rápidas */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="animal-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-orange-700">
-                Animais Sob Responsabilidade
-              </CardTitle>
-              <PawPrint className="h-4 w-4 text-orange-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-orange-900">{responsabilidadesAtivas.length}</div>
-              <p className="text-xs text-orange-600">Atualmente ativos</p>
-            </CardContent>
-          </Card>
-
-          <Card className="animal-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-green-700">
-                Intervenções Realizadas
-              </CardTitle>
-              <Stethoscope className="h-4 w-4 text-green-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-900">{intervencoes.length}</div>
-              <p className="text-xs text-green-600">Total registado</p>
-            </CardContent>
-          </Card>
-
-          <Card className="animal-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-purple-700">
-                Histórico de Responsabilidades
-              </CardTitle>
-              <Users className="h-4 w-4 text-purple-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-purple-900">{responsabilidadesHistorico.length}</div>
-              <p className="text-xs text-purple-600">Animais já cuidados</p>
-            </CardContent>
-          </Card>
+          </div>
         </div>
 
-        {/* Seção de Especialidades */}
-        <Card className="animal-card">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2 text-blue-800">
-              <Award className="h-5 w-5 text-blue-500" />
-              <span>Especialidades do Voluntário</span>
-            </CardTitle>
-            <CardDescription>
-              Áreas de especialização e competências do voluntário
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+        {/* Estatísticas Rápidas - Design Moderno */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Animais Ativos</p>
+                <p className="text-3xl font-bold text-orange-600">{responsabilidadesAtivas.length}</p>
+              </div>
+              <div className="bg-orange-100 p-3 rounded-full">
+                <PawPrint className="h-6 w-6 text-orange-600" />
+              </div>
+            </div>
+            <div className="mt-4">
+              <div className="flex items-center text-sm text-gray-500">
+                <span>Sob responsabilidade</span>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Intervenções</p>
+                <p className="text-3xl font-bold text-green-600">{intervencoes.length}</p>
+              </div>
+              <div className="bg-green-100 p-3 rounded-full">
+                <Stethoscope className="h-6 w-6 text-green-600" />
+              </div>
+            </div>
+            <div className="mt-4">
+              <div className="flex items-center text-sm text-gray-500">
+                <span>Total realizadas</span>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Especialidades</p>
+                <p className="text-3xl font-bold text-purple-600">{especialidades.length}</p>
+              </div>
+              <div className="bg-purple-100 p-3 rounded-full">
+                <Award className="h-6 w-6 text-purple-600" />
+              </div>
+            </div>
+            <div className="mt-4">
+              <div className="flex items-center text-sm text-gray-500">
+                <span>Áreas de atuação</span>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Histórico</p>
+                <p className="text-3xl font-bold text-blue-600">{responsabilidadesHistorico.length}</p>
+              </div>
+              <div className="bg-blue-100 p-3 rounded-full">
+                <Users className="h-6 w-6 text-blue-600" />
+              </div>
+            </div>
+            <div className="mt-4">
+              <div className="flex items-center text-sm text-gray-500">
+                <span>Animais cuidados</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Seção de Especialidades - Design Moderno */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+          <div className="p-6">
+            <div className="flex items-center space-x-3 mb-6">
+              <div className="bg-blue-100 p-2 rounded-lg">
+                <Award className="h-6 w-6 text-blue-600" />
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Especialidades do Voluntário</h2>
+                <p className="text-sm text-gray-600">Áreas de especialização e competências</p>
+              </div>
+            </div>
             {especialidades.length === 0 ? (
               <div className="text-center py-8">
                 <Star className="h-12 w-12 text-gray-300 mx-auto mb-4" />
@@ -577,8 +646,8 @@ const VoluntarioDetail = () => {
                 ))}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           

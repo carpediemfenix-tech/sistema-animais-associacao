@@ -88,6 +88,8 @@ const EspecialidadesVoluntario: React.FC<EspecialidadesVoluntarioProps> = ({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [editingEspecialidade, setEditingEspecialidade] = useState<VoluntarioEspecialidade | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   
   const [novaEspecialidade, setNovaEspecialidade] = useState({
     especialidade_id: '',
@@ -268,6 +270,74 @@ const EspecialidadesVoluntario: React.FC<EspecialidadesVoluntarioProps> = ({
     }
   };
 
+  const handleEditEspecialidade = (especialidade: VoluntarioEspecialidade) => {
+    setEditingEspecialidade(especialidade);
+    setEditDialogOpen(true);
+  };
+
+  const handleUpdateEspecialidade = async () => {
+    if (!editingEspecialidade) return;
+
+    try {
+      setSubmitting(true);
+
+      const updateData: any = {
+        nivel_experiencia: editingEspecialidade.nivel_experiencia || 'iniciante'
+      };
+
+      // Adicionar campos opcionais apenas se tiverem valor válido
+      if (editingEspecialidade.data_certificacao && editingEspecialidade.data_certificacao.trim() !== '') {
+        updateData.data_certificacao = editingEspecialidade.data_certificacao;
+      } else {
+        updateData.data_certificacao = null;
+      }
+      
+      if (editingEspecialidade.certificado_valido_ate && editingEspecialidade.certificado_valido_ate.trim() !== '') {
+        updateData.certificado_valido_ate = editingEspecialidade.certificado_valido_ate;
+      } else {
+        updateData.certificado_valido_ate = null;
+      }
+      
+      if (editingEspecialidade.observacoes && editingEspecialidade.observacoes.trim() !== '') {
+        updateData.observacoes = editingEspecialidade.observacoes;
+      } else {
+        updateData.observacoes = null;
+      }
+
+      console.log('🔍 [DEBUG] Dados a atualizar:', updateData);
+
+      const { error } = await supabase
+        .from('voluntario_especialidades_2025_12_21_22_00')
+        .update(updateData)
+        .eq('id', editingEspecialidade.id);
+
+      if (error) {
+        console.error('❌ [ERROR] Erro detalhado do Supabase:', error);
+        throw new Error(error.message || 'Erro ao atualizar especialidade');
+      }
+
+      console.log('✅ [SUCCESS] Especialidade atualizada com sucesso');
+
+      toast({
+        title: "Sucesso",
+        description: "Especialidade atualizada com sucesso",
+      });
+
+      setEditDialogOpen(false);
+      setEditingEspecialidade(null);
+      await loadData();
+    } catch (error: any) {
+      console.error('❌ [ERROR] Erro ao atualizar especialidade:', error);
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao atualizar especialidade",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const getEspecialidadeIcon = (icone: string) => {
     const IconComponent = iconMap[icone] || Star;
     return <IconComponent className="h-4 w-4" />;
@@ -297,6 +367,7 @@ const EspecialidadesVoluntario: React.FC<EspecialidadesVoluntarioProps> = ({
   }
 
   return (
+    <>
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="flex items-center space-x-2">
@@ -432,7 +503,7 @@ const EspecialidadesVoluntario: React.FC<EspecialidadesVoluntarioProps> = ({
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => {/* TODO: Implementar edição */}}
+                        onClick={() => handleEditEspecialidade(ve)}
                         className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                       >
                         Editar
@@ -512,6 +583,94 @@ const EspecialidadesVoluntario: React.FC<EspecialidadesVoluntarioProps> = ({
         )}
       </CardContent>
     </Card>
+
+    {/* Diálogo de Edição de Especialidade */}
+    <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Editar Especialidade</DialogTitle>
+        </DialogHeader>
+        {editingEspecialidade && (
+          <div className="space-y-4">
+            <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+              <div className={`p-2 rounded-lg ${getEspecialidadeCor(editingEspecialidade.especialidade.cor).replace('text-', 'bg-').replace('-800', '-100')}`}>
+                {getEspecialidadeIcon(editingEspecialidade.especialidade.icone)}
+              </div>
+              <div>
+                <h4 className="font-semibold">{editingEspecialidade.especialidade.nome}</h4>
+                <p className="text-sm text-gray-600">{editingEspecialidade.especialidade.categoria}</p>
+              </div>
+            </div>
+
+            <div>
+              <Label>Nível de Experiência</Label>
+              <Select
+                value={editingEspecialidade.nivel_experiencia}
+                onValueChange={(value) => setEditingEspecialidade(prev => prev ? { ...prev, nivel_experiencia: value } : null)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="iniciante">Iniciante</SelectItem>
+                  <SelectItem value="intermediario">Intermediário</SelectItem>
+                  <SelectItem value="avancado">Avançado</SelectItem>
+                  <SelectItem value="expert">Expert</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label>Data de Certificação</Label>
+              <Input
+                type="date"
+                value={editingEspecialidade.data_certificacao || ''}
+                onChange={(e) => setEditingEspecialidade(prev => prev ? { ...prev, data_certificacao: e.target.value } : null)}
+              />
+            </div>
+
+            <div>
+              <Label>Certificado Válido Até</Label>
+              <Input
+                type="date"
+                value={editingEspecialidade.certificado_valido_ate || ''}
+                onChange={(e) => setEditingEspecialidade(prev => prev ? { ...prev, certificado_valido_ate: e.target.value } : null)}
+              />
+            </div>
+
+            <div>
+              <Label>Observações</Label>
+              <Textarea
+                value={editingEspecialidade.observacoes || ''}
+                onChange={(e) => setEditingEspecialidade(prev => prev ? { ...prev, observacoes: e.target.value } : null)}
+                rows={3}
+                placeholder="Observações sobre esta especialidade..."
+              />
+            </div>
+
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setEditDialogOpen(false);
+                  setEditingEspecialidade(null);
+                }}
+                disabled={submitting}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleUpdateEspecialidade}
+                disabled={submitting}
+              >
+                {submitting ? 'A guardar...' : 'Guardar Alterações'}
+              </Button>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+    </>
   );
 };
 
