@@ -144,6 +144,12 @@ function App() {
               {/* Redirecionamentos para rotas antigas de voluntários */}
               <Route path="/voluntarios/gestao" element={<Navigate to="/gestao-voluntarios-unificada" replace />} />
               <Route path="/voluntarios/relatorios" element={<Navigate to="/relatorios-voluntarios" replace />} />
+              <Route path="/voluntarios/editar/:id" element={<Navigate to="/editar-voluntario/:id" replace />} />
+              <Route path="/voluntarios/perfil/:id" element={<Navigate to="/voluntario/:id" replace />} />
+              <Route path="/voluntarios/novo" element={<Navigate to="/novo-voluntario" replace />} />
+              {/* Redirecionamentos para rotas antigas de animais */}
+              <Route path="/animal/:id/editar" element={<Navigate to="/editar-animal/:id" replace />} />
+              <Route path="/animais/novo" element={<Navigate to="/novo-animal" replace />} />
               <Route path="/voluntarios-dashboard" element={<ProtectedRoute><VoluntariosDashboard /></ProtectedRoute>} />
               <Route path="/voluntario/:id" element={<ProtectedRoute><VoluntarioDetail /></ProtectedRoute>} />
               <Route path="/voluntario/:id/profile" element={<ProtectedRoute><VoluntarioProfile /></ProtectedRoute>} />
