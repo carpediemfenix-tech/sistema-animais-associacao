@@ -476,7 +476,7 @@ const EspecialidadesVoluntario: React.FC<EspecialidadesVoluntarioProps> = ({
         )}
       </CardHeader>
       <CardContent>
-        {voluntarioEspecialidades.length === 0 ? (
+        {!voluntarioEspecialidades || voluntarioEspecialidades.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <Award className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p>Nenhuma especialidade registada</p>
@@ -486,7 +486,7 @@ const EspecialidadesVoluntario: React.FC<EspecialidadesVoluntarioProps> = ({
           </div>
         ) : (
           <div className="space-y-4">
-            {voluntarioEspecialidades.map((ve) => (
+            {voluntarioEspecialidades.filter(ve => ve && ve.especialidade).map((ve) => (
               <div key={ve.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center space-x-3">

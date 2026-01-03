@@ -97,6 +97,7 @@ import ModuloDenuncias from "./pages/ModuloDenuncias";
 import EditarDenuncia from "./pages/EditarDenuncia";
 import ConcluirDenuncia from "./pages/ConcluirDenuncia";
 import ConfiguracoesNotificacoes from "./pages/ConfiguracoesNotificacoes";
+import AdministracaoAvancada from "./pages/AdministracaoAvancada";
 
 const queryClient = new QueryClient();
 
@@ -243,6 +244,7 @@ function App() {
               
               {/* Módulo Administrador */}
               <Route path="/modulo-administrador" element={<ProtectedRoute><ModuloAdministrador /></ProtectedRoute>} />
+              <Route path="/administracao-avancada" element={<ProtectedRoute><AdministracaoAvancada /></ProtectedRoute>} />
               <Route path="/gestao-utilizadores" element={<ProtectedRoute><GestaoUtilizadores /></ProtectedRoute>} />
               {/* Redirecionamento para rota antiga de utilizadores */}
               <Route path="/utilizadores" element={<Navigate to="/gestao-utilizadores" replace />} />

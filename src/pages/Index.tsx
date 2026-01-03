@@ -343,6 +343,23 @@ const Index: React.FC = () => {
               </Card>
             </Link>
 
+            {/* 11. Administração Avançada */}
+            <Link to="/administracao-avancada" className="group">
+              <Card className="h-full transition-all duration-300 hover:shadow-xl hover:-translate-y-2 border-0 bg-gradient-to-br from-purple-800 to-indigo-900 group-hover:from-purple-700 group-hover:to-indigo-800">
+                <CardContent className="p-6 text-center">
+                  <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg border-2 border-purple-400">
+                    <Activity className="h-10 w-10 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-2">Admin Avançada</h3>
+                  <p className="text-sm text-purple-200 mb-4">Diagnósticos, performance e backup</p>
+                  <div className="flex justify-center space-x-2">
+                    <Badge className="text-xs bg-purple-500/20 text-purple-300 border border-purple-500/30">EXPERT</Badge>
+                    <Badge variant="outline" className="text-xs text-purple-200 border-purple-600">Pro</Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+
           </div>
         </div>
 
