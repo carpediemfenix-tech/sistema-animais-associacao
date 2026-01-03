@@ -227,6 +227,13 @@ const AnimalDetail = () => {
         ]}
         primaryActions={
           <>
+            <Link to={`/animal/${id}`}>
+              <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 h-9">
+                <Activity className="h-4 w-4 mr-2" />
+                Modo Futurista
+              </Button>
+            </Link>
+            
             <Badge className={`text-sm px-3 py-1 ${
               animal.estado === 'Ativo' ? 'bg-green-600' :
               animal.estado === 'Adotado' ? 'bg-blue-600' :

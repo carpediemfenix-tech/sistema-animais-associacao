@@ -10,6 +10,7 @@ import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import AnimaisList from "./pages/AnimaisList";
 import AnimalDetail from "./pages/AnimalDetail";
+import AnimalDetailFuturistic from "./pages/AnimalDetailFuturistic";
 import AnimalBI from "./pages/AnimalBI";
 import AnimalIntervencoes from "./pages/AnimalIntervencoes";
 import AnimalEventos from "./pages/AnimalEventos";
@@ -157,7 +158,8 @@ function App() {
               {/* Módulo de Animais */}
               <Route path="/modulo-animais" element={<ProtectedRoute><ModuloAnimais /></ProtectedRoute>} />
               <Route path="/animais" element={<ProtectedRoute><AnimaisList /></ProtectedRoute>} />
-              <Route path="/animal/:id" element={<ProtectedRoute><AnimalDetail /></ProtectedRoute>} />
+              <Route path="/animal/:id" element={<ProtectedRoute><AnimalDetailFuturistic /></ProtectedRoute>} />
+              <Route path="/animal/:id/classic" element={<ProtectedRoute><AnimalDetail /></ProtectedRoute>} />
               <Route path="/animal/:id/bi" element={<ProtectedRoute><AnimalBI /></ProtectedRoute>} />
               <Route path="/animal/:id/intervencoes" element={<ProtectedRoute><AnimalIntervencoes /></ProtectedRoute>} />
               <Route path="/animal/:id/eventos" element={<ProtectedRoute><AnimalEventos /></ProtectedRoute>} />
