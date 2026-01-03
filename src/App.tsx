@@ -279,6 +279,9 @@ function App() {
               {/* Manual */}
               <Route path="/manual" element={<ProtectedRoute><ManualUtilizador /></ProtectedRoute>} />
               
+              {/* Administração Avançada */}
+              <Route path="/administracao-avancada" element={<ProtectedRoute><AdministracaoAvancada /></ProtectedRoute>} />
+              
               {/* Rota 404 */}
               <Route path="*" element={<NotFound />} />
             </Routes>

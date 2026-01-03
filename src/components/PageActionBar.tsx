@@ -79,7 +79,7 @@ const PageActionBar: React.FC<PageActionBarProps> = ({
                   </Button>
                 </Link>
                 
-                {breadcrumbs.length > 0 && (
+                {breadcrumbs && breadcrumbs.length > 0 && (
                   <ChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0" />
                 )}
               </>
@@ -87,7 +87,7 @@ const PageActionBar: React.FC<PageActionBarProps> = ({
             
             {/* Breadcrumbs */}
             <div className="flex items-center gap-2 flex-wrap min-w-0">
-              {breadcrumbs.map((crumb, index) => (
+              {breadcrumbs && breadcrumbs.map((crumb, index) => (
                 <React.Fragment key={index}>
                   {crumb.href ? (
                     <Link to={crumb.href}>

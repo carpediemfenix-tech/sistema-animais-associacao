@@ -41,7 +41,7 @@ export const useNotifications = () => {
 
   // Função para forçar recalculo do contador
   const recalcularContador = useCallback(() => {
-    const naoLidas = notificacoes.filter(n => !n.lida && !n.arquivada).length;
+    const naoLidas = (notificacoes || []).filter(n => !n.lida && !n.arquivada).length;
     console.log('🔄 [HOOK] Recalculando contador:', naoLidas);
     setContadorNaoLidas(naoLidas);
     return naoLidas;

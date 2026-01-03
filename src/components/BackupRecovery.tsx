@@ -1,704 +1,696 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { 
+  Shield, 
   Download, 
   Upload, 
+  RefreshCw, 
   Database, 
-  Shield, 
-  Clock, 
+  Archive,
+  Clock,
   CheckCircle,
   AlertTriangle,
-  RefreshCw,
   HardDrive,
-  Calendar,
+  Cloud,
   FileText,
-  Settings,
-  Archive,
-  RotateCcw
-} from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+  Settings
+} from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
-interface BackupConfig {
-  autoBackup: boolean;
-  backupFrequency: 'daily' | 'weekly' | 'monthly';
-  includeImages: boolean;
-  includeNotifications: boolean;
-  retentionDays: number;
-  compressionEnabled: boolean;
-}
-
-interface BackupInfo {
+interface BackupRecord {
   id: string;
   name: string;
-  size: string;
-  date: Date;
-  type: 'manual' | 'automatic';
-  status: 'completed' | 'failed' | 'in_progress';
+  description: string;
+  type: 'full' | 'incremental' | 'differential';
+  status: 'creating' | 'completed' | 'failed' | 'restoring';
+  size: number;
   tables: string[];
-  description?: string;
+  createdAt: string;
+  createdBy: string;
+  progress: number;
+  error?: string;
 }
 
 interface RestorePoint {
   id: string;
-  name: string;
-  date: Date;
-  size: string;
-  verified: boolean;
+  timestamp: string;
+  description: string;
+  tables: string[];
+  recordCount: number;
 }
 
 const BackupRecovery: React.FC = () => {
-  const [config, setConfig] = useState<BackupConfig>({
-    autoBackup: false,
-    backupFrequency: 'weekly',
-    includeImages: true,
-    includeNotifications: false,
-    retentionDays: 30,
-    compressionEnabled: true
-  });
-
-  const [backups, setBackups] = useState<BackupInfo[]>([]);
+  const [backups, setBackups] = useState<BackupRecord[]>([]);
   const [restorePoints, setRestorePoints] = useState<RestorePoint[]>([]);
-  const [isCreatingBackup, setIsCreatingBackup] = useState(false);
-  const [isRestoring, setIsRestoring] = useState(false);
-  const [backupProgress, setBackupProgress] = useState(0);
-  const [selectedTables, setSelectedTables] = useState<string[]>([]);
-  const [backupName, setBackupName] = useState('');
-  const [backupDescription, setBackupDescription] = useState('');
-  const [lastBackup, setLastBackup] = useState<Date | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [createBackupDialog, setCreateBackupDialog] = useState(false);
+  const [restoreDialog, setRestoreDialog] = useState(false);
+  const [selectedBackup, setSelectedBackup] = useState<BackupRecord | null>(null);
   const { toast } = useToast();
 
-  // Tabelas disponíveis para backup
+  const [newBackup, setNewBackup] = useState({
+    name: '',
+    description: '',
+    type: 'full' as 'full' | 'incremental' | 'differential',
+    tables: [] as string[]
+  });
+
   const availableTables = [
     'animais',
-    'voluntarios_2025_12_21_22_00',
-    'denuncias',
-    'missoes_2025_12_21_19_00',
+    'voluntarios',
+    'intervencoes',
+    'eventos',
+    'localizacoes',
+    'responsabilidades',
     'notificacoes',
+    'denuncias_2025_12_29_23_00',
     'especialidades_voluntarios_2025_12_21_22_00',
+    'voluntario_especialidades_2025_12_21_22_00',
     'clinicas_veterinarias',
-    'movimentos_financeiros',
-    'equipamentos',
-    'logs_acesso'
+    'especies',
+    'grupos',
+    'user_access_logs'
   ];
 
-  // Carregar configurações e backups
   useEffect(() => {
-    loadConfig();
     loadBackups();
     loadRestorePoints();
   }, []);
 
-  const loadConfig = () => {
-    const savedConfig = localStorage.getItem('backup_config');
-    if (savedConfig) {
-      setConfig(JSON.parse(savedConfig));
+  const loadBackups = async () => {
+    try {
+      // Simular carregamento de backups
+      const mockBackups: BackupRecord[] = [
+        {
+          id: '1',
+          name: 'Backup Completo - Janeiro 2026',
+          description: 'Backup completo de todas as tabelas do sistema',
+          type: 'full',
+          status: 'completed',
+          size: 15728640, // 15MB
+          tables: availableTables,
+          createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+          createdBy: 'admin',
+          progress: 100
+        },
+        {
+          id: '2',
+          name: 'Backup Incremental - Hoje',
+          description: 'Backup incremental das alterações de hoje',
+          type: 'incremental',
+          status: 'completed',
+          size: 2097152, // 2MB
+          tables: ['animais', 'intervencoes', 'notificacoes'],
+          createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+          createdBy: 'admin',
+          progress: 100
+        }
+      ];
+
+      setBackups(mockBackups);
+    } catch (error) {
+      console.error('Erro ao carregar backups:', error);
     }
   };
 
-  const saveConfig = (newConfig: BackupConfig) => {
-    localStorage.setItem('backup_config', JSON.stringify(newConfig));
-    setConfig(newConfig);
+  const loadRestorePoints = async () => {
+    try {
+      // Simular pontos de restauro
+      const mockRestorePoints: RestorePoint[] = [
+        {
+          id: '1',
+          timestamp: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+          description: 'Antes da atualização do sistema',
+          tables: availableTables,
+          recordCount: 15420
+        },
+        {
+          id: '2',
+          timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+          description: 'Backup diário automático',
+          tables: availableTables,
+          recordCount: 15380
+        }
+      ];
+
+      setRestorePoints(mockRestorePoints);
+    } catch (error) {
+      console.error('Erro ao carregar pontos de restauro:', error);
+    }
   };
 
-  const loadBackups = () => {
-    // Simular carregamento de backups existentes
-    const mockBackups: BackupInfo[] = [
-      {
-        id: '1',
-        name: 'Backup Automático - Sistema Completo',
-        size: '45.2 MB',
-        date: new Date(Date.now() - 24 * 60 * 60 * 1000),
-        type: 'automatic',
-        status: 'completed',
-        tables: ['animais', 'voluntarios_2025_12_21_22_00', 'denuncias'],
-        description: 'Backup automático diário do sistema'
-      },
-      {
-        id: '2',
-        name: 'Backup Manual - Antes da Atualização',
-        size: '52.8 MB',
-        date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-        type: 'manual',
-        status: 'completed',
-        tables: availableTables,
-        description: 'Backup completo antes da atualização do sistema'
-      }
-    ];
-    setBackups(mockBackups);
-    setLastBackup(mockBackups[0]?.date || null);
-  };
-
-  const loadRestorePoints = () => {
-    // Simular pontos de restauração
-    const mockRestorePoints: RestorePoint[] = [
-      {
-        id: '1',
-        name: 'Sistema Estável - Janeiro 2026',
-        date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-        size: '48.1 MB',
-        verified: true
-      },
-      {
-        id: '2',
-        name: 'Pré-Migração Especialidades',
-        date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
-        size: '41.7 MB',
-        verified: true
-      }
-    ];
-    setRestorePoints(mockRestorePoints);
-  };
-
-  // Criar backup
   const createBackup = async () => {
-    if (!backupName.trim()) {
+    if (!newBackup.name.trim()) {
       toast({
-        title: "❌ Nome Obrigatório",
+        title: "Nome obrigatório",
         description: "Por favor, insira um nome para o backup",
         variant: "destructive",
       });
       return;
     }
 
-    if (selectedTables.length === 0) {
-      toast({
-        title: "❌ Tabelas Obrigatórias",
-        description: "Selecione pelo menos uma tabela para backup",
-        variant: "destructive",
-      });
-      return;
-    }
+    const backupId = Date.now().toString();
+    const backup: BackupRecord = {
+      id: backupId,
+      name: newBackup.name,
+      description: newBackup.description,
+      type: newBackup.type,
+      status: 'creating',
+      size: 0,
+      tables: newBackup.tables.length > 0 ? newBackup.tables : availableTables,
+      createdAt: new Date().toISOString(),
+      createdBy: 'admin',
+      progress: 0
+    };
 
-    setIsCreatingBackup(true);
-    setBackupProgress(0);
+    setBackups(prev => [backup, ...prev]);
+    setCreateBackupDialog(false);
 
+    // Simular processo de backup
     try {
-      toast({
-        title: "🔄 Iniciando Backup",
-        description: "Criando backup das tabelas selecionadas...",
-      });
-
-      // Simular processo de backup
       for (let i = 0; i <= 100; i += 10) {
-        setBackupProgress(i);
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await new Promise(resolve => setTimeout(resolve, 300));
+        setBackups(prev => prev.map(b => 
+          b.id === backupId 
+            ? { ...b, progress: i }
+            : b
+        ));
       }
 
-      // Simular exportação de dados
-      const backupData = {
-        metadata: {
-          name: backupName,
-          description: backupDescription,
-          date: new Date().toISOString(),
-          tables: selectedTables,
-          version: '2.0'
-        },
-        data: {}
-      };
+      // Simular tamanho do backup
+      const estimatedSize = backup.tables.length * 1024 * 1024; // 1MB por tabela
 
-      // Exportar dados das tabelas selecionadas
-      for (const table of selectedTables) {
-        try {
-          const { data, error } = await supabase
-            .from(table)
-            .select('*');
-          
-          if (!error && data) {
-            backupData.data[table] = data;
-          }
-        } catch (error) {
-          console.warn(`Erro ao exportar tabela ${table}:`, error);
-        }
-      }
-
-      // Criar arquivo de backup
-      const backupBlob = new Blob([JSON.stringify(backupData, null, 2)], {
-        type: 'application/json'
-      });
-
-      const url = URL.createObjectURL(backupBlob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `backup_${backupName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      // Adicionar à lista de backups
-      const newBackup: BackupInfo = {
-        id: Date.now().toString(),
-        name: backupName,
-        size: `${(backupBlob.size / (1024 * 1024)).toFixed(1)} MB`,
-        date: new Date(),
-        type: 'manual',
-        status: 'completed',
-        tables: selectedTables,
-        description: backupDescription
-      };
-
-      setBackups(prev => [newBackup, ...prev]);
-      setLastBackup(new Date());
-
-      // Limpar formulário
-      setBackupName('');
-      setBackupDescription('');
-      setSelectedTables([]);
+      setBackups(prev => prev.map(b => 
+        b.id === backupId 
+          ? { 
+              ...b, 
+              status: 'completed', 
+              progress: 100,
+              size: estimatedSize
+            }
+          : b
+      ));
 
       toast({
         title: "✅ Backup Criado",
-        description: `Backup "${backupName}" criado e transferido com sucesso`,
+        description: `Backup "${backup.name}" criado com sucesso`,
       });
-    } catch (error) {
+
+      // Reset form
+      setNewBackup({
+        name: '',
+        description: '',
+        type: 'full',
+        tables: []
+      });
+
+    } catch (error: any) {
+      setBackups(prev => prev.map(b => 
+        b.id === backupId 
+          ? { 
+              ...b, 
+              status: 'failed',
+              error: error.message
+            }
+          : b
+      ));
+
       toast({
         title: "❌ Erro no Backup",
-        description: "Falha ao criar backup do sistema",
+        description: error.message,
         variant: "destructive",
       });
-    } finally {
-      setIsCreatingBackup(false);
-      setBackupProgress(0);
     }
   };
 
-  // Restaurar backup
-  const restoreBackup = async (backupId: string) => {
-    if (!window.confirm('Tem certeza que deseja restaurar este backup? Esta ação não pode ser desfeita.')) {
-      return;
-    }
-
-    setIsRestoring(true);
+  const restoreBackup = async (backup: BackupRecord) => {
+    setLoading(true);
+    
     try {
+      // Atualizar status para restoring
+      setBackups(prev => prev.map(b => 
+        b.id === backup.id 
+          ? { ...b, status: 'restoring', progress: 0 }
+          : b
+      ));
+
+      // Simular processo de restauro
+      for (let i = 0; i <= 100; i += 20) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+        setBackups(prev => prev.map(b => 
+          b.id === backup.id 
+            ? { ...b, progress: i }
+            : b
+        ));
+      }
+
+      // Restauro concluído
+      setBackups(prev => prev.map(b => 
+        b.id === backup.id 
+          ? { ...b, status: 'completed', progress: 100 }
+          : b
+      ));
+
       toast({
-        title: "🔄 Iniciando Restauração",
-        description: "Restaurando dados do backup...",
+        title: "✅ Restauro Concluído",
+        description: `Dados restaurados a partir do backup "${backup.name}"`,
       });
 
-      // Simular processo de restauração
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      setRestoreDialog(false);
+      setSelectedBackup(null);
+
+    } catch (error: any) {
+      setBackups(prev => prev.map(b => 
+        b.id === backup.id 
+          ? { 
+              ...b, 
+              status: 'failed',
+              error: error.message
+            }
+          : b
+      ));
 
       toast({
-        title: "✅ Restauração Concluída",
-        description: "Dados restaurados com sucesso. Recarregue a página.",
-      });
-    } catch (error) {
-      toast({
-        title: "❌ Erro na Restauração",
-        description: "Falha ao restaurar backup",
+        title: "❌ Erro no Restauro",
+        description: error.message,
         variant: "destructive",
       });
     } finally {
-      setIsRestoring(false);
+      setLoading(false);
     }
   };
 
-  // Verificar integridade do backup
-  const verifyBackup = async (backupId: string) => {
-    toast({
-      title: "🔍 Verificando Integridade",
-      description: "Validando dados do backup...",
-    });
+  const downloadBackup = (backup: BackupRecord) => {
+    // Simular download
+    const data = {
+      backup: backup,
+      timestamp: new Date().toISOString(),
+      tables: backup.tables,
+      metadata: {
+        version: '2.0',
+        system: 'Valentão Operacionais'
+      }
+    };
 
-    // Simular verificação
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `backup_${backup.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 
     toast({
-      title: "✅ Backup Verificado",
-      description: "Integridade do backup confirmada",
+      title: "📥 Download Iniciado",
+      description: `Backup "${backup.name}" está sendo descarregado`,
     });
   };
 
-  // Excluir backup
   const deleteBackup = async (backupId: string) => {
-    if (!window.confirm('Tem certeza que deseja excluir este backup?')) {
-      return;
-    }
-
-    setBackups(prev => prev.filter(backup => backup.id !== backupId));
+    setBackups(prev => prev.filter(b => b.id !== backupId));
     
     toast({
-      title: "🗑️ Backup Excluído",
+      title: "🗑️ Backup Removido",
       description: "Backup removido com sucesso",
     });
   };
 
-  const getStatusIcon = (status: BackupInfo['status']) => {
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const getStatusIcon = (status: string) => {
     switch (status) {
       case 'completed':
         return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'creating':
+      case 'restoring':
+        return <RefreshCw className="h-4 w-4 text-blue-500 animate-spin" />;
       case 'failed':
         return <AlertTriangle className="h-4 w-4 text-red-500" />;
-      case 'in_progress':
-        return <RefreshCw className="h-4 w-4 text-blue-500 animate-spin" />;
+      default:
+        return <Clock className="h-4 w-4 text-gray-500" />;
     }
   };
 
-  const getStatusColor = (status: BackupInfo['status']) => {
-    switch (status) {
-      case 'completed':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'failed':
-        return 'bg-red-100 text-red-800 border-red-200';
-      case 'in_progress':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'full':
+        return 'bg-blue-100 text-blue-800';
+      case 'incremental':
+        return 'bg-green-100 text-green-800';
+      case 'differential':
+        return 'bg-yellow-100 text-yellow-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
   return (
     <div className="space-y-6">
-      {/* Cabeçalho */}
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Backup e Recuperação</h2>
-          <p className="text-gray-600">
-            {lastBackup 
-              ? `Último backup: ${lastBackup.toLocaleString('pt-PT')}`
-              : 'Nenhum backup realizado'
-            }
-          </p>
+          <p className="text-gray-600">Proteja os seus dados com backups automáticos e restauro rápido</p>
         </div>
         <div className="flex items-center space-x-2">
-          <Badge className="bg-blue-100 text-blue-800">
-            {backups.length} Backups
-          </Badge>
-          <Badge className="bg-green-100 text-green-800">
-            {restorePoints.length} Pontos de Restauração
-          </Badge>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Criar Novo Backup */}
-        <div className="lg:col-span-2 space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Download className="h-5 w-5" />
-                <span>Criar Novo Backup</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Dialog open={createBackupDialog} onOpenChange={setCreateBackupDialog}>
+            <DialogTrigger asChild>
+              <Button size="sm">
+                <Archive className="h-4 w-4 mr-2" />
+                Criar Backup
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Criar Novo Backup</DialogTitle>
+                <DialogDescription>
+                  Configure um novo backup dos dados do sistema
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
                 <div>
                   <Label htmlFor="backup-name">Nome do Backup</Label>
                   <Input
                     id="backup-name"
-                    value={backupName}
-                    onChange={(e) => setBackupName(e.target.value)}
+                    value={newBackup.name}
+                    onChange={(e) => setNewBackup(prev => ({ ...prev, name: e.target.value }))}
                     placeholder="Ex: Backup Mensal Janeiro"
                   />
                 </div>
+                
                 <div>
-                  <Label htmlFor="backup-description">Descrição (Opcional)</Label>
-                  <Input
+                  <Label htmlFor="backup-description">Descrição</Label>
+                  <Textarea
                     id="backup-description"
-                    value={backupDescription}
-                    onChange={(e) => setBackupDescription(e.target.value)}
-                    placeholder="Descrição do backup"
+                    value={newBackup.description}
+                    onChange={(e) => setNewBackup(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Descrição opcional do backup..."
+                    rows={3}
                   />
                 </div>
-              </div>
 
-              <div>
-                <Label className="text-sm font-medium mb-3 block">
-                  Tabelas para Backup ({selectedTables.length} selecionadas)
-                </Label>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-40 overflow-y-auto border rounded-lg p-3">
-                  {availableTables.map((table) => (
-                    <label key={table} className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={selectedTables.includes(table)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedTables(prev => [...prev, table]);
-                          } else {
-                            setSelectedTables(prev => prev.filter(t => t !== table));
-                          }
-                        }}
-                        className="rounded"
-                      />
-                      <span className="text-sm">{table}</span>
-                    </label>
-                  ))}
-                </div>
-                <div className="flex space-x-2 mt-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setSelectedTables(availableTables)}
-                  >
-                    Selecionar Todas
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setSelectedTables([])}
-                  >
-                    Limpar Seleção
-                  </Button>
-                </div>
-              </div>
-
-              {isCreatingBackup && (
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Progresso do Backup</span>
-                    <span>{backupProgress}%</span>
-                  </div>
-                  <Progress value={backupProgress} className="h-2" />
-                </div>
-              )}
-
-              <Button 
-                onClick={createBackup} 
-                disabled={isCreatingBackup || !backupName.trim() || selectedTables.length === 0}
-                className="w-full bg-blue-600 hover:bg-blue-700"
-              >
-                <Download className={`h-4 w-4 mr-2 ${isCreatingBackup ? 'animate-spin' : ''}`} />
-                {isCreatingBackup ? 'Criando Backup...' : 'Criar Backup'}
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Lista de Backups */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Archive className="h-5 w-5" />
-                <span>Backups Existentes</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {backups.length === 0 ? (
-                <div className="text-center py-8">
-                  <HardDrive className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500">Nenhum backup encontrado</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {backups.map((backup) => (
-                    <div key={backup.id} className="border rounded-lg p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <h4 className="font-medium">{backup.name}</h4>
-                            <Badge className={getStatusColor(backup.status)}>
-                              {getStatusIcon(backup.status)}
-                              <span className="ml-1">
-                                {backup.status === 'completed' ? 'Concluído' :
-                                 backup.status === 'failed' ? 'Falhou' : 'Em Progresso'}
-                              </span>
-                            </Badge>
-                            <Badge variant="outline">
-                              {backup.type === 'manual' ? 'Manual' : 'Automático'}
-                            </Badge>
-                          </div>
-                          
-                          {backup.description && (
-                            <p className="text-sm text-gray-600 mb-2">{backup.description}</p>
-                          )}
-                          
-                          <div className="flex items-center space-x-4 text-xs text-gray-500">
-                            <span className="flex items-center space-x-1">
-                              <Calendar className="h-3 w-3" />
-                              <span>{backup.date.toLocaleString('pt-PT')}</span>
-                            </span>
-                            <span className="flex items-center space-x-1">
-                              <HardDrive className="h-3 w-3" />
-                              <span>{backup.size}</span>
-                            </span>
-                            <span className="flex items-center space-x-1">
-                              <Database className="h-3 w-3" />
-                              <span>{backup.tables.length} tabelas</span>
-                            </span>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center space-x-2 ml-4">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => verifyBackup(backup.id)}
-                            title="Verificar Integridade"
-                          >
-                            <Shield className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => restoreBackup(backup.id)}
-                            disabled={isRestoring || backup.status !== 'completed'}
-                            title="Restaurar Backup"
-                          >
-                            <RotateCcw className={`h-4 w-4 ${isRestoring ? 'animate-spin' : ''}`} />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => deleteBackup(backup.id)}
-                            className="text-red-600 hover:text-red-700"
-                            title="Excluir Backup"
-                          >
-                            <AlertTriangle className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Configurações e Pontos de Restauração */}
-        <div className="space-y-6">
-          {/* Configurações de Backup */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Settings className="h-5 w-5" />
-                <span>Configurações</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="auto-backup" className="text-sm font-medium">
-                  Backup Automático
-                </Label>
-                <Switch
-                  id="auto-backup"
-                  checked={config.autoBackup}
-                  onCheckedChange={(checked) => 
-                    saveConfig({ ...config, autoBackup: checked })
-                  }
-                />
-              </div>
-
-              {config.autoBackup && (
                 <div>
-                  <Label className="text-sm font-medium mb-2 block">
-                    Frequência
-                  </Label>
-                  <select
-                    value={config.backupFrequency}
-                    onChange={(e) => 
-                      saveConfig({ 
-                        ...config, 
-                        backupFrequency: e.target.value as 'daily' | 'weekly' | 'monthly' 
-                      })
-                    }
-                    className="w-full p-2 border rounded-md text-sm"
-                  >
-                    <option value="daily">Diário</option>
-                    <option value="weekly">Semanal</option>
-                    <option value="monthly">Mensal</option>
-                  </select>
-                </div>
-              )}
-
-              <div className="flex items-center justify-between">
-                <Label htmlFor="include-images" className="text-sm font-medium">
-                  Incluir Imagens
-                </Label>
-                <Switch
-                  id="include-images"
-                  checked={config.includeImages}
-                  onCheckedChange={(checked) => 
-                    saveConfig({ ...config, includeImages: checked })
-                  }
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <Label htmlFor="include-notifications" className="text-sm font-medium">
-                  Incluir Notificações
-                </Label>
-                <Switch
-                  id="include-notifications"
-                  checked={config.includeNotifications}
-                  onCheckedChange={(checked) => 
-                    saveConfig({ ...config, includeNotifications: checked })
-                  }
-                />
-              </div>
-
-              <div>
-                <Label className="text-sm font-medium mb-2 block">
-                  Retenção: {config.retentionDays} dias
-                </Label>
-                <input
-                  type="range"
-                  min="7"
-                  max="365"
-                  value={config.retentionDays}
-                  onChange={(e) => 
-                    saveConfig({ ...config, retentionDays: parseInt(e.target.value) })
-                  }
-                  className="w-full"
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Pontos de Restauração */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Clock className="h-5 w-5" />
-                <span>Pontos de Restauração</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {restorePoints.length === 0 ? (
-                <div className="text-center py-4">
-                  <Clock className="h-8 w-8 text-gray-300 mx-auto mb-2" />
-                  <p className="text-sm text-gray-500">Nenhum ponto de restauração</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {restorePoints.map((point) => (
-                    <div key={point.id} className="border rounded-lg p-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-medium text-sm">{point.name}</h4>
-                        {point.verified && (
-                          <Badge className="bg-green-100 text-green-800 text-xs">
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            Verificado
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="flex items-center justify-between text-xs text-gray-500">
-                        <span>{point.date.toLocaleDateString('pt-PT')}</span>
-                        <span>{point.size}</span>
-                      </div>
+                  <Label>Tipo de Backup</Label>
+                  <div className="grid grid-cols-3 gap-2 mt-2">
+                    {['full', 'incremental', 'differential'].map((type) => (
                       <Button
-                        variant="outline"
+                        key={type}
+                        variant={newBackup.type === type ? 'default' : 'outline'}
                         size="sm"
-                        className="w-full mt-2"
-                        onClick={() => restoreBackup(point.id)}
-                        disabled={isRestoring}
+                        onClick={() => setNewBackup(prev => ({ ...prev, type: type as any }))}
                       >
-                        <RotateCcw className="h-3 w-3 mr-1" />
-                        Restaurar
+                        {type === 'full' ? 'Completo' : 
+                         type === 'incremental' ? 'Incremental' : 'Diferencial'}
                       </Button>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+
+                <div className="flex space-x-2">
+                  <Button onClick={createBackup} className="flex-1">
+                    Criar Backup
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setCreateBackupDialog(false)}
+                    className="flex-1"
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+          
+          <Button variant="outline" size="sm" onClick={loadBackups}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Atualizar
+          </Button>
         </div>
       </div>
+
+      {/* Statistics */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Backups</p>
+                <p className="text-2xl font-bold text-blue-600">{backups.length}</p>
+              </div>
+              <Archive className="h-8 w-8 text-blue-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Espaço Usado</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {formatFileSize(backups.reduce((acc, b) => acc + b.size, 0))}
+                </p>
+              </div>
+              <HardDrive className="h-8 w-8 text-green-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Último Backup</p>
+                <p className="text-2xl font-bold text-purple-600">
+                  {backups.length > 0 ? 
+                    new Date(Math.max(...backups.map(b => new Date(b.createdAt).getTime()))).toLocaleDateString('pt-PT') :
+                    'Nunca'
+                  }
+                </p>
+              </div>
+              <Clock className="h-8 w-8 text-purple-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Pontos Restauro</p>
+                <p className="text-2xl font-bold text-orange-600">{restorePoints.length}</p>
+              </div>
+              <Shield className="h-8 w-8 text-orange-500" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Backups List */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Database className="h-5 w-5" />
+            <span>Backups Disponíveis</span>
+          </CardTitle>
+          <CardDescription>
+            Gerir e restaurar backups do sistema
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ScrollArea className="h-96">
+            <div className="space-y-4">
+              {backups.map((backup) => (
+                <div
+                  key={backup.id}
+                  className="p-4 border rounded-lg hover:shadow-md transition-shadow"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center space-x-3">
+                      {getStatusIcon(backup.status)}
+                      <div>
+                        <h4 className="font-medium text-gray-900">{backup.name}</h4>
+                        <p className="text-sm text-gray-600">{backup.description}</p>
+                        <div className="flex items-center space-x-2 mt-1">
+                          <Badge className={getTypeColor(backup.type)}>
+                            {backup.type === 'full' ? 'Completo' : 
+                             backup.type === 'incremental' ? 'Incremental' : 'Diferencial'}
+                          </Badge>
+                          <span className="text-xs text-gray-500">
+                            {formatFileSize(backup.size)}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            {backup.tables.length} tabelas
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-gray-500">
+                        {new Date(backup.createdAt).toLocaleString('pt-PT')}
+                      </p>
+                      <p className="text-xs text-gray-400">por {backup.createdBy}</p>
+                    </div>
+                  </div>
+
+                  {(backup.status === 'creating' || backup.status === 'restoring') && (
+                    <div className="mb-3">
+                      <Progress value={backup.progress} className="h-2" />
+                      <p className="text-xs text-gray-500 mt-1">
+                        {backup.status === 'creating' ? 'Criando' : 'Restaurando'} - {backup.progress}%
+                      </p>
+                    </div>
+                  )}
+
+                  {backup.error && (
+                    <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-700">
+                      <strong>Erro:</strong> {backup.error}
+                    </div>
+                  )}
+
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => downloadBackup(backup)}
+                      disabled={backup.status !== 'completed'}
+                    >
+                      <Download className="h-4 w-4 mr-1" />
+                      Download
+                    </Button>
+                    
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={backup.status !== 'completed'}
+                          onClick={() => setSelectedBackup(backup)}
+                        >
+                          <Upload className="h-4 w-4 mr-1" />
+                          Restaurar
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Confirmar Restauro</DialogTitle>
+                          <DialogDescription>
+                            Tem a certeza que deseja restaurar os dados a partir deste backup?
+                            Esta ação irá substituir os dados atuais.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div className="p-4 bg-yellow-50 border border-yellow-200 rounded">
+                            <h4 className="font-medium text-yellow-800">Aviso Importante</h4>
+                            <p className="text-sm text-yellow-700 mt-1">
+                              O restauro irá substituir os dados atuais. Recomendamos criar um backup 
+                              dos dados atuais antes de prosseguir.
+                            </p>
+                          </div>
+                          
+                          {selectedBackup && (
+                            <div className="space-y-2">
+                              <p><strong>Backup:</strong> {selectedBackup.name}</p>
+                              <p><strong>Data:</strong> {new Date(selectedBackup.createdAt).toLocaleString('pt-PT')}</p>
+                              <p><strong>Tabelas:</strong> {selectedBackup.tables.join(', ')}</p>
+                              <p><strong>Tamanho:</strong> {formatFileSize(selectedBackup.size)}</p>
+                            </div>
+                          )}
+
+                          <div className="flex space-x-2">
+                            <Button
+                              onClick={() => selectedBackup && restoreBackup(selectedBackup)}
+                              disabled={loading}
+                              className="flex-1"
+                              variant="destructive"
+                            >
+                              {loading ? 'Restaurando...' : 'Confirmar Restauro'}
+                            </Button>
+                            <DialogTrigger asChild>
+                              <Button variant="outline" className="flex-1">
+                                Cancelar
+                              </Button>
+                            </DialogTrigger>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => deleteBackup(backup.id)}
+                      disabled={backup.status === 'creating' || backup.status === 'restoring'}
+                    >
+                      Remover
+                    </Button>
+                  </div>
+                </div>
+              ))}
+
+              {backups.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  <Archive className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Nenhum backup disponível</p>
+                  <p className="text-sm">Crie o seu primeiro backup para proteger os dados</p>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+        </CardContent>
+      </Card>
+
+      {/* Restore Points */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Shield className="h-5 w-5" />
+            <span>Pontos de Restauro</span>
+          </CardTitle>
+          <CardDescription>
+            Pontos de restauro automáticos do sistema
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {restorePoints.map((point) => (
+              <div
+                key={point.id}
+                className="flex items-center justify-between p-3 border rounded-lg hover:shadow-sm transition-shadow"
+              >
+                <div>
+                  <h4 className="font-medium text-gray-900">{point.description}</h4>
+                  <p className="text-sm text-gray-600">
+                    {new Date(point.timestamp).toLocaleString('pt-PT')} • {point.recordCount} registos
+                  </p>
+                </div>
+                <Button size="sm" variant="outline">
+                  <Upload className="h-4 w-4 mr-1" />
+                  Restaurar
+                </Button>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

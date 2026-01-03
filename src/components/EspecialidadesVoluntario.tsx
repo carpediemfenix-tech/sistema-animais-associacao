@@ -348,7 +348,7 @@ const EspecialidadesVoluntario: React.FC<EspecialidadesVoluntarioProps> = ({
   };
 
   const especialidadesDisponiveis = especialidades.filter(
-    esp => !voluntarioEspecialidades.some(ve => ve.especialidade_id === esp.id)
+    esp => !voluntarioEspecialidades || !voluntarioEspecialidades.some(ve => ve.especialidade_id === esp.id)
   );
 
   if (loading) {
@@ -486,7 +486,7 @@ const EspecialidadesVoluntario: React.FC<EspecialidadesVoluntarioProps> = ({
           </div>
         ) : (
           <div className="space-y-4">
-            {voluntarioEspecialidades.filter(ve => ve && ve.especialidade).map((ve) => (
+            {voluntarioEspecialidades && voluntarioEspecialidades.filter(ve => ve && ve.especialidade).map((ve) => (
               <div key={ve.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center space-x-3">

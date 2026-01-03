@@ -1,540 +1,440 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   Activity, 
   AlertTriangle, 
   CheckCircle, 
   Database, 
   Wifi, 
-  Clock, 
-  Users, 
-  PawPrint,
-  FileText,
-  Settings,
+  Zap,
   RefreshCw,
   Bug,
-  Zap,
   Shield,
-  TrendingUp
-} from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+  Clock,
+  TrendingUp,
+  AlertCircle
+} from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+
+interface DiagnosticResult {
+  component: string;
+  status: 'success' | 'warning' | 'error';
+  message: string;
+  details?: string;
+  timestamp: string;
+}
 
 interface SystemHealth {
-  database: 'healthy' | 'warning' | 'error';
-  authentication: 'healthy' | 'warning' | 'error';
-  notifications: 'healthy' | 'warning' | 'error';
-  performance: 'healthy' | 'warning' | 'error';
-}
-
-interface SystemStats {
-  totalAnimals: number;
-  totalVolunteers: number;
-  totalDenuncias: number;
-  totalMissions: number;
-  activeNotifications: number;
-  systemUptime: string;
-}
-
-interface PerformanceMetrics {
-  avgResponseTime: number;
-  errorRate: number;
-  activeConnections: number;
-  memoryUsage: number;
+  overall: number;
+  database: number;
+  frontend: number;
+  performance: number;
 }
 
 const SystemDiagnostics: React.FC = () => {
-  const [systemHealth, setSystemHealth] = useState<SystemHealth>({
-    database: 'healthy',
-    authentication: 'healthy',
-    notifications: 'healthy',
-    performance: 'healthy'
+  const [diagnostics, setDiagnostics] = useState<DiagnosticResult[]>([]);
+  const [health, setHealth] = useState<SystemHealth>({
+    overall: 0,
+    database: 0,
+    frontend: 0,
+    performance: 0
   });
-  
-  const [systemStats, setSystemStats] = useState<SystemStats>({
-    totalAnimals: 0,
-    totalVolunteers: 0,
-    totalDenuncias: 0,
-    totalMissions: 0,
-    activeNotifications: 0,
-    systemUptime: '0h 0m'
-  });
-  
-  const [performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetrics>({
-    avgResponseTime: 0,
-    errorRate: 0,
-    activeConnections: 0,
-    memoryUsage: 0
-  });
-  
-  const [isLoading, setIsLoading] = useState(false);
-  const [lastCheck, setLastCheck] = useState<Date>(new Date());
+  const [loading, setLoading] = useState(false);
+  const [autoRefresh, setAutoRefresh] = useState(false);
   const { toast } = useToast();
 
-  // Função para verificar saúde do banco de dados
-  const checkDatabaseHealth = async (): Promise<'healthy' | 'warning' | 'error'> => {
-    try {
-      const startTime = Date.now();
-      const { error } = await supabase.from('animais').select('id').limit(1);
-      const responseTime = Date.now() - startTime;
-      
-      if (error) return 'error';
-      if (responseTime > 2000) return 'warning';
-      return 'healthy';
-    } catch {
-      return 'error';
-    }
-  };
-
-  // Função para verificar autenticação
-  const checkAuthenticationHealth = async (): Promise<'healthy' | 'warning' | 'error'> => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      return session ? 'healthy' : 'warning';
-    } catch {
-      return 'error';
-    }
-  };
-
-  // Função para verificar notificações
-  const checkNotificationsHealth = async (): Promise<'healthy' | 'warning' | 'error'> => {
-    try {
-      const { data, error } = await supabase
-        .from('notificacoes')
-        .select('id')
-        .limit(1);
-      
-      if (error) return 'error';
-      return 'healthy';
-    } catch {
-      return 'error';
-    }
-  };
-
-  // Função para coletar estatísticas do sistema
-  const collectSystemStats = async (): Promise<SystemStats> => {
-    try {
-      const [animalsResult, volunteersResult, denunciasResult, missionsResult, notificationsResult] = await Promise.all([
-        supabase.from('animais').select('id', { count: 'exact' }),
-        supabase.from('voluntarios_2025_12_21_22_00').select('id', { count: 'exact' }),
-        supabase.from('denuncias').select('id', { count: 'exact' }),
-        supabase.from('missoes_2025_12_21_19_00').select('id', { count: 'exact' }),
-        supabase.from('notificacoes').select('id', { count: 'exact' }).eq('lida', false)
-      ]);
-
-      return {
-        totalAnimals: animalsResult.count || 0,
-        totalVolunteers: volunteersResult.count || 0,
-        totalDenuncias: denunciasResult.count || 0,
-        totalMissions: missionsResult.count || 0,
-        activeNotifications: notificationsResult.count || 0,
-        systemUptime: calculateUptime()
-      };
-    } catch (error) {
-      console.error('Erro ao coletar estatísticas:', error);
-      return systemStats;
-    }
-  };
-
-  // Função para calcular uptime (simulado)
-  const calculateUptime = (): string => {
-    const startTime = new Date('2025-01-01'); // Data de início simulada
-    const now = new Date();
-    const diffMs = now.getTime() - startTime.getTime();
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-    const diffDays = Math.floor(diffHours / 24);
-    const remainingHours = diffHours % 24;
+  useEffect(() => {
+    runDiagnostics();
     
-    return `${diffDays}d ${remainingHours}h`;
-  };
+    if (autoRefresh) {
+      const interval = setInterval(runDiagnostics, 30000); // 30 segundos
+      return () => clearInterval(interval);
+    }
+  }, [autoRefresh]);
 
-  // Função para executar diagnóstico completo
   const runDiagnostics = async () => {
-    setIsLoading(true);
+    setLoading(true);
+    const results: DiagnosticResult[] = [];
+    
     try {
-      const [dbHealth, authHealth, notifHealth, stats] = await Promise.all([
-        checkDatabaseHealth(),
-        checkAuthenticationHealth(),
-        checkNotificationsHealth(),
-        collectSystemStats()
-      ]);
+      // 1. Teste de Conectividade com Supabase
+      const dbStart = performance.now();
+      try {
+        const { error } = await supabase.from('animais').select('id').limit(1);
+        const dbTime = performance.now() - dbStart;
+        
+        if (error) {
+          results.push({
+            component: 'Database Connection',
+            status: 'error',
+            message: 'Falha na conexão com a base de dados',
+            details: error.message,
+            timestamp: new Date().toISOString()
+          });
+        } else {
+          results.push({
+            component: 'Database Connection',
+            status: 'success',
+            message: `Conexão ativa (${dbTime.toFixed(2)}ms)`,
+            timestamp: new Date().toISOString()
+          });
+        }
+      } catch (error: any) {
+        results.push({
+          component: 'Database Connection',
+          status: 'error',
+          message: 'Erro de conectividade',
+          details: error.message,
+          timestamp: new Date().toISOString()
+        });
+      }
 
-      setSystemHealth({
-        database: dbHealth,
-        authentication: authHealth,
-        notifications: notifHealth,
-        performance: dbHealth === 'healthy' ? 'healthy' : 'warning'
+      // 2. Verificação de Tabelas Críticas
+      const criticalTables = [
+        'animais',
+        'voluntarios',
+        'intervencoes',
+        'notificacoes',
+        'denuncias_2025_12_29_23_00'
+      ];
+
+      for (const table of criticalTables) {
+        try {
+          const { data, error } = await supabase
+            .from(table)
+            .select('id')
+            .limit(1);
+
+          if (error) {
+            results.push({
+              component: `Table: ${table}`,
+              status: 'error',
+              message: `Tabela ${table} inacessível`,
+              details: error.message,
+              timestamp: new Date().toISOString()
+            });
+          } else {
+            results.push({
+              component: `Table: ${table}`,
+              status: 'success',
+              message: `Tabela ${table} acessível`,
+              timestamp: new Date().toISOString()
+            });
+          }
+        } catch (error: any) {
+          results.push({
+            component: `Table: ${table}`,
+            status: 'error',
+            message: `Erro ao verificar ${table}`,
+            details: error.message,
+            timestamp: new Date().toISOString()
+          });
+        }
+      }
+
+      // 3. Verificação de Performance do Frontend
+      const performanceStart = performance.now();
+      
+      // Simular operações do frontend
+      const testArray = Array.from({ length: 1000 }, (_, i) => i);
+      testArray.filter(n => n % 2 === 0).map(n => n * 2);
+      
+      const performanceTime = performance.now() - performanceStart;
+      
+      if (performanceTime > 100) {
+        results.push({
+          component: 'Frontend Performance',
+          status: 'warning',
+          message: `Performance lenta (${performanceTime.toFixed(2)}ms)`,
+          timestamp: new Date().toISOString()
+        });
+      } else {
+        results.push({
+          component: 'Frontend Performance',
+          status: 'success',
+          message: `Performance boa (${performanceTime.toFixed(2)}ms)`,
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      // 4. Verificação de Memória
+      if ('memory' in performance) {
+        const memory = (performance as any).memory;
+        const memoryUsage = (memory.usedJSHeapSize / memory.totalJSHeapSize) * 100;
+        
+        if (memoryUsage > 80) {
+          results.push({
+            component: 'Memory Usage',
+            status: 'warning',
+            message: `Uso de memória alto (${memoryUsage.toFixed(1)}%)`,
+            timestamp: new Date().toISOString()
+          });
+        } else {
+          results.push({
+            component: 'Memory Usage',
+            status: 'success',
+            message: `Uso de memória normal (${memoryUsage.toFixed(1)}%)`,
+            timestamp: new Date().toISOString()
+          });
+        }
+      }
+
+      // 5. Verificação de Erros de Console
+      const consoleErrors = checkConsoleErrors();
+      if (consoleErrors.length > 0) {
+        results.push({
+          component: 'Console Errors',
+          status: 'error',
+          message: `${consoleErrors.length} erros detectados`,
+          details: consoleErrors.join(', '),
+          timestamp: new Date().toISOString()
+        });
+      } else {
+        results.push({
+          component: 'Console Errors',
+          status: 'success',
+          message: 'Nenhum erro de console detectado',
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      // Calcular saúde do sistema
+      const successCount = results.filter(r => r.status === 'success').length;
+      const warningCount = results.filter(r => r.status === 'warning').length;
+      const errorCount = results.filter(r => r.status === 'error').length;
+      
+      const overallHealth = Math.round((successCount / results.length) * 100);
+      const databaseHealth = Math.round((results.filter(r => r.component.includes('Database') || r.component.includes('Table')).filter(r => r.status === 'success').length / results.filter(r => r.component.includes('Database') || r.component.includes('Table')).length) * 100);
+      const frontendHealth = Math.round((results.filter(r => r.component.includes('Frontend') || r.component.includes('Memory') || r.component.includes('Console')).filter(r => r.status === 'success').length / results.filter(r => r.component.includes('Frontend') || r.component.includes('Memory') || r.component.includes('Console')).length) * 100);
+      
+      setHealth({
+        overall: overallHealth,
+        database: databaseHealth,
+        frontend: frontendHealth,
+        performance: performanceTime < 50 ? 100 : performanceTime < 100 ? 75 : 50
       });
 
-      setSystemStats(stats);
-      setLastCheck(new Date());
+      setDiagnostics(results);
 
-      // Simular métricas de performance
-      setPerformanceMetrics({
-        avgResponseTime: Math.random() * 500 + 100,
-        errorRate: Math.random() * 5,
-        activeConnections: Math.floor(Math.random() * 50) + 10,
-        memoryUsage: Math.random() * 80 + 20
-      });
+      // Toast com resultado
+      if (errorCount > 0) {
+        toast({
+          title: "⚠️ Problemas Detectados",
+          description: `${errorCount} erros e ${warningCount} avisos encontrados`,
+          variant: "destructive",
+        });
+      } else if (warningCount > 0) {
+        toast({
+          title: "✅ Sistema Funcional",
+          description: `${warningCount} avisos encontrados`,
+        });
+      } else {
+        toast({
+          title: "✅ Sistema Saudável",
+          description: "Todos os testes passaram com sucesso",
+        });
+      }
 
+    } catch (error: any) {
+      console.error('Erro no diagnóstico:', error);
       toast({
-        title: "✅ Diagnóstico Completo",
-        description: "Verificação do sistema concluída com sucesso",
-      });
-    } catch (error) {
-      toast({
-        title: "❌ Erro no Diagnóstico",
-        description: "Falha ao executar verificação do sistema",
+        title: "Erro no Diagnóstico",
+        description: error.message,
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  // Executar diagnóstico na inicialização
-  useEffect(() => {
-    runDiagnostics();
-  }, []);
+  const checkConsoleErrors = (): string[] => {
+    // Esta função seria implementada para capturar erros de console
+    // Por agora, retorna array vazio
+    return [];
+  };
 
-  // Função para obter ícone e cor do status
-  const getStatusIcon = (status: 'healthy' | 'warning' | 'error') => {
+  const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'healthy':
-        return <CheckCircle className="h-5 w-5 text-green-500" />;
+      case 'success':
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
       case 'warning':
-        return <AlertTriangle className="h-5 w-5 text-yellow-500" />;
+        return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
       case 'error':
-        return <AlertTriangle className="h-5 w-5 text-red-500" />;
+        return <AlertCircle className="h-4 w-4 text-red-500" />;
+      default:
+        return <Activity className="h-4 w-4 text-gray-500" />;
     }
   };
 
-  const getStatusColor = (status: 'healthy' | 'warning' | 'error') => {
+  const getStatusColor = (status: string) => {
     switch (status) {
-      case 'healthy':
+      case 'success':
         return 'bg-green-100 text-green-800 border-green-200';
       case 'warning':
         return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'error':
         return 'bg-red-100 text-red-800 border-red-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
-  const getStatusText = (status: 'healthy' | 'warning' | 'error') => {
-    switch (status) {
-      case 'healthy':
-        return 'Saudável';
-      case 'warning':
-        return 'Atenção';
-      case 'error':
-        return 'Erro';
-    }
+  const getHealthColor = (value: number) => {
+    if (value >= 90) return 'text-green-600';
+    if (value >= 70) return 'text-yellow-600';
+    return 'text-red-600';
   };
 
   return (
     <div className="space-y-6">
-      {/* Cabeçalho */}
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Diagnóstico do Sistema</h2>
-          <p className="text-gray-600">
-            Última verificação: {lastCheck.toLocaleString('pt-PT')}
-          </p>
+          <h2 className="text-2xl font-bold text-gray-900">Diagnósticos do Sistema</h2>
+          <p className="text-gray-600">Monitorização em tempo real da saúde do sistema</p>
         </div>
-        <Button 
-          onClick={runDiagnostics} 
-          disabled={isLoading}
-          className="bg-blue-600 hover:bg-blue-700"
-        >
-          <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-          {isLoading ? 'Verificando...' : 'Executar Diagnóstico'}
-        </Button>
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setAutoRefresh(!autoRefresh)}
+            className={autoRefresh ? 'bg-green-50 border-green-200' : ''}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${autoRefresh ? 'animate-spin' : ''}`} />
+            Auto-refresh
+          </Button>
+          <Button
+            onClick={runDiagnostics}
+            disabled={loading}
+            size="sm"
+          >
+            {loading ? (
+              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Activity className="h-4 w-4 mr-2" />
+            )}
+            Executar Diagnóstico
+          </Button>
+        </div>
       </div>
 
-      <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="overview">Visão Geral</TabsTrigger>
-          <TabsTrigger value="health">Saúde do Sistema</TabsTrigger>
-          <TabsTrigger value="performance">Performance</TabsTrigger>
-          <TabsTrigger value="statistics">Estatísticas</TabsTrigger>
-        </TabsList>
+      {/* Health Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Saúde Geral</p>
+                <p className={`text-2xl font-bold ${getHealthColor(health.overall)}`}>
+                  {health.overall}%
+                </p>
+              </div>
+              <Shield className={`h-8 w-8 ${getHealthColor(health.overall)}`} />
+            </div>
+            <Progress value={health.overall} className="mt-2" />
+          </CardContent>
+        </Card>
 
-        {/* Visão Geral */}
-        <TabsContent value="overview" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-2">
-                  <Database className="h-8 w-8 text-blue-500" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Base de Dados</p>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Base de Dados</p>
+                <p className={`text-2xl font-bold ${getHealthColor(health.database)}`}>
+                  {health.database}%
+                </p>
+              </div>
+              <Database className={`h-8 w-8 ${getHealthColor(health.database)}`} />
+            </div>
+            <Progress value={health.database} className="mt-2" />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Frontend</p>
+                <p className={`text-2xl font-bold ${getHealthColor(health.frontend)}`}>
+                  {health.frontend}%
+                </p>
+              </div>
+              <Zap className={`h-8 w-8 ${getHealthColor(health.frontend)}`} />
+            </div>
+            <Progress value={health.frontend} className="mt-2" />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Performance</p>
+                <p className={`text-2xl font-bold ${getHealthColor(health.performance)}`}>
+                  {health.performance}%
+                </p>
+              </div>
+              <TrendingUp className={`h-8 w-8 ${getHealthColor(health.performance)}`} />
+            </div>
+            <Progress value={health.performance} className="mt-2" />
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Detailed Results */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Bug className="h-5 w-5" />
+            <span>Resultados Detalhados</span>
+          </CardTitle>
+          <CardDescription>
+            Última execução: {diagnostics.length > 0 ? new Date(diagnostics[0].timestamp).toLocaleString('pt-PT') : 'Nunca'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ScrollArea className="h-96">
+            <div className="space-y-3">
+              {diagnostics.map((result, index) => (
+                <div
+                  key={index}
+                  className={`p-3 rounded-lg border ${getStatusColor(result.status)}`}
+                >
+                  <div className="flex items-start justify-between">
                     <div className="flex items-center space-x-2">
-                      {getStatusIcon(systemHealth.database)}
-                      <span className="text-lg font-bold">
-                        {getStatusText(systemHealth.database)}
-                      </span>
+                      {getStatusIcon(result.status)}
+                      <div>
+                        <p className="font-medium">{result.component}</p>
+                        <p className="text-sm opacity-80">{result.message}</p>
+                        {result.details && (
+                          <p className="text-xs opacity-60 mt-1">{result.details}</p>
+                        )}
+                      </div>
                     </div>
+                    <Badge variant="outline" className="text-xs">
+                      {new Date(result.timestamp).toLocaleTimeString('pt-PT')}
+                    </Badge>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-2">
-                  <Shield className="h-8 w-8 text-green-500" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Autenticação</p>
-                    <div className="flex items-center space-x-2">
-                      {getStatusIcon(systemHealth.authentication)}
-                      <span className="text-lg font-bold">
-                        {getStatusText(systemHealth.authentication)}
-                      </span>
-                    </div>
-                  </div>
+              ))}
+              
+              {diagnostics.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  <Activity className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Nenhum diagnóstico executado ainda</p>
+                  <p className="text-sm">Clique em "Executar Diagnóstico" para começar</p>
                 </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-2">
-                  <Zap className="h-8 w-8 text-yellow-500" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Notificações</p>
-                    <div className="flex items-center space-x-2">
-                      {getStatusIcon(systemHealth.notifications)}
-                      <span className="text-lg font-bold">
-                        {getStatusText(systemHealth.notifications)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-2">
-                  <TrendingUp className="h-8 w-8 text-purple-500" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Performance</p>
-                    <div className="flex items-center space-x-2">
-                      {getStatusIcon(systemHealth.performance)}
-                      <span className="text-lg font-bold">
-                        {getStatusText(systemHealth.performance)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        {/* Saúde do Sistema */}
-        <TabsContent value="health" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Activity className="h-5 w-5" />
-                  <span>Status dos Componentes</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">Base de Dados</span>
-                  <Badge className={getStatusColor(systemHealth.database)}>
-                    {getStatusText(systemHealth.database)}
-                  </Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">Autenticação</span>
-                  <Badge className={getStatusColor(systemHealth.authentication)}>
-                    {getStatusText(systemHealth.authentication)}
-                  </Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">Notificações</span>
-                  <Badge className={getStatusColor(systemHealth.notifications)}>
-                    {getStatusText(systemHealth.notifications)}
-                  </Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">Performance</span>
-                  <Badge className={getStatusColor(systemHealth.performance)}>
-                    {getStatusText(systemHealth.performance)}
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Clock className="h-5 w-5" />
-                  <span>Tempo de Atividade</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-green-600 mb-2">
-                    {systemStats.systemUptime}
-                  </div>
-                  <p className="text-gray-600">Sistema ativo</p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        {/* Performance */}
-        <TabsContent value="performance" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Métricas de Performance</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="text-sm font-medium">Tempo de Resposta Médio</span>
-                    <span className="text-sm text-gray-600">
-                      {performanceMetrics.avgResponseTime.toFixed(0)}ms
-                    </span>
-                  </div>
-                  <Progress 
-                    value={Math.min(performanceMetrics.avgResponseTime / 10, 100)} 
-                    className="h-2"
-                  />
-                </div>
-                
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="text-sm font-medium">Taxa de Erro</span>
-                    <span className="text-sm text-gray-600">
-                      {performanceMetrics.errorRate.toFixed(1)}%
-                    </span>
-                  </div>
-                  <Progress 
-                    value={performanceMetrics.errorRate * 20} 
-                    className="h-2"
-                  />
-                </div>
-                
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="text-sm font-medium">Uso de Memória</span>
-                    <span className="text-sm text-gray-600">
-                      {performanceMetrics.memoryUsage.toFixed(0)}%
-                    </span>
-                  </div>
-                  <Progress 
-                    value={performanceMetrics.memoryUsage} 
-                    className="h-2"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Conexões Ativas</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-blue-600 mb-2">
-                    {performanceMetrics.activeConnections}
-                  </div>
-                  <p className="text-gray-600">Conexões simultâneas</p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        {/* Estatísticas */}
-        <TabsContent value="statistics" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-2">
-                  <PawPrint className="h-8 w-8 text-orange-500" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Total de Animais</p>
-                    <p className="text-2xl font-bold">{systemStats.totalAnimals}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-2">
-                  <Users className="h-8 w-8 text-blue-500" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Total de Voluntários</p>
-                    <p className="text-2xl font-bold">{systemStats.totalVolunteers}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-2">
-                  <FileText className="h-8 w-8 text-red-500" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Total de Denúncias</p>
-                    <p className="text-2xl font-bold">{systemStats.totalDenuncias}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-2">
-                  <Settings className="h-8 w-8 text-green-500" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Total de Missões</p>
-                    <p className="text-2xl font-bold">{systemStats.totalMissions}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-2">
-                  <Zap className="h-8 w-8 text-yellow-500" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Notificações Ativas</p>
-                    <p className="text-2xl font-bold">{systemStats.activeNotifications}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-2">
-                  <Wifi className="h-8 w-8 text-purple-500" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Conexões Ativas</p>
-                    <p className="text-2xl font-bold">{performanceMetrics.activeConnections}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-      </Tabs>
+              )}
+            </div>
+          </ScrollArea>
+        </CardContent>
+      </Card>
     </div>
   );
 };

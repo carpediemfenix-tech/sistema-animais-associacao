@@ -88,7 +88,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
   };
 
   // Filtrar notificações
-  const notificacoesFiltradas = notificacoes.filter(notif => {
+  const notificacoesFiltradas = (notificacoes || []).filter(notif => {
     const matchCategoria = filtroCategoria === 'todas' || notif.categoria === filtroCategoria;
     const matchPrioridade = filtroPrioridade === 'todas' || notif.prioridade === filtroPrioridade;
     const matchStatus = filtroStatus === 'todas' || 
@@ -139,10 +139,10 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
 
   // Estatísticas
   const stats = {
-    total: notificacoes.length,
-    naoLidas: notificacoes.filter(n => !n.lida).length,
-    criticas: notificacoes.filter(n => n.prioridade === 'critica' || n.prioridade === 'urgente').length,
-    hoje: notificacoes.filter(n => {
+    total: (notificacoes || []).length,
+    naoLidas: (notificacoes || []).filter(n => !n.lida).length,
+    criticas: (notificacoes || []).filter(n => n.prioridade === 'critica' || n.prioridade === 'urgente').length,
+    hoje: (notificacoes || []).filter(n => {
       const hoje = new Date().toDateString();
       const notifData = new Date(n.created_at).toDateString();
       return hoje === notifData;

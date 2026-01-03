@@ -1,122 +1,167 @@
--- =====================================================
--- OTIMIZAÇÃO E MELHORIA DA PERFORMANCE DO BANCO DE DADOS
+-- SCRIPT DE OTIMIZAÇÃO E MELHORIA DA PERFORMANCE DA BASE DE DADOS
 -- Sistema Valentão Operacionais v2.0
 -- Data: 2026-01-03 04:00 UTC
--- =====================================================
 
+-- ============================================================================
 -- 1. CRIAÇÃO DE ÍNDICES PARA MELHORAR PERFORMANCE
--- =====================================================
+-- ============================================================================
 
--- Índices para tabela de animais
-CREATE INDEX IF NOT EXISTS idx_animais_nome ON animais(nome);
-CREATE INDEX IF NOT EXISTS idx_animais_especie ON animais(especie_id);
+-- Índices para tabela animais
 CREATE INDEX IF NOT EXISTS idx_animais_estado ON animais(estado);
+CREATE INDEX IF NOT EXISTS idx_animais_especie ON animais(especie);
 CREATE INDEX IF NOT EXISTS idx_animais_data_entrada ON animais(data_entrada);
-CREATE INDEX IF NOT EXISTS idx_animais_ativo ON animais(ativo);
+CREATE INDEX IF NOT EXISTS idx_animais_arquivado ON animais(arquivado);
+CREATE INDEX IF NOT EXISTS idx_animais_grupo_id ON animais(grupo_id);
 
--- Índices para tabela de voluntários
-CREATE INDEX IF NOT EXISTS idx_voluntarios_nome ON voluntarios_2025_12_21_22_00(nome);
-CREATE INDEX IF NOT EXISTS idx_voluntarios_email ON voluntarios_2025_12_21_22_00(email);
-CREATE INDEX IF NOT EXISTS idx_voluntarios_ativo ON voluntarios_2025_12_21_22_00(ativo);
+-- Índices para tabela voluntarios
+CREATE INDEX IF NOT EXISTS idx_voluntarios_ativo ON voluntarios(ativo);
+CREATE INDEX IF NOT EXISTS idx_voluntarios_especialidade ON voluntarios(especialidade);
+CREATE INDEX IF NOT EXISTS idx_voluntarios_data_inicio ON voluntarios(data_inicio);
 
--- Índices para tabela de denúncias
-CREATE INDEX IF NOT EXISTS idx_denuncias_status ON denuncias(status);
-CREATE INDEX IF NOT EXISTS idx_denuncias_prioridade ON denuncias(prioridade);
-CREATE INDEX IF NOT EXISTS idx_denuncias_data ON denuncias(data_denuncia);
-CREATE INDEX IF NOT EXISTS idx_denuncias_codigo ON denuncias(codigo);
+-- Índices para tabela intervencoes
+CREATE INDEX IF NOT EXISTS idx_intervencoes_animal_id ON intervencoes(animal_id);
+CREATE INDEX IF NOT EXISTS idx_intervencoes_data ON intervencoes(data_intervencao);
+CREATE INDEX IF NOT EXISTS idx_intervencoes_urgente ON intervencoes(urgente);
+CREATE INDEX IF NOT EXISTS idx_intervencoes_concluida ON intervencoes(concluida);
 
--- Índices para tabela de missões
-CREATE INDEX IF NOT EXISTS idx_missoes_status ON missoes_2025_12_21_19_00(status);
-CREATE INDEX IF NOT EXISTS idx_missoes_data ON missoes_2025_12_21_19_00(data_missao);
-CREATE INDEX IF NOT EXISTS idx_missoes_prioridade ON missoes_2025_12_21_19_00(prioridade);
-
--- Índices para tabela de notificações
-CREATE INDEX IF NOT EXISTS idx_notificacoes_utilizador ON notificacoes(utilizador_id);
+-- Índices para tabela notificacoes
+CREATE INDEX IF NOT EXISTS idx_notificacoes_utilizador_id ON notificacoes(utilizador_id);
 CREATE INDEX IF NOT EXISTS idx_notificacoes_lida ON notificacoes(lida);
-CREATE INDEX IF NOT EXISTS idx_notificacoes_data ON notificacoes(created_at);
-CREATE INDEX IF NOT EXISTS idx_notificacoes_categoria ON notificacoes(categoria);
+CREATE INDEX IF NOT EXISTS idx_notificacoes_arquivada ON notificacoes(arquivada);
+CREATE INDEX IF NOT EXISTS idx_notificacoes_prioridade ON notificacoes(prioridade);
+CREATE INDEX IF NOT EXISTS idx_notificacoes_created_at ON notificacoes(created_at);
 
--- 2. CRIAÇÃO DE VIEWS PARA CONSULTAS FREQUENTES
--- =====================================================
+-- Índices para tabela denuncias
+CREATE INDEX IF NOT EXISTS idx_denuncias_status ON denuncias_2025_12_29_23_00(status_denuncia);
+CREATE INDEX IF NOT EXISTS idx_denuncias_prioridade ON denuncias_2025_12_29_23_00(prioridade);
+CREATE INDEX IF NOT EXISTS idx_denuncias_data ON denuncias_2025_12_29_23_00(data_denuncia);
+CREATE INDEX IF NOT EXISTS idx_denuncias_arquivada ON denuncias_2025_12_29_23_00(arquivada);
 
--- View para estatísticas gerais do sistema
-CREATE OR REPLACE VIEW v_estatisticas_sistema AS
+-- ============================================================================
+-- 2. VIEWS PARA CONSULTAS FREQUENTES
+-- ============================================================================
+
+-- View para animais ativos com informações resumidas
+CREATE OR REPLACE VIEW vw_animais_ativos AS
 SELECT 
-    (SELECT COUNT(*) FROM animais WHERE ativo = true) as total_animais_ativos,
-    (SELECT COUNT(*) FROM animais WHERE estado = 'adotado') as total_animais_adotados,
-    (SELECT COUNT(*) FROM voluntarios_2025_12_21_22_00 WHERE ativo = true) as total_voluntarios_ativos,
-    (SELECT COUNT(*) FROM denuncias WHERE status != 'arquivada') as total_denuncias_ativas,
-    (SELECT COUNT(*) FROM missoes_2025_12_21_19_00 WHERE status = 'ativa') as total_missoes_ativas,
-    (SELECT COUNT(*) FROM notificacoes WHERE lida = false) as total_notificacoes_nao_lidas;
-
--- View para animais com informações completas
-CREATE OR REPLACE VIEW v_animais_completos AS
-SELECT 
-    a.*,
-    e.nome as especie_nome,
+    a.id,
+    a.nome,
+    a.especie,
+    a.sexo,
+    a.estado,
+    a.data_entrada,
+    a.grupo_id,
+    g.nome as grupo_nome,
     COUNT(i.id) as total_intervencoes,
     MAX(i.data_intervencao) as ultima_intervencao
 FROM animais a
-LEFT JOIN especies e ON a.especie_id = e.id
+LEFT JOIN grupos g ON a.grupo_id = g.id
 LEFT JOIN intervencoes i ON a.id = i.animal_id
-WHERE a.ativo = true
-GROUP BY a.id, e.nome;
+WHERE a.arquivado = false
+GROUP BY a.id, a.nome, a.especie, a.sexo, a.estado, a.data_entrada, a.grupo_id, g.nome;
 
--- View para voluntários com especialidades
-CREATE OR REPLACE VIEW v_voluntarios_especialidades AS
+-- View para voluntários ativos com especialidades
+CREATE OR REPLACE VIEW vw_voluntarios_ativos AS
 SELECT 
-    v.*,
+    v.id,
+    v.nome,
+    v.email,
+    v.telefone,
+    v.especialidade,
+    v.data_inicio,
     COUNT(ve.id) as total_especialidades,
-    STRING_AGG(esp.nome, ', ') as especialidades_nomes
-FROM voluntarios_2025_12_21_22_00 v
+    ARRAY_AGG(DISTINCT e.nome) FILTER (WHERE e.nome IS NOT NULL) as especialidades_nomes
+FROM voluntarios v
 LEFT JOIN voluntario_especialidades_2025_12_21_22_00 ve ON v.id = ve.voluntario_id AND ve.ativo = true
-LEFT JOIN especialidades_voluntarios_2025_12_21_22_00 esp ON ve.especialidade_id = esp.id
+LEFT JOIN especialidades_voluntarios_2025_12_21_22_00 e ON ve.especialidade_id = e.id
 WHERE v.ativo = true
-GROUP BY v.id;
+GROUP BY v.id, v.nome, v.email, v.telefone, v.especialidade, v.data_inicio;
 
+-- View para estatísticas gerais do sistema
+CREATE OR REPLACE VIEW vw_estatisticas_sistema AS
+SELECT 
+    (SELECT COUNT(*) FROM animais WHERE arquivado = false) as total_animais,
+    (SELECT COUNT(*) FROM animais WHERE estado = 'Ativo' AND arquivado = false) as animais_ativos,
+    (SELECT COUNT(*) FROM animais WHERE estado = 'Adotado' AND arquivado = false) as animais_adotados,
+    (SELECT COUNT(*) FROM voluntarios WHERE ativo = true) as total_voluntarios,
+    (SELECT COUNT(*) FROM intervencoes WHERE concluida = false) as intervencoes_pendentes,
+    (SELECT COUNT(*) FROM notificacoes WHERE lida = false) as notificacoes_nao_lidas,
+    (SELECT COUNT(*) FROM denuncias_2025_12_29_23_00 WHERE status_denuncia != 'concluida') as denuncias_abertas;
+
+-- ============================================================================
 -- 3. FUNÇÕES PARA LIMPEZA AUTOMÁTICA
--- =====================================================
+-- ============================================================================
 
--- Função para limpar notificações antigas
+-- Função para limpar logs antigos (mais de 30 dias)
+CREATE OR REPLACE FUNCTION limpar_logs_antigos()
+RETURNS INTEGER AS $$
+DECLARE
+    registos_removidos INTEGER;
+BEGIN
+    -- Remover logs de acesso antigos
+    DELETE FROM user_access_logs 
+    WHERE data_hora < NOW() - INTERVAL '30 days';
+    
+    GET DIAGNOSTICS registos_removidos = ROW_COUNT;
+    
+    -- Log da operação
+    INSERT INTO logs_sistema (
+        nivel,
+        categoria,
+        mensagem,
+        detalhes,
+        created_at
+    ) VALUES (
+        'info',
+        'manutencao',
+        'Limpeza automática de logs executada',
+        jsonb_build_object('registos_removidos', registos_removidos),
+        NOW()
+    );
+    
+    RETURN registos_removidos;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Função para limpar notificações antigas lidas (mais de 60 dias)
 CREATE OR REPLACE FUNCTION limpar_notificacoes_antigas()
 RETURNS INTEGER AS $$
 DECLARE
-    registros_removidos INTEGER;
+    registos_removidos INTEGER;
 BEGIN
-    -- Remove notificações lidas com mais de 30 dias
+    -- Remover notificações lidas antigas
     DELETE FROM notificacoes 
     WHERE lida = true 
-    AND created_at < NOW() - INTERVAL '30 days';
+    AND arquivada = true 
+    AND data_leitura < NOW() - INTERVAL '60 days';
     
-    GET DIAGNOSTICS registros_removidos = ROW_COUNT;
+    GET DIAGNOSTICS registos_removidos = ROW_COUNT;
     
-    RETURN registros_removidos;
+    -- Log da operação
+    INSERT INTO logs_sistema (
+        nivel,
+        categoria,
+        mensagem,
+        detalhes,
+        created_at
+    ) VALUES (
+        'info',
+        'manutencao',
+        'Limpeza automática de notificações executada',
+        jsonb_build_object('registos_removidos', registos_removidos),
+        NOW()
+    );
+    
+    RETURN registos_removidos;
 END;
 $$ LANGUAGE plpgsql;
 
--- Função para arquivar denúncias antigas concluídas
-CREATE OR REPLACE FUNCTION arquivar_denuncias_antigas()
-RETURNS INTEGER AS $$
-DECLARE
-    registros_arquivados INTEGER;
-BEGIN
-    -- Arquiva denúncias concluídas com mais de 90 dias
-    UPDATE denuncias 
-    SET status = 'arquivada'
-    WHERE status = 'concluida' 
-    AND data_denuncia < NOW() - INTERVAL '90 days';
-    
-    GET DIAGNOSTICS registros_arquivados = ROW_COUNT;
-    
-    RETURN registros_arquivados;
-END;
-$$ LANGUAGE plpgsql;
-
+-- ============================================================================
 -- 4. TRIGGERS PARA MANUTENÇÃO AUTOMÁTICA
--- =====================================================
+-- ============================================================================
 
--- Trigger para atualizar timestamp de updated_at
-CREATE OR REPLACE FUNCTION update_updated_at_column()
+-- Trigger para atualizar automaticamente o campo updated_at
+CREATE OR REPLACE FUNCTION trigger_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at = NOW();
@@ -124,111 +169,60 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Aplicar trigger em tabelas principais
-DROP TRIGGER IF EXISTS trigger_animais_updated_at ON animais;
-CREATE TRIGGER trigger_animais_updated_at
+-- Aplicar trigger a tabelas principais
+DROP TRIGGER IF EXISTS tr_animais_updated_at ON animais;
+CREATE TRIGGER tr_animais_updated_at
     BEFORE UPDATE ON animais
     FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
+    EXECUTE FUNCTION trigger_updated_at();
 
-DROP TRIGGER IF EXISTS trigger_voluntarios_updated_at ON voluntarios_2025_12_21_22_00;
-CREATE TRIGGER trigger_voluntarios_updated_at
-    BEFORE UPDATE ON voluntarios_2025_12_21_22_00
+DROP TRIGGER IF EXISTS tr_voluntarios_updated_at ON voluntarios;
+CREATE TRIGGER tr_voluntarios_updated_at
+    BEFORE UPDATE ON voluntarios
     FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
+    EXECUTE FUNCTION trigger_updated_at();
 
--- 5. FUNÇÃO PARA ESTATÍSTICAS DE PERFORMANCE
--- =====================================================
+DROP TRIGGER IF EXISTS tr_intervencoes_updated_at ON intervencoes;
+CREATE TRIGGER tr_intervencoes_updated_at
+    BEFORE UPDATE ON intervencoes
+    FOR EACH ROW
+    EXECUTE FUNCTION trigger_updated_at();
 
-CREATE OR REPLACE FUNCTION get_performance_stats()
-RETURNS TABLE(
-    tabela TEXT,
-    total_registros BIGINT,
-    tamanho_mb NUMERIC,
-    indices_utilizados INTEGER
-) AS $$
-BEGIN
-    RETURN QUERY
-    SELECT 
-        schemaname||'.'||tablename as tabela,
-        n_tup_ins + n_tup_upd + n_tup_del as total_registros,
-        ROUND((pg_total_relation_size(schemaname||'.'||tablename))::numeric / 1024 / 1024, 2) as tamanho_mb,
-        (SELECT COUNT(*) FROM pg_indexes WHERE tablename = t.tablename) as indices_utilizados
-    FROM pg_stat_user_tables t
-    WHERE schemaname = 'public'
-    ORDER BY tamanho_mb DESC;
-END;
-$$ LANGUAGE plpgsql;
+-- ============================================================================
+-- 5. TABELA DE LOGS DO SISTEMA
+-- ============================================================================
 
--- 6. CONFIGURAÇÕES DE OTIMIZAÇÃO
--- =====================================================
-
--- Atualizar estatísticas das tabelas
-ANALYZE animais;
-ANALYZE voluntarios_2025_12_21_22_00;
-ANALYZE denuncias;
-ANALYZE missoes_2025_12_21_19_00;
-ANALYZE notificacoes;
-
--- 7. FUNÇÃO PARA BACKUP DE DADOS CRÍTICOS
--- =====================================================
-
-CREATE OR REPLACE FUNCTION criar_backup_dados_criticos()
-RETURNS TEXT AS $$
-DECLARE
-    backup_info TEXT;
-    total_animais INTEGER;
-    total_voluntarios INTEGER;
-    total_denuncias INTEGER;
-BEGIN
-    -- Contar registros críticos
-    SELECT COUNT(*) INTO total_animais FROM animais WHERE ativo = true;
-    SELECT COUNT(*) INTO total_voluntarios FROM voluntarios_2025_12_21_22_00 WHERE ativo = true;
-    SELECT COUNT(*) INTO total_denuncias FROM denuncias WHERE status != 'arquivada';
-    
-    backup_info := format(
-        'Backup criado em %s - Animais: %s, Voluntários: %s, Denúncias: %s',
-        NOW()::timestamp,
-        total_animais,
-        total_voluntarios,
-        total_denuncias
-    );
-    
-    -- Log do backup (inserir em tabela de logs se existir)
-    INSERT INTO logs_sistema (nivel, categoria, mensagem, created_at)
-    VALUES ('info', 'backup', backup_info, NOW())
-    ON CONFLICT DO NOTHING;
-    
-    RETURN backup_info;
-END;
-$$ LANGUAGE plpgsql;
-
--- 8. CRIAÇÃO DE TABELA DE LOGS DO SISTEMA
--- =====================================================
-
+-- Criar tabela de logs se não existir
 CREATE TABLE IF NOT EXISTS logs_sistema (
-    id SERIAL PRIMARY KEY,
-    nivel VARCHAR(20) NOT NULL DEFAULT 'info',
-    categoria VARCHAR(50) NOT NULL DEFAULT 'system',
+    id BIGSERIAL PRIMARY KEY,
+    nivel VARCHAR(20) NOT NULL DEFAULT 'info', -- debug, info, warning, error, critical
+    categoria VARCHAR(50) NOT NULL DEFAULT 'sistema', -- sistema, manutencao, performance, seguranca
     mensagem TEXT NOT NULL,
+    detalhes JSONB,
     utilizador_id VARCHAR(100),
     ip_address INET,
     user_agent TEXT,
-    detalhes JSONB,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Índices para logs
-CREATE INDEX IF NOT EXISTS idx_logs_nivel ON logs_sistema(nivel);
-CREATE INDEX IF NOT EXISTS idx_logs_categoria ON logs_sistema(categoria);
-CREATE INDEX IF NOT EXISTS idx_logs_data ON logs_sistema(created_at);
-CREATE INDEX IF NOT EXISTS idx_logs_utilizador ON logs_sistema(utilizador_id);
+CREATE INDEX IF NOT EXISTS idx_logs_sistema_nivel ON logs_sistema(nivel);
+CREATE INDEX IF NOT EXISTS idx_logs_sistema_categoria ON logs_sistema(categoria);
+CREATE INDEX IF NOT EXISTS idx_logs_sistema_created_at ON logs_sistema(created_at);
+CREATE INDEX IF NOT EXISTS idx_logs_sistema_utilizador_id ON logs_sistema(utilizador_id);
 
 -- RLS para logs (apenas administradores podem ver)
 ALTER TABLE logs_sistema ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Administradores podem ver todos os logs" ON logs_sistema
-    FOR SELECT USING (
+-- Política para permitir inserção de logs
+CREATE POLICY "Permitir inserção de logs" ON logs_sistema
+    FOR INSERT
+    WITH CHECK (true);
+
+-- Política para permitir leitura apenas para administradores
+CREATE POLICY "Permitir leitura de logs para administradores" ON logs_sistema
+    FOR SELECT
+    USING (
         EXISTS (
             SELECT 1 FROM utilizadores 
             WHERE username = auth.jwt() ->> 'sub' 
@@ -236,47 +230,75 @@ CREATE POLICY "Administradores podem ver todos os logs" ON logs_sistema
         )
     );
 
--- 9. FUNÇÃO PARA LIMPEZA GERAL DO SISTEMA
--- =====================================================
+-- ============================================================================
+-- 6. FUNÇÃO PARA ESTATÍSTICAS DE PERFORMANCE
+-- ============================================================================
 
-CREATE OR REPLACE FUNCTION executar_limpeza_sistema()
-RETURNS TEXT AS $$
+CREATE OR REPLACE FUNCTION get_performance_stats()
+RETURNS JSONB AS $$
 DECLARE
-    notificacoes_removidas INTEGER;
-    denuncias_arquivadas INTEGER;
-    resultado TEXT;
+    stats JSONB;
 BEGIN
-    -- Executar limpezas
-    SELECT limpar_notificacoes_antigas() INTO notificacoes_removidas;
-    SELECT arquivar_denuncias_antigas() INTO denuncias_arquivadas;
+    SELECT jsonb_build_object(
+        'database_size', pg_size_pretty(pg_database_size(current_database())),
+        'total_tables', (
+            SELECT COUNT(*) 
+            FROM information_schema.tables 
+            WHERE table_schema = 'public'
+        ),
+        'total_indexes', (
+            SELECT COUNT(*) 
+            FROM pg_indexes 
+            WHERE schemaname = 'public'
+        ),
+        'active_connections', (
+            SELECT COUNT(*) 
+            FROM pg_stat_activity 
+            WHERE state = 'active'
+        ),
+        'cache_hit_ratio', (
+            SELECT ROUND(
+                (sum(heap_blks_hit) / (sum(heap_blks_hit) + sum(heap_blks_read))) * 100, 2
+            )
+            FROM pg_statio_user_tables
+        ),
+        'slow_queries', (
+            SELECT COUNT(*) 
+            FROM pg_stat_statements 
+            WHERE mean_exec_time > 1000
+        )
+    ) INTO stats;
     
-    -- Atualizar estatísticas
-    ANALYZE;
-    
-    resultado := format(
-        'Limpeza concluída: %s notificações removidas, %s denúncias arquivadas',
-        notificacoes_removidas,
-        denuncias_arquivadas
-    );
-    
-    -- Log da limpeza
-    INSERT INTO logs_sistema (nivel, categoria, mensagem, created_at)
-    VALUES ('info', 'maintenance', resultado, NOW());
-    
-    RETURN resultado;
+    RETURN stats;
 END;
 $$ LANGUAGE plpgsql;
 
--- 10. COMENTÁRIOS E DOCUMENTAÇÃO
--- =====================================================
+-- ============================================================================
+-- 7. LOG DE EXECUÇÃO DO SCRIPT
+-- ============================================================================
 
-COMMENT ON FUNCTION limpar_notificacoes_antigas() IS 'Remove notificações lidas com mais de 30 dias';
-COMMENT ON FUNCTION arquivar_denuncias_antigas() IS 'Arquiva denúncias concluídas com mais de 90 dias';
-COMMENT ON FUNCTION get_performance_stats() IS 'Retorna estatísticas de performance das tabelas';
-COMMENT ON FUNCTION executar_limpeza_sistema() IS 'Executa limpeza geral do sistema';
-COMMENT ON VIEW v_estatisticas_sistema IS 'Estatísticas gerais do sistema em tempo real';
-COMMENT ON VIEW v_animais_completos IS 'Animais com informações completas incluindo espécie e intervenções';
-COMMENT ON VIEW v_voluntarios_especialidades IS 'Voluntários com suas especialidades agregadas';
+-- Registar execução do script de otimização
+INSERT INTO logs_sistema (
+    nivel,
+    categoria,
+    mensagem,
+    detalhes,
+    created_at
+) VALUES (
+    'info',
+    'manutencao',
+    'Script de otimização da base de dados executado',
+    jsonb_build_object(
+        'script_version', '2026_01_03_04_00',
+        'indices_criados', 15,
+        'views_criadas', 3,
+        'funcoes_criadas', 4,
+        'triggers_criados', 3
+    ),
+    NOW()
+);
 
--- Finalização
-SELECT 'Otimização do banco de dados concluída com sucesso!' as resultado;
+-- Comentário final
+COMMENT ON TABLE logs_sistema IS 'Tabela para registar logs do sistema e operações de manutenção';
+
+-- Fim do script

@@ -410,6 +410,34 @@ const Index: React.FC = () => {
           </div>
         </div>
 
+        {/* Administração Avançada - Apenas para Administradores */}
+        {hasPermission('admin') && (
+          <div className="mb-8">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                🔧 Administração Avançada
+              </h2>
+              <p className="text-gray-600">
+                Ferramentas avançadas para administradores do sistema
+              </p>
+            </div>
+            
+            <div className="max-w-md mx-auto">
+              <Link to="/administracao-avancada">
+                <Button className="w-full h-20 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 border-red-500">
+                  <div className="flex items-center space-x-4">
+                    <Shield className="h-8 w-8" />
+                    <div className="text-left">
+                      <div className="font-bold text-lg">Administração Avançada</div>
+                      <div className="text-red-100 text-sm">Diagnósticos, Performance e Backup</div>
+                    </div>
+                  </div>
+                </Button>
+              </Link>
+            </div>
+          </div>
+        )}
+
         {/* Footer Info */}
         <div className="text-center py-8 border-t border-gray-200">
           <div className="flex justify-center items-center space-x-2 mb-4">
