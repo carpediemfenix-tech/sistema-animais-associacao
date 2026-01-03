@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import { convertGoogleDriveUrl } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { 
   ArrowLeft, 
@@ -73,6 +74,7 @@ interface ResponsabilidadeAtiva {
   animal_numero_processo: string;
   animal_especie: string;
   animal_estado: string;
+  animal_url_fotografia?: string;
 }
 
 interface IntervencaoHistorico {
@@ -96,6 +98,7 @@ interface ResponsabilidadeHistorico {
   animal_nome: string;
   animal_numero_processo: string;
   animal_especie: string;
+  animal_url_fotografia?: string;
 }
 
 interface ParticipacaoMissao {
@@ -170,7 +173,8 @@ const VoluntarioDetail = () => {
             numero_processo,
             especie,
             estado,
-            arquivado
+            arquivado,
+            url_fotografia
           )
         `)
         .eq('voluntario_id', id)
@@ -188,7 +192,8 @@ const VoluntarioDetail = () => {
           animal_nome: resp.animais.nome,
           animal_numero_processo: resp.animais.numero_processo,
           animal_especie: resp.animais.especie,
-          animal_estado: resp.animais.estado
+          animal_estado: resp.animais.estado,
+          animal_url_fotografia: resp.animais.url_fotografia
         }));
         setResponsabilidadesAtivas(responsabilidadesFormatadas);
       }
@@ -233,7 +238,8 @@ const VoluntarioDetail = () => {
           animais!inner(
             nome,
             numero_processo,
-            especie
+            especie,
+            url_fotografia
           )
         `)
         .eq('voluntario_id', id)
@@ -250,7 +256,8 @@ const VoluntarioDetail = () => {
           motivo_mudanca: resp.motivo_mudanca,
           animal_nome: resp.animais.nome,
           animal_numero_processo: resp.animais.numero_processo,
-          animal_especie: resp.animais.especie
+          animal_especie: resp.animais.especie,
+          animal_url_fotografia: resp.animais.url_fotografia
         }));
         setResponsabilidadesHistorico(historicoFormatado);
       }
@@ -677,8 +684,27 @@ const VoluntarioDetail = () => {
                     <div key={resp.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow bg-gradient-to-r from-orange-50 to-red-50">
                       <div className="flex items-start justify-between">
                         <div className="flex items-start space-x-3">
-                          <div className="bg-orange-100 p-2 rounded-lg flex-shrink-0">
-                            <PawPrint className="h-5 w-5 text-orange-600" />
+                          {/* Fotografia do Animal */}
+                          <div className="flex-shrink-0">
+                            {resp.animal_url_fotografia ? (
+                              <img 
+                                src={convertGoogleDriveUrl(resp.animal_url_fotografia, 200)} 
+                                alt={`Foto de ${resp.animal_nome}`}
+                                className="w-12 h-12 rounded-full object-cover border-2 border-orange-200 shadow-sm"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                  e.currentTarget.nextElementSibling.style.display = 'flex';
+                                }}
+                              />
+                            ) : null}
+                            {/* Placeholder quando não há foto */}
+                            <div 
+                              className={`w-12 h-12 rounded-full bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center text-white font-bold text-sm shadow-sm ${
+                                resp.animal_url_fotografia ? 'hidden' : 'flex'
+                              }`}
+                            >
+                              {resp.animal_nome.charAt(0).toUpperCase()}
+                            </div>
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center space-x-2 mb-2">
@@ -882,17 +908,45 @@ const VoluntarioDetail = () => {
                       )}
                       
                       <div className="flex items-start space-x-4">
-                        {/* Indicador da Timeline */}
-                        <div className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center ${
-                          resp.data_fim 
-                            ? 'bg-gray-100 border-2 border-gray-300' 
-                            : 'bg-green-100 border-2 border-green-300'
-                        }`}>
-                          {resp.data_fim ? (
-                            <CheckCircle className="h-5 w-5 text-gray-500" />
-                          ) : (
-                            <Clock className="h-5 w-5 text-green-500" />
-                          )}
+                        {/* Fotografia do Animal na Timeline */}
+                        <div className="flex-shrink-0 relative">
+                          {resp.animal_url_fotografia ? (
+                            <img 
+                              src={convertGoogleDriveUrl(resp.animal_url_fotografia, 200)} 
+                              alt={`Foto de ${resp.animal_nome}`}
+                              className={`w-12 h-12 rounded-full object-cover border-2 shadow-sm ${
+                                resp.data_fim 
+                                  ? 'border-gray-300 opacity-75' 
+                                  : 'border-green-300'
+                              }`}
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                e.currentTarget.nextElementSibling.style.display = 'flex';
+                              }}
+                            />
+                          ) : null}
+                          {/* Placeholder quando não há foto */}
+                          <div 
+                            className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-sm border-2 ${
+                              resp.data_fim 
+                                ? 'bg-gradient-to-br from-gray-400 to-gray-600 border-gray-300 opacity-75' 
+                                : 'bg-gradient-to-br from-purple-400 to-indigo-600 border-green-300'
+                            } ${resp.animal_url_fotografia ? 'hidden' : 'flex'}`}
+                          >
+                            {resp.animal_nome.charAt(0).toUpperCase()}
+                          </div>
+                          {/* Indicador de status sobreposto */}
+                          <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center ${
+                            resp.data_fim 
+                              ? 'bg-gray-100 border-2 border-gray-300' 
+                              : 'bg-green-100 border-2 border-green-300'
+                          }`}>
+                            {resp.data_fim ? (
+                              <CheckCircle className="h-3 w-3 text-gray-500" />
+                            ) : (
+                              <Clock className="h-3 w-3 text-green-500" />
+                            )}
+                          </div>
                         </div>
 
                         {/* Conteúdo da Responsabilidade */}
