@@ -173,16 +173,26 @@ const EspecialidadesVoluntario: React.FC<EspecialidadesVoluntarioProps> = ({
         return;
       }
 
-      // 2. Preparar dados para inserção (apenas colunas que existem na tabela)
-      const insertData = {
+      // 2. Preparar dados para inserção (estrutura completa restaurada)
+      const insertData: any = {
         voluntario_id: voluntarioId,
         especialidade_id: novaEspecialidade.especialidade_id,
+        nivel_experiencia: novaEspecialidade.nivel_experiencia || 'iniciante',
         ativo: true
       };
 
-      // NOTA: A tabela atual só tem estas colunas:
-      // id, voluntario_id, especialidade_id, data_atribuicao, ativo, created_at, updated_at
-      // Os campos nivel_experiencia, data_certificacao, certificado_valido_ate, observacoes NÃO EXISTEM
+      // Adicionar campos opcionais apenas se tiverem valor válido
+      if (novaEspecialidade.data_certificacao && novaEspecialidade.data_certificacao.trim() !== '') {
+        insertData.data_certificacao = novaEspecialidade.data_certificacao;
+      }
+      
+      if (novaEspecialidade.certificado_valido_ate && novaEspecialidade.certificado_valido_ate.trim() !== '') {
+        insertData.certificado_valido_ate = novaEspecialidade.certificado_valido_ate;
+      }
+      
+      if (novaEspecialidade.observacoes && novaEspecialidade.observacoes.trim() !== '') {
+        insertData.observacoes = novaEspecialidade.observacoes;
+      }
 
       console.log('🔍 [DEBUG] Dados a inserir:', insertData);
 
