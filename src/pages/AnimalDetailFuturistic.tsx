@@ -111,7 +111,11 @@ const AnimalDetailFuturistic = () => {
       // Carregar localização atual
       const { data: localizacaoData, error: localizacaoError } = await supabase
         .from('localizacoes_animal')
-        .select('*')
+        .select(`
+          *,
+          localizacao:localizacoes(nome, descricao, tipo, endereco),
+          responsavel:voluntarios(nome)
+        `)
         .eq('animal_id', id)
         .eq('ativo', true)
         .single();
@@ -558,14 +562,19 @@ const AnimalDetailFuturistic = () => {
                         <div className="w-4 h-4 bg-emerald-400 rounded-full animate-pulse"></div>
                       </div>
                       <div className="text-2xl font-bold mb-2 text-emerald-200 break-words">
-                        {localizacaoAtual?.localizacao || 'Localização não definida'}
+                        {localizacaoAtual?.localizacao?.nome || 'Localização não definida'}
                       </div>
                       <div className="text-sm text-emerald-200 opacity-90 mb-2">
-                        {localizacaoAtual?.descricao || 'Aguardando atualização de localização'}
+                        {localizacaoAtual?.localizacao?.descricao || 'Aguardando atualização de localização'}
                       </div>
-                      {localizacaoAtual?.endereco_detalhes && (
+                      {localizacaoAtual?.localizacao?.tipo && (
                         <div className="text-xs bg-emerald-500/20 rounded-lg px-3 py-1 border border-emerald-400/30 mb-2">
-                          📍 {localizacaoAtual.endereco_detalhes}
+                          🏠 Tipo: {localizacaoAtual.localizacao.tipo}
+                        </div>
+                      )}
+                      {(localizacaoAtual?.endereco_detalhes || localizacaoAtual?.localizacao?.endereco) && (
+                        <div className="text-xs bg-emerald-500/20 rounded-lg px-3 py-1 border border-emerald-400/30 mb-2">
+                          📍 {localizacaoAtual.endereco_detalhes || localizacaoAtual.localizacao.endereco}
                         </div>
                       )}
                       {localizacaoAtual?.data_inicio && (
@@ -573,9 +582,14 @@ const AnimalDetailFuturistic = () => {
                           📅 Desde: {new Date(localizacaoAtual.data_inicio).toLocaleDateString('pt-PT')}
                         </div>
                       )}
-                      {localizacaoAtual?.responsavel && (
+                      {localizacaoAtual?.responsavel?.nome && (
                         <div className="text-xs text-emerald-300 opacity-75 mt-1">
-                          👤 Responsável: {localizacaoAtual.responsavel}
+                          👤 Responsável: {localizacaoAtual.responsavel.nome}
+                        </div>
+                      )}
+                      {localizacaoAtual?.motivo_transferencia && (
+                        <div className="text-xs text-emerald-300 opacity-75 mt-1">
+                          📝 Motivo: {localizacaoAtual.motivo_transferencia}
                         </div>
                       )}
                     </div>
@@ -699,7 +713,7 @@ const AnimalDetailFuturistic = () => {
                     <div className="flex items-center justify-center lg:justify-start space-x-2">
                       <MapPin className="h-4 w-4 text-green-400" />
                       <span className="text-green-300">
-                        Local: {localizacaoAtual.localizacao}
+                        Local: {localizacaoAtual.localizacao?.nome || 'Não especificado'}
                       </span>
                     </div>
                   )}
