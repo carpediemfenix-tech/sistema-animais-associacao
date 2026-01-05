@@ -296,12 +296,20 @@ const VoluntarioDetail = () => {
 
       // Buscar participações em missões - tentativa de consulta real
       try {
+        console.log('🔍 DEBUG - Buscando participações para voluntário ID:', id);
+        
         // Primeiro tentar consulta direta sem embed
         const { data: participacoesData, error: participacoesError } = await supabase
           .from('participacoes_missoes_2025_12_29_07_00')
           .select('*')
           .eq('voluntario_id', id)
           .order('data_participacao', { ascending: false });
+        
+        console.log('🔍 DEBUG - Resultado da consulta de participações:', {
+          data: participacoesData,
+          error: participacoesError,
+          count: participacoesData?.length || 0
+        });
 
         if (participacoesError) {
           console.warn('Erro na consulta de participações:', participacoesError);
@@ -311,29 +319,71 @@ const VoluntarioDetail = () => {
         // Se temos participações, buscar dados das missões separadamente
         if (participacoesData && participacoesData.length > 0) {
           const missaoIds = participacoesData.map(p => p.missao_id);
+          console.log('🔍 DEBUG - IDs das missões encontradas:', missaoIds);
           
-          const { data: missoesData, error: missoesError } = await supabase
-            .from('missoes_2025_12_18_14_15')
-            .select('*')
-            .in('id', missaoIds);
+          // Tentar buscar missões em ambas as tabelas possíveis
+          let missoesData = null;
+          let missoesError = null;
+          
+          // Primeiro tentar a tabela mais recente
+          try {
+            const { data: missoesData1, error: missoesError1 } = await supabase
+              .from('missoes_2025_12_29_07_00')
+              .select('*')
+              .in('id', missaoIds);
+            
+            if (missoesError1) {
+              console.log('🔍 DEBUG - Tabela missoes_2025_12_29_07_00 falhou, tentando missoes_2025_12_18_14_15');
+              throw missoesError1;
+            }
+            
+            missoesData = missoesData1;
+            console.log('🔍 DEBUG - Missões encontradas na tabela 2025_12_29_07_00:', missoesData1?.length || 0);
+            
+          } catch (error1) {
+            console.log('🔍 DEBUG - Tentando tabela missoes_2025_12_18_14_15...');
+            
+            const { data: missoesData2, error: missoesError2 } = await supabase
+              .from('missoes_2025_12_18_14_15')
+              .select('*')
+              .in('id', missaoIds);
+            
+            missoesData = missoesData2;
+            missoesError = missoesError2;
+            console.log('🔍 DEBUG - Missões encontradas na tabela 2025_12_18_14_15:', missoesData2?.length || 0);
+          }
+          
+          console.log('🔍 DEBUG - Resultado final da consulta de missões:', {
+            data: missoesData,
+            error: missoesError,
+            count: missoesData?.length || 0
+          });
 
           if (missoesError) {
-            console.warn('Erro ao buscar dados das missões:', missoesError);
-            throw missoesError;
+            console.warn('Erro ao buscar dados das missões em ambas as tabelas:', missoesError);
+            // Não lançar erro, continuar com dados parciais
           }
 
           // Combinar dados de participações com missões
           const participacoesCompletas = participacoesData.map(participacao => {
             const missao = missoesData?.find(m => m.id === participacao.missao_id);
+            
+            console.log('🔍 DEBUG - Processando participação:', {
+              participacao_id: participacao.id,
+              missao_id: participacao.missao_id,
+              missao_encontrada: !!missao,
+              missao_titulo: missao?.titulo
+            });
+            
             return {
               ...participacao,
-              missao_titulo: missao?.titulo || 'Missão não encontrada',
-              missao_descricao: missao?.descricao || '',
-              missao_data_inicio: missao?.data_inicio || '',
+              missao_titulo: missao?.titulo || `Missão ${participacao.missao_id.substring(0, 8)}...`,
+              missao_descricao: missao?.descricao || 'Descrição não disponível',
+              missao_data_inicio: missao?.data_inicio || participacao.data_participacao,
               missao_data_fim: missao?.data_fim || null,
-              missao_status: missao?.status || 'desconhecido',
+              missao_status: missao?.status || 'ativo',
               missao_prioridade: missao?.prioridade || 'media',
-              missao_local_principal: missao?.local_principal || '',
+              missao_local_principal: missao?.local_principal || 'Local não especificado',
               missao_orcamento_previsto: missao?.orcamento_previsto || 0
             };
           });
