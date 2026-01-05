@@ -259,59 +259,71 @@ const VoluntarioDetail = () => {
         setResponsabilidadesHistorico(historicoFormatado);
       }
 
-      // Buscar intervenções
-      const { data: intervencoesData, error: intervencoesError } = await supabase
-        .from('intervencoes_animais')
-        .select(`
-          *,
-          animais!inner(nome, numero_processo, arquivado)
-        `)
-        .eq('voluntario_responsavel_id', id)
-        .eq('animais.arquivado', false)
-        .order('data_intervencao', { ascending: false })
-        .limit(10);
+      // Buscar intervenções - com tratamento de erro para tabela inexistente
+      try {
+        const { data: intervencoesData, error: intervencoesError } = await supabase
+          .from('intervencoes_animais')
+          .select(`
+            *,
+            animais!inner(nome, numero_processo, arquivado)
+          `)
+          .eq('voluntario_responsavel_id', id)
+          .eq('animais.arquivado', false)
+          .order('data_intervencao', { ascending: false })
+          .limit(10);
 
-      if (intervencoesError) {
-        console.error('Erro ao buscar intervenções:', intervencoesError);
-      } else {
-        const intervencoesFormatadas = (intervencoesData || []).map(int => ({
-          id: int.id,
-          animal_id: int.animal_id,
-          tipo_intervencao: int.tipo_intervencao,
-          data_intervencao: int.data_intervencao,
-          descricao: int.descricao,
-          animal_nome: int.animais.nome,
-          animal_numero_processo: int.animais.numero_processo
-        }));
-        setIntervencoes(intervencoesFormatadas);
+        if (intervencoesError) {
+          console.warn('Tabela de intervenções não encontrada ou erro na consulta:', intervencoesError);
+          setIntervencoes([]); // Define array vazio se tabela não existir
+        } else {
+          const intervencoesFormatadas = (intervencoesData || []).map(int => ({
+            id: int.id,
+            animal_id: int.animal_id,
+            tipo_intervencao: int.tipo_intervencao,
+            data_intervencao: int.data_intervencao,
+            descricao: int.descricao,
+            animal_nome: int.animais.nome,
+            animal_numero_processo: int.animais.numero_processo
+          }));
+          setIntervencoes(intervencoesFormatadas);
+        }
+      } catch (error) {
+        console.warn('Erro ao buscar intervenções (tabela pode não existir):', error);
+        setIntervencoes([]);
       }
 
-      // Buscar participações em missões
-      const { data: participacoesData, error: participacoesError } = await supabase
-        .from('participacoes_missoes_2025_12_29_07_00')
-        .select(`
-          *,
-          missoes_2025_12_18_14_15!inner(
-            id,
-            titulo,
-            descricao,
-            data_inicio,
-            data_fim,
-            status,
-            prioridade,
-            local_principal,
-            orcamento_previsto
-          )
-        `)
-        .eq('voluntario_id', id)
-        .order('data_participacao', { ascending: false });
+      // Buscar participações em missões - com tratamento de erro
+      try {
+        const { data: participacoesData, error: participacoesError } = await supabase
+          .from('participacoes_missoes_2025_12_29_07_00')
+          .select(`
+            *,
+            missoes_2025_12_18_14_15(
+              id,
+              titulo,
+              descricao,
+              data_inicio,
+              data_fim,
+              status,
+              prioridade,
+              local_principal,
+              orcamento_previsto
+            )
+          `)
+          .eq('voluntario_id', id)
+          .order('data_participacao', { ascending: false });
 
-      if (participacoesError) {
-        console.error('Erro ao buscar participações em missões:', participacoesError);
-      } else {
-        console.log('DEBUG - Participações carregadas:', participacoesData);
-        console.log('DEBUG - Número de participações:', participacoesData?.length || 0);
-        setParticipacoesMissoes(participacoesData || []);
+        if (participacoesError) {
+          console.warn('Erro ao buscar participações em missões:', participacoesError);
+          setParticipacoesMissoes([]);
+        } else {
+          console.log('DEBUG - Participações carregadas:', participacoesData);
+          console.log('DEBUG - Número de participações:', participacoesData?.length || 0);
+          setParticipacoesMissoes(participacoesData || []);
+        }
+      } catch (error) {
+        console.warn('Erro ao buscar participações (problema de relacionamento):', error);
+        setParticipacoesMissoes([]);
       }
 
       // Buscar equipamentos atribuídos
