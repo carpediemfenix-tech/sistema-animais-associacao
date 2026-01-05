@@ -51,11 +51,11 @@ interface ParticipacaoMissao {
   funcao: string;
   data_participacao: string;
   data_fim?: string;
-  horas_dedicadas: number;
-  pontos_atribuidos: number;
-  status_participacao: string;
+  horas_dedicadas?: number;
+  pontos_atribuidos?: number;
+  status_participacao?: string;
   observacoes?: string;
-  created_at: string;
+  created_at?: string;
 }
 
 interface Voluntario {
@@ -133,14 +133,57 @@ const MissaoParticipacoes = () => {
 
   const loadParticipacoes = async () => {
     console.log('👥 Carregando participações para missão ID:', id);
-    const { data, error } = await supabase
+    
+    // Buscar participações básicas
+    const { data: participacoesData, error: participacoesError } = await supabase
       .from('participacoes_missoes_2025_12_29_07_00')
       .select('*')
       .eq('missao_id', id)
       .order('data_participacao', { ascending: false });
 
-    if (error) throw error;
-    setParticipacoes(data || []);
+    if (participacoesError) throw participacoesError;
+    
+    // Para cada participação, buscar os pontos do histórico
+    const participacoesComPontos = await Promise.all(
+      (participacoesData || []).map(async (participacao) => {
+        // Buscar pontos do histórico detalhado
+        const { data: historicoData } = await supabase
+          .from('historico_pontos_detalhado_2026_01_05_15_00')
+          .select('pontos_total')
+          .eq('voluntario_id', participacao.voluntario_id)
+          .eq('origem_id', id)
+          .eq('tipo_origem', 'missao')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+        
+        // Se não encontrar no histórico detalhado, tentar no histórico antigo
+        let pontos = historicoData?.pontos_total || 0;
+        
+        if (pontos === 0) {
+          const { data: historicoAntigoData } = await supabase
+            .from('historico_pontos_2025_12_22_02_00')
+            .select('pontos')
+            .eq('voluntario_id', participacao.voluntario_id)
+            .eq('missao_id', id)
+            .order('data_atribuicao', { ascending: false })
+            .limit(1)
+            .single();
+          
+          pontos = historicoAntigoData?.pontos || 0;
+        }
+        
+        return {
+          ...participacao,
+          pontos_atribuidos: pontos,
+          horas_dedicadas: participacao.horas_dedicadas || 0,
+          status_participacao: participacao.status_participacao || 'pendente'
+        };
+      })
+    );
+    
+    console.log('📊 Participações com pontos carregadas:', participacoesComPontos);
+    setParticipacoes(participacoesComPontos);
   };
 
   const loadVoluntarios = async () => {
@@ -358,6 +401,45 @@ const MissaoParticipacoes = () => {
     setParticipacaoDialogOpen(true);
   };
 
+  // Recalcular pontos de todas as participações
+  const handleRecalcularPontos = async () => {
+    if (!id) return;
+    
+    setLoading(true);
+    try {
+      const { data: resultado, error } = await supabase.functions.invoke(
+        'recalcular_pontos_missao_2026_01_05_16_00',
+        {
+          body: { missao_id: id }
+        }
+      );
+
+      if (error) {
+        throw error;
+      }
+
+      const stats = resultado?.data;
+      
+      toast({
+        title: "Pontos recalculados",
+        description: `${stats?.pontos_recalculados || 0} participações recalculadas de ${stats?.total_participacoes || 0} total`,
+      });
+
+      // Recarregar participações para mostrar os novos pontos
+      await loadParticipacoes();
+      
+    } catch (error: any) {
+      console.error('❌ Erro ao recalcular pontos:', error);
+      toast({
+        title: "Erro ao recalcular pontos",
+        description: error.message || "Erro interno do sistema",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Obter voluntário por ID
   const getVoluntarioById = (voluntarioId: string) => {
     return voluntarios.find(v => v.id === voluntarioId);
@@ -433,10 +515,21 @@ const MissaoParticipacoes = () => {
           { label: 'Participações', icon: <Users className="h-4 w-4" /> }
         ]}
         primaryActions={
-          <Button onClick={() => openParticipacaoDialog()} className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 h-9">
-            <Plus className="h-4 w-4 mr-2" />
+          <div className="flex items-center space-x-2">
+            <Button 
+              onClick={handleRecalcularPontos} 
+              variant="outline" 
+              className="h-9"
+              disabled={loading}
+            >
+              <Star className="h-4 w-4 mr-2" />
+              Recalcular Pontos
+            </Button>
+            <Button onClick={() => openParticipacaoDialog()} className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 h-9">
+              <Plus className="h-4 w-4 mr-2" />
             Adicionar Participação
           </Button>
+          </div>
         }
       />
       
@@ -553,18 +646,21 @@ const MissaoParticipacoes = () => {
                         <TableCell>
                           <div className="flex items-center text-gray-600">
                             <Clock className="h-3 w-3 mr-1" />
-                            <span>{participacao.horas_dedicadas}h</span>
+                            <span>{participacao.horas_dedicadas || 0}h</span>
                           </div>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center text-purple-600">
                             <Star className="h-3 w-3 mr-1" />
-                            <span>{participacao.pontos_atribuidos}</span>
+                            <span>{participacao.pontos_atribuidos || 0}</span>
+                            {(participacao.pontos_atribuidos || 0) === 0 && (
+                              <span className="text-xs text-gray-500 ml-1">(pendente)</span>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge className={participacao.status_participacao === 'confirmada' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
-                            {participacao.status_participacao === 'confirmada' ? 'Confirmada' : participacao.status_participacao}
+                          <Badge className={(participacao.status_participacao || 'pendente') === 'confirmada' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
+                            {(participacao.status_participacao || 'pendente') === 'confirmada' ? 'Confirmada' : (participacao.status_participacao || 'Pendente')}
                           </Badge>
                         </TableCell>
                         <TableCell>
