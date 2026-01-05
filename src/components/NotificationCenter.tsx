@@ -25,7 +25,7 @@ import {
   Bug
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useNotifications } from "@/hooks/useNotifications";
+import { useNotificationsContext } from "@/contexts/NotificationsContext";
 
 interface NotificationCenterProps {
   isOpen: boolean;
@@ -55,7 +55,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
     eliminarNotificacao,
     recalcularContador,
     limparDadosInconsistentes
-  } = useNotifications();
+  } = useNotificationsContext();
 
   // Função de debug
   const debugContador = async () => {

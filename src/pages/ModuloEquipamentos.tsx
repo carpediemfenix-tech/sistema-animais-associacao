@@ -100,16 +100,12 @@ interface TipoEquipamento {
 interface Equipamento {
   id: string;
   tipo_equipamento_id: string;
-  codigo_interno: string;
-  numero_serie: string;
-  data_aquisicao: string;
-  data_validade: string;
+  numero_serie?: string;
   estado: string;
-  localizacao: string;
-  condicao: string;
-  valor_aquisicao: number;
-  garantia_ate: string;
-  observacoes: string;
+  localizacao?: string;
+  valor_aquisicao?: number;
+  data_aquisicao?: string;
+  observacoes?: string;
   ativo: boolean;
   tipo_equipamento?: TipoEquipamento;
 }
@@ -873,15 +869,11 @@ const ModuloEquipamentos = () => {
       
       const equipamentoData = {
         tipo_equipamento_id: equipamentoForm.tipo_equipamento_id,
-        codigo_interno: equipamentoForm.codigo_interno,
         numero_serie: equipamentoForm.numero_serie || null,
         data_aquisicao: equipamentoForm.data_aquisicao,
-        data_validade: equipamentoForm.data_validade || null,
         estado: equipamentoForm.estado,
         localizacao: equipamentoForm.localizacao || null,
-        condicao: equipamentoForm.condicao,
         valor_aquisicao: parseFloat(equipamentoForm.valor_aquisicao) || 0,
-        garantia_ate: equipamentoForm.garantia_ate || null,
         observacoes: equipamentoForm.observacoes || null,
         ativo: true
       };
@@ -2323,7 +2315,7 @@ const ModuloEquipamentos = () => {
 
       toast({
         title: "Equipamento desativado",
-        description: 'Equipamento "' + equipamento.codigo_interno + '" foi desativado com sucesso',
+        description: 'Equipamento "' + (equipamento.numero_serie || equipamento.id) + '" foi desativado com sucesso',
       });
 
       loadEquipamentos();
@@ -2352,7 +2344,7 @@ const ModuloEquipamentos = () => {
 
       toast({
         title: "Equipamento eliminado",
-        description: `Equipamento '${equipamento.codigo_interno}' foi eliminado permanentemente`,
+        description: `Equipamento '${equipamento.numero_serie || equipamento.id}' foi eliminado permanentemente`,
       });
 
       loadEquipamentos();

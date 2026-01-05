@@ -31,7 +31,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import NotificationCenter from "./NotificationCenter";
-import { useNotifications } from "@/hooks/useNotifications";
+import { useNotificationsContext } from "@/contexts/NotificationsContext";
 
 interface NavigationButton {
   label: string;
@@ -83,7 +83,7 @@ const EnhancedHeader = () => {
 
 // Estados para notificações avançadas
   const [showNotificacoes, setShowNotificacoes] = useState(false);
-  const { contadorNaoLidas } = useNotifications();
+  const { contadorNaoLidas } = useNotificationsContext();
   const [autoRefresh, setAutoRefresh] = useState(true);
 
   // As notificações são agora geridas pelo hook useNotifications

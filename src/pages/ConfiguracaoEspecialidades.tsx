@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { 
   ArrowLeft, 
   Plus, 
@@ -310,6 +310,9 @@ const ConfiguracaoEspecialidades = () => {
                 <DialogTitle>
                   {editingId ? 'Editar Especialidade' : 'Nova Especialidade'}
                 </DialogTitle>
+                <DialogDescription>
+                  {editingId ? 'Edite os dados da especialidade selecionada' : 'Adicione uma nova especialidade de voluntário'}
+                </DialogDescription>
               </DialogHeader>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
