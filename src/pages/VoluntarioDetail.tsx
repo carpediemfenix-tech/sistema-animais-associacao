@@ -292,11 +292,61 @@ const VoluntarioDetail = () => {
         setIntervencoes([]);
       }
 
-      // Buscar participações em missões - temporariamente usando dados mock devido a problemas de FK
+      // Buscar participações em missões - tentativa de consulta real
       try {
-        console.warn('Consulta de participações temporariamente usando dados mock devido a problemas de relacionamento FK');
+        // Primeiro tentar consulta direta sem embed
+        const { data: participacoesData, error: participacoesError } = await supabase
+          .from('participacoes_missoes_2025_12_29_07_00')
+          .select('*')
+          .eq('voluntario_id', id)
+          .order('data_participacao', { ascending: false });
+
+        if (participacoesError) {
+          console.warn('Erro na consulta de participações:', participacoesError);
+          throw participacoesError;
+        }
+
+        // Se temos participações, buscar dados das missões separadamente
+        if (participacoesData && participacoesData.length > 0) {
+          const missaoIds = participacoesData.map(p => p.missao_id);
+          
+          const { data: missoesData, error: missoesError } = await supabase
+            .from('missoes_2025_12_18_14_15')
+            .select('*')
+            .in('id', missaoIds);
+
+          if (missoesError) {
+            console.warn('Erro ao buscar dados das missões:', missoesError);
+            throw missoesError;
+          }
+
+          // Combinar dados de participações com missões
+          const participacoesCompletas = participacoesData.map(participacao => {
+            const missao = missoesData?.find(m => m.id === participacao.missao_id);
+            return {
+              ...participacao,
+              missao_titulo: missao?.titulo || 'Missão não encontrada',
+              missao_descricao: missao?.descricao || '',
+              missao_data_inicio: missao?.data_inicio || '',
+              missao_data_fim: missao?.data_fim || null,
+              missao_status: missao?.status || 'desconhecido',
+              missao_prioridade: missao?.prioridade || 'media',
+              missao_local_principal: missao?.local_principal || '',
+              missao_orcamento_previsto: missao?.orcamento_previsto || 0
+            };
+          });
+
+          setParticipacoesMissoes(participacoesCompletas);
+          console.log('DEBUG - Participações reais carregadas:', participacoesCompletas.length, 'registos');
+        } else {
+          setParticipacoesMissoes([]);
+          console.log('DEBUG - Nenhuma participação encontrada para este voluntário');
+        }
+
+      } catch (error) {
+        console.warn('Erro ao buscar participações, usando dados mock:', error);
         
-        // Dados mock para demonstração
+        // Fallback para dados mock
         const participacoesMock = [
           {
             id: '1',
@@ -347,59 +397,72 @@ const VoluntarioDetail = () => {
         
         setParticipacoesMissoes(participacoesMock);
         console.log('DEBUG - Participações mock carregadas:', participacoesMock.length, 'registos');
-        
-      } catch (error) {
-        console.warn('Erro ao carregar dados mock de participações:', error);
-        setParticipacoesMissoes([]);
       }
 
-      // Buscar equipamentos atribuídos
-      const { data: equipamentosData, error: equipamentosError } = await supabase
-        .from('atribuicoes_equipamentos_2025_12_13_01_00')
-        .select(`
-          *,
-          equipamentos_2025_12_13_01_00!inner(
-            id,
-            numero_serie,
-            estado,
-            localizacao,
-            valor_aquisicao,
-            ativo,
-            tipos_equipamentos_2025_12_13_01_00(
-              nome,
-              categorias_equipamentos_2025_12_13_01_00(nome, cor)
+      // Buscar equipamentos atribuídos - com logs de debug
+      try {
+        console.log('DEBUG - Buscando equipamentos para voluntário ID:', id);
+        
+        const { data: equipamentosData, error: equipamentosError } = await supabase
+          .from('atribuicoes_equipamentos_2025_12_13_01_00')
+          .select(`
+            *,
+            equipamentos_2025_12_13_01_00(
+              id,
+              numero_serie,
+              estado,
+              localizacao,
+              valor_aquisicao,
+              ativo,
+              tipos_equipamentos_2025_12_13_01_00(
+                nome,
+                categorias_equipamentos_2025_12_13_01_00(nome, cor)
+              )
             )
-          )
-        `)
-        .eq('voluntario_id', id)
-        .eq('ativo', true)
-        .eq('equipamentos_2025_12_13_01_00.ativo', true)
-        .order('data_atribuicao', { ascending: false });
+          `)
+          .eq('voluntario_id', id)
+          .eq('ativo', true)
+          .order('data_atribuicao', { ascending: false });
 
-      if (equipamentosError) {
-        console.error('Erro ao buscar equipamentos atribuídos:', equipamentosError);
-      } else {
-        const equipamentosFormatados = (equipamentosData || []).map(eq => ({
-          id: eq.id,
-          equipamento_id: eq.equipamento_id,
-          data_atribuicao: eq.data_atribuicao,
-          data_devolucao_prevista: eq.data_devolucao_prevista,
-          data_devolucao_real: eq.data_devolucao_real,
-          estado: eq.estado,
-          observacoes: eq.observacoes,
-          equipamento: {
-            id: eq.equipamentos_2025_12_13_01_00.id,
-            numero_serie: eq.equipamentos_2025_12_13_01_00.numero_serie,
-            estado: eq.equipamentos_2025_12_13_01_00.estado,
-            localizacao: eq.equipamentos_2025_12_13_01_00.localizacao,
-            valor_aquisicao: eq.equipamentos_2025_12_13_01_00.valor_aquisicao,
-            tipo_equipamento: {
-              nome: eq.equipamentos_2025_12_13_01_00.tipos_equipamentos_2025_12_13_01_00?.nome,
-              categoria: eq.equipamentos_2025_12_13_01_00.tipos_equipamentos_2025_12_13_01_00?.categorias_equipamentos_2025_12_13_01_00
+        if (equipamentosError) {
+          console.error('Erro ao buscar equipamentos atribuídos:', equipamentosError);
+          setEquipamentosAtribuidos([]);
+        } else {
+          console.log('DEBUG - Equipamentos encontrados:', equipamentosData?.length || 0);
+          console.log('DEBUG - Dados dos equipamentos:', equipamentosData);
+          
+          // Filtrar apenas equipamentos ativos
+          const equipamentosAtivos = (equipamentosData || []).filter(eq => 
+            eq.equipamentos_2025_12_13_01_00 && eq.equipamentos_2025_12_13_01_00.ativo
+          );
+          
+          const equipamentosFormatados = equipamentosAtivos.map(eq => ({
+            id: eq.id,
+            equipamento_id: eq.equipamento_id,
+            data_atribuicao: eq.data_atribuicao,
+            data_devolucao_prevista: eq.data_devolucao_prevista,
+            data_devolucao_real: eq.data_devolucao_real,
+            estado: eq.estado,
+            observacoes: eq.observacoes,
+            equipamento: {
+              id: eq.equipamentos_2025_12_13_01_00?.id,
+              numero_serie: eq.equipamentos_2025_12_13_01_00?.numero_serie,
+              estado: eq.equipamentos_2025_12_13_01_00?.estado,
+              localizacao: eq.equipamentos_2025_12_13_01_00?.localizacao,
+              valor_aquisicao: eq.equipamentos_2025_12_13_01_00?.valor_aquisicao,
+              tipo_equipamento: {
+                nome: eq.equipamentos_2025_12_13_01_00?.tipos_equipamentos_2025_12_13_01_00?.nome,
+                categoria: eq.equipamentos_2025_12_13_01_00?.tipos_equipamentos_2025_12_13_01_00?.categorias_equipamentos_2025_12_13_01_00
+              }
             }
-          }
-        }));
-        setEquipamentosAtribuidos(equipamentosFormatados);
+          }));
+          
+          setEquipamentosAtribuidos(equipamentosFormatados);
+          console.log('DEBUG - Equipamentos formatados:', equipamentosFormatados.length, 'equipamentos');
+        }
+      } catch (error) {
+        console.error('Erro ao buscar equipamentos atribuídos:', error);
+        setEquipamentosAtribuidos([]);
       }
 
       // Buscar especialidades do voluntário
