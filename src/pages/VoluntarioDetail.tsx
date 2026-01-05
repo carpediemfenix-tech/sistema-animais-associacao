@@ -391,98 +391,20 @@ const VoluntarioDetail = () => {
           setParticipacoesMissoes(participacoesCompletas);
           console.log('DEBUG - Participações reais carregadas:', participacoesCompletas.length, 'registos');
         } else {
-          console.log('DEBUG - Nenhuma participação real encontrada, usando dados mock');
-          // Usar dados mock quando não há participações reais
-          const participacoesMock = [
-            {
-              id: '1',
-              missao_id: 'mock-1',
-              data_participacao: '2025-12-20',
-              funcao: 'Coordenador',
-              observacoes: 'Coordenação geral da missão de resgate',
-              missao_titulo: 'Missão de Resgate - Dezembro 2025',
-              missao_descricao: 'Operação de resgate de animais abandonados no centro da cidade',
-              missao_data_inicio: '2025-12-20',
-              missao_data_fim: '2025-12-22',
-              missao_status: 'concluida',
-              missao_prioridade: 'alta',
-              missao_local_principal: 'Centro da Cidade',
-              missao_orcamento_previsto: 500.00
-            },
-            {
-              id: '2',
-              missao_id: 'mock-2',
-              data_participacao: '2025-12-15',
-              funcao: 'Voluntário',
-              observacoes: 'Apoio nas atividades de vacinação',
-              missao_titulo: 'Campanha de Vacinação',
-              missao_descricao: 'Vacinação antirrábica para animais da comunidade',
-              missao_data_inicio: '2025-12-15',
-              missao_data_fim: null,
-              missao_status: 'ativa',
-              missao_prioridade: 'media',
-              missao_local_principal: 'Parque Municipal',
-              missao_orcamento_previsto: 300.00
-            }
-          ];
-          setParticipacoesMissoes(participacoesMock);
-          console.log('DEBUG - Participações mock carregadas:', participacoesMock.length, 'registos');
+          console.log('DEBUG - Nenhuma participação real encontrada');
+          console.log('DEBUG - participacoesData:', participacoesData);
+          console.log('DEBUG - participacoesError:', participacoesError);
+          // NÃO usar dados mock, deixar vazio
+          setParticipacoesMissoes([]);
+          console.log('DEBUG - Lista de participações definida como vazia (sem dados mock)');
+          // Removido: dados mock não são mais usados
         }
 
       } catch (error) {
-        console.warn('Erro ao buscar participações, usando dados mock:', error);
-        
-        // Fallback para dados mock
-        const participacoesMock = [
-          {
-            id: '1',
-            missao_id: 'mock-1',
-            data_participacao: '2025-12-20',
-            funcao: 'Coordenador',
-            observacoes: 'Coordenação geral da missão de resgate',
-            missao_titulo: 'Missão de Resgate - Dezembro 2025',
-            missao_descricao: 'Operação de resgate de animais abandonados no centro da cidade',
-            missao_data_inicio: '2025-12-20',
-            missao_data_fim: '2025-12-22',
-            missao_status: 'concluida',
-            missao_prioridade: 'alta',
-            missao_local_principal: 'Centro da Cidade',
-            missao_orcamento_previsto: 500.00
-          },
-          {
-            id: '2',
-            missao_id: 'mock-2',
-            data_participacao: '2025-12-15',
-            funcao: 'Voluntário',
-            observacoes: 'Apoio nas atividades de vacinação',
-            missao_titulo: 'Campanha de Vacinação',
-            missao_descricao: 'Vacinação antirrábica para animais da comunidade',
-            missao_data_inicio: '2025-12-15',
-            missao_data_fim: null,
-            missao_status: 'ativa',
-            missao_prioridade: 'media',
-            missao_local_principal: 'Parque Municipal',
-            missao_orcamento_previsto: 300.00
-          },
-          {
-            id: '3',
-            missao_id: 'mock-3',
-            data_participacao: '2025-12-10',
-            funcao: 'Apoio Técnico',
-            observacoes: 'Suporte técnico na feira de adoção',
-            missao_titulo: 'Feira de Adoção',
-            missao_descricao: 'Evento para promover a adoção responsável de animais',
-            missao_data_inicio: '2025-12-10',
-            missao_data_fim: '2025-12-10',
-            missao_status: 'concluida',
-            missao_prioridade: 'media',
-            missao_local_principal: 'Shopping Center',
-            missao_orcamento_previsto: 200.00
-          }
-        ];
-        
-        setParticipacoesMissoes(participacoesMock);
-        console.log('DEBUG - Participações mock carregadas:', participacoesMock.length, 'registos');
+        console.error('Erro ao buscar participações:', error);
+        // NÃO usar dados mock em caso de erro, deixar vazio
+        setParticipacoesMissoes([]);
+        console.log('DEBUG - Erro na consulta, lista de participações definida como vazia');
       }
 
       // Buscar equipamentos atribuídos - com logs de debug
