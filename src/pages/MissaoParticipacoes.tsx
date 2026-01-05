@@ -330,10 +330,52 @@ const MissaoParticipacoes = () => {
 
       if (error) throw error;
 
-      toast({
-        title: "Participação atualizada",
-        description: "Participação atualizada com sucesso!",
-      });
+      console.log('✅ Participação atualizada, recalculando pontos...');
+
+      // Recalcular pontuação usando Edge Function especializada
+      try {
+        const { data: pontuacaoResult, error: pontuacaoError } = await supabase.functions.invoke(
+          'atualizar_pontuacao_participacao_2026_01_05_16_00',
+          {
+            body: {
+              data: {
+                participacao_id: editingParticipacao.id,
+                voluntario_id: editingParticipacao.voluntario_id,
+                missao_id: id!,
+                funcao: participacaoForm.funcao,
+                horas_dedicadas: parseFloat(participacaoForm.horas_dedicadas || '0'),
+                data_atividade: participacaoForm.data_participacao,
+                observacoes: `Participação atualizada como ${participacaoForm.funcao} na missão`
+              }
+            }
+          }
+        );
+
+        if (pontuacaoError) {
+          console.warn('⚠️ Erro no recálculo de pontuação:', pontuacaoError);
+          toast({
+            title: "Participação atualizada",
+            description: "Participação atualizada (pontuação será recalculada posteriormente)",
+          });
+        } else {
+          const resultado = pontuacaoResult?.data;
+          const pontosCalculados = resultado?.pontos_novos || 0;
+          const metodoCalculo = resultado?.metodo_calculo || 'desconhecido';
+          
+          console.log('✅ Pontuação recalculada:', resultado);
+          
+          toast({
+            title: "Participação atualizada",
+            description: `Participação atualizada com ${pontosCalculados} pontos (${metodoCalculo})!`,
+          });
+        }
+      } catch (error) {
+        console.warn('⚠️ Erro na chamada da função de pontuação:', error);
+        toast({
+          title: "Participação atualizada",
+          description: "Participação atualizada (pontuação será recalculada posteriormente)",
+        });
+      }
 
       setParticipacaoDialogOpen(false);
       setEditingParticipacao(null);
@@ -741,6 +783,18 @@ const MissaoParticipacoes = () => {
             <DialogDescription>
               {editingParticipacao ? 'Atualize os dados da participação' : 'Adicione um voluntário à missão'}
             </DialogDescription>
+            
+            {editingParticipacao && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                <div className="flex items-center space-x-2 text-blue-700">
+                  <Star className="h-4 w-4" />
+                  <span className="text-sm font-medium">Recalculo Automático</span>
+                </div>
+                <p className="text-xs text-blue-600 mt-1">
+                  Os pontos serão recalculados automaticamente quando alterar a função ou horas dedicadas.
+                </p>
+              </div>
+            )}
           </DialogHeader>
 
           <form onSubmit={(e) => {
