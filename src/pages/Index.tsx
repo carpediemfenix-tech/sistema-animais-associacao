@@ -22,7 +22,8 @@ import {
   Stethoscope,
   Shield,
   AlertTriangle,
-  Zap
+  Zap,
+  Calculator
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -343,7 +344,26 @@ const Index: React.FC = () => {
               </Card>
             </Link>
 
-            {/* 11. Administração Avançada */}
+            {/* 11. Gestão de Pontuação */}
+            {hasPermission('admin') && (
+              <Link to="/gestao-pontuacao" className="group">
+                <Card className="h-full transition-all duration-300 hover:shadow-xl hover:-translate-y-2 border-0 bg-gradient-to-br from-yellow-50 to-orange-50 group-hover:from-yellow-100 group-hover:to-orange-100">
+                  <CardContent className="p-6 text-center">
+                    <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                      <Calculator className="h-10 w-10 text-white" />
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">Gestão de Pontuação</h3>
+                    <p className="text-sm text-gray-600 mb-4">Configure regras de pontuação para voluntários</p>
+                    <div className="flex justify-center space-x-2">
+                      <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-700">Configuração</Badge>
+                      <Badge variant="outline" className="text-xs">Pontos</Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            )}
+
+            {/* 12. Administração Avançada */}
             <Link to="/administracao-avancada" className="group">
               <Card className="h-full transition-all duration-300 hover:shadow-xl hover:-translate-y-2 border-0 bg-gradient-to-br from-purple-800 to-indigo-900 group-hover:from-purple-700 group-hover:to-indigo-800">
                 <CardContent className="p-6 text-center">

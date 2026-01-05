@@ -93,6 +93,7 @@ import GestaoSocios from "./pages/GestaoSocios";
 import ConfiguracaoIntervencoes from "./pages/ConfiguracaoIntervencoes";
 import GruposArquivados from "./pages/GruposArquivados";
 import LogsAcesso from "./pages/LogsAcesso";
+import GestaoPontuacao from "./pages/GestaoPontuacao";
 
 // Módulo de Denúncias - Fase 2
 import WizardDenuncia from "./pages/WizardDenuncia";
@@ -242,6 +243,9 @@ function App() {
               <Route path="/equipamentos/manutencoes" element={<ProtectedRoute><EquipamentosManutencoes /></ProtectedRoute>} />
               <Route path="/equipamentos/alertas" element={<ProtectedRoute><EquipamentosAlertas /></ProtectedRoute>} />
               <Route path="/equipamentos/relatorios" element={<ProtectedRoute><EquipamentosRelatorios /></ProtectedRoute>} />
+              
+              {/* Sistema de Pontuação */}
+              <Route path="/gestao-pontuacao" element={<ProtectedRoute><GestaoPontuacao /></ProtectedRoute>} />
               
               {/* Módulo de Clínicas */}
               <Route path="/modulo-clinicas" element={<ProtectedRoute><ModuloClinicas /></ProtectedRoute>} />

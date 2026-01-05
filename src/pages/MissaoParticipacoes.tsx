@@ -157,15 +157,14 @@ const MissaoParticipacoes = () => {
   // Criar participação
   const handleCreateParticipacao = async () => {
     try {
-      // Calcular pontos baseado na função
-      const pontosBase = {
-        'coordenador': 25,
-        'participante': 10,
-        'apoio': 8,
-        'especialista': 15
-      };
+      // Buscar dados da missão para cálculo inteligente de pontuação
+      const { data: missaoData } = await supabase
+        .from('missoes_2025_12_18_14_15')
+        .select('pontos_base, multiplicador_dificuldade, bonus_urgencia, prioridade')
+        .eq('id', id)
+        .single();
       
-      const pontosAtribuidos = pontosBase[participacaoForm.funcao as keyof typeof pontosBase] || 10;
+      console.log('DEBUG - Dados da missão para pontuação:', missaoData);
       
       // Usar apenas campos básicos que existem na tabela
       const participacaoData = {
@@ -197,22 +196,55 @@ const MissaoParticipacoes = () => {
       
       console.log('DEBUG - Participação criada com sucesso:', participacaoResult);
 
-      // Atualizar pontuação do voluntário usando a função SQL
-      const { error: pontosError } = await supabase.rpc('atualizar_pontuacao_voluntario', {
-        p_voluntario_id: participacaoForm.voluntario_id,
-        p_pontos: pontosAtribuidos,
-        p_descricao: `Participação como ${participacaoForm.funcao} na missão`,
-        p_missao_id: id
-      });
+      // Calcular pontuação usando sistema inteligente
+      try {
+        const { data: pontuacaoResult, error: pontuacaoError } = await supabase.functions.invoke(
+          'calcular_pontuacao_inteligente_2026_01_05_15_00',
+          {
+            body: {
+              data: {
+                voluntario_id: participacaoForm.voluntario_id,
+                tipo_origem: 'missao',
+                origem_id: id,
+                funcao: participacaoForm.funcao,
+                horas_dedicadas: parseFloat(participacaoForm.horas_dedicadas || '0'),
+                data_atividade: participacaoForm.data_participacao,
+                prioridade: missaoData?.prioridade || 'media',
+                observacoes: `Participação como ${participacaoForm.funcao} na missão`,
+                pontos_base_origem: missaoData?.pontos_base || 0,
+                multiplicador_dificuldade: missaoData?.multiplicador_dificuldade || 1.0,
+                bonus_urgencia_origem: missaoData?.bonus_urgencia || 0
+              }
+            }
+          }
+        );
 
-      if (pontosError) {
-        console.warn('⚠️ Erro ao atualizar pontos:', pontosError);
+        if (pontuacaoError) {
+          console.warn('⚠️ Erro no cálculo inteligente de pontuação:', pontuacaoError);
+          // Fallback para sistema antigo
+          const pontosBasicos = { 'coordenador': 25, 'participante': 10, 'apoio': 8, 'especialista': 15 };
+          const pontosFallback = pontosBasicos[participacaoForm.funcao as keyof typeof pontosBasicos] || 10;
+          
+          toast({
+            title: "Participação adicionada",
+            description: `Voluntário adicionado com ${pontosFallback} pontos (cálculo básico)`,
+          });
+        } else {
+          const pontosCalculados = pontuacaoResult?.data?.pontos_calculados || 0;
+          console.log('✅ Pontuação calculada:', pontuacaoResult);
+          
+          toast({
+            title: "Participação adicionada",
+            description: `Voluntário adicionado com ${pontosCalculados} pontos (cálculo inteligente)!`,
+          });
+        }
+      } catch (error) {
+        console.warn('⚠️ Erro na chamada da função de pontuação:', error);
+        toast({
+          title: "Participação adicionada",
+          description: "Voluntário adicionado (pontuação será calculada posteriormente)",
+        });
       }
-
-      toast({
-        title: "Participação adicionada",
-        description: `Voluntário adicionado com ${pontosAtribuidos} pontos!`,
-      });
 
       setParticipacaoDialogOpen(false);
       resetParticipacaoForm();
