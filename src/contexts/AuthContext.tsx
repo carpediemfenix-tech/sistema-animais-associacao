@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import WelcomeMessage from '@/components/WelcomeMessage';
@@ -322,34 +322,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }, 4300); // Aumentado de 2300ms para 4300ms para sincronizar com a mensagem de 4 segundos
   };
 
-  // 🚨 CORREÇÃO CRÍTICA: Função hasPermission corrigida
-  const hasPermission = (action: 'create' | 'update' | 'delete' | 'admin'): boolean => {
-    console.log('🔍 [AUTH] hasPermission chamada:', {
-      action,
-      user: user?.username,
-      perfil_acesso: user?.perfil_acesso,
-      ativo: user?.ativo,
-      userCompleto: user
-    });
-    
+  // Função hasPermission otimizada com useCallback
+  const hasPermission = useCallback((action: 'create' | 'update' | 'delete' | 'admin'): boolean => {
     // Verificar se o usuário está logado e ativo
     if (!user || !user.ativo) {
-      console.log('❌ [AUTH] Usuário não logado ou inativo');
       return false;
     }
     
     // Para ação 'admin', verificar se é administrador
     if (action === 'admin') {
-      console.log('🔍 [AUTH] Verificando permissão admin para:', user.username, 'Perfil:', user.perfil_acesso);
-      const isAdmin = user.perfil_acesso === 'administrador';
-      console.log('💼 [AUTH] É administrador?', isAdmin);
-      return isAdmin;
+      return user.perfil_acesso === 'administrador';
     }
     
     // Para outras ações, qualquer usuário logado tem permissão
-    console.log('✅ [AUTH] Permissão concedida para ação:', action);
     return true;
-  };
+  }, [user]);
 
   const isAuthenticated = !!user && user.ativo;
 

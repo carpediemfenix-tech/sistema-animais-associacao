@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import NovoEquipamentoModal from "@/components/NovoEquipamentoModal";
@@ -149,6 +149,17 @@ const EquipamentosInventario: React.FC = () => {
       toast({
         title: "Erro",
         description: "Código interno e tipo de equipamento são obrigatórios",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validar se tipo_equipamento_id é um UUID válido
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(novoEquipamento.tipo_equipamento_id)) {
+      toast({
+        title: "Erro",
+        description: "Tipo de equipamento inválido. Por favor, selecione um tipo válido.",
         variant: "destructive",
       });
       return;
@@ -648,6 +659,9 @@ const EquipamentosInventario: React.FC = () => {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Detalhes do Equipamento</DialogTitle>
+            <DialogDescription>
+              Visualize todas as informações detalhadas do equipamento selecionado
+            </DialogDescription>
           </DialogHeader>
           {equipamentoSelecionado && (
             <div className="space-y-4">
@@ -700,6 +714,9 @@ const EquipamentosInventario: React.FC = () => {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Confirmar Exclusão</DialogTitle>
+            <DialogDescription>
+              Esta ação irá desativar o equipamento permanentemente
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <p>Tem certeza que deseja desativar o equipamento <strong>{equipamentoSelecionado?.codigo_interno}</strong>?</p>
@@ -721,6 +738,9 @@ const EquipamentosInventario: React.FC = () => {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Configurações do Inventário</DialogTitle>
+            <DialogDescription>
+              Personalize as configurações de exibição e filtros do inventário
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-6">
             {/* Configurações de Exibição */}
