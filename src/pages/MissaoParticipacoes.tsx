@@ -167,17 +167,16 @@ const MissaoParticipacoes = () => {
       
       const pontosAtribuidos = pontosBase[participacaoForm.funcao as keyof typeof pontosBase] || 10;
       
+      // Usar apenas campos básicos que existem na tabela
       const participacaoData = {
         missao_id: id,
         voluntario_id: participacaoForm.voluntario_id,
         funcao: participacaoForm.funcao,
         data_participacao: participacaoForm.data_participacao,
-        data_fim: participacaoForm.data_fim || null,
-        horas_dedicadas: parseFloat(participacaoForm.horas_dedicadas) || 0,
-        pontos_atribuidos: pontosAtribuidos,
-        status_participacao: 'ativa',
         observacoes: participacaoForm.observacoes || null
       };
+      
+      console.log('DEBUG - Dados da participação a inserir:', participacaoData);
 
       const { data: participacaoResult, error } = await supabase
         .from('participacoes_missoes_2025_12_29_07_00')
@@ -185,7 +184,18 @@ const MissaoParticipacoes = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('DEBUG - Erro detalhado na inserção:', {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint,
+          participacaoData
+        });
+        throw error;
+      }
+      
+      console.log('DEBUG - Participação criada com sucesso:', participacaoResult);
 
       // Atualizar pontuação do voluntário usando a função SQL
       const { error: pontosError } = await supabase.rpc('atualizar_pontuacao_voluntario', {
