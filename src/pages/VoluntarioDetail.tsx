@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { convertGoogleDriveUrl } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,7 +30,11 @@ import {
   Megaphone,
   Clipboard,
   PlayCircle,
-  XCircle
+  XCircle,
+  Package,
+  Settings,
+  Eye,
+  RotateCcw
 } from "lucide-react";
 import EnhancedHeader from "@/components/EnhancedHeader";
 import EnhancedFooter from "@/components/EnhancedFooter";
@@ -49,21 +54,21 @@ interface Voluntario {
 
 interface EspecialidadeVoluntario {
   id: string;
-  especialidade: {
-    id: string;
+  voluntario_id: string;
+  especialidade_id: string;
+  nivel_experiencia: string;
+  certificado: boolean;
+  data_certificacao?: string;
+  observacoes?: string;
+  ativo: boolean;
+  especialidades_voluntarios_2025_12_21_22_00?: {
+    codigo: string;
     nome: string;
     descricao: string;
     categoria: string;
-    cor: string;
     icone: string;
-    pontos_bonus: number;
-    requer_certificacao: boolean;
+    cor: string;
   };
-  nivel_experiencia: string;
-  data_certificacao?: string;
-  certificado_valido_ate?: string;
-  observacoes?: string;
-  ativo: boolean;
 }
 
 interface ResponsabilidadeAtiva {
@@ -77,76 +82,94 @@ interface ResponsabilidadeAtiva {
   animal_url_fotografia?: string;
 }
 
-interface IntervencaoHistorico {
-  id: string;
-  animal_id: string;
-  data_intervencao: string;
-  tipo_intervencao: string;
-  veterinario?: string;
-  clinica?: string;
-  custo?: number;
-  animal_nome: string;
-  animal_numero_processo: string;
-}
-
 interface ResponsabilidadeHistorico {
   id: string;
   animal_id: string;
   data_inicio: string;
-  data_fim?: string;
-  motivo_mudanca?: string;
+  data_fim: string;
   animal_nome: string;
   animal_numero_processo: string;
   animal_especie: string;
+  animal_estado: string;
   animal_url_fotografia?: string;
+}
+
+interface Intervencao {
+  id: string;
+  animal_id: string;
+  tipo_intervencao: string;
+  data_intervencao: string;
+  descricao: string;
+  animal_nome: string;
+  animal_numero_processo: string;
 }
 
 interface ParticipacaoMissao {
   id: string;
   missao_id: string;
-  funcao: string;
-  status_participacao: string;
   data_participacao: string;
-  horas_dedicadas: number;
-  pontos_atribuidos: number;
+  funcao: string;
+  observacoes?: string;
+  missao_titulo: string;
+  missao_descricao: string;
+  missao_data_inicio: string;
+  missao_data_fim?: string;
+  missao_status: string;
+  missao_prioridade: string;
+  missao_local_principal?: string;
+  missao_orcamento_previsto?: number;
+}
 
-  missoes_2025_12_18_14_15?: {
-    titulo: string;
-    codigo: string;
-    status: string;
-    data_inicio: string;
-    data_fim?: string;
-    tipos_missoes_2025_12_18_14_15?: {
+interface EquipamentoAtribuido {
+  id: string;
+  equipamento_id: string;
+  data_atribuicao: string;
+  data_devolucao_prevista?: string;
+  data_devolucao_real?: string;
+  estado: string;
+  observacoes?: string;
+  equipamento?: {
+    id: string;
+    numero_serie?: string;
+    estado: string;
+    localizacao?: string;
+    valor_aquisicao?: number;
+    tipo_equipamento?: {
       nome: string;
-      categoria: string;
-      cor: string;
+      categoria?: {
+        nome: string;
+        cor: string;
+      };
     };
   };
 }
 
 const VoluntarioDetail = () => {
-  const { id } = useParams();
-  const [voluntario, setVoluntario] = useState<Voluntario | null>(null);
-  const [responsabilidadesAtivas, setResponsabilidadesAtivas] = useState<ResponsabilidadeAtiva[]>([]);
-  const [intervencoes, setIntervencoes] = useState<IntervencaoHistorico[]>([]);
-  const [responsabilidadesHistorico, setResponsabilidadesHistorico] = useState<ResponsabilidadeHistorico[]>([]);
-  const [participacoesMissoes, setParticipacoesMissoes] = useState<ParticipacaoMissao[]>([]);
-  const [especialidades, setEspecialidades] = useState<EspecialidadeVoluntario[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
-  const { hasPermission } = useAuth();
+  const { user } = useAuth();
+  
+  const [voluntario, setVoluntario] = useState<Voluntario | null>(null);
+  const [especialidades, setEspecialidades] = useState<EspecialidadeVoluntario[]>([]);
+  const [responsabilidadesAtivas, setResponsabilidadesAtivas] = useState<ResponsabilidadeAtiva[]>([]);
+  const [responsabilidadesHistorico, setResponsabilidadesHistorico] = useState<ResponsabilidadeHistorico[]>([]);
+  const [intervencoes, setIntervencoes] = useState<Intervencao[]>([]);
+  const [participacoesMissoes, setParticipacoesMissoes] = useState<ParticipacaoMissao[]>([]);
+  const [equipamentosAtribuidos, setEquipamentosAtribuidos] = useState<EquipamentoAtribuido[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("resumo");
 
   useEffect(() => {
     if (id) {
-      fetchVoluntarioData();
+      loadVoluntarioData();
     }
   }, [id]);
 
-  const fetchVoluntarioData = async () => {
+  const loadVoluntarioData = async () => {
+    if (!id) return;
+    
     try {
       setLoading(true);
-      setError(null);
 
       // Buscar dados do voluntário
       const { data: voluntarioData, error: voluntarioError } = await supabase
@@ -198,20 +221,55 @@ const VoluntarioDetail = () => {
         setResponsabilidadesAtivas(responsabilidadesFormatadas);
       }
 
-      // Buscar histórico de intervenções
-      const { data: intervencoesData, error: intervencoesError } = await supabase
-        .from('intervencoes')
+      // Buscar histórico de responsabilidades
+      const { data: responsabilidadesHistoricoData, error: historicoError } = await supabase
+        .from('responsabilidades_voluntarios')
         .select(`
           *,
           animais!inner(
+            id,
             nome,
-            numero_processo
-          ),
-          tipos_intervencoes(nome)
+            numero_processo,
+            especie,
+            estado,
+            arquivado,
+            url_fotografia
+          )
         `)
         .eq('voluntario_id', id)
+        .not('data_fim', 'is', null)
+        .eq('ativo', true)
+        .eq('animais.arquivado', false)
+        .order('data_fim', { ascending: false });
+
+      if (historicoError) {
+        console.error('Erro ao buscar histórico de responsabilidades:', historicoError);
+      } else {
+        const historicoFormatado = (responsabilidadesHistoricoData || []).map(resp => ({
+          id: resp.id,
+          animal_id: resp.animal_id,
+          data_inicio: resp.data_inicio,
+          data_fim: resp.data_fim,
+          animal_nome: resp.animais.nome,
+          animal_numero_processo: resp.animais.numero_processo,
+          animal_especie: resp.animais.especie,
+          animal_estado: resp.animais.estado,
+          animal_url_fotografia: resp.animais.url_fotografia
+        }));
+        setResponsabilidadesHistorico(historicoFormatado);
+      }
+
+      // Buscar intervenções
+      const { data: intervencoesData, error: intervencoesError } = await supabase
+        .from('intervencoes_animais')
+        .select(`
+          *,
+          animais!inner(nome, numero_processo, arquivado)
+        `)
+        .eq('voluntario_responsavel_id', id)
+        .eq('animais.arquivado', false)
         .order('data_intervencao', { ascending: false })
-        .limit(20);
+        .limit(10);
 
       if (intervencoesError) {
         console.error('Erro ao buscar intervenções:', intervencoesError);
@@ -219,47 +277,13 @@ const VoluntarioDetail = () => {
         const intervencoesFormatadas = (intervencoesData || []).map(int => ({
           id: int.id,
           animal_id: int.animal_id,
+          tipo_intervencao: int.tipo_intervencao,
           data_intervencao: int.data_intervencao,
-          tipo_intervencao: int.tipos_intervencoes?.nome || int.tipo_intervencao_id,
-          veterinario: int.veterinario,
-          clinica: int.clinica,
-          custo: int.custo,
+          descricao: int.descricao,
           animal_nome: int.animais.nome,
           animal_numero_processo: int.animais.numero_processo
         }));
         setIntervencoes(intervencoesFormatadas);
-      }
-
-      // Buscar histórico completo de responsabilidades
-      const { data: historicoData, error: historicoError } = await supabase
-        .from('responsabilidades_voluntarios')
-        .select(`
-          *,
-          animais!inner(
-            nome,
-            numero_processo,
-            especie,
-            url_fotografia
-          )
-        `)
-        .eq('voluntario_id', id)
-        .order('data_inicio', { ascending: false });
-
-      if (historicoError) {
-        console.error('Erro ao buscar histórico de responsabilidades:', historicoError);
-      } else {
-        const historicoFormatado = (historicoData || []).map(resp => ({
-          id: resp.id,
-          animal_id: resp.animal_id,
-          data_inicio: resp.data_inicio,
-          data_fim: resp.data_fim,
-          motivo_mudanca: resp.motivo_mudanca,
-          animal_nome: resp.animais.nome,
-          animal_numero_processo: resp.animais.numero_processo,
-          animal_especie: resp.animais.especie,
-          animal_url_fotografia: resp.animais.url_fotografia
-        }));
-        setResponsabilidadesHistorico(historicoFormatado);
       }
 
       // Buscar participações em missões
@@ -267,21 +291,16 @@ const VoluntarioDetail = () => {
         .from('participacoes_missoes_2025_12_29_07_00')
         .select(`
           *,
-          missao:missoes_2025_12_18_14_15(
+          missoes_2025_12_18_14_15!inner(
             id,
             titulo,
-            codigo,
-            status,
+            descricao,
             data_inicio,
             data_fim,
-            local_principal,
+            status,
             prioridade,
-            orcamento_previsto,
-            tipos_missoes_2025_12_18_14_15(
-              nome,
-              categoria,
-              cor
-            )
+            local_principal,
+            orcamento_previsto
           )
         `)
         .eq('voluntario_id', id)
@@ -295,12 +314,61 @@ const VoluntarioDetail = () => {
         setParticipacoesMissoes(participacoesData || []);
       }
 
+      // Buscar equipamentos atribuídos
+      const { data: equipamentosData, error: equipamentosError } = await supabase
+        .from('atribuicoes_equipamentos_2025_12_13_01_00')
+        .select(`
+          *,
+          equipamentos_2025_12_13_01_00!inner(
+            id,
+            numero_serie,
+            estado,
+            localizacao,
+            valor_aquisicao,
+            ativo,
+            tipos_equipamentos_2025_12_13_01_00(
+              nome,
+              categorias_equipamentos_2025_12_13_01_00(nome, cor)
+            )
+          )
+        `)
+        .eq('voluntario_id', id)
+        .eq('ativo', true)
+        .eq('equipamentos_2025_12_13_01_00.ativo', true)
+        .order('data_atribuicao', { ascending: false });
+
+      if (equipamentosError) {
+        console.error('Erro ao buscar equipamentos atribuídos:', equipamentosError);
+      } else {
+        const equipamentosFormatados = (equipamentosData || []).map(eq => ({
+          id: eq.id,
+          equipamento_id: eq.equipamento_id,
+          data_atribuicao: eq.data_atribuicao,
+          data_devolucao_prevista: eq.data_devolucao_prevista,
+          data_devolucao_real: eq.data_devolucao_real,
+          estado: eq.estado,
+          observacoes: eq.observacoes,
+          equipamento: {
+            id: eq.equipamentos_2025_12_13_01_00.id,
+            numero_serie: eq.equipamentos_2025_12_13_01_00.numero_serie,
+            estado: eq.equipamentos_2025_12_13_01_00.estado,
+            localizacao: eq.equipamentos_2025_12_13_01_00.localizacao,
+            valor_aquisicao: eq.equipamentos_2025_12_13_01_00.valor_aquisicao,
+            tipo_equipamento: {
+              nome: eq.equipamentos_2025_12_13_01_00.tipos_equipamentos_2025_12_13_01_00?.nome,
+              categoria: eq.equipamentos_2025_12_13_01_00.tipos_equipamentos_2025_12_13_01_00?.categorias_equipamentos_2025_12_13_01_00
+            }
+          }
+        }));
+        setEquipamentosAtribuidos(equipamentosFormatados);
+      }
+
       // Buscar especialidades do voluntário
       const { data: especialidadesData, error: especialidadesError } = await supabase
         .from('voluntario_especialidades_2025_12_21_22_00')
         .select(`
           *,
-          especialidade:especialidades_voluntarios_2025_12_21_22_00(*)
+          especialidades_voluntarios_2025_12_21_22_00(*)
         `)
         .eq('voluntario_id', id)
         .eq('ativo', true);
@@ -313,10 +381,9 @@ const VoluntarioDetail = () => {
 
     } catch (error: any) {
       console.error('Erro ao carregar dados do voluntário:', error);
-      setError(error.message || 'Erro ao carregar dados do voluntário');
       toast({
         title: "Erro",
-        description: "Não foi possível carregar os dados do voluntário",
+        description: error.message || "Erro ao carregar dados do voluntário",
         variant: "destructive",
       });
     } finally {
@@ -324,178 +391,128 @@ const VoluntarioDetail = () => {
     }
   };
 
-  // Função para renderizar ícones das especialidades com cores
-  const renderEspecialidadeIcon = (icone: string, cor: string) => {
-    const iconProps = { size: 20, className: `text-${cor}-600` };
-    
-    switch (icone) {
-      case 'Shield': return <Shield {...iconProps} />;
-      case 'Heart': return <Heart {...iconProps} />;
-      case 'Brain': return <Activity {...iconProps} />;
-      case 'Truck': return <Users {...iconProps} />;
-      case 'Calendar': return <Calendar {...iconProps} />;
-      case 'Camera': return <Star {...iconProps} />;
-      case 'Share': return <Megaphone {...iconProps} />;
-      case 'FileText': return <Clipboard {...iconProps} />;
-      case 'DollarSign': return <Target {...iconProps} />;
-      case 'BookOpen': return <PlayCircle {...iconProps} />;
-      case 'Stethoscope': return <Stethoscope {...iconProps} />;
-      case 'Plus': return <CheckCircle {...iconProps} />;
-      default: return <Star {...iconProps} />;
-    }
+  const getEstadoBadge = (estado: string) => {
+    const cores = {
+      'disponivel': 'bg-green-100 text-green-800',
+      'em_uso': 'bg-blue-100 text-blue-800',
+      'manutencao': 'bg-yellow-100 text-yellow-800',
+      'danificado': 'bg-red-100 text-red-800',
+      'perdido': 'bg-gray-100 text-gray-800',
+      'descartado': 'bg-black text-white'
+    };
+    return cores[estado as keyof typeof cores] || 'bg-gray-100 text-gray-800';
   };
 
-  // Função para obter cor do badge baseada na cor da especialidade
-  const getBadgeColor = (cor: string) => {
-    const colorMap: { [key: string]: string } = {
-      'red': 'bg-red-100 text-red-800 border-red-200',
-      'green': 'bg-green-100 text-green-800 border-green-200',
-      'purple': 'bg-purple-100 text-purple-800 border-purple-200',
-      'blue': 'bg-blue-100 text-blue-800 border-blue-200',
-      'yellow': 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      'pink': 'bg-pink-100 text-pink-800 border-pink-200',
-      'cyan': 'bg-cyan-100 text-cyan-800 border-cyan-200',
-      'gray': 'bg-gray-100 text-gray-800 border-gray-200',
-      'orange': 'bg-orange-100 text-orange-800 border-orange-200',
-      'teal': 'bg-teal-100 text-teal-800 border-teal-200',
-      'emerald': 'bg-emerald-100 text-emerald-800 border-emerald-200'
+  const getAtribuicaoEstadoBadge = (estado: string) => {
+    const cores = {
+      'ativo': 'bg-green-100 text-green-800',
+      'devolvido': 'bg-blue-100 text-blue-800',
+      'perdido': 'bg-red-100 text-red-800',
+      'danificado': 'bg-orange-100 text-orange-800'
     };
-    return colorMap[cor] || 'bg-gray-100 text-gray-800 border-gray-200';
+    return cores[estado as keyof typeof cores] || 'bg-gray-100 text-gray-800';
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-lg text-gray-600">A carregar dados do voluntário...</p>
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-purple-50">
+        <EnhancedHeader />
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Carregando dados do voluntário...</p>
+            </div>
+          </div>
         </div>
+        <EnhancedFooter />
       </div>
     );
   }
 
-  if (error || !voluntario) {
+  if (!voluntario) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="max-w-md mx-auto px-4">
-          <Card className="border-red-200 bg-red-50">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-2 text-red-600">
-                <AlertCircle className="h-5 w-5" />
-                <span>{error || 'Voluntário não encontrado'}</span>
-              </div>
-            </CardContent>
-          </Card>
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-purple-50">
+        <EnhancedHeader />
+        <div className="container mx-auto px-4 py-6">
+          <div className="text-center py-12">
+            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Voluntário não encontrado</h2>
+            <p className="text-gray-600 mb-4">O voluntário solicitado não foi encontrado.</p>
+            <Link to="/gestao-voluntarios">
+              <Button>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Voltar à Lista
+              </Button>
+            </Link>
+          </div>
         </div>
+        <EnhancedFooter />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-purple-50">
       <EnhancedHeader />
       
-      {/* Page Action Bar */}
       <PageActionBar 
-        title={`Perfil: ${voluntario.nome}`}
-        subtitle="Detalhes completos do voluntário"
         actions={[
           {
-            label: "Editar Voluntário",
-            href: `/editar-voluntario/${voluntario.id}`,
-            variant: "default",
-            icon: "edit"
+            label: "Voltar",
+            icon: ArrowLeft,
+            variant: "outline",
+            onClick: () => window.history.back()
           },
           {
-            label: "Voltar",
-            href: "/voluntarios",
-            variant: "outline",
-            icon: "arrow-left"
+            label: "Editar Voluntário",
+            icon: User,
+            variant: "default",
+            onClick: () => window.location.href = `#/editar-voluntario/${voluntario.id}`
           }
         ]}
       />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-
-        {/* Perfil do Voluntário - Design Moderno */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-8">
-            <div className="flex items-center space-x-4">
-              <div className="bg-white/20 backdrop-blur-sm w-16 h-16 rounded-full flex items-center justify-center">
-                <User className="h-8 w-8 text-white" />
-              </div>
-              <div className="text-white">
-                <h1 className="text-3xl font-bold">{voluntario.nome}</h1>
-                <div className="flex items-center space-x-3 mt-2">
-                  <Badge 
-                    variant={voluntario.ativo ? "default" : "secondary"}
-                    className={voluntario.ativo ? "bg-green-500 hover:bg-green-600" : "bg-gray-500"}
-                  >
-                    {voluntario.ativo ? "Ativo" : "Inativo"}
-                  </Badge>
-                  {voluntario.especialidade && (
-                    <span className="text-blue-100 text-sm">{voluntario.especialidade}</span>
-                  )}
-                </div>
-              </div>
+      <div className="container mx-auto px-4 py-6 space-y-6">
+        {/* Header do Voluntário */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+            <div className="bg-gradient-to-br from-green-500 to-blue-600 rounded-full p-4">
+              <User className="h-12 w-12 text-white" />
             </div>
-          </div>
-          
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {voluntario.email && (
-                <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
-                  <div className="bg-blue-100 p-2 rounded-lg">
-                    <Mail className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Email</p>
-                    <p className="font-medium text-gray-900">{voluntario.email}</p>
-                  </div>
-                </div>
-              )}
+            
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-3xl font-bold text-gray-900">{voluntario.nome}</h1>
+                <Badge className={voluntario.ativo ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
+                  {voluntario.ativo ? "Ativo" : "Inativo"}
+                </Badge>
+              </div>
               
-              {voluntario.telefone && (
-                <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
-                  <div className="bg-green-100 p-2 rounded-lg">
-                    <Phone className="h-5 w-5 text-green-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Telefone</p>
-                    <p className="font-medium text-gray-900">{voluntario.telefone}</p>
-                  </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+                <div className="flex items-center gap-2">
+                  <Mail className="h-4 w-4" />
+                  <span>{voluntario.email}</span>
                 </div>
-              )}
-              
-              {voluntario.morada && (
-                <div className="flex items-center space-x-3 p-3 bg-red-50 rounded-lg">
-                  <div className="bg-red-100 p-2 rounded-lg">
-                    <MapPin className="h-5 w-5 text-red-600" />
+                {voluntario.telefone && (
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-4 w-4" />
+                    <span>{voluntario.telefone}</span>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Morada</p>
-                    <p className="font-medium text-gray-900">{voluntario.morada}</p>
+                )}
+                {voluntario.morada && (
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4" />
+                    <span>{voluntario.morada}</span>
                   </div>
-                </div>
-              )}
-              
-              <div className="flex items-center space-x-3 p-3 bg-purple-50 rounded-lg">
-                <div className="bg-purple-100 p-2 rounded-lg">
-                  <Calendar className="h-5 w-5 text-purple-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Membro desde</p>
-                  <p className="font-medium text-gray-900">
-                    {new Date(voluntario.created_at).toLocaleDateString('pt-PT')}
-                  </p>
-                </div>
+                )}
               </div>
             </div>
           </div>
         </div>
 
-        {/* Estatísticas Rápidas - Design Moderno */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        {/* Estatísticas Rápidas */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
@@ -503,12 +520,19 @@ const VoluntarioDetail = () => {
                 <p className="text-3xl font-bold text-orange-600">{responsabilidadesAtivas.length}</p>
               </div>
               <div className="bg-orange-100 p-3 rounded-full">
-                <PawPrint className="h-6 w-6 text-orange-600" />
+                <Heart className="h-6 w-6 text-orange-600" />
               </div>
             </div>
-            <div className="mt-4">
-              <div className="flex items-center text-sm text-gray-500">
-                <span>Sob responsabilidade</span>
+          </div>
+          
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Histórico</p>
+                <p className="text-3xl font-bold text-purple-600">{responsabilidadesHistorico.length}</p>
+              </div>
+              <div className="bg-purple-100 p-3 rounded-full">
+                <Activity className="h-6 w-6 text-purple-600" />
               </div>
             </div>
           </div>
@@ -523,9 +547,16 @@ const VoluntarioDetail = () => {
                 <Stethoscope className="h-6 w-6 text-green-600" />
               </div>
             </div>
-            <div className="mt-4">
-              <div className="flex items-center text-sm text-gray-500">
-                <span>Total realizadas</span>
+          </div>
+          
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Missões</p>
+                <p className="text-3xl font-bold text-indigo-600">{participacoesMissoes.length}</p>
+              </div>
+              <div className="bg-indigo-100 p-3 rounded-full">
+                <Target className="h-6 w-6 text-indigo-600" />
               </div>
             </div>
           </div>
@@ -533,230 +564,280 @@ const VoluntarioDetail = () => {
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Especialidades</p>
-                <p className="text-3xl font-bold text-purple-600">{especialidades.length}</p>
-              </div>
-              <div className="bg-purple-100 p-3 rounded-full">
-                <Award className="h-6 w-6 text-purple-600" />
-              </div>
-            </div>
-            <div className="mt-4">
-              <div className="flex items-center text-sm text-gray-500">
-                <span>Áreas de atuação</span>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Histórico</p>
-                <p className="text-3xl font-bold text-blue-600">{responsabilidadesHistorico.length}</p>
+                <p className="text-sm font-medium text-gray-600">Equipamentos</p>
+                <p className="text-3xl font-bold text-blue-600">{equipamentosAtribuidos.length}</p>
               </div>
               <div className="bg-blue-100 p-3 rounded-full">
-                <Users className="h-6 w-6 text-blue-600" />
-              </div>
-            </div>
-            <div className="mt-4">
-              <div className="flex items-center text-sm text-gray-500">
-                <span>Animais cuidados</span>
+                <Package className="h-6 w-6 text-blue-600" />
               </div>
             </div>
           </div>
         </div>
 
-        {/* Seção de Especialidades - Design Moderno */}
+        {/* Sistema de Abas */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-          <div className="p-6">
-            <div className="flex items-center space-x-3 mb-6">
-              <div className="bg-blue-100 p-2 rounded-lg">
-                <Award className="h-6 w-6 text-blue-600" />
-              </div>
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900">Especialidades do Voluntário</h2>
-                <p className="text-sm text-gray-600">Áreas de especialização e competências</p>
-              </div>
-            </div>
-            {especialidades.length === 0 ? (
-              <div className="text-center py-8">
-                <Star className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500">Nenhuma especialidade atribuída</p>
-                <p className="text-sm text-gray-400 mt-2">
-                  As especialidades podem ser adicionadas na página de edição
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {especialidades.map((esp) => (
-                  <div key={esp.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                    <div className="flex items-start space-x-3">
-                      <div className="flex-shrink-0">
-                        <div className={`p-2 rounded-lg ${getBadgeColor(esp.especialidade.cor).replace('text-', 'bg-').replace('-800', '-100')}`}>
-                          {renderEspecialidadeIcon(esp.especialidade.icone, esp.especialidade.cor)}
-                        </div>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-semibold text-gray-900 truncate">
-                            {esp.especialidade.nome}
-                          </h4>
-                          <Badge className={`${getBadgeColor(esp.especialidade.cor)} text-xs`}>
-                            {esp.especialidade.categoria}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-gray-600 mb-3">
-                          {esp.especialidade.descricao}
-                        </p>
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="text-gray-500">Nível:</span>
-                            <Badge variant="outline" className="capitalize">
-                              {esp.nivel_experiencia}
-                            </Badge>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-5 lg:grid-cols-5 p-1 bg-gray-100 rounded-t-xl">
+              <TabsTrigger value="resumo" className="flex items-center gap-2">
+                <User className="h-4 w-4" />
+                <span className="hidden sm:inline">Resumo</span>
+              </TabsTrigger>
+              <TabsTrigger value="animais" className="flex items-center gap-2">
+                <Heart className="h-4 w-4" />
+                <span className="hidden sm:inline">Animais</span>
+              </TabsTrigger>
+              <TabsTrigger value="intervencoes" className="flex items-center gap-2">
+                <Stethoscope className="h-4 w-4" />
+                <span className="hidden sm:inline">Intervenções</span>
+              </TabsTrigger>
+              <TabsTrigger value="missoes" className="flex items-center gap-2">
+                <Target className="h-4 w-4" />
+                <span className="hidden sm:inline">Missões</span>
+              </TabsTrigger>
+              <TabsTrigger value="equipamentos" className="flex items-center gap-2">
+                <Package className="h-4 w-4" />
+                <span className="hidden sm:inline">Equipamentos</span>
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Aba Resumo */}
+            <TabsContent value="resumo" className="p-6 space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Especialidades */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <Star className="h-5 w-5 text-yellow-600" />
+                    Especialidades
+                  </h3>
+                  {especialidades.length === 0 ? (
+                    <p className="text-gray-500 text-sm">Nenhuma especialidade registada</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {especialidades.map((esp) => (
+                        <div key={esp.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <div 
+                              className="w-3 h-3 rounded-full"
+                              style={{ backgroundColor: esp.especialidades_voluntarios_2025_12_21_22_00?.cor || '#6B7280' }}
+                            />
+                            <div>
+                              <p className="font-medium text-gray-900">
+                                {esp.especialidades_voluntarios_2025_12_21_22_00?.nome}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                Nível: {esp.nivel_experiencia}
+                              </p>
+                            </div>
                           </div>
-                          {esp.especialidade.pontos_bonus > 0 && (
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="text-gray-500">Pontos Bónus:</span>
-                              <span className="font-medium text-green-600">+{esp.especialidade.pontos_bonus}</span>
-                            </div>
-                          )}
-                          {esp.especialidade.requer_certificacao && (
-                            <div className="flex items-center space-x-1 text-xs">
-                              <CheckCircle className="h-3 w-3 text-green-500" />
-                              <span className="text-green-600">Requer Certificação</span>
-                            </div>
-                          )}
-                          {esp.data_certificacao && (
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="text-gray-500">Certificado em:</span>
-                              <span className="text-gray-700">
-                                {new Date(esp.data_certificacao).toLocaleDateString('pt-PT')}
-                              </span>
-                            </div>
-                          )}
-                          {esp.certificado_valido_ate && (
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="text-gray-500">Válido até:</span>
-                              <span className={`font-medium ${
-                                new Date(esp.certificado_valido_ate) > new Date() 
-                                  ? 'text-green-600' 
-                                  : 'text-red-600'
-                              }`}>
-                                {new Date(esp.certificado_valido_ate).toLocaleDateString('pt-PT')}
-                              </span>
-                            </div>
-                          )}
-                          {esp.observacoes && (
-                            <div className="mt-2 p-2 bg-gray-50 rounded text-xs">
-                              <span className="text-gray-500">Observações:</span>
-                              <p className="text-gray-700 mt-1">{esp.observacoes}</p>
-                            </div>
+                          {esp.certificado && (
+                            <Badge className="bg-green-100 text-green-800">
+                              <Award className="h-3 w-3 mr-1" />
+                              Certificado
+                            </Badge>
                           )}
                         </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Resumo de Atividades */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <Activity className="h-5 w-5 text-purple-600" />
+                    Resumo de Atividades
+                  </h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <Heart className="h-5 w-5 text-orange-600" />
+                        <span className="font-medium">Animais sob responsabilidade</span>
                       </div>
+                      <Badge className="bg-orange-100 text-orange-800">
+                        {responsabilidadesAtivas.length} ativos
+                      </Badge>
+                    </div>
+                    
+                    <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <Stethoscope className="h-5 w-5 text-green-600" />
+                        <span className="font-medium">Intervenções realizadas</span>
+                      </div>
+                      <Badge className="bg-green-100 text-green-800">
+                        {intervencoes.length} registos
+                      </Badge>
+                    </div>
+                    
+                    <div className="flex items-center justify-between p-3 bg-indigo-50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <Target className="h-5 w-5 text-indigo-600" />
+                        <span className="font-medium">Participações em missões</span>
+                      </div>
+                      <Badge className="bg-indigo-100 text-indigo-800">
+                        {participacoesMissoes.length} missões
+                      </Badge>
+                    </div>
+                    
+                    <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <Package className="h-5 w-5 text-blue-600" />
+                        <span className="font-medium">Equipamentos atribuídos</span>
+                      </div>
+                      <Badge className="bg-blue-100 text-blue-800">
+                        {equipamentosAtribuidos.length} equipamentos
+                      </Badge>
                     </div>
                   </div>
-                ))}
+                </div>
               </div>
-            )}
-          </div>
-        </div>
+            </TabsContent>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          
-          {/* Animais Sob Responsabilidade Atual - Design Moderno */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-            <div className="p-6">
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="bg-orange-100 p-2 rounded-lg">
-                  <Heart className="h-6 w-6 text-orange-600" />
+            {/* Aba Animais */}
+            <TabsContent value="animais" className="p-6 space-y-6">
+              {/* Animais Sob Responsabilidade Atual */}
+              <div>
+                <div className="flex items-center space-x-3 mb-6">
+                  <div className="bg-orange-100 p-2 rounded-lg">
+                    <Heart className="h-6 w-6 text-orange-600" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-semibold text-gray-900">Animais Sob Responsabilidade</h2>
+                    <p className="text-sm text-gray-600">Animais atualmente sob os cuidados deste voluntário</p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-xl font-semibold text-gray-900">Animais Sob Responsabilidade</h2>
-                  <p className="text-sm text-gray-600">Animais atualmente sob os cuidados deste voluntário</p>
-                </div>
-              </div>
-              {responsabilidadesAtivas.length === 0 ? (
-                <div className="text-center py-8">
-                  <PawPrint className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500">Nenhum animal sob responsabilidade atual</p>
-                  <p className="text-sm text-gray-400 mt-2">
-                    Este voluntário não tem animais atribuídos no momento
-                  </p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 gap-4">
-                  {responsabilidadesAtivas.map((resp) => (
-                    <div key={resp.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow bg-gradient-to-r from-orange-50 to-red-50">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start space-x-3">
-                          {/* Fotografia do Animal */}
-                          <div className="flex-shrink-0">
+                
+                {responsabilidadesAtivas.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Heart className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500">Nenhum animal sob responsabilidade atual</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {responsabilidadesAtivas.map((resp) => (
+                      <div key={resp.id} className="bg-gradient-to-br from-orange-50 to-red-50 rounded-xl p-4 border border-orange-200 hover:shadow-md transition-shadow">
+                        <div className="flex items-center space-x-3 mb-3">
+                          <div className="relative">
                             {resp.animal_url_fotografia ? (
                               <img 
-                                src={convertGoogleDriveUrl(resp.animal_url_fotografia, 200)} 
-                                alt={`Foto de ${resp.animal_nome}`}
-                                className="w-12 h-12 rounded-full object-cover border-2 border-orange-200 shadow-sm"
+                                src={convertGoogleDriveUrl(resp.animal_url_fotografia)} 
+                                alt={resp.animal_nome}
+                                className="w-12 h-12 rounded-full object-cover border-2 border-orange-300"
                                 onError={(e) => {
-                                  e.currentTarget.style.display = 'none';
-                                  e.currentTarget.nextElementSibling.style.display = 'flex';
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                  target.nextElementSibling?.classList.remove('hidden');
                                 }}
                               />
                             ) : null}
-                            {/* Placeholder quando não há foto */}
-                            <div 
-                              className={`w-12 h-12 rounded-full bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center text-white font-bold text-sm shadow-sm ${
-                                resp.animal_url_fotografia ? 'hidden' : 'flex'
-                              }`}
-                            >
-                              {resp.animal_nome.charAt(0).toUpperCase()}
+                            <div className={`w-12 h-12 rounded-full bg-orange-200 flex items-center justify-center border-2 border-orange-300 ${resp.animal_url_fotografia ? 'hidden' : ''}`}>
+                              <span className="text-orange-700 font-semibold text-lg">
+                                {resp.animal_nome.charAt(0).toUpperCase()}
+                              </span>
                             </div>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <h4 className="font-semibold text-gray-900 truncate">
-                                {resp.animal_nome}
-                              </h4>
-                              <Badge variant={resp.animal_estado === 'Ativo' ? 'default' : 'secondary'} className="text-xs">
-                                {resp.animal_estado}
-                              </Badge>
-                            </div>
-                            <div className="space-y-1">
-                              <div className="flex items-center text-sm text-gray-600">
-                                <span className="font-medium">Processo:</span>
-                                <span className="ml-2">{resp.animal_numero_processo}</span>
-                              </div>
-                              <div className="flex items-center text-sm text-gray-600">
-                                <span className="font-medium">Espécie:</span>
-                                <span className="ml-2">{resp.animal_especie}</span>
-                              </div>
-                              <div className="flex items-center text-sm text-gray-600">
-                                <Calendar className="h-3 w-3 mr-1" />
-                                <span className="font-medium">Responsável desde:</span>
-                                <span className="ml-2">{new Date(resp.data_inicio).toLocaleDateString('pt-PT')}</span>
-                              </div>
-                            </div>
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-gray-900">{resp.animal_nome}</h3>
+                            <p className="text-sm text-gray-600">#{resp.animal_numero_processo}</p>
                           </div>
                         </div>
-                        <div className="flex flex-col items-end space-y-2">
+                        
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-600">Espécie:</span>
+                            <Badge variant="outline">{resp.animal_especie}</Badge>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-600">Estado:</span>
+                            <Badge className="bg-blue-100 text-blue-800">{resp.animal_estado}</Badge>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-600">Desde:</span>
+                            <span className="text-sm font-medium">{new Date(resp.data_inicio).toLocaleDateString('pt-PT')}</span>
+                          </div>
+                        </div>
+                        
+                        <div className="mt-4 pt-3 border-t border-orange-200">
                           <Link to={`/animal/${resp.animal_id}`}>
-                            <Button size="sm" variant="outline" className="text-xs">
-                              <User className="h-3 w-3 mr-1" />
+                            <Button size="sm" className="w-full bg-orange-600 hover:bg-orange-700">
+                              <Eye className="h-4 w-4 mr-2" />
                               Ver Animal
                             </Button>
                           </Link>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
-          {/* Intervenções Acompanhadas - Design Moderno */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-            <div className="p-6">
+              <Separator />
+
+              {/* Histórico de Responsabilidades */}
+              <div>
+                <div className="flex items-center space-x-3 mb-6">
+                  <div className="bg-purple-100 p-2 rounded-lg">
+                    <Activity className="h-6 w-6 text-purple-600" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-semibold text-gray-900">Histórico de Responsabilidades</h2>
+                    <p className="text-sm text-gray-600">Todos os animais que estiveram sob os cuidados deste voluntário</p>
+                  </div>
+                </div>
+                
+                {responsabilidadesHistorico.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500">Nenhum histórico de responsabilidades</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {responsabilidadesHistorico.map((resp) => (
+                      <div key={resp.id} className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl p-4 border border-purple-200">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <div className="relative">
+                              {resp.animal_url_fotografia ? (
+                                <img 
+                                  src={convertGoogleDriveUrl(resp.animal_url_fotografia)} 
+                                  alt={resp.animal_nome}
+                                  className="w-10 h-10 rounded-full object-cover border-2 border-purple-300"
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.style.display = 'none';
+                                    target.nextElementSibling?.classList.remove('hidden');
+                                  }}
+                                />
+                              ) : null}
+                              <div className={`w-10 h-10 rounded-full bg-purple-200 flex items-center justify-center border-2 border-purple-300 ${resp.animal_url_fotografia ? 'hidden' : ''}`}>
+                                <span className="text-purple-700 font-semibold">
+                                  {resp.animal_nome.charAt(0).toUpperCase()}
+                                </span>
+                              </div>
+                            </div>
+                            <div>
+                              <h3 className="font-semibold text-gray-900">{resp.animal_nome}</h3>
+                              <p className="text-sm text-gray-600">#{resp.animal_numero_processo} • {resp.animal_especie}</p>
+                            </div>
+                          </div>
+                          
+                          <div className="text-right">
+                            <p className="text-sm font-medium text-gray-900">
+                              {new Date(resp.data_inicio).toLocaleDateString('pt-PT')} - {new Date(resp.data_fim).toLocaleDateString('pt-PT')}
+                            </p>
+                            <p className="text-xs text-gray-600">
+                              {Math.ceil((new Date(resp.data_fim).getTime() - new Date(resp.data_inicio).getTime()) / (1000 * 60 * 60 * 24))} dias
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+
+            {/* Aba Intervenções */}
+            <TabsContent value="intervencoes" className="p-6">
               <div className="flex items-center space-x-3 mb-6">
                 <div className="bg-green-100 p-2 rounded-lg">
                   <Stethoscope className="h-6 w-6 text-green-600" />
@@ -768,431 +849,225 @@ const VoluntarioDetail = () => {
                   </p>
                 </div>
               </div>
+              
               {intervencoes.length === 0 ? (
                 <div className="text-center py-8">
-                  <Stethoscope className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500">Nenhuma intervenção acompanhada</p>
-                  <p className="text-sm text-gray-400 mt-2">
-                    Este voluntário não participou em intervenções médicas recentemente
-                  </p>
+                  <Stethoscope className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500">Nenhuma intervenção registada</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 gap-4 max-h-80 overflow-y-auto">
-                  {intervencoes.slice(0, 10).map((int) => (
-                    <div key={int.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow bg-gradient-to-r from-green-50 to-emerald-50">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start space-x-3">
-                          <div className="bg-green-100 p-2 rounded-lg flex-shrink-0">
-                            <Stethoscope className="h-5 w-5 text-green-600" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <h4 className="font-semibold text-gray-900 truncate">
-                                {int.animal_nome}
-                              </h4>
-                              <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
-                                Acompanhou
-                              </Badge>
-                            </div>
-                            <div className="space-y-1">
-                              <div className="flex items-center text-sm text-gray-600">
-                                <span className="font-medium">Tipo:</span>
-                                <span className="ml-2">{int.tipo_intervencao}</span>
-                              </div>
-                              {int.veterinario && (
-                                <div className="flex items-center text-sm text-gray-600">
-                                  <span className="font-medium">Veterinário:</span>
-                                  <span className="ml-2">Dr. {int.veterinario}</span>
-                                </div>
-                              )}
-                              {int.clinica && (
-                                <div className="flex items-center text-sm text-gray-600">
-                                  <span className="font-medium">Clínica:</span>
-                                  <span className="ml-2">{int.clinica}</span>
-                                </div>
-                              )}
-                              <div className="flex items-center text-sm text-gray-600">
-                                <Calendar className="h-3 w-3 mr-1" />
-                                <span className="font-medium">Data:</span>
-                                <span className="ml-2">{new Date(int.data_intervencao).toLocaleDateString('pt-PT')}</span>
-                              </div>
-                            </div>
-                          </div>
+                <div className="space-y-4">
+                  {intervencoes.map((intervencao) => (
+                    <div key={intervencao.id} className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 border border-green-200">
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <h3 className="font-semibold text-gray-900">{intervencao.tipo_intervencao}</h3>
+                          <p className="text-sm text-gray-600">
+                            {intervencao.animal_nome} (#{intervencao.animal_numero_processo})
+                          </p>
                         </div>
-                        <div className="flex flex-col items-end space-y-2">
-                          {int.custo && (
-                            <div className="text-sm font-medium text-green-700 bg-green-100 px-2 py-1 rounded">
-                              €{int.custo.toFixed(2)}
-                            </div>
-                          )}
-                          <Link to={`/animal/${int.animal_id}`}>
-                            <Button size="sm" variant="outline" className="text-xs">
-                              <User className="h-3 w-3 mr-1" />
-                              Ver Animal
-                            </Button>
-                          </Link>
+                        <Badge className="bg-green-100 text-green-800">
+                          {new Date(intervencao.data_intervencao).toLocaleDateString('pt-PT')}
+                        </Badge>
+                      </div>
+                      
+                      {intervencao.descricao && (
+                        <p className="text-sm text-gray-700 bg-white p-3 rounded-lg">
+                          {intervencao.descricao}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+
+            {/* Aba Missões */}
+            <TabsContent value="missoes" className="p-6">
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="bg-indigo-100 p-2 rounded-lg">
+                  <Target className="h-6 w-6 text-indigo-600" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">Participações em Missões</h2>
+                  <p className="text-sm text-gray-600">Histórico de participações em missões e eventos da associação</p>
+                </div>
+              </div>
+              
+              {participacoesMissoes.length === 0 ? (
+                <div className="text-center py-8">
+                  <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500">Nenhuma participação em missões registada</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {participacoesMissoes.map((participacao) => (
+                    <div key={participacao.id} className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl p-4 border border-indigo-200">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-gray-900">{participacao.missao_titulo}</h3>
+                          <p className="text-sm text-gray-600 mt-1">{participacao.missao_descricao}</p>
                         </div>
+                        <div className="text-right ml-4">
+                          <Badge className="bg-indigo-100 text-indigo-800 mb-2">
+                            {participacao.funcao}
+                          </Badge>
+                          <p className="text-xs text-gray-600">
+                            {new Date(participacao.data_participacao).toLocaleDateString('pt-PT')}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div>
+                          <span className="text-gray-600">Status:</span>
+                          <p className="font-medium">{participacao.missao_status}</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Prioridade:</span>
+                          <p className="font-medium">{participacao.missao_prioridade}</p>
+                        </div>
+                        {participacao.missao_local_principal && (
+                          <div>
+                            <span className="text-gray-600">Local:</span>
+                            <p className="font-medium">{participacao.missao_local_principal}</p>
+                          </div>
+                        )}
+                        {participacao.missao_orcamento_previsto && (
+                          <div>
+                            <span className="text-gray-600">Orçamento:</span>
+                            <p className="font-medium">€{participacao.missao_orcamento_previsto}</p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
                 </div>
               )}
-            </div>
-          </div>
-        </div>
+            </TabsContent>
 
-        {/* Histórico Completo de Responsabilidades - Design Moderno */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-          <div className="p-6">
-            <div className="flex items-center space-x-3 mb-6">
-              <div className="bg-purple-100 p-2 rounded-lg">
-                <Activity className="h-6 w-6 text-purple-600" />
-              </div>
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900">Histórico Completo de Responsabilidades</h2>
-                <p className="text-sm text-gray-600">Todos os animais que estiveram sob os cuidados deste voluntário</p>
-              </div>
-            </div>
-            {responsabilidadesHistorico.length === 0 ? (
-              <div className="text-center py-8">
-                <Users className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500">Nenhum histórico de responsabilidades</p>
-                <p className="text-sm text-gray-400 mt-2">
-                  Este voluntário ainda não teve animais sob sua responsabilidade
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {/* Estatísticas do Histórico */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                  <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
-                    <div className="flex items-center space-x-3">
-                      <div className="p-2 bg-purple-100 rounded-lg">
-                        <Users className="h-4 w-4 text-purple-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-purple-700">Total de Animais</p>
-                        <p className="text-2xl font-bold text-purple-900">{responsabilidadesHistorico.length}</p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                    <div className="flex items-center space-x-3">
-                      <div className="p-2 bg-green-100 rounded-lg">
-                        <Clock className="h-4 w-4 text-green-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-green-700">Responsabilidades Ativas</p>
-                        <p className="text-2xl font-bold text-green-900">
-                          {responsabilidadesHistorico.filter(r => !r.data_fim).length}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                    <div className="flex items-center space-x-3">
-                      <div className="p-2 bg-gray-100 rounded-lg">
-                        <CheckCircle className="h-4 w-4 text-gray-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-700">Responsabilidades Finalizadas</p>
-                        <p className="text-2xl font-bold text-gray-900">
-                          {responsabilidadesHistorico.filter(r => r.data_fim).length}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+            {/* Aba Equipamentos */}
+            <TabsContent value="equipamentos" className="p-6">
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="bg-blue-100 p-2 rounded-lg">
+                  <Package className="h-6 w-6 text-blue-600" />
                 </div>
-
-                {/* Timeline de Responsabilidades */}
-                <div className="space-y-4">
-                  {responsabilidadesHistorico.map((resp, index) => (
-                    <div key={resp.id} className="relative">
-                      {/* Linha da Timeline */}
-                      {index < responsabilidadesHistorico.length - 1 && (
-                        <div className="absolute left-6 top-12 w-0.5 h-16 bg-gray-200"></div>
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">Equipamentos Atribuídos</h2>
+                  <p className="text-sm text-gray-600">Equipamentos atualmente sob responsabilidade deste voluntário</p>
+                </div>
+              </div>
+              
+              {equipamentosAtribuidos.length === 0 ? (
+                <div className="text-center py-8">
+                  <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500">Nenhum equipamento atribuído</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {equipamentosAtribuidos.map((atribuicao) => (
+                    <div key={atribuicao.id} className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200 hover:shadow-md transition-shadow">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center space-x-3">
+                          <div className="bg-blue-200 p-2 rounded-lg">
+                            <Package className="h-5 w-5 text-blue-700" />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-gray-900">
+                              {atribuicao.equipamento?.tipo_equipamento?.nome || 'Equipamento'}
+                            </h3>
+                            <p className="text-sm text-gray-600">
+                              {atribuicao.equipamento?.numero_serie || 'Sem série'}
+                            </p>
+                          </div>
+                        </div>
+                        
+                        <Badge className={getAtribuicaoEstadoBadge(atribuicao.estado)}>
+                          {atribuicao.estado}
+                        </Badge>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-600">Estado do Equipamento:</span>
+                          <Badge className={getEstadoBadge(atribuicao.equipamento?.estado || '')}>
+                            {atribuicao.equipamento?.estado}
+                          </Badge>
+                        </div>
+                        
+                        {atribuicao.equipamento?.localizacao && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-600">Localização:</span>
+                            <span className="text-sm font-medium">{atribuicao.equipamento.localizacao}</span>
+                          </div>
+                        )}
+                        
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-600">Atribuído em:</span>
+                          <span className="text-sm font-medium">
+                            {new Date(atribuicao.data_atribuicao).toLocaleDateString('pt-PT')}
+                          </span>
+                        </div>
+                        
+                        {atribuicao.data_devolucao_prevista && !atribuicao.data_devolucao_real && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-600">Devolução prevista:</span>
+                            <span className="text-sm font-medium text-orange-600">
+                              {new Date(atribuicao.data_devolucao_prevista).toLocaleDateString('pt-PT')}
+                            </span>
+                          </div>
+                        )}
+                        
+                        {atribuicao.equipamento?.tipo_equipamento?.categoria && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-600">Categoria:</span>
+                            <Badge 
+                              className="text-xs"
+                              style={{ 
+                                backgroundColor: atribuicao.equipamento.tipo_equipamento.categoria.cor + '20', 
+                                color: atribuicao.equipamento.tipo_equipamento.categoria.cor 
+                              }}
+                            >
+                              {atribuicao.equipamento.tipo_equipamento.categoria.nome}
+                            </Badge>
+                          </div>
+                        )}
+                        
+                        {atribuicao.equipamento?.valor_aquisicao && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-600">Valor:</span>
+                            <span className="text-sm font-medium">
+                              €{atribuicao.equipamento.valor_aquisicao.toFixed(2)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {atribuicao.observacoes && (
+                        <div className="mt-3 pt-3 border-t border-blue-200">
+                          <p className="text-xs text-gray-600 bg-white p-2 rounded">
+                            <strong>Observações:</strong> {atribuicao.observacoes}
+                          </p>
+                        </div>
                       )}
                       
-                      <div className="flex items-start space-x-4">
-                        {/* Fotografia do Animal na Timeline */}
-                        <div className="flex-shrink-0 relative">
-                          {resp.animal_url_fotografia ? (
-                            <img 
-                              src={convertGoogleDriveUrl(resp.animal_url_fotografia, 200)} 
-                              alt={`Foto de ${resp.animal_nome}`}
-                              className={`w-12 h-12 rounded-full object-cover border-2 shadow-sm ${
-                                resp.data_fim 
-                                  ? 'border-gray-300 opacity-75' 
-                                  : 'border-green-300'
-                              }`}
-                              onError={(e) => {
-                                e.currentTarget.style.display = 'none';
-                                e.currentTarget.nextElementSibling.style.display = 'flex';
-                              }}
-                            />
-                          ) : null}
-                          {/* Placeholder quando não há foto */}
-                          <div 
-                            className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-sm border-2 ${
-                              resp.data_fim 
-                                ? 'bg-gradient-to-br from-gray-400 to-gray-600 border-gray-300 opacity-75' 
-                                : 'bg-gradient-to-br from-purple-400 to-indigo-600 border-green-300'
-                            } ${resp.animal_url_fotografia ? 'hidden' : 'flex'}`}
-                          >
-                            {resp.animal_nome.charAt(0).toUpperCase()}
-                          </div>
-                          {/* Indicador de status sobreposto */}
-                          <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center ${
-                            resp.data_fim 
-                              ? 'bg-gray-100 border-2 border-gray-300' 
-                              : 'bg-green-100 border-2 border-green-300'
-                          }`}>
-                            {resp.data_fim ? (
-                              <CheckCircle className="h-3 w-3 text-gray-500" />
-                            ) : (
-                              <Clock className="h-3 w-3 text-green-500" />
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Conteúdo da Responsabilidade */}
-                        <div className="flex-1 border rounded-lg p-4 hover:shadow-md transition-shadow bg-gradient-to-r from-purple-50 to-indigo-50">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center space-x-2 mb-2">
-                                <h4 className="font-semibold text-gray-900 truncate">
-                                  {resp.animal_nome}
-                                </h4>
-                                <Badge variant={resp.data_fim ? "secondary" : "default"} className="text-xs">
-                                  {resp.data_fim ? "Finalizada" : "Ativa"}
-                                </Badge>
-                              </div>
-                              <div className="space-y-1">
-                                <div className="flex items-center text-sm text-gray-600">
-                                  <span className="font-medium">Processo:</span>
-                                  <span className="ml-2">{resp.animal_numero_processo}</span>
-                                </div>
-                                <div className="flex items-center text-sm text-gray-600">
-                                  <span className="font-medium">Espécie:</span>
-                                  <span className="ml-2">{resp.animal_especie}</span>
-                                </div>
-                                <div className="flex items-center text-sm text-gray-600">
-                                  <Calendar className="h-3 w-3 mr-1" />
-                                  <span className="font-medium">Período:</span>
-                                  <span className="ml-2">
-                                    {new Date(resp.data_inicio).toLocaleDateString('pt-PT')}
-                                    {resp.data_fim && (
-                                      <> - {new Date(resp.data_fim).toLocaleDateString('pt-PT')}</>
-                                    )}
-                                  </span>
-                                </div>
-                                {resp.motivo_mudanca && (
-                                  <div className="mt-2 p-2 bg-yellow-50 rounded text-xs border border-yellow-200">
-                                    <span className="font-medium text-yellow-700">Motivo da mudança:</span>
-                                    <p className="text-yellow-600 mt-1">{resp.motivo_mudanca}</p>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                            <div className="flex flex-col items-end space-y-2 ml-4">
-                              <Link to={`/animal/${resp.animal_id}`}>
-                                <Button size="sm" variant="outline" className="text-xs">
-                                  <User className="h-3 w-3 mr-1" />
-                                  Ver Animal
-                                </Button>
-                              </Link>
-                            </div>
-                          </div>
-                        </div>
+                      <div className="mt-4 pt-3 border-t border-blue-200">
+                        <Link to={`/equipamentos/inventario`}>
+                          <Button size="sm" variant="outline" className="w-full">
+                            <Eye className="h-4 w-4 mr-2" />
+                            Ver no Inventário
+                          </Button>
+                        </Link>
                       </div>
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Participações em Missões - Design Moderno */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-          <div className="p-6">
-            <div className="flex items-center space-x-3 mb-6">
-              <div className="bg-indigo-100 p-2 rounded-lg">
-                <Target className="h-6 w-6 text-indigo-600" />
-              </div>
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900">Participações em Missões</h2>
-                <p className="text-sm text-gray-600">Histórico de participações em missões e eventos da associação</p>
-              </div>
-            </div>
-            {participacoesMissoes.length === 0 ? (
-              <div className="text-center py-8">
-                <Target className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500">Nenhuma participação em missões registada</p>
-                <p className="text-sm text-gray-400 mt-2">
-                  Este voluntário ainda não participou em missões
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {/* Estatísticas das Missões */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="p-4 bg-indigo-50 rounded-lg border border-indigo-200">
-                    <div className="flex items-center space-x-3">
-                      <div className="p-2 bg-indigo-100 rounded-lg">
-                        <Target className="h-4 w-4 text-indigo-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-indigo-700">Total de Missões</p>
-                        <p className="text-2xl font-bold text-indigo-900">{participacoesMissoes.length}</p>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                    <div className="flex items-center space-x-3">
-                      <div className="p-2 bg-yellow-100 rounded-lg">
-                        <Star className="h-4 w-4 text-yellow-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-yellow-700">Pontos Acumulados</p>
-                        <p className="text-2xl font-bold text-yellow-900">
-                          {participacoesMissoes.reduce((sum, p) => sum + (p.pontos_atribuidos || 0), 0)}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                    <div className="flex items-center space-x-3">
-                      <div className="p-2 bg-green-100 rounded-lg">
-                        <Clock className="h-4 w-4 text-green-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-green-700">Horas Dedicadas</p>
-                        <p className="text-2xl font-bold text-green-900">
-                          {participacoesMissoes.reduce((sum, p) => sum + (p.horas_dedicadas || 0), 0).toFixed(1)}h
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Lista de Participações */}
-                <div className="grid grid-cols-1 gap-4">
-                  {participacoesMissoes.map((participacao) => {
-                    const getStatusBadge = (status: string) => {
-                      const statusConfig = {
-                        'rascunho': { color: 'bg-gray-100 text-gray-800', icon: Edit, label: 'Rascunho' },
-                        'planejada': { color: 'bg-blue-100 text-blue-800', icon: Calendar, label: 'Planejada' },
-                        'ativa': { color: 'bg-green-100 text-green-800', icon: PlayCircle, label: 'Ativa' },
-                        'pausada': { color: 'bg-yellow-100 text-yellow-800', icon: Clock, label: 'Pausada' },
-                        'concluida': { color: 'bg-emerald-100 text-emerald-800', icon: CheckCircle, label: 'Concluída' },
-                        'cancelada': { color: 'bg-red-100 text-red-800', icon: XCircle, label: 'Cancelada' }
-                      };
-                      const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.rascunho;
-                      const Icon = config.icon;
-                      return (
-                        <Badge className={`${config.color} flex items-center space-x-1 text-xs`}>
-                          <Icon className="h-3 w-3" />
-                          <span>{config.label}</span>
-                        </Badge>
-                      );
-                    };
-
-                    const getIconeCategoria = (categoria: string) => {
-                      const iconesConfig = {
-                        'evento': Heart,
-                        'resgate': Shield,
-                        'campanha': Megaphone,
-                        'representacao': Users,
-                        'tarefa': Clipboard
-                      };
-                      return iconesConfig[categoria as keyof typeof iconesConfig] || Target;
-                    };
-
-                    const IconeCategoria = getIconeCategoria(participacao.missao?.tipos_missoes_2025_12_18_14_15?.categoria || 'evento');
-
-                    return (
-                      <div key={participacao.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow bg-gradient-to-r from-indigo-50 to-blue-50">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-start space-x-3">
-                            <div className="bg-indigo-100 p-2 rounded-lg flex-shrink-0">
-                              <IconeCategoria className="h-5 w-5 text-indigo-600" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center space-x-2 mb-2">
-                                <h4 className="font-semibold text-gray-900 truncate">
-                                  {participacao.missao?.titulo || 'Missão N/A'}
-                                </h4>
-                                {participacao.missao?.status && getStatusBadge(participacao.missao.status)}
-                              </div>
-                              <div className="space-y-1">
-                                <div className="flex items-center text-sm text-gray-600">
-                                  <span className="font-medium">Código:</span>
-                                  <span className="ml-2">{participacao.missao?.codigo}</span>
-                                </div>
-                                <div className="flex items-center text-sm text-gray-600">
-                                  <span className="font-medium">Função:</span>
-                                  <span className="ml-2">{participacao.funcao}</span>
-                                </div>
-                                <div className="flex items-center text-sm text-gray-600">
-                                  <Calendar className="h-3 w-3 mr-1" />
-                                  <span className="font-medium">Participação:</span>
-                                  <span className="ml-2">{new Date(participacao.data_participacao).toLocaleDateString('pt-PT')}</span>
-                                </div>
-                                {participacao.missao?.tipos_missoes_2025_12_18_14_15?.nome && (
-                                  <div className="flex items-center text-sm text-gray-600">
-                                    <span className="font-medium">Tipo:</span>
-                                    <span className="ml-2">{participacao.missao.tipos_missoes_2025_12_18_14_15.nome}</span>
-                                  </div>
-                                )}
-                                {participacao.missao?.local_principal && (
-                                  <div className="flex items-center text-sm text-gray-600">
-                                    <MapPin className="h-3 w-3 mr-1" />
-                                    <span className="font-medium">Local:</span>
-                                    <span className="ml-2">{participacao.missao.local_principal}</span>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex flex-col items-end space-y-2">
-                            {/* Métricas */}
-                            <div className="flex items-center space-x-3 text-sm">
-                              {participacao.horas_dedicadas > 0 && (
-                                <div className="flex items-center space-x-1 text-green-600 bg-green-100 px-2 py-1 rounded">
-                                  <Clock className="h-3 w-3" />
-                                  <span>{participacao.horas_dedicadas}h</span>
-                                </div>
-                              )}
-                              {participacao.pontos_atribuidos > 0 && (
-                                <div className="flex items-center space-x-1 text-yellow-600 bg-yellow-100 px-2 py-1 rounded">
-                                  <Star className="h-3 w-3" />
-                                  <span>{participacao.pontos_atribuidos}</span>
-                                </div>
-                              )}
-
-                            </div>
-                            {/* Botão Ver Missão */}
-                            <Link to={`/missao/${participacao.missao?.id}`}>
-                              <Button size="sm" variant="outline" className="text-xs">
-                                <Eye className="h-3 w-3 mr-1" />
-                                Ver Missão
-                              </Button>
-                            </Link>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
+              )}
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
-      
+
       <EnhancedFooter />
     </div>
   );
