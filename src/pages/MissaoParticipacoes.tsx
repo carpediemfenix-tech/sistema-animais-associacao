@@ -209,12 +209,14 @@ const MissaoParticipacoes = () => {
       
       console.log('DEBUG - Dados da missão para pontuação:', missaoData);
       
-      // Usar apenas campos básicos que existem na tabela
+      // Usar campos completos da tabela
       const participacaoData = {
         missao_id: id,
         voluntario_id: participacaoForm.voluntario_id,
         funcao: participacaoForm.funcao,
         data_participacao: participacaoForm.data_participacao,
+        data_fim: participacaoForm.data_fim || null,
+        horas_dedicadas: parseFloat(participacaoForm.horas_dedicadas) || 0,
         observacoes: participacaoForm.observacoes || null
       };
       
@@ -307,6 +309,9 @@ const MissaoParticipacoes = () => {
     if (!editingParticipacao) return;
 
     try {
+      console.log('📝 Atualizando participação:', editingParticipacao.id);
+      console.log('📝 Dados do formulário:', participacaoForm);
+      
       const participacaoData = {
         funcao: participacaoForm.funcao,
         data_participacao: participacaoForm.data_participacao,
@@ -315,6 +320,8 @@ const MissaoParticipacoes = () => {
         observacoes: participacaoForm.observacoes || null,
         updated_at: new Date().toISOString()
       };
+      
+      console.log('📝 Dados para atualização:', participacaoData);
 
       const { error } = await supabase
         .from('participacoes_missoes_2025_12_29_07_00')
@@ -372,26 +379,54 @@ const MissaoParticipacoes = () => {
 
   // Reset formulário
   const resetParticipacaoForm = () => {
+    // Formatar data_inicio da missão para input date
+    const dataInicioFormatada = missao?.data_inicio 
+      ? new Date(missao.data_inicio).toISOString().split('T')[0]
+      : new Date().toISOString().split('T')[0]; // Data atual como fallback
+    
     setParticipacaoForm({
       voluntario_id: '',
       funcao: 'participante',
-      data_participacao: missao?.data_inicio || '',
+      data_participacao: dataInicioFormatada,
       data_fim: '',
       horas_dedicadas: '0',
       observacoes: ''
     });
+    
+    console.log('🔄 Formulário resetado com data:', dataInicioFormatada);
   };
 
   // Abrir diálogo
   const openParticipacaoDialog = (participacao?: ParticipacaoMissao) => {
     if (participacao) {
+      console.log('📝 Editando participação:', participacao);
       setEditingParticipacao(participacao);
+      
+      // Formatar data_participacao para input date
+      const dataParticipacao = participacao.data_participacao 
+        ? new Date(participacao.data_participacao).toISOString().split('T')[0]
+        : '';
+      
+      // Formatar data_fim para input date (se existir)
+      const dataFim = participacao.data_fim 
+        ? new Date(participacao.data_fim).toISOString().split('T')[0]
+        : '';
+      
       setParticipacaoForm({
         voluntario_id: participacao.voluntario_id,
         funcao: participacao.funcao,
-        data_participacao: participacao.data_participacao,
-        data_fim: participacao.data_fim || '',
-        horas_dedicadas: participacao.horas_dedicadas.toString(),
+        data_participacao: dataParticipacao,
+        data_fim: dataFim,
+        horas_dedicadas: (participacao.horas_dedicadas || 0).toString(),
+        observacoes: participacao.observacoes || ''
+      });
+      
+      console.log('📝 Formulário preenchido:', {
+        voluntario_id: participacao.voluntario_id,
+        funcao: participacao.funcao,
+        data_participacao: dataParticipacao,
+        data_fim: dataFim,
+        horas_dedicadas: (participacao.horas_dedicadas || 0).toString(),
         observacoes: participacao.observacoes || ''
       });
     } else {
