@@ -41,7 +41,7 @@ import EnhancedFooter from "@/components/EnhancedFooter";
 import PageActionBar from "@/components/PageActionBar";
 import { useAuth } from "@/contexts/AuthContext";
 import { MockDataIndicator, MockDataCard, MockDataText } from "@/components/MockDataIndicator";
-import { isMockData, hasMockData } from "@/lib/mockUtils";
+import { isMockData, hasMockData, isStrictMockData, hasStrictMockData } from "@/lib/mockUtils";
 
 interface Voluntario {
   id: string;
@@ -390,6 +390,20 @@ const VoluntarioDetail = () => {
 
           setParticipacoesMissoes(participacoesCompletas);
           console.log('DEBUG - Participações reais carregadas:', participacoesCompletas.length, 'registos');
+          
+          // Debug da detecção de dados mock
+          participacoesCompletas.forEach((participacao, index) => {
+            const isOldMock = isMockData(participacao);
+            const isNewMock = isStrictMockData(participacao);
+            console.log(`DEBUG - Participação ${index + 1}:`, {
+              id: participacao.id,
+              missao_id: participacao.missao_id,
+              missao_titulo: participacao.missao_titulo,
+              isOldMockDetection: isOldMock,
+              isStrictMockDetection: isNewMock,
+              shouldShowRedBadge: isNewMock
+            });
+          });
         } else {
           console.log('DEBUG - Nenhuma participação real encontrada');
           console.log('DEBUG - participacoesData:', participacoesData);
@@ -1000,7 +1014,7 @@ const VoluntarioDetail = () => {
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <h2 className="text-xl font-semibold text-gray-900">Participações em Missões</h2>
-                    {hasMockData(participacoesMissoes) && (
+                    {hasStrictMockData(participacoesMissoes) && (
                       <Badge variant="destructive" className="mock-data-badge">
                         DADOS DE TESTE
                       </Badge>
@@ -1018,26 +1032,31 @@ const VoluntarioDetail = () => {
               ) : (
                 <div className="space-y-4">
                   {participacoesMissoes.map((participacao) => (
-                    <MockDataCard 
+                    <div 
                       key={participacao.id} 
-                      data={participacao}
-                      className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl p-4 border border-indigo-200"
+                      className={`bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl p-4 border border-indigo-200 ${
+                        isStrictMockData(participacao) ? 'mock-data-card' : ''
+                      }`}
                     >
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
-                          <MockDataText data={participacao}>
-                            <h3 className="font-semibold text-gray-900">{participacao.missao_titulo}</h3>
-                          </MockDataText>
-                          <MockDataText data={participacao}>
-                            <p className="text-sm text-gray-600 mt-1">{participacao.missao_descricao}</p>
-                          </MockDataText>
+                          <h3 className={`font-semibold text-gray-900 ${
+                            isStrictMockData(participacao) ? 'mock-data-text' : ''
+                          }`}>
+                            {participacao.missao_titulo}
+                          </h3>
+                          <p className={`text-sm text-gray-600 mt-1 ${
+                            isStrictMockData(participacao) ? 'mock-data-text' : ''
+                          }`}>
+                            {participacao.missao_descricao}
+                          </p>
                         </div>
                         <div className="text-right ml-4">
-                          <MockDataIndicator data={participacao} variant="subtle">
-                            <Badge className="bg-indigo-100 text-indigo-800 mb-2">
-                              {participacao.funcao}
-                            </Badge>
-                          </MockDataIndicator>
+                          <Badge className={`bg-indigo-100 text-indigo-800 mb-2 ${
+                            isStrictMockData(participacao) ? 'mock-data' : ''
+                          }`}>
+                            {participacao.funcao}
+                          </Badge>
                           <p className="text-xs text-gray-600">
                             {new Date(participacao.data_participacao).toLocaleDateString('pt-PT')}
                           </p>
@@ -1066,7 +1085,7 @@ const VoluntarioDetail = () => {
                           </div>
                         )}
                       </div>
-                    </MockDataCard>
+                    </div>
                   ))}
                 </div>
               )}

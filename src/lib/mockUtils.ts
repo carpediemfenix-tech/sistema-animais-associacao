@@ -20,16 +20,17 @@ export const isMockData = (data: any): boolean => {
       return true;
     }
 
-    // Verificar se contém texto indicativo de mock
-    const mockIndicators = ['mock', 'teste', 'exemplo', 'demo'];
-    const stringFields = Object.values(data).filter(value => typeof value === 'string');
-    
-    for (const field of stringFields) {
-      const fieldLower = field.toLowerCase();
-      if (mockIndicators.some(indicator => fieldLower.includes(indicator))) {
-        return true;
-      }
+    // Verificar outros campos de ID que podem ser mock
+    if (data.animal_id && typeof data.animal_id === 'string' && data.animal_id.startsWith('mock-')) {
+      return true;
     }
+
+    if (data.voluntario_id && typeof data.voluntario_id === 'string' && data.voluntario_id.startsWith('mock-')) {
+      return true;
+    }
+
+    // REMOVIDO: Verificação por texto genérico que causava falsos positivos
+    // Agora apenas IDs que começam com "mock-" são considerados mock
   }
 
   // Verificar se é string que começa com "mock-"
@@ -46,6 +47,41 @@ export const isMockData = (data: any): boolean => {
 export const hasMockData = (dataList: any[]): boolean => {
   if (!Array.isArray(dataList)) return false;
   return dataList.some(item => isMockData(item));
+};
+
+/**
+ * Verifica se dados são mock de forma mais restritiva
+ * Apenas considera mock se IDs começam explicitamente com "mock-"
+ */
+export const isStrictMockData = (data: any): boolean => {
+  if (!data) return false;
+
+  // Verificar se é um objeto
+  if (typeof data === 'object') {
+    // Lista de campos de ID para verificar
+    const idFields = ['id', 'missao_id', 'animal_id', 'voluntario_id', 'equipamento_id'];
+    
+    for (const field of idFields) {
+      if (data[field] && typeof data[field] === 'string' && data[field].startsWith('mock-')) {
+        return true;
+      }
+    }
+  }
+
+  // Verificar se é string que começa com "mock-"
+  if (typeof data === 'string' && data.startsWith('mock-')) {
+    return true;
+  }
+
+  return false;
+};
+
+/**
+ * Verifica se uma lista contém dados mock usando verificação restritiva
+ */
+export const hasStrictMockData = (dataList: any[]): boolean => {
+  if (!Array.isArray(dataList)) return false;
+  return dataList.some(item => isStrictMockData(item));
 };
 
 /**
