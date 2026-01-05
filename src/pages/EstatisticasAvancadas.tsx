@@ -25,6 +25,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import EnhancedHeader from "@/components/EnhancedHeader";
 import EnhancedFooter from "@/components/EnhancedFooter";
+import PageActionBar from "@/components/PageActionBar";
 
 interface EstatisticasAvancadas {
   // Animais
@@ -110,20 +111,20 @@ const EstatisticasAvancadas = () => {
 
       // Carregar dados de formação
       const { data: formacoes } = await supabase
-        .from('acoes_formacao')
+        .from('acoes_formacao_2025_12_18_14_15')
         .select('id, ativo')
         .then(result => ({ data: result.data || [] }))
         .catch(() => ({ data: [] }));
 
       const { data: participacoes } = await supabase
-        .from('participacoes_formacao')
+        .from('participacoes_formacao_2025_12_18_14_15')
         .select('resultado')
         .then(result => ({ data: result.data || [] }))
         .catch(() => ({ data: [] }));
 
       // Carregar dados financeiros
       const { data: movimentos } = await supabase
-        .from('movimentos_financeiros')
+        .from('movimentos_financeiros_2025_12_13_06_00')
         .select('valor, tipo, created_at')
         .then(result => ({ data: result.data || [] }))
         .catch(() => ({ data: [] }));
