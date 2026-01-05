@@ -78,7 +78,7 @@ const EquipamentosDashboard: React.FC = () => {
         equipamentosDisponiveis: equipamentos?.filter(e => e.estado === 'disponivel').length || 0,
         equipamentosEmUso: equipamentos?.filter(e => e.estado === 'em_uso').length || 0,
         equipamentosManutencao: equipamentos?.filter(e => e.estado === 'manutencao').length || 0,
-        valorTotalInventario: equipamentos?.reduce((sum, e) => sum + (e.valor_aquisicao || 0), 0) || 0,
+        valorTotalInventario: equipamentos?.reduce((sum, e) => sum + (parseFloat(e.valor_aquisicao) || 0), 0) || 0,
         alertasAtivos: alertas?.length || 0,
         manutencoesPendentes: manutencoes?.length || 0,
         atribuicoesAtivas: atribuicoes?.length || 0
