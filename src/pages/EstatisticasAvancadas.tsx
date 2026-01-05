@@ -19,7 +19,8 @@ import {
   Activity,
   Clock,
   CheckCircle,
-  AlertTriangle
+  AlertTriangle,
+  Rocket
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -210,6 +211,14 @@ const EstatisticasAvancadas = () => {
       <PageActionBar
         breadcrumbs={[
           { label: 'Estatísticas Avançadas', icon: <BarChart3 className="h-4 w-4" /> }
+        ]}
+        actions={[
+          <Link key="futuristic" to="/estatisticas-avancadas">
+            <Button variant="outline" size="sm">
+              <Rocket className="h-4 w-4 mr-2" />
+              Modo Futurístico
+            </Button>
+          </Link>
         ]}
       />
       

@@ -69,6 +69,7 @@ import ModuloAgenda from "./pages/ModuloAgenda";
 import ModuloEquipamentos from "./pages/ModuloEquipamentos";
 import ModuloClinicas from "./pages/ModuloClinicas";
 import EstatisticasAvancadas from "./pages/EstatisticasAvancadas";
+import EstatisticasAvancadasFuturistic from "./pages/EstatisticasAvancadasFuturistic";
 import VerificacaoBI from "./pages/VerificacaoBI";
 import AnimalEstados from "./pages/AnimalEstados";
 import GestaoEstados from "./pages/GestaoEstados";
@@ -278,7 +279,8 @@ function App() {
               
               {/* Relatórios e Estatísticas */}
               <Route path="/relatorios" element={<ProtectedRoute><Relatorios /></ProtectedRoute>} />
-              <Route path="/estatisticas-avancadas" element={<ProtectedRoute><EstatisticasAvancadas /></ProtectedRoute>} />
+              <Route path="/estatisticas-avancadas" element={<ProtectedRoute><EstatisticasAvancadasFuturistic /></ProtectedRoute>} />
+              <Route path="/estatisticas-avancadas/classic" element={<ProtectedRoute><EstatisticasAvancadas /></ProtectedRoute>} />
               
               {/* Manual */}
               <Route path="/manual" element={<ProtectedRoute><ManualUtilizador /></ProtectedRoute>} />
