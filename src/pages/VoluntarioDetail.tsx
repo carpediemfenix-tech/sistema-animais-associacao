@@ -40,6 +40,8 @@ import EnhancedHeader from "@/components/EnhancedHeader";
 import EnhancedFooter from "@/components/EnhancedFooter";
 import PageActionBar from "@/components/PageActionBar";
 import { useAuth } from "@/contexts/AuthContext";
+import { MockDataIndicator, MockDataCard, MockDataText } from "@/components/MockDataIndicator";
+import { isMockData, hasMockData } from "@/lib/mockUtils";
 
 interface Voluntario {
   id: string;
@@ -1023,8 +1025,15 @@ const VoluntarioDetail = () => {
                 <div className="bg-indigo-100 p-2 rounded-lg">
                   <Target className="h-6 w-6 text-indigo-600" />
                 </div>
-                <div>
-                  <h2 className="text-xl font-semibold text-gray-900">Participações em Missões</h2>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-xl font-semibold text-gray-900">Participações em Missões</h2>
+                    {hasMockData(participacoesMissoes) && (
+                      <Badge variant="destructive" className="mock-data-badge">
+                        DADOS DE TESTE
+                      </Badge>
+                    )}
+                  </div>
                   <p className="text-sm text-gray-600">Histórico de participações em missões e eventos da associação</p>
                 </div>
               </div>
@@ -1037,16 +1046,26 @@ const VoluntarioDetail = () => {
               ) : (
                 <div className="space-y-4">
                   {participacoesMissoes.map((participacao) => (
-                    <div key={participacao.id} className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl p-4 border border-indigo-200">
+                    <MockDataCard 
+                      key={participacao.id} 
+                      data={participacao}
+                      className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl p-4 border border-indigo-200"
+                    >
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
-                          <h3 className="font-semibold text-gray-900">{participacao.missao_titulo}</h3>
-                          <p className="text-sm text-gray-600 mt-1">{participacao.missao_descricao}</p>
+                          <MockDataText data={participacao}>
+                            <h3 className="font-semibold text-gray-900">{participacao.missao_titulo}</h3>
+                          </MockDataText>
+                          <MockDataText data={participacao}>
+                            <p className="text-sm text-gray-600 mt-1">{participacao.missao_descricao}</p>
+                          </MockDataText>
                         </div>
                         <div className="text-right ml-4">
-                          <Badge className="bg-indigo-100 text-indigo-800 mb-2">
-                            {participacao.funcao}
-                          </Badge>
+                          <MockDataIndicator data={participacao} variant="subtle">
+                            <Badge className="bg-indigo-100 text-indigo-800 mb-2">
+                              {participacao.funcao}
+                            </Badge>
+                          </MockDataIndicator>
                           <p className="text-xs text-gray-600">
                             {new Date(participacao.data_participacao).toLocaleDateString('pt-PT')}
                           </p>
@@ -1075,7 +1094,7 @@ const VoluntarioDetail = () => {
                           </div>
                         )}
                       </div>
-                    </div>
+                    </MockDataCard>
                   ))}
                 </div>
               )}
