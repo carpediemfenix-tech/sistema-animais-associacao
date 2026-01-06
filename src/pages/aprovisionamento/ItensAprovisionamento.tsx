@@ -20,7 +20,8 @@ import {
   BarChart3,
   Eye,
   ShoppingCart,
-  Minus
+  Minus,
+  History
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -29,6 +30,7 @@ import { useNavigate } from "react-router-dom";
 import EnhancedHeader from "@/components/EnhancedHeader";
 import EnhancedFooter from "@/components/EnhancedFooter";
 import PageActionBar from "@/components/PageActionBar";
+import HistoricoMovimentos from "@/components/HistoricoMovimentos";
 import {
   Select,
   SelectContent,
@@ -107,6 +109,12 @@ const ItensAprovisionamento = () => {
   const [filterCategoria, setFilterCategoria] = useState<string>('all');
   const [filterAlerta, setFilterAlerta] = useState<string>('all');
   
+  // Estados para paginação e ordenação
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(12);
+  const [sortBy, setSortBy] = useState<string>('nome');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  
   // Estados do formulário
   const [formData, setFormData] = useState({
     tipo_id: '',
@@ -138,6 +146,10 @@ const ItensAprovisionamento = () => {
     preco_unitario: '',
     observacoes: ''
   });
+
+  // Estados para histórico de movimentos
+  const [showHistorico, setShowHistorico] = useState(false);
+  const [itemHistorico, setItemHistorico] = useState<Item | null>(null);
 
   useEffect(() => {
     loadData();
@@ -338,14 +350,56 @@ const ItensAprovisionamento = () => {
 
   const handleMovimentoStock = async () => {
     try {
+      // Validações mais robustas
       if (!itemMovimento || !movimentoData.tipo_movimento || !movimentoData.quantidade) {
         toast({
-          title: "Erro",
+          title: "Erro de Validação",
           description: "Todos os campos obrigatórios devem ser preenchidos",
           variant: "destructive",
         });
         return;
       }
+
+      if (movimentoData.quantidade <= 0) {
+        toast({
+          title: "Erro de Validação",
+          description: "A quantidade deve ser maior que zero",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validação para saídas
+      if (movimentoData.tipo_movimento.startsWith('SAIDA') && 
+          movimentoData.quantidade > itemMovimento.quantidade_atual) {
+        const confirmar = window.confirm(
+          `ATENÇÃO: Tentativa de saída de ${movimentoData.quantidade} unidades, mas apenas ${itemMovimento.quantidade_atual} disponíveis.\n\nEsta operação resultará em stock negativo. Deseja continuar?`
+        );
+        if (!confirmar) return;
+      }
+
+      // Confirmação para operações críticas
+      const isOperacaoCritica = movimentoData.quantidade > 100 || 
+                               (movimentoData.preco_unitario && parseFloat(movimentoData.preco_unitario) > 1000);
+      
+      if (isOperacaoCritica) {
+        const confirmar = window.confirm(
+          `Operação de alto valor/quantidade detectada:\n\n` +
+          `Item: ${itemMovimento.nome}\n` +
+          `Tipo: ${movimentoData.tipo_movimento}\n` +
+          `Quantidade: ${movimentoData.quantidade}\n` +
+          `Valor unitário: €${movimentoData.preco_unitario || 'N/A'}\n\n` +
+          `Confirma esta operação?`
+        );
+        if (!confirmar) return;
+      }
+
+      console.log('📦 [MOVIMENTO] Iniciando movimento de stock:', {
+        item: itemMovimento.nome,
+        tipo: movimentoData.tipo_movimento,
+        quantidade: movimentoData.quantidade,
+        stockAtual: itemMovimento.quantidade_atual
+      });
 
       // Chamar função do Supabase para atualizar stock
       const { data, error } = await supabase.rpc('atualizar_stock_item', {
@@ -365,18 +419,42 @@ const ItensAprovisionamento = () => {
         throw new Error(result.error);
       }
 
+      // Feedback de sucesso melhorado
+      const tipoLabel = movimentoData.tipo_movimento.startsWith('ENTRADA') ? 'Entrada' : 'Saída';
+      const valorInfo = result.valor_total ? ` (€${result.valor_total.toFixed(2)})` : '';
+      
       toast({
-        title: "Sucesso",
-        description: `Stock atualizado: ${result.quantidade_anterior} → ${result.quantidade_nova}`,
+        title: `✅ ${tipoLabel} Registrada`,
+        description: `${itemMovimento.nome}: ${result.quantidade_anterior} → ${result.quantidade_nova} unidades${valorInfo}`,
       });
 
+      // Alertas de stock
       if (result.alerta_stock_baixo) {
-        toast({
-          title: "⚠️ Alerta de Stock",
-          description: `Stock abaixo do mínimo para ${itemMovimento.nome}`,
-          variant: "destructive",
-        });
+        setTimeout(() => {
+          toast({
+            title: "⚠️ Alerta de Stock Baixo",
+            description: `${itemMovimento.nome} está abaixo do stock mínimo (${itemMovimento.stock_minimo} unidades)`,
+            variant: "destructive",
+          });
+        }, 1000);
       }
+
+      if (result.quantidade_nova <= 0) {
+        setTimeout(() => {
+          toast({
+            title: "🚫 Stock Esgotado",
+            description: `${itemMovimento.nome} ficou sem stock disponível`,
+            variant: "destructive",
+          });
+        }, 1500);
+      }
+
+      console.log('✅ [MOVIMENTO] Movimento concluído com sucesso:', {
+        item: itemMovimento.nome,
+        stockAnterior: result.quantidade_anterior,
+        stockNovo: result.quantidade_nova,
+        valorTotal: result.valor_total
+      });
 
       setShowMovimentoForm(false);
       setItemMovimento(null);
@@ -391,10 +469,26 @@ const ItensAprovisionamento = () => {
       loadData();
 
     } catch (error: any) {
-      console.error('Erro ao atualizar stock:', error);
+      console.error('❌ [MOVIMENTO] Erro ao atualizar stock:', error);
+      
+      // Tratamento de erros específicos
+      let errorMessage = "Erro inesperado ao processar movimento";
+      
+      if (error.message?.includes('insufficient_stock')) {
+        errorMessage = "Stock insuficiente para esta operação";
+      } else if (error.message?.includes('invalid_quantity')) {
+        errorMessage = "Quantidade inválida especificada";
+      } else if (error.message?.includes('item_not_found')) {
+        errorMessage = "Item não encontrado";
+      } else if (error.message?.includes('permission_denied')) {
+        errorMessage = "Sem permissão para esta operação";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
-        title: "Erro",
-        description: error.message || "Erro ao atualizar stock",
+        title: "❌ Erro no Movimento",
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -701,6 +795,18 @@ const ItensAprovisionamento = () => {
                     >
                       <TrendingDown className="h-4 w-4 mr-1" />
                       Saída
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setItemHistorico(item);
+                        setShowHistorico(true);
+                      }}
+                      className="text-blue-600 hover:text-blue-700"
+                    >
+                      <History className="h-4 w-4 mr-1" />
+                      Histórico
                     </Button>
                     <Button
                       size="sm"
@@ -1074,6 +1180,18 @@ const ItensAprovisionamento = () => {
             </div>
           </Card>
         </div>
+      )}
+
+      {/* Modal de Histórico de Movimentos */}
+      {showHistorico && itemHistorico && (
+        <HistoricoMovimentos
+          item={itemHistorico}
+          isOpen={showHistorico}
+          onClose={() => {
+            setShowHistorico(false);
+            setItemHistorico(null);
+          }}
+        />
       )}
 
       <EnhancedFooter />
