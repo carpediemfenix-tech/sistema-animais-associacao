@@ -365,6 +365,7 @@ const CategoriasAprovisionamento = () => {
           {
             label: "Nova Categoria",
             onClick: () => {
+              console.log('🔍 [CATEGORIAS] Botão Nova Categoria clicado');
               setShowNewForm(true);
               setEditingId(null);
               resetForm();
@@ -574,13 +575,29 @@ const CategoriasAprovisionamento = () => {
         {/* Lista de Categorias */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Package className="h-5 w-5" />
-              Categorias Existentes ({categorias.length})
-            </CardTitle>
-            <CardDescription>
-              Gerir todas as categorias de aprovisionamento
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Package className="h-5 w-5" />
+                  Categorias Existentes ({categorias.length})
+                </CardTitle>
+                <CardDescription>
+                  Gerir todas as categorias de aprovisionamento
+                </CardDescription>
+              </div>
+              <Button 
+                onClick={() => {
+                  console.log('🔍 [CATEGORIAS] Botão alternativo Nova Categoria clicado');
+                  setShowNewForm(true);
+                  setEditingId(null);
+                  resetForm();
+                }}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Nova Categoria
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {categorias.length === 0 ? (
