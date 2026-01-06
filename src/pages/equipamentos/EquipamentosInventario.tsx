@@ -102,8 +102,12 @@ const EquipamentosInventario = () => {
   const [tiposEquipamentos, setTiposEquipamentos] = useState<TipoEquipamento[]>([]);
   const [showDetalhes, setShowDetalhes] = useState(false);
   const [showConfirmarExclusao, setShowConfirmarExclusao] = useState(false);
-  const [showConfirmarReativacao, setShowConfirmarReativacao] = useState(false); // Novo estado
+  const [showConfirmarReativacao, setShowConfirmarReativacao] = useState(false);
+  const [showConfirmarExclusaoPermanente, setShowConfirmarExclusaoPermanente] = useState(false); // Novo estado
+  const [showEditarEquipamento, setShowEditarEquipamento] = useState(false); // Novo estado
   const [equipamentoSelecionado, setEquipamentoSelecionado] = useState<Equipamento | null>(null);
+  const [equipamentoEditando, setEquipamentoEditando] = useState<any>(null); // Novo estado
+  const [historicoEquipamento, setHistoricoEquipamento] = useState<any>(null); // Novo estado
   const [showConfiguracoes, setShowConfiguracoes] = useState(false);
 
   useEffect(() => {
@@ -127,6 +131,40 @@ const EquipamentosInventario = () => {
       setTiposEquipamentos(data || []);
     } catch (error) {
       console.error('Erro ao carregar tipos de equipamentos:', error);
+    }
+  };
+
+  const verificarHistoricoEquipamento = async (equipamentoId: string) => {
+    try {
+      // Verificar atribuições
+      const { data: atribuicoes, error: atribuicoesError } = await supabase
+        .from('atribuicoes_equipamentos_2025_12_13_01_00')
+        .select('id')
+        .eq('equipamento_id', equipamentoId);
+
+      if (atribuicoesError) throw atribuicoesError;
+
+      // Verificar manutenções
+      const { data: manutencoes, error: manutencoesError } = await supabase
+        .from('manutencoes_equipamentos_2025_12_13_01_00')
+        .select('id')
+        .eq('equipamento_id', equipamentoId);
+
+      if (manutencoesError) {
+        console.warn('Tabela de manutenções não encontrada:', manutencoesError);
+      }
+
+      const temHistorico = {
+        atribuicoes: (atribuicoes || []).length > 0,
+        manutencoes: (manutencoes || []).length > 0,
+        total: (atribuicoes || []).length + (manutencoes || []).length
+      };
+
+      console.log('Histórico do equipamento:', equipamentoId, temHistorico);
+      return temHistorico;
+    } catch (error) {
+      console.error('Erro ao verificar histórico do equipamento:', error);
+      return { atribuicoes: false, manutencoes: false, total: 0 };
     }
   };
 
@@ -245,16 +283,37 @@ const EquipamentosInventario = () => {
   };
 
   const handleEditarEquipamento = (equipamento: any) => {
-    // TODO: Implementar edição
-    toast({
-      title: "Em desenvolvimento",
-      description: "Funcionalidade de edição em desenvolvimento",
+    // Preparar dados para edição
+    setEquipamentoEditando({
+      id: equipamento.id,
+      codigo_interno: equipamento.codigo_interno || '',
+      numero_serie: equipamento.numero_serie || '',
+      tipo_equipamento_id: equipamento.tipo_equipamento_id || '',
+      localizacao: equipamento.localizacao || '',
+      estado: equipamento.estado || 'disponivel',
+      condicao: equipamento.condicao || 'bom',
+      valor_aquisicao: equipamento.valor_aquisicao || 0,
+      data_aquisicao: equipamento.data_aquisicao ? equipamento.data_aquisicao.split('T')[0] : new Date().toISOString().split('T')[0],
+      garantia_ate: equipamento.garantia_ate ? equipamento.garantia_ate.split('T')[0] : '',
+      observacoes: equipamento.observacoes || ''
     });
+    setShowEditarEquipamento(true);
   };
 
-  const handleDesativarEquipamento = (equipamento: any) => {
+  const handleDesativarEquipamento = async (equipamento: any) => {
     setEquipamentoSelecionado(equipamento);
-    setShowConfirmarExclusao(true);
+    
+    // Verificar histórico para decidir entre desativar ou apagar
+    const historico = await verificarHistoricoEquipamento(equipamento.id);
+    setHistoricoEquipamento(historico);
+    
+    if (historico.total > 0) {
+      // Tem histórico - apenas desativar
+      setShowConfirmarExclusao(true);
+    } else {
+      // Não tem histórico - pode apagar permanentemente
+      setShowConfirmarExclusaoPermanente(true);
+    }
   };
 
   const handleReativarEquipamento = (equipamento: any) => {
@@ -313,6 +372,95 @@ const EquipamentosInventario = () => {
       toast({
         title: "Erro",
         description: error.message || "Erro ao reativar equipamento",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const confirmarExclusaoPermanente = async () => {
+    if (!equipamentoSelecionado) return;
+
+    try {
+      const { error } = await supabase
+        .from('equipamentos_2025_12_13_01_00')
+        .delete()
+        .eq('id', equipamentoSelecionado.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Equipamento apagado",
+        description: `Equipamento "${equipamentoSelecionado.numero_serie || equipamentoSelecionado.id}" foi apagado permanentemente`,
+      });
+
+      setShowConfirmarExclusaoPermanente(false);
+      setEquipamentoSelecionado(null);
+      setHistoricoEquipamento(null);
+      loadEquipamentos();
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao apagar equipamento",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const salvarEdicaoEquipamento = async () => {
+    if (!equipamentoEditando) return;
+
+    // Validar campos obrigatórios
+    if (!equipamentoEditando.codigo_interno || !equipamentoEditando.tipo_equipamento_id) {
+      toast({
+        title: "Erro",
+        description: "Código interno e tipo de equipamento são obrigatórios",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validar UUID do tipo de equipamento
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(equipamentoEditando.tipo_equipamento_id)) {
+      toast({
+        title: "Erro",
+        description: "Tipo de equipamento inválido. Por favor, selecione um tipo válido.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('equipamentos_2025_12_13_01_00')
+        .update({
+          codigo_interno: equipamentoEditando.codigo_interno,
+          numero_serie: equipamentoEditando.numero_serie,
+          tipo_equipamento_id: equipamentoEditando.tipo_equipamento_id,
+          localizacao: equipamentoEditando.localizacao,
+          estado: equipamentoEditando.estado,
+          condicao: equipamentoEditando.condicao,
+          valor_aquisicao: equipamentoEditando.valor_aquisicao,
+          data_aquisicao: equipamentoEditando.data_aquisicao,
+          garantia_ate: equipamentoEditando.garantia_ate || null,
+          observacoes: equipamentoEditando.observacoes
+        })
+        .eq('id', equipamentoEditando.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Equipamento atualizado com sucesso!",
+      });
+
+      setShowEditarEquipamento(false);
+      setEquipamentoEditando(null);
+      loadEquipamentos();
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao atualizar equipamento",
         variant: "destructive",
       });
     }
@@ -970,6 +1118,200 @@ const EquipamentosInventario = () => {
             </Button>
             <Button onClick={() => setShowConfiguracoes(false)}>
               Salvar Configurações
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Confirmação de Exclusão Permanente */}
+      <Dialog open={showConfirmarExclusaoPermanente} onOpenChange={setShowConfirmarExclusaoPermanente}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirmar Exclusão Permanente</DialogTitle>
+            <DialogDescription>
+              Esta ação irá apagar o equipamento permanentemente. Não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 p-3 bg-red-50 rounded-lg">
+              <AlertTriangle className="h-5 w-5 text-red-600" />
+              <div>
+                <p className="text-sm font-medium text-red-800">
+                  Apagar permanentemente o equipamento <strong>{equipamentoSelecionado?.codigo_interno}</strong>?
+                </p>
+                <p className="text-xs text-red-600 mt-1">
+                  Este equipamento não tem histórico de utilização e pode ser apagado com segurança.
+                </p>
+              </div>
+            </div>
+            {historicoEquipamento && (
+              <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
+                <p>• Atribuições: {historicoEquipamento.atribuicoes ? 'Sim' : 'Não'}</p>
+                <p>• Manutenções: {historicoEquipamento.manutencoes ? 'Sim' : 'Não'}</p>
+              </div>
+            )}
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setShowConfirmarExclusaoPermanente(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={confirmarExclusaoPermanente}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Apagar Permanentemente
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Edição de Equipamento */}
+      <Dialog open={showEditarEquipamento} onOpenChange={setShowEditarEquipamento}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar Equipamento</DialogTitle>
+            <DialogDescription>
+              Atualize as informações do equipamento
+            </DialogDescription>
+          </DialogHeader>
+          {equipamentoEditando && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Código Interno *</Label>
+                  <Input
+                    value={equipamentoEditando.codigo_interno}
+                    onChange={(e) => setEquipamentoEditando({...equipamentoEditando, codigo_interno: e.target.value})}
+                    placeholder="Código do equipamento"
+                  />
+                </div>
+                <div>
+                  <Label>Número de Série</Label>
+                  <Input
+                    value={equipamentoEditando.numero_serie}
+                    onChange={(e) => setEquipamentoEditando({...equipamentoEditando, numero_serie: e.target.value})}
+                    placeholder="Número de série"
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Tipo de Equipamento *</Label>
+                  <Select 
+                    value={equipamentoEditando.tipo_equipamento_id} 
+                    onValueChange={(value) => setEquipamentoEditando({...equipamentoEditando, tipo_equipamento_id: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tiposEquipamentos.map((tipo) => (
+                        <SelectItem key={tipo.id} value={tipo.id}>
+                          {tipo.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Localização</Label>
+                  <Input
+                    value={equipamentoEditando.localizacao}
+                    onChange={(e) => setEquipamentoEditando({...equipamentoEditando, localizacao: e.target.value})}
+                    placeholder="Localização do equipamento"
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Estado</Label>
+                  <Select 
+                    value={equipamentoEditando.estado} 
+                    onValueChange={(value) => setEquipamentoEditando({...equipamentoEditando, estado: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="disponivel">Disponível</SelectItem>
+                      <SelectItem value="em_uso">Em Uso</SelectItem>
+                      <SelectItem value="manutencao">Manutenção</SelectItem>
+                      <SelectItem value="danificado">Danificado</SelectItem>
+                      <SelectItem value="perdido">Perdido</SelectItem>
+                      <SelectItem value="descartado">Descartado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Condição</Label>
+                  <Select 
+                    value={equipamentoEditando.condicao} 
+                    onValueChange={(value) => setEquipamentoEditando({...equipamentoEditando, condicao: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="novo">Novo</SelectItem>
+                      <SelectItem value="bom">Bom</SelectItem>
+                      <SelectItem value="regular">Regular</SelectItem>
+                      <SelectItem value="mau">Mau</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Valor de Aquisição (€)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={equipamentoEditando.valor_aquisicao}
+                    onChange={(e) => setEquipamentoEditando({...equipamentoEditando, valor_aquisicao: parseFloat(e.target.value) || 0})}
+                    placeholder="0.00"
+                  />
+                </div>
+                <div>
+                  <Label>Data de Aquisição</Label>
+                  <Input
+                    type="date"
+                    value={equipamentoEditando.data_aquisicao}
+                    onChange={(e) => setEquipamentoEditando({...equipamentoEditando, data_aquisicao: e.target.value})}
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <Label>Garantia Até</Label>
+                <Input
+                  type="date"
+                  value={equipamentoEditando.garantia_ate}
+                  onChange={(e) => setEquipamentoEditando({...equipamentoEditando, garantia_ate: e.target.value})}
+                />
+              </div>
+              
+              <div>
+                <Label>Observações</Label>
+                <Textarea
+                  value={equipamentoEditando.observacoes}
+                  onChange={(e) => setEquipamentoEditando({...equipamentoEditando, observacoes: e.target.value})}
+                  placeholder="Observações adicionais..."
+                  rows={3}
+                />
+              </div>
+            </div>
+          )}
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setShowEditarEquipamento(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={salvarEdicaoEquipamento}>
+              <Edit className="h-4 w-4 mr-2" />
+              Salvar Alterações
             </Button>
           </div>
         </DialogContent>
