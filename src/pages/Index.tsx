@@ -242,18 +242,18 @@ const Index: React.FC = () => {
               </Card>
             </Link>
 
-            {/* 6. Equipamentos */}
-            <Link to="/equipamentos" className="group">
+            {/* 6. Aprovisionamento */}
+            <Link to="/aprovisionamento" className="group">
               <Card className="h-full transition-all duration-300 hover:shadow-xl hover:-translate-y-2 border-0 bg-gradient-to-br from-orange-50 to-amber-50 group-hover:from-orange-100 group-hover:to-amber-100">
                 <CardContent className="p-6 text-center">
                   <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-orange-500 to-amber-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
                     <Briefcase className="h-10 w-10 text-white" />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">Equipamentos</h3>
-                  <p className="text-sm text-gray-600 mb-4">Gestão de equipamentos e materiais</p>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">Aprovisionamento</h3>
+                  <p className="text-sm text-gray-600 mb-4">Gestão de recursos e consumíveis</p>
                   <div className="flex justify-center space-x-2">
-                    <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-700">Inventário</Badge>
-                    <Badge variant="outline" className="text-xs">Manutenção</Badge>
+                    <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-700">Fase 1</Badge>
+                    <Badge variant="outline" className="text-xs">Categorias</Badge>
                   </div>
                 </CardContent>
               </Card>

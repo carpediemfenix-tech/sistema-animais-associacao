@@ -1,0 +1,452 @@
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { 
+  Package, 
+  Plus, 
+  Settings, 
+  TrendingUp, 
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  Users,
+  PawPrint,
+  Target,
+  Shield,
+  Cookie,
+  Pill,
+  Wrench,
+  FileText,
+  Sparkles,
+  Camera,
+  Gift
+} from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
+import EnhancedHeader from "@/components/EnhancedHeader";
+import EnhancedFooter from "@/components/EnhancedFooter";
+import PageActionBar from "@/components/PageActionBar";
+
+interface Categoria {
+  id: string;
+  nome: string;
+  descricao: string;
+  tem_numero_serie: boolean;
+  tem_validade: boolean;
+  permite_devolucao: boolean;
+  permite_atribuicao_animais: boolean;
+  requer_verificacao: boolean;
+  cor_interface: string;
+  icone: string;
+  ativo: boolean;
+  total_tipos?: number;
+  total_itens?: number;
+}
+
+const AprovisionamentoDashboard = () => {
+  const { user, hasPermission } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    total_categorias: 0,
+    total_tipos: 0,
+    total_itens: 0,
+    itens_disponíveis: 0,
+    itens_ocupados: 0,
+    itens_vencendo: 0
+  });
+
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+
+      // Carregar categorias
+      const { data: categoriasData, error: categoriasError } = await supabase
+        .from('categorias_aprovisionamento_2026_01_06')
+        .select('*')
+        .eq('ativo', true)
+        .order('nome');
+
+      if (categoriasError) {
+        console.error('Erro ao carregar categorias:', categoriasError);
+        if (categoriasError.code === '42P01') {
+          toast({
+            title: "Estrutura não encontrada",
+            description: "O módulo de Aprovisionamento precisa ser configurado. Contacte o administrador.",
+            variant: "destructive",
+          });
+        }
+        setCategorias([]);
+      } else {
+        setCategorias(categoriasData || []);
+        
+        // Carregar contagem de tipos para cada categoria
+        if (categoriasData && categoriasData.length > 0) {
+          const categoriasComContagem = await Promise.all(
+            categoriasData.map(async (categoria) => {
+              const { count } = await supabase
+                .from('tipos_aprovisionamento_2026_01_06')
+                .select('*', { count: 'exact', head: true })
+                .eq('categoria_id', categoria.id)
+                .eq('ativo', true);
+              
+              return {
+                ...categoria,
+                total_tipos: count || 0,
+                total_itens: 0 // Será implementado na próxima fase
+              };
+            })
+          );
+          
+          setCategorias(categoriasComContagem);
+          
+          // Calcular estatísticas
+          const totalTipos = categoriasComContagem.reduce((sum, cat) => sum + (cat.total_tipos || 0), 0);
+          
+          setStats(prev => ({
+            ...prev,
+            total_categorias: categoriasComContagem.length,
+            total_tipos: totalTipos,
+            total_itens: 0, // Será implementado na próxima fase
+            itens_disponíveis: 0,
+            itens_ocupados: 0,
+            itens_vencendo: 0
+          }));
+        }
+      }
+
+    } catch (error: any) {
+      console.error('Erro ao carregar dados do dashboard:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar dados do dashboard",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getIconComponent = (iconName: string) => {
+    const icons: { [key: string]: React.ComponentType<any> } = {
+      Package,
+      Shield,
+      Cookie,
+      Pill,
+      Wrench,
+      FileText,
+      Sparkles,
+      Camera,
+      Gift
+    };
+    
+    const IconComponent = icons[iconName] || Package;
+    return <IconComponent className="h-6 w-6" />;
+  };
+
+  const handleNavigateToCategories = () => {
+    navigate('/aprovisionamento/categorias');
+  };
+
+  const handleNavigateToTypes = () => {
+    navigate('/aprovisionamento/tipos');
+  };
+
+  const handleNavigateToItems = () => {
+    navigate('/aprovisionamento/itens');
+  };
+
+  const handleNavigateToSettings = () => {
+    navigate('/aprovisionamento/configuracoes');
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <EnhancedHeader />
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          </div>
+        </div>
+        <EnhancedFooter />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <EnhancedHeader />
+      
+      <PageActionBar
+        title="Aprovisionamento"
+        subtitle="Gestão completa de recursos, equipamentos e consumíveis"
+        actions={[
+          {
+            label: "Configurações",
+            onClick: handleNavigateToSettings,
+            variant: "outline" as const,
+            icon: Settings
+          },
+          {
+            label: "Novo Item",
+            onClick: handleNavigateToItems,
+            variant: "default" as const,
+            icon: Plus,
+            disabled: true // Será habilitado na próxima fase
+          }
+        ]}
+      />
+
+      <div className="container mx-auto px-4 py-8">
+        {/* Estatísticas Gerais */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-blue-600">Categorias</p>
+                  <p className="text-3xl font-bold text-blue-900">{stats.total_categorias}</p>
+                </div>
+                <Package className="h-8 w-8 text-blue-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-green-600">Tipos</p>
+                  <p className="text-3xl font-bold text-green-900">{stats.total_tipos}</p>
+                </div>
+                <Settings className="h-8 w-8 text-green-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-purple-600">Total de Itens</p>
+                  <p className="text-3xl font-bold text-purple-900">{stats.total_itens}</p>
+                  <p className="text-xs text-purple-600 mt-1">Próxima fase</p>
+                </div>
+                <TrendingUp className="h-8 w-8 text-purple-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-orange-600">Alertas</p>
+                  <p className="text-3xl font-bold text-orange-900">{stats.itens_vencendo}</p>
+                  <p className="text-xs text-orange-600 mt-1">Próxima fase</p>
+                </div>
+                <AlertTriangle className="h-8 w-8 text-orange-600" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Estados dos Itens - Placeholder para próximas fases */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Card className="opacity-60">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Disponíveis</p>
+                  <p className="text-2xl font-bold text-green-600">{stats.itens_disponíveis}</p>
+                  <p className="text-xs text-gray-500">Próxima fase</p>
+                </div>
+                <CheckCircle className="h-8 w-8 text-green-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="opacity-60">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Em Uso</p>
+                  <p className="text-2xl font-bold text-blue-600">{stats.itens_ocupados}</p>
+                  <p className="text-xs text-gray-500">Próxima fase</p>
+                </div>
+                <Clock className="h-8 w-8 text-blue-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="opacity-60">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">A Vencer</p>
+                  <p className="text-2xl font-bold text-orange-600">{stats.itens_vencendo}</p>
+                  <p className="text-xs text-gray-500">Próxima fase</p>
+                </div>
+                <AlertTriangle className="h-8 w-8 text-orange-600" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Categorias */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Package className="h-5 w-5" />
+                  Categorias de Aprovisionamento
+                </CardTitle>
+                <CardDescription>
+                  Gerir categorias e tipos de recursos disponíveis
+                </CardDescription>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={handleNavigateToTypes}>
+                  <Settings className="h-4 w-4 mr-2" />
+                  Gerir Tipos
+                </Button>
+                <Button onClick={handleNavigateToCategories}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Gerir Categorias
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {categorias.length === 0 ? (
+              <div className="text-center py-12">
+                <Package className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  Nenhuma categoria encontrada
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  Comece por criar categorias para organizar o seu aprovisionamento
+                </p>
+                <Button onClick={handleNavigateToCategories}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Criar Primeira Categoria
+                </Button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {categorias.map((categoria) => (
+                  <Card 
+                    key={categoria.id} 
+                    className="hover:shadow-md transition-shadow cursor-pointer border-l-4"
+                    style={{ borderLeftColor: categoria.cor_interface }}
+                    onClick={() => navigate(`/aprovisionamento/categoria/${categoria.id}`)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <div 
+                          className="p-2 rounded-lg"
+                          style={{ backgroundColor: `${categoria.cor_interface}20` }}
+                        >
+                          <div style={{ color: categoria.cor_interface }}>
+                            {getIconComponent(categoria.icone)}
+                          </div>
+                        </div>
+                        <Badge variant="secondary">
+                          {categoria.total_tipos || 0} tipos
+                        </Badge>
+                      </div>
+                      
+                      <h3 className="font-semibold text-gray-900 mb-1">
+                        {categoria.nome}
+                      </h3>
+                      
+                      {categoria.descricao && (
+                        <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                          {categoria.descricao}
+                        </p>
+                      )}
+                      
+                      <div className="flex flex-wrap gap-1">
+                        {categoria.tem_numero_serie && (
+                          <Badge variant="outline" className="text-xs">
+                            Nº Série
+                          </Badge>
+                        )}
+                        {categoria.tem_validade && (
+                          <Badge variant="outline" className="text-xs">
+                            Validade
+                          </Badge>
+                        )}
+                        {categoria.permite_devolucao && (
+                          <Badge variant="outline" className="text-xs">
+                            Devolução
+                          </Badge>
+                        )}
+                        {categoria.permite_atribuicao_animais && (
+                          <Badge variant="outline" className="text-xs">
+                            Animais
+                          </Badge>
+                        )}
+                        {categoria.requer_verificacao && (
+                          <Badge variant="outline" className="text-xs">
+                            Verificação
+                          </Badge>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Ações Rápidas - Placeholder para próximas fases */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+          <Card className="hover:shadow-md transition-shadow cursor-pointer opacity-60" onClick={() => toast({ title: "Em desenvolvimento", description: "Funcionalidade será implementada na próxima fase" })}>
+            <CardContent className="p-6 text-center">
+              <Users className="h-12 w-12 text-blue-600 mx-auto mb-4" />
+              <h3 className="font-semibold text-gray-900 mb-2">Atribuições a Voluntários</h3>
+              <p className="text-sm text-gray-600">Gerir equipamentos atribuídos a voluntários</p>
+              <Badge variant="outline" className="mt-2">Próxima fase</Badge>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-md transition-shadow cursor-pointer opacity-60" onClick={() => toast({ title: "Em desenvolvimento", description: "Funcionalidade será implementada na próxima fase" })}>
+            <CardContent className="p-6 text-center">
+              <PawPrint className="h-12 w-12 text-green-600 mx-auto mb-4" />
+              <h3 className="font-semibold text-gray-900 mb-2">Atribuições a Animais</h3>
+              <p className="text-sm text-gray-600">Gerir consumíveis atribuídos a animais</p>
+              <Badge variant="outline" className="mt-2">Próxima fase</Badge>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-md transition-shadow cursor-pointer opacity-60" onClick={() => toast({ title: "Em desenvolvimento", description: "Funcionalidade será implementada na próxima fase" })}>
+            <CardContent className="p-6 text-center">
+              <Target className="h-12 w-12 text-purple-600 mx-auto mb-4" />
+              <h3 className="font-semibold text-gray-900 mb-2">Atribuições a Missões</h3>
+              <p className="text-sm text-gray-600">Gerir equipamentos atribuídos a missões</p>
+              <Badge variant="outline" className="mt-2">Próxima fase</Badge>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+      
+      <EnhancedFooter />
+    </div>
+  );
+};
+
+export default AprovisionamentoDashboard;

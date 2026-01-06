@@ -95,6 +95,11 @@ import GruposArquivados from "./pages/GruposArquivados";
 import LogsAcesso from "./pages/LogsAcesso";
 import GestaoPontuacao from "./pages/GestaoPontuacao";
 
+// Módulo de Aprovisionamento - Fase 1
+import AprovisionamentoDashboard from "./pages/aprovisionamento/AprovisionamentoDashboard";
+import CategoriasAprovisionamento from "./pages/aprovisionamento/CategoriasAprovisionamento";
+import TiposAprovisionamento from "./pages/aprovisionamento/TiposAprovisionamento";
+
 // Módulo de Denúncias - Fase 2
 import WizardDenuncia from "./pages/WizardDenuncia";
 import DenunciaDetail from "./pages/DenunciaDetail";
@@ -243,6 +248,11 @@ function App() {
               <Route path="/equipamentos/manutencoes" element={<ProtectedRoute><EquipamentosManutencoes /></ProtectedRoute>} />
               <Route path="/equipamentos/alertas" element={<ProtectedRoute><EquipamentosAlertas /></ProtectedRoute>} />
               <Route path="/equipamentos/relatorios" element={<ProtectedRoute><EquipamentosRelatorios /></ProtectedRoute>} />
+              
+              {/* Módulo de Aprovisionamento - Fase 1 */}
+              <Route path="/aprovisionamento" element={<ProtectedRoute><AprovisionamentoDashboard /></ProtectedRoute>} />
+              <Route path="/aprovisionamento/categorias" element={<ProtectedRoute><CategoriasAprovisionamento /></ProtectedRoute>} />
+              <Route path="/aprovisionamento/tipos" element={<ProtectedRoute><TiposAprovisionamento /></ProtectedRoute>} />
               
               {/* Sistema de Pontuação */}
               <Route path="/gestao-pontuacao" element={<ProtectedRoute><GestaoPontuacao /></ProtectedRoute>} />
