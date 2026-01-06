@@ -57,9 +57,9 @@ const AprovisionamentoDashboard = () => {
     total_categorias: 0,
     total_tipos: 0,
     total_itens: 0,
-    itens_disponíveis: 0,
-    itens_ocupados: 0,
-    itens_vencendo: 0
+    alertas_stock: 0,
+    valor_total_stock: 0,
+    total_movimentos: 0
   });
 
   useEffect(() => {
@@ -147,7 +147,7 @@ const AprovisionamentoDashboard = () => {
             return {
               ...categoria,
               total_tipos: count || 0,
-              total_itens: 0 // Será implementado na próxima fase
+              total_itens: 0
             };
           } catch (error) {
             console.error(`❌ [DASHBOARD] Erro ao processar categoria ${categoria.nome}:`, error);
@@ -162,23 +162,68 @@ const AprovisionamentoDashboard = () => {
       
       setCategorias(categoriasComContagem);
       
-      // Calcular estatísticas
-      const totalTipos = categoriasComContagem.reduce((sum, cat) => sum + (cat.total_tipos || 0), 0);
+      // Carregar estatísticas de stock
+      console.log('🔍 [DASHBOARD] Carregando estatísticas de stock...');
       
-      console.log('📊 [DASHBOARD] Estatísticas calculadas:', {
-        total_categorias: categoriasComContagem.length,
-        total_tipos: totalTipos
-      });
-      
-      setStats(prev => ({
-        ...prev,
-        total_categorias: categoriasComContagem.length,
-        total_tipos: totalTipos,
-        total_itens: 0, // Será implementado na próxima fase
-        itens_disponíveis: 0,
-        itens_ocupados: 0,
-        itens_vencendo: 0
-      }));
+      try {
+        // Contar itens totais
+        const { count: totalItens, error: itensError } = await supabase
+          .from('itens_aprovisionamento_2026_01_06')
+          .select('*', { count: 'exact', head: true })
+          .eq('ativo', true);
+
+        // Contar alertas de stock baixo
+        const { count: alertasStock, error: alertasError } = await supabase
+          .from('itens_aprovisionamento_2026_01_06')
+          .select('*', { count: 'exact', head: true })
+          .eq('ativo', true)
+          .eq('alerta_stock_baixo', true);
+
+        // Calcular valor total do stock
+        const { data: valorData, error: valorError } = await supabase
+          .from('itens_aprovisionamento_2026_01_06')
+          .select('valor_total_stock')
+          .eq('ativo', true);
+
+        // Contar movimentos de stock
+        const { count: totalMovimentos, error: movimentosError } = await supabase
+          .from('movimentos_stock_2026_01_06')
+          .select('*', { count: 'exact', head: true });
+
+        const valorTotalStock = valorData?.reduce((sum, item) => sum + (item.valor_total_stock || 0), 0) || 0;
+        
+        console.log('📊 [DASHBOARD] Estatísticas de stock:', {
+          totalItens: totalItens || 0,
+          alertasStock: alertasStock || 0,
+          valorTotalStock,
+          totalMovimentos: totalMovimentos || 0
+        });
+
+        // Calcular estatísticas
+        const totalTipos = categoriasComContagem.reduce((sum, cat) => sum + (cat.total_tipos || 0), 0);
+        
+        setStats({
+          total_categorias: categoriasComContagem.length,
+          total_tipos: totalTipos,
+          total_itens: totalItens || 0,
+          alertas_stock: alertasStock || 0,
+          valor_total_stock: valorTotalStock,
+          total_movimentos: totalMovimentos || 0
+        });
+
+      } catch (stockError) {
+        console.error('❌ [DASHBOARD] Erro ao carregar estatísticas de stock:', stockError);
+        // Manter estatísticas básicas mesmo se stock falhar
+        const totalTipos = categoriasComContagem.reduce((sum, cat) => sum + (cat.total_tipos || 0), 0);
+        setStats({
+          total_categorias: categoriasComContagem.length,
+          total_tipos: totalTipos,
+          total_itens: 0,
+          alertas_stock: 0,
+          valor_total_stock: 0,
+          total_movimentos: 0
+        });
+      }
 
     } catch (error: any) {
       console.error('❌ [DASHBOARD] Erro geral ao carregar dados:', error);
@@ -255,11 +300,10 @@ const AprovisionamentoDashboard = () => {
             icon: Settings
           },
           {
-            label: "Novo Item",
+            label: "Gestão de Itens",
             onClick: handleNavigateToItems,
             variant: "default" as const,
-            icon: Plus,
-            disabled: true // Será habilitado na próxima fase
+            icon: Plus
           }
         ]}
       />
@@ -310,53 +354,69 @@ const AprovisionamentoDashboard = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-purple-600">Total de Itens</p>
+                  <p className="text-sm font-medium text-purple-600">Itens em Stock</p>
                   <p className="text-3xl font-bold text-purple-900">{stats.total_itens}</p>
-                  <p className="text-xs text-purple-600 mt-1">Próxima fase</p>
+                  <p className="text-xs text-purple-600 mt-1">Produtos físicos</p>
                 </div>
                 <TrendingUp className="h-8 w-8 text-purple-600" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+          <Card className={`bg-gradient-to-br border-2 ${
+            stats.alertas_stock > 0 
+              ? 'from-red-50 to-red-100 border-red-300 animate-pulse' 
+              : 'from-orange-50 to-orange-100 border-orange-200'
+          }`}>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-orange-600">Alertas</p>
-                  <p className="text-3xl font-bold text-orange-900">{stats.itens_vencendo}</p>
-                  <p className="text-xs text-orange-600 mt-1">Próxima fase</p>
+                  <p className={`text-sm font-medium ${
+                    stats.alertas_stock > 0 ? 'text-red-600' : 'text-orange-600'
+                  }`}>Alertas Stock</p>
+                  <p className={`text-3xl font-bold ${
+                    stats.alertas_stock > 0 ? 'text-red-900' : 'text-orange-900'
+                  }`}>{stats.alertas_stock}</p>
+                  <p className={`text-xs mt-1 ${
+                    stats.alertas_stock > 0 ? 'text-red-600' : 'text-orange-600'
+                  }`}>
+                    {stats.alertas_stock > 0 ? '⚠️ Stock baixo!' : '✅ Stock OK'}
+                  </p>
                 </div>
-                <AlertTriangle className="h-8 w-8 text-orange-600" />
+                <AlertTriangle className={`h-8 w-8 ${
+                  stats.alertas_stock > 0 ? 'text-red-600' : 'text-orange-600'
+                }`} />
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Estados dos Itens - Placeholder para próximas fases */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card className="opacity-60">
+        {/* Estatísticas Financeiras e de Movimentos */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Disponíveis</p>
-                  <p className="text-2xl font-bold text-green-600">{stats.itens_disponíveis}</p>
-                  <p className="text-xs text-gray-500">Próxima fase</p>
+                  <p className="text-sm font-medium text-emerald-600">Valor Total Stock</p>
+                  <p className="text-3xl font-bold text-emerald-900">
+                    €{stats.valor_total_stock.toFixed(2)}
+                  </p>
+                  <p className="text-xs text-emerald-600 mt-1">Investimento atual</p>
                 </div>
-                <CheckCircle className="h-8 w-8 text-green-600" />
+                <TrendingUp className="h-8 w-8 text-emerald-600" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="opacity-60">
+          <Card className="bg-gradient-to-br from-indigo-50 to-indigo-100 border-indigo-200">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Em Uso</p>
-                  <p className="text-2xl font-bold text-blue-600">{stats.itens_ocupados}</p>
-                  <p className="text-xs text-gray-500">Próxima fase</p>
+                  <p className="text-sm font-medium text-indigo-600">Movimentos</p>
+                  <p className="text-3xl font-bold text-indigo-900">{stats.total_movimentos}</p>
+                  <p className="text-xs text-indigo-600 mt-1">Entradas/Saídas</p>
                 </div>
-                <Clock className="h-8 w-8 text-blue-600" />
+                <Clock className="h-8 w-8 text-indigo-600" />
               </div>
             </CardContent>
           </Card>
@@ -481,6 +541,43 @@ const AprovisionamentoDashboard = () => {
                 ))}
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Gestão de Itens - Fase 2 */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              Gestão de Itens
+            </CardTitle>
+            <CardDescription>
+              Gerir itens físicos, stock e movimentos
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card 
+                className="hover:shadow-md transition-shadow cursor-pointer border-blue-200 bg-blue-50" 
+                onClick={handleNavigateToItems}
+              >
+                <CardContent className="p-4 text-center">
+                  <Package className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+                  <h4 className="font-semibold text-blue-900 mb-1">Itens de Stock</h4>
+                  <p className="text-sm text-blue-700">Gerir produtos físicos e quantidades</p>
+                  <Badge className="mt-2 bg-blue-600">Disponível</Badge>
+                </CardContent>
+              </Card>
+
+              <Card className="hover:shadow-md transition-shadow cursor-pointer opacity-60" onClick={() => toast({ title: "Em desenvolvimento", description: "Funcionalidade será implementada na próxima fase" })}>
+                <CardContent className="p-4 text-center">
+                  <BarChart3 className="h-8 w-8 text-gray-600 mx-auto mb-2" />
+                  <h4 className="font-semibold text-gray-900 mb-1">Relatórios Stock</h4>
+                  <p className="text-sm text-gray-600">Análises e relatórios de stock</p>
+                  <Badge variant="outline" className="mt-2">Próxima fase</Badge>
+                </CardContent>
+              </Card>
+            </div>
           </CardContent>
         </Card>
 
