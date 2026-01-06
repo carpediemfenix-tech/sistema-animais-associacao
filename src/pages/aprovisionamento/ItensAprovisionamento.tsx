@@ -369,13 +369,75 @@ const ItensAprovisionamento = () => {
         return;
       }
 
-      // Validação para saídas
+      // Validação melhorada para saídas
       if (movimentoData.tipo_movimento.startsWith('SAIDA') && 
           movimentoData.quantidade > itemMovimento.quantidade_atual) {
-        const confirmar = window.confirm(
-          `ATENÇÃO: Tentativa de saída de ${movimentoData.quantidade} unidades, mas apenas ${itemMovimento.quantidade_atual} disponíveis.\n\nEsta operação resultará em stock negativo. Deseja continuar?`
+        
+        const stockDisponivel = itemMovimento.quantidade_atual;
+        const quantidadeSolicitada = movimentoData.quantidade;
+        const diferenca = quantidadeSolicitada - stockDisponivel;
+        
+        // Opções para o utilizador
+        const opcoes = [
+          `1. Ajustar para ${stockDisponivel} unidades (stock disponível)`,
+          `2. Continuar com ${quantidadeSolicitada} unidades (stock negativo: -${diferenca})`,
+          `3. Cancelar operação`
+        ].join('\n');
+        
+        const escolha = window.prompt(
+          `⚠️ STOCK INSUFICIENTE\n\n` +
+          `Item: ${itemMovimento.nome}\n` +
+          `Stock disponível: ${stockDisponivel} unidades\n` +
+          `Quantidade solicitada: ${quantidadeSolicitada} unidades\n` +
+          `Diferença: ${diferenca} unidades em falta\n\n` +
+          `Escolha uma opção:\n${opcoes}\n\n` +
+          `Digite 1, 2 ou 3:`,
+          '1'
         );
-        if (!confirmar) return;
+        
+        if (escolha === '1') {
+          // Ajustar para stock disponível
+          setMovimentoData(prev => ({
+            ...prev,
+            quantidade: stockDisponivel
+          }));
+          
+          toast({
+            title: "🔄 Quantidade Ajustada",
+            description: `Quantidade alterada para ${stockDisponivel} unidades (stock disponível)`,
+          });
+          
+          // Não continuar com a operação, deixar o utilizador confirmar novamente
+          return;
+          
+        } else if (escolha === '2') {
+          // Continuar com stock negativo - confirmação adicional
+          const confirmarNegativo = window.confirm(
+            `⚠️ CONFIRMAÇÃO FINAL\n\n` +
+            `Tem a certeza que deseja continuar?\n\n` +
+            `Esta operação irá resultar em:\n` +
+            `• Stock atual: ${stockDisponivel} unidades\n` +
+            `• Stock final: ${stockDisponivel - quantidadeSolicitada} unidades (NEGATIVO)\n\n` +
+            `Isto pode indicar:\n` +
+            `• Perda/dano não registado\n` +
+            `• Erro de contagem\n` +
+            `• Movimento em falta\n\n` +
+            `Continuar mesmo assim?`
+          );
+          
+          if (!confirmarNegativo) return;
+          
+          // Adicionar observação automática
+          setMovimentoData(prev => ({
+            ...prev,
+            observacoes: (prev.observacoes || '') + 
+              ` [STOCK NEGATIVO AUTORIZADO: ${stockDisponivel} → ${stockDisponivel - quantidadeSolicitada}]`
+          }));
+          
+        } else {
+          // Cancelar (opção 3 ou qualquer outra)
+          return;
+        }
       }
 
       // Confirmação para operações críticas
@@ -471,11 +533,43 @@ const ItensAprovisionamento = () => {
     } catch (error: any) {
       console.error('❌ [MOVIMENTO] Erro ao atualizar stock:', error);
       
-      // Tratamento de erros específicos
+      // Tratamento de erros específicos melhorado
       let errorMessage = "Erro inesperado ao processar movimento";
+      let showRetryOptions = false;
       
-      if (error.message?.includes('insufficient_stock')) {
-        errorMessage = "Stock insuficiente para esta operação";
+      if (error.message?.includes('Stock insuficiente') || error.message?.includes('insufficient_stock')) {
+        // Extrair informações do erro
+        const match = error.message.match(/Disponível: (\d+)/);
+        const stockDisponivel = match ? parseInt(match[1]) : itemMovimento?.quantidade_atual || 0;
+        
+        errorMessage = `Stock insuficiente: apenas ${stockDisponivel} unidades disponíveis`;
+        showRetryOptions = true;
+        
+        // Mostrar opções de recuperação
+        setTimeout(() => {
+          const retry = window.confirm(
+            `🚫 MOVIMENTO BLOQUEADO\n\n` +
+            `O sistema bloqueou esta operação por segurança.\n\n` +
+            `Detalhes:\n` +
+            `• Item: ${itemMovimento?.nome}\n` +
+            `• Stock disponível: ${stockDisponivel} unidades\n` +
+            `• Quantidade solicitada: ${movimentoData.quantidade} unidades\n\n` +
+            `Deseja ajustar a quantidade para ${stockDisponivel} unidades?`
+          );
+          
+          if (retry) {
+            setMovimentoData(prev => ({
+              ...prev,
+              quantidade: stockDisponivel
+            }));
+            
+            toast({
+              title: "🔄 Quantidade Ajustada",
+              description: `Pronto para nova tentativa com ${stockDisponivel} unidades`,
+            });
+          }
+        }, 1000);
+        
       } else if (error.message?.includes('invalid_quantity')) {
         errorMessage = "Quantidade inválida especificada";
       } else if (error.message?.includes('item_not_found')) {
@@ -1108,13 +1202,78 @@ const ItensAprovisionamento = () => {
 
               <div>
                 <Label htmlFor="quantidade">Quantidade *</Label>
-                <Input
-                  id="quantidade"
-                  type="number"
-                  min="1"
-                  value={movimentoData.quantidade}
-                  onChange={(e) => setMovimentoData({...movimentoData, quantidade: parseInt(e.target.value) || 0})}
-                />
+                <div className="space-y-2">
+                  <Input
+                    id="quantidade"
+                    type="number"
+                    min="1"
+                    value={movimentoData.quantidade}
+                    onChange={(e) => setMovimentoData({...movimentoData, quantidade: parseInt(e.target.value) || 0})}
+                    className={`${
+                      movimentoData.tipo_movimento.startsWith('SAIDA') && 
+                      movimentoData.quantidade > (itemMovimento?.quantidade_atual || 0)
+                        ? 'border-red-500 bg-red-50' 
+                        : ''
+                    }`}
+                  />
+                  
+                  {/* Feedback visual em tempo real */}
+                  {itemMovimento && (
+                    <div className="text-sm space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-600">Stock atual:</span>
+                        <span className="font-semibold">{itemMovimento.quantidade_atual} unidades</span>
+                      </div>
+                      
+                      {movimentoData.quantidade > 0 && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-600">Stock após operação:</span>
+                          <span className={`font-semibold ${
+                            movimentoData.tipo_movimento.startsWith('ENTRADA')
+                              ? 'text-green-600'
+                              : movimentoData.tipo_movimento.startsWith('SAIDA') && 
+                                movimentoData.quantidade > itemMovimento.quantidade_atual
+                                ? 'text-red-600'
+                                : 'text-blue-600'
+                          }`}>
+                            {movimentoData.tipo_movimento.startsWith('ENTRADA')
+                              ? itemMovimento.quantidade_atual + movimentoData.quantidade
+                              : itemMovimento.quantidade_atual - movimentoData.quantidade
+                            } unidades
+                          </span>
+                        </div>
+                      )}
+                      
+                      {/* Alerta de stock insuficiente */}
+                      {movimentoData.tipo_movimento.startsWith('SAIDA') && 
+                       movimentoData.quantidade > itemMovimento.quantidade_atual && (
+                        <div className="flex items-center gap-2 p-2 bg-red-50 border border-red-200 rounded">
+                          <AlertTriangle className="h-4 w-4 text-red-600" />
+                          <span className="text-red-700 text-xs">
+                            Stock insuficiente! Faltam {movimentoData.quantidade - itemMovimento.quantidade_atual} unidades
+                          </span>
+                        </div>
+                      )}
+                      
+                      {/* Sugestão de quantidade máxima */}
+                      {movimentoData.tipo_movimento.startsWith('SAIDA') && 
+                       movimentoData.quantidade > itemMovimento.quantidade_atual && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setMovimentoData(prev => ({
+                            ...prev,
+                            quantidade: itemMovimento.quantidade_atual
+                          }))}
+                          className="w-full text-xs"
+                        >
+                          🔄 Ajustar para {itemMovimento.quantidade_atual} unidades (máximo disponível)
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div>
