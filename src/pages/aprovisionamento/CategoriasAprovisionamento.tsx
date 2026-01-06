@@ -353,27 +353,32 @@ const CategoriasAprovisionamento = () => {
       <EnhancedHeader />
       
       <PageActionBar
-        title="Gestão de Categorias"
-        subtitle="Configurar categorias de aprovisionamento"
-        actions={[
-          {
-            label: "Voltar ao Dashboard",
-            onClick: () => navigate('/aprovisionamento'),
-            variant: "outline" as const,
-            icon: ArrowLeft
-          },
-          {
-            label: "Nova Categoria",
-            onClick: () => {
-              console.log('🔍 [CATEGORIAS] Botão Nova Categoria clicado');
-              setShowNewForm(true);
-              setEditingId(null);
-              resetForm();
-            },
-            variant: "default" as const,
-            icon: Plus
-          }
+        breadcrumbs={[
+          { label: 'Aprovisionamento', href: '/aprovisionamento' },
+          { label: 'Gestão de Categorias' }
         ]}
+        primaryActions={
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/aprovisionamento')}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Voltar ao Dashboard
+            </Button>
+            <Button 
+              onClick={() => {
+                console.log('🔍 [CATEGORIAS] Botão Nova Categoria clicado');
+                setShowNewForm(true);
+                setEditingId(null);
+                resetForm();
+              }}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Nova Categoria
+            </Button>
+          </div>
+        }
       />
 
       <div className="container mx-auto px-4 py-8">

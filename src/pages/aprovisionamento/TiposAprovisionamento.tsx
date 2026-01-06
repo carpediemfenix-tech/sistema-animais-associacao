@@ -324,26 +324,31 @@ const TiposAprovisionamento = () => {
       <EnhancedHeader />
       
       <PageActionBar
-        title="Gestão de Tipos"
-        subtitle="Configurar tipos específicos por categoria"
-        actions={[
-          {
-            label: "Voltar ao Dashboard",
-            onClick: () => navigate('/aprovisionamento'),
-            variant: "outline" as const,
-            icon: ArrowLeft
-          },
-          {
-            label: "Novo Tipo",
-            onClick: () => {
-              setShowNewForm(true);
-              setEditingId(null);
-              resetForm();
-            },
-            variant: "default" as const,
-            icon: Plus
-          }
+        breadcrumbs={[
+          { label: 'Aprovisionamento', href: '/aprovisionamento' },
+          { label: 'Gestão de Tipos' }
         ]}
+        primaryActions={
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/aprovisionamento')}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Voltar ao Dashboard
+            </Button>
+            <Button 
+              onClick={() => {
+                setShowNewForm(true);
+                setEditingId(null);
+                resetForm();
+              }}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Tipo
+            </Button>
+          </div>
+        }
       />
 
       <div className="container mx-auto px-4 py-8">
