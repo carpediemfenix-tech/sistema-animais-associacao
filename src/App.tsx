@@ -99,6 +99,7 @@ import GestaoPontuacao from "./pages/GestaoPontuacao";
 import AprovisionamentoDashboard from "./pages/aprovisionamento/AprovisionamentoDashboard";
 import CategoriasAprovisionamento from "./pages/aprovisionamento/CategoriasAprovisionamento";
 import TiposAprovisionamento from "./pages/aprovisionamento/TiposAprovisionamento";
+import TestAprovisionamento from "./pages/aprovisionamento/TestAprovisionamento";
 
 // Módulo de Denúncias - Fase 2
 import WizardDenuncia from "./pages/WizardDenuncia";
@@ -253,6 +254,7 @@ function App() {
               <Route path="/aprovisionamento" element={<ProtectedRoute><AprovisionamentoDashboard /></ProtectedRoute>} />
               <Route path="/aprovisionamento/categorias" element={<ProtectedRoute><CategoriasAprovisionamento /></ProtectedRoute>} />
               <Route path="/aprovisionamento/tipos" element={<ProtectedRoute><TiposAprovisionamento /></ProtectedRoute>} />
+              <Route path="/aprovisionamento/teste" element={<ProtectedRoute><TestAprovisionamento /></ProtectedRoute>} />
               
               {/* Sistema de Pontuação */}
               <Route path="/gestao-pontuacao" element={<ProtectedRoute><GestaoPontuacao /></ProtectedRoute>} />
