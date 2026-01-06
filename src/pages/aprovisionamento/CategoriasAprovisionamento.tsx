@@ -150,6 +150,8 @@ const CategoriasAprovisionamento = () => {
 
   const handleSave = async () => {
     try {
+      console.log('🔍 [CATEGORIAS] Iniciando salvamento...', { formData, editingId });
+      
       if (!formData.nome.trim()) {
         toast({
           title: "Erro",
@@ -161,6 +163,7 @@ const CategoriasAprovisionamento = () => {
 
       if (editingId) {
         // Atualizar categoria existente
+        console.log('🔍 [CATEGORIAS] Atualizando categoria existente...', editingId);
         const { error } = await supabase
           .from('categorias_aprovisionamento_2026_01_06')
           .update({
@@ -169,20 +172,32 @@ const CategoriasAprovisionamento = () => {
           })
           .eq('id', editingId);
 
-        if (error) throw error;
+        if (error) {
+          console.error('❌ [CATEGORIAS] Erro ao atualizar:', error);
+          throw error;
+        }
 
+        console.log('✅ [CATEGORIAS] Categoria atualizada com sucesso');
         toast({
           title: "Sucesso",
           description: "Categoria atualizada com sucesso",
         });
       } else {
         // Criar nova categoria
-        const { error } = await supabase
+        console.log('🔍 [CATEGORIAS] Criando nova categoria...');
+        const { data, error } = await supabase
           .from('categorias_aprovisionamento_2026_01_06')
-          .insert([formData]);
+          .insert([formData])
+          .select();
 
-        if (error) throw error;
+        console.log('🔍 [CATEGORIAS] Resultado da inserção:', { data, error });
 
+        if (error) {
+          console.error('❌ [CATEGORIAS] Erro ao criar:', error);
+          throw error;
+        }
+
+        console.log('✅ [CATEGORIAS] Categoria criada com sucesso');
         toast({
           title: "Sucesso",
           description: "Categoria criada com sucesso",
@@ -195,10 +210,21 @@ const CategoriasAprovisionamento = () => {
       loadCategorias();
 
     } catch (error: any) {
-      console.error('Erro ao salvar categoria:', error);
+      console.error('❌ [CATEGORIAS] Erro ao salvar categoria:', error);
+      
+      let errorMessage = "Erro ao salvar categoria";
+      
+      if (error.code === 'PGRST116' || error.message?.includes('JWT')) {
+        errorMessage = "Erro de autenticação. Faça login novamente.";
+      } else if (error.code === '42501') {
+        errorMessage = "Sem permissão para esta operação. Verifique as políticas RLS.";
+      } else if (error.message) {
+        errorMessage = `${error.code ? error.code + ': ' : ''}${error.message}`;
+      }
+      
       toast({
         title: "Erro",
-        description: error.message || "Erro ao salvar categoria",
+        description: errorMessage,
         variant: "destructive",
       });
     }

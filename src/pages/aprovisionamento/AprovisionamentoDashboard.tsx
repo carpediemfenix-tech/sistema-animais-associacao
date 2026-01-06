@@ -69,64 +69,119 @@ const AprovisionamentoDashboard = () => {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
+      console.log('🔍 [DASHBOARD] Iniciando carregamento de dados...');
+      console.log('🔍 [DASHBOARD] Usuário autenticado:', !!user);
 
       // Carregar categorias
+      console.log('🔍 [DASHBOARD] Carregando categorias...');
       const { data: categoriasData, error: categoriasError } = await supabase
         .from('categorias_aprovisionamento_2026_01_06')
         .select('*')
-        .eq('ativo', true)
         .order('nome');
 
+      console.log('🔍 [DASHBOARD] Resultado categorias:', { 
+        data: categoriasData, 
+        error: categoriasError,
+        count: categoriasData?.length || 0
+      });
+
       if (categoriasError) {
-        console.error('Erro ao carregar categorias:', categoriasError);
+        console.error('❌ [DASHBOARD] Erro ao carregar categorias:', categoriasError);
+        
         if (categoriasError.code === '42P01') {
           toast({
-            title: "Estrutura não encontrada",
-            description: "O módulo de Aprovisionamento precisa ser configurado. Contacte o administrador.",
+            title: "Tabela não encontrada",
+            description: "A tabela categorias_aprovisionamento_2026_01_06 não existe. Execute as migrações.",
+            variant: "destructive",
+          });
+        } else if (categoriasError.code === 'PGRST116' || categoriasError.message?.includes('JWT')) {
+          toast({
+            title: "Erro de autenticação",
+            description: "Problema com as políticas RLS ou sessão expirada. Faça login novamente.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Erro ao carregar categorias",
+            description: `Código: ${categoriasError.code} - ${categoriasError.message}`,
             variant: "destructive",
           });
         }
         setCategorias([]);
-      } else {
-        setCategorias(categoriasData || []);
-        
-        // Carregar contagem de tipos para cada categoria
-        if (categoriasData && categoriasData.length > 0) {
-          const categoriasComContagem = await Promise.all(
-            categoriasData.map(async (categoria) => {
-              const { count } = await supabase
-                .from('tipos_aprovisionamento_2026_01_06')
-                .select('*', { count: 'exact', head: true })
-                .eq('categoria_id', categoria.id)
-                .eq('ativo', true);
-              
-              return {
-                ...categoria,
-                total_tipos: count || 0,
-                total_itens: 0 // Será implementado na próxima fase
-              };
-            })
-          );
-          
-          setCategorias(categoriasComContagem);
-          
-          // Calcular estatísticas
-          const totalTipos = categoriasComContagem.reduce((sum, cat) => sum + (cat.total_tipos || 0), 0);
-          
-          setStats(prev => ({
-            ...prev,
-            total_categorias: categoriasComContagem.length,
-            total_tipos: totalTipos,
-            total_itens: 0, // Será implementado na próxima fase
-            itens_disponíveis: 0,
-            itens_ocupados: 0,
-            itens_vencendo: 0
-          }));
-        }
+        setStats(prev => ({ ...prev, total_categorias: 0, total_tipos: 0 }));
+        return;
       }
 
+      console.log('✅ [DASHBOARD] Categorias carregadas:', categoriasData?.length || 0);
+      
+      if (!categoriasData || categoriasData.length === 0) {
+        console.log('⚠️ [DASHBOARD] Nenhuma categoria encontrada');
+        setCategorias([]);
+        setStats(prev => ({ ...prev, total_categorias: 0, total_tipos: 0 }));
+        return;
+      }
+
+      // Carregar contagem de tipos para cada categoria
+      console.log('🔍 [DASHBOARD] Carregando contagem de tipos...');
+      
+      const categoriasComContagem = await Promise.all(
+        categoriasData.map(async (categoria) => {
+          try {
+            const { count, error: countError } = await supabase
+              .from('tipos_aprovisionamento_2026_01_06')
+              .select('*', { count: 'exact', head: true })
+              .eq('categoria_id', categoria.id)
+              .eq('ativo', true);
+
+            if (countError) {
+              console.error(`❌ [DASHBOARD] Erro ao contar tipos para categoria ${categoria.nome}:`, countError);
+              return {
+                ...categoria,
+                total_tipos: 0,
+                total_itens: 0
+              };
+            }
+
+            console.log(`✅ [DASHBOARD] Categoria ${categoria.nome}: ${count || 0} tipos`);
+            
+            return {
+              ...categoria,
+              total_tipos: count || 0,
+              total_itens: 0 // Será implementado na próxima fase
+            };
+          } catch (error) {
+            console.error(`❌ [DASHBOARD] Erro ao processar categoria ${categoria.nome}:`, error);
+            return {
+              ...categoria,
+              total_tipos: 0,
+              total_itens: 0
+            };
+          }
+        })
+      );
+      
+      setCategorias(categoriasComContagem);
+      
+      // Calcular estatísticas
+      const totalTipos = categoriasComContagem.reduce((sum, cat) => sum + (cat.total_tipos || 0), 0);
+      
+      console.log('📊 [DASHBOARD] Estatísticas calculadas:', {
+        total_categorias: categoriasComContagem.length,
+        total_tipos: totalTipos
+      });
+      
+      setStats(prev => ({
+        ...prev,
+        total_categorias: categoriasComContagem.length,
+        total_tipos: totalTipos,
+        total_itens: 0, // Será implementado na próxima fase
+        itens_disponíveis: 0,
+        itens_ocupados: 0,
+        itens_vencendo: 0
+      }));
+
     } catch (error: any) {
-      console.error('Erro ao carregar dados do dashboard:', error);
+      console.error('❌ [DASHBOARD] Erro geral ao carregar dados:', error);
       toast({
         title: "Erro",
         description: "Erro ao carregar dados do dashboard",
@@ -177,6 +232,7 @@ const AprovisionamentoDashboard = () => {
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <span className="ml-4 text-gray-600">Carregando dados do aprovisionamento...</span>
           </div>
         </div>
         <EnhancedFooter />
@@ -209,6 +265,21 @@ const AprovisionamentoDashboard = () => {
       />
 
       <div className="container mx-auto px-4 py-8">
+        {/* Debug Info - Remover em produção */}
+        {process.env.NODE_ENV === 'development' && (
+          <Card className="mb-6 border-yellow-200 bg-yellow-50">
+            <CardContent className="p-4">
+              <h4 className="font-semibold text-yellow-800 mb-2">🔧 Debug Info (Desenvolvimento)</h4>
+              <div className="text-sm text-yellow-700 space-y-1">
+                <p>• Usuário autenticado: {user ? '✅ Sim' : '❌ Não'}</p>
+                <p>• Categorias carregadas: {categorias.length}</p>
+                <p>• Total de tipos: {stats.total_tipos}</p>
+                <p>• Verifique o console do navegador para logs detalhados</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Estatísticas Gerais */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
