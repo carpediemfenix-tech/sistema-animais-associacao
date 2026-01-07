@@ -16,6 +16,7 @@ import {
   Package, 
   ArrowLeft,
   User,
+  Users,
   Heart,
   MapPin,
   Calendar,
@@ -509,6 +510,7 @@ const EditarAtribuicao: React.FC = () => {
                     {atribuicao.tipo_atribuicao === 'VOLUNTARIO' && <User className="h-4 w-4 text-green-600" />}
                     {atribuicao.tipo_atribuicao === 'ANIMAL' && <Heart className="h-4 w-4 text-red-600" />}
                     {atribuicao.tipo_atribuicao === 'MISSAO' && <MapPin className="h-4 w-4 text-purple-600" />}
+                    {atribuicao.tipo_atribuicao === 'GRUPO' && <Users className="h-4 w-4 text-orange-600" />}
                     <span className="font-medium">{atribuicao.entidade_nome}</span>
                   </div>
                 </div>

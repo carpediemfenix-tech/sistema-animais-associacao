@@ -22,7 +22,6 @@ import {
   Users,
   Heart,
   MapPin,
-  UsersIcon,
   Loader2,
   CheckCircle,
   AlertTriangle
@@ -547,7 +546,7 @@ const ConfiguracoesAtribuicoes: React.FC = () => {
                       
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <UsersIcon className="h-4 w-4 text-green-600" />
+                          <Users className="h-4 w-4 text-green-600" />
                           <span>Grupos</span>
                         </div>
                         <Switch

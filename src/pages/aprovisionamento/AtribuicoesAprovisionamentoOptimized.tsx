@@ -18,6 +18,7 @@ import {
   Filter, 
   ArrowLeft,
   User,
+  Users,
   Heart,
   MapPin,
   Calendar,
@@ -395,6 +396,7 @@ const AtribuicoesAprovisionamento: React.FC = () => {
                     <SelectItem value="VOLUNTARIO">Voluntários</SelectItem>
                     <SelectItem value="ANIMAL">Animais</SelectItem>
                     <SelectItem value="MISSAO">Missões</SelectItem>
+                    <SelectItem value="GRUPO">Grupos</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -521,6 +523,7 @@ const AtribuicoesAprovisionamento: React.FC = () => {
                         {atribuicao.tipo_atribuicao === 'VOLUNTARIO' && <User className="h-3 w-3 mr-1" />}
                         {atribuicao.tipo_atribuicao === 'ANIMAL' && <Heart className="h-3 w-3 mr-1" />}
                         {atribuicao.tipo_atribuicao === 'MISSAO' && <MapPin className="h-3 w-3 mr-1" />}
+                        {atribuicao.tipo_atribuicao === 'GRUPO' && <Users className="h-3 w-3 mr-1" />}
                         {atribuicao.tipo_atribuicao}
                       </Badge>
                       

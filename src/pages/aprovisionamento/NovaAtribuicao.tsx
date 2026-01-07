@@ -17,6 +17,7 @@ import {
   Plus, 
   ArrowLeft,
   User,
+  Users,
   Heart,
   MapPin,
   AlertCircle,
