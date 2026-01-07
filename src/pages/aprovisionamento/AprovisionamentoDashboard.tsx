@@ -584,12 +584,12 @@ const AprovisionamentoDashboard = () => {
 
         {/* Ações Rápidas - Placeholder para próximas fases */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-          <Card className="hover:shadow-md transition-shadow cursor-pointer opacity-60" onClick={() => toast({ title: "Em desenvolvimento", description: "Funcionalidade será implementada na próxima fase" })}>
+          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/aprovisionamento/atribuicoes')}>
             <CardContent className="p-6 text-center">
               <Users className="h-12 w-12 text-blue-600 mx-auto mb-4" />
-              <h3 className="font-semibold text-gray-900 mb-2">Atribuições a Voluntários</h3>
-              <p className="text-sm text-gray-600">Gerir equipamentos atribuídos a voluntários</p>
-              <Badge variant="outline" className="mt-2">Próxima fase</Badge>
+              <h3 className="font-semibold text-gray-900 mb-2">Gestão de Atribuições</h3>
+              <p className="text-sm text-gray-600">Gerir atribuições a voluntários, animais e missões</p>
+              <Badge variant="default" className="mt-2 bg-blue-600">✅ Disponível</Badge>
             </CardContent>
           </Card>
 
