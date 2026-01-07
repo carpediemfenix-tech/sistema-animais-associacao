@@ -150,7 +150,9 @@ const ItensAprovisionamento = () => {
   // Estados para histórico de movimentos
   const [showHistorico, setShowHistorico] = useState(false);
   const [itemHistorico, setItemHistorico] = useState<Item | null>(null);
-
+  
+  // Estado para autorizar stock negativo
+  const [stockNegativoAutorizado, setStockNegativoAutorizado] = useState(false);
   useEffect(() => {
     loadData();
   }, []);
@@ -348,22 +350,38 @@ const ItensAprovisionamento = () => {
     }
   };
 
+  // Função para validar se o movimento é válido
+  const isMovimentoValido = () => {
+    if (!itemMovimento || !movimentoData.tipo_movimento || !movimentoData.quantidade) {
+      return { valido: false, motivo: "Campos obrigatórios em falta" };
+    }
+
+    if (movimentoData.quantidade <= 0) {
+      return { valido: false, motivo: "Quantidade deve ser maior que zero" };
+    }
+
+    // Validação crítica: stock insuficiente para saídas (exceto se autorizado)
+    if (movimentoData.tipo_movimento.startsWith('SAIDA') && 
+        movimentoData.quantidade > itemMovimento.quantidade_atual && 
+        !stockNegativoAutorizado) {
+      return { 
+        valido: false, 
+        motivo: `Stock insuficiente (disponível: ${itemMovimento.quantidade_atual}, solicitado: ${movimentoData.quantidade})`,
+        podeAutorizar: true
+      };
+    }
+
+    return { valido: true, motivo: "" };
+  };
+
   const handleMovimentoStock = async () => {
     try {
-      // Validações mais robustas
-      if (!itemMovimento || !movimentoData.tipo_movimento || !movimentoData.quantidade) {
+      // Validação centralizada e robusta
+      const validacao = isMovimentoValido();
+      if (!validacao.valido) {
         toast({
-          title: "Erro de Validação",
-          description: "Todos os campos obrigatórios devem ser preenchidos",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (movimentoData.quantidade <= 0) {
-        toast({
-          title: "Erro de Validação",
-          description: "A quantidade deve ser maior que zero",
+          title: "❌ Movimento Inválido",
+          description: validacao.motivo,
           variant: "destructive",
         });
         return;
@@ -1323,19 +1341,48 @@ const ItensAprovisionamento = () => {
                 />
               </div>
             </CardContent>
-            <div className="flex justify-end gap-2 p-6 pt-0">
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  setShowMovimentoForm(false);
-                  setItemMovimento(null);
-                }}
-              >
-                Cancelar
-              </Button>
-              <Button onClick={handleMovimentoStock}>
-                Confirmar Movimento
-              </Button>
+            <div className="space-y-3 p-6 pt-0">
+              {/* Status de validação */}
+              {(() => {
+                const validacao = isMovimentoValido();
+                if (!validacao.valido) {
+                  return (
+                    <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <AlertTriangle className="h-4 w-4 text-red-600" />
+                      <span className="text-red-700 text-sm font-medium">
+                        {validacao.motivo}
+                      </span>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+              
+              <div className="flex justify-end gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowMovimentoForm(false);
+                    setItemMovimento(null);
+                  }}
+                >
+                  Cancelar
+                </Button>
+                <Button 
+                  onClick={handleMovimentoStock}
+                  disabled={!isMovimentoValido().valido}
+                  className={`${
+                    !isMovimentoValido().valido 
+                      ? 'opacity-50 cursor-not-allowed' 
+                      : ''
+                  }`}
+                >
+                  {!isMovimentoValido().valido 
+                    ? '❌ Movimento Inválido' 
+                    : '✅ Confirmar Movimento'
+                  }
+                </Button>
+              </div>
             </div>
           </Card>
         </div>
