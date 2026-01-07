@@ -44,7 +44,7 @@ interface Item {
     categoria?: {
       id: string;
       nome: string;
-      cor: string;
+      cor_interface: string;
     };
   };
 }
@@ -137,7 +137,7 @@ const AtribuicoesAprovisionamento: React.FC = () => {
       // Carregar todas as categorias de uma vez
       const { data: categoriasData, error: categoriasError } = await supabase
         .from('categorias_aprovisionamento_2026_01_06')
-        .select('id, nome, cor, ativo')
+        .select('id, nome, cor_interface, ativo')
         .eq('ativo', true);
       
       if (categoriasError) {
