@@ -679,17 +679,12 @@ const AprovisionamentoDashboard = () => {
               <Button 
                 variant="outline" 
                 className="h-auto p-4 flex flex-col items-center gap-2"
-                onClick={() => {
-                  toast({
-                    title: "Acesso Administrativo",
-                    description: "Você tem acesso completo a todas as funcionalidades do sistema",
-                  });
-                }}
+                onClick={() => navigate('/aprovisionamento/configuracoes')}
               >
-                <CheckCircle className="h-6 w-6 text-green-600" />
+                <Settings className="h-6 w-6 text-purple-600" />
                 <div className="text-center">
-                  <div className="font-medium">Acesso Total</div>
-                  <div className="text-xs text-gray-600">Todas as permissões</div>
+                  <div className="font-medium">Configurar Regras</div>
+                  <div className="text-xs text-gray-600">Quantidades máximas e permissões</div>
                 </div>
               </Button>
             </div>

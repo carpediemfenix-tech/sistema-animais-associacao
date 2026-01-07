@@ -52,9 +52,11 @@ interface ConfigAtribuicao {
   permite_voluntarios: boolean;
   permite_animais: boolean;
   permite_missoes: boolean;
+  permite_grupos: boolean;
   quantidade_maxima_por_voluntario?: number;
   quantidade_maxima_por_animal?: number;
   quantidade_maxima_por_missao?: number;
+  quantidade_maxima_por_grupo?: number;
   prazo_devolucao_dias: number;
   requer_verificacao: boolean;
   permite_consumo: boolean;
@@ -73,7 +75,7 @@ const NovaAtribuicao: React.FC = () => {
   // Estados do formulário
   const [formData, setFormData] = useState({
     item_id: '',
-    tipo_atribuicao: 'VOLUNTARIO' as 'VOLUNTARIO' | 'ANIMAL' | 'MISSAO',
+    tipo_atribuicao: 'VOLUNTARIO' as 'VOLUNTARIO' | 'ANIMAL' | 'MISSAO' | 'GRUPO',
     entidade_id: '',
     quantidade: 1,
     data_devolucao_prevista: '',
@@ -465,7 +467,7 @@ const NovaAtribuicao: React.FC = () => {
                     <Label htmlFor="tipo">Tipo de Atribuição *</Label>
                     <Select 
                       value={formData.tipo_atribuicao} 
-                      onValueChange={(value: 'VOLUNTARIO' | 'ANIMAL' | 'MISSAO') => 
+                      onValueChange={(value: 'VOLUNTARIO' | 'ANIMAL' | 'MISSAO' | 'GRUPO') => 
                         setFormData({...formData, tipo_atribuicao: value})
                       }
                     >
@@ -489,6 +491,12 @@ const NovaAtribuicao: React.FC = () => {
                           <div className="flex items-center gap-2">
                             <MapPin className="h-4 w-4" />
                             Missão
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="GRUPO">
+                          <div className="flex items-center gap-2">
+                            <Users className="h-4 w-4" />
+                            Grupo de Animais
                           </div>
                         </SelectItem>
                       </SelectContent>
