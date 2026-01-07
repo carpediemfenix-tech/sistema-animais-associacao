@@ -263,7 +263,14 @@ const ProcessarDevolucao: React.FC = () => {
     try {
       setSaving(true);
 
-      const { data, error } = await supabase.rpc('processar_devolucao_parcial_item', {
+      // Usar função v2 para evitar conflitos
+      console.log('🔄 Processando devolução:', {
+        atribuicao_id: atribuicao.id,
+        quantidade: formData.quantidade_devolvida,
+        estado: formData.estado_devolucao
+      });
+
+      const { data, error } = await supabase.rpc('processar_devolucao_parcial_v2', {
         p_atribuicao_id: atribuicao.id,
         p_quantidade_devolver: formData.quantidade_devolvida,
         p_estado_devolucao: formData.estado_devolucao,
@@ -271,8 +278,20 @@ const ProcessarDevolucao: React.FC = () => {
       });
 
       if (error) {
+        console.error('❌ Erro RPC:', error);
+        
+        // Tratamento específico para erro de função ambígua
+        if (error.code === 'PGRST203') {
+          toast({
+            title: "Erro de configuração",
+            description: "Conflito de funções detectado. Tentando função alternativa...",
+            variant: "destructive",
+          });
+        }
         throw error;
       }
+
+      console.log('✅ Resposta da função:', data);
 
       if (data && !data.success) {
         toast({
