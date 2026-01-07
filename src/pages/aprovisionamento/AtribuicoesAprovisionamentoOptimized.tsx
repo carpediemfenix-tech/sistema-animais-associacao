@@ -159,10 +159,14 @@ const AtribuicoesAprovisionamento: React.FC = () => {
       
       console.log('🗺️ Mapa de tipos criado:', tiposMap.size, 'tipos');
       
-      // Carregar atribuições
+      // Carregar atribuições com campos de devolução parcial
       const { data: atribuicoesData, error: atribuicoesError } = await supabase
         .from('atribuicoes_itens_2026_01_07_00_52')
-        .select('*')
+        .select(`
+          *,
+          quantidade_devolvida,
+          quantidade_restante
+        `)
         .order('created_at', { ascending: false });
 
       console.log('📊 DEBUG - Atribuições carregadas:', { count: atribuicoesData?.length, atribuicoesError });
@@ -530,10 +534,13 @@ const AtribuicoesAprovisionamento: React.FC = () => {
                       {/* Badge do estado */}
                       <Badge variant={
                         atribuicao.estado === 'ATIVO' ? 'default' :
-                        atribuicao.estado === 'DEVOLVIDO' ? 'secondary' :
+                        atribuicao.estado === 'PARCIALMENTE_DEVOLVIDO' ? 'secondary' :
+                        atribuicao.estado === 'DEVOLVIDO' ? 'outline' :
                         atribuicao.estado === 'CONSUMIDO' ? 'outline' : 'destructive'
+                      } className={
+                        atribuicao.estado === 'PARCIALMENTE_DEVOLVIDO' ? 'bg-yellow-600 text-white' : ''
                       }>
-                        {atribuicao.estado}
+                        {atribuicao.estado === 'PARCIALMENTE_DEVOLVIDO' ? 'PARCIAL. DEVOLVIDO' : atribuicao.estado}
                       </Badge>
                       
                       {/* Badge de vencimento */}
@@ -554,7 +561,16 @@ const AtribuicoesAprovisionamento: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
                       <div>
                         <p><strong>Entidade:</strong> {atribuicao.entidade_nome}</p>
-                        <p><strong>Quantidade:</strong> {atribuicao.quantidade_atribuida}</p>
+                        <p><strong>Quantidade:</strong> 
+                          {atribuicao.estado === 'PARCIALMENTE_DEVOLVIDO' ? (
+                            <span>
+                              {atribuicao.quantidade_restante || atribuicao.quantidade_atribuida} restantes 
+                              <span className="text-gray-500"> (de {atribuicao.quantidade_atribuida})</span>
+                            </span>
+                          ) : (
+                            atribuicao.quantidade_atribuida
+                          )}
+                        </p>
                         <p><strong>Categoria:</strong> {atribuicao.item?.tipo?.categoria?.nome || 'N/A'}</p>
                       </div>
                       
@@ -569,6 +585,9 @@ const AtribuicoesAprovisionamento: React.FC = () => {
                       </div>
                       
                       <div>
+                        {atribuicao.quantidade_devolvida && atribuicao.quantidade_devolvida > 0 && (
+                          <p><strong>Quantidade Devolvida:</strong> {atribuicao.quantidade_devolvida}</p>
+                        )}
                         {atribuicao.valor_responsabilidade && (
                           <p><strong>Valor Responsabilidade:</strong> €{atribuicao.valor_responsabilidade.toFixed(2)}</p>
                         )}
@@ -598,7 +617,7 @@ const AtribuicoesAprovisionamento: React.FC = () => {
                       Ver
                     </Button>
                     
-                    {atribuicao.estado === 'ATIVO' && (
+                    {(atribuicao.estado === 'ATIVO' || atribuicao.estado === 'PARCIALMENTE_DEVOLVIDO') && (
                       <>
                         <Button
                           size="sm"
@@ -616,7 +635,7 @@ const AtribuicoesAprovisionamento: React.FC = () => {
                           className="text-blue-600 hover:text-blue-700"
                         >
                           <RotateCcw className="h-4 w-4 mr-1" />
-                          Devolver
+                          {atribuicao.estado === 'PARCIALMENTE_DEVOLVIDO' ? 'Devolver Resto' : 'Devolver'}
                         </Button>
                       </>
                     )}

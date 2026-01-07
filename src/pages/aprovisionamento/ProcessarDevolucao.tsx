@@ -263,9 +263,9 @@ const ProcessarDevolucao: React.FC = () => {
     try {
       setSaving(true);
 
-      const { data, error } = await supabase.rpc('processar_devolucao_item', {
+      const { data, error } = await supabase.rpc('processar_devolucao_parcial_item', {
         p_atribuicao_id: atribuicao.id,
-        p_quantidade_devolvida: formData.quantidade_devolvida,
+        p_quantidade_devolver: formData.quantidade_devolvida,
         p_estado_devolucao: formData.estado_devolucao,
         p_observacoes_verificacao: formData.observacoes_verificacao || null
       });
@@ -283,9 +283,15 @@ const ProcessarDevolucao: React.FC = () => {
         return;
       }
 
+      // Feedback melhorado para devolução parcial
+      const isDevolvido = data.devolucao_completa;
+      const quantidadeRestante = data.quantidade_restante;
+      
       toast({
-        title: "✅ Devolução processada com sucesso!",
-        description: `Item devolvido com estado: ${data.estado_final}`,
+        title: isDevolvido ? "✅ Devolução Completa!" : "✅ Devolução Parcial Processada!",
+        description: isDevolvido 
+          ? `Todos os itens foram devolvidos com sucesso`
+          : `${formData.quantidade_devolvida} unidades devolvidas. Restam ${quantidadeRestante} por devolver.`,
       });
 
       // Redirecionar para a lista de atribuições
