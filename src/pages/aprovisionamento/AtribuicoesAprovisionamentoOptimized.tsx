@@ -596,15 +596,26 @@ const AtribuicoesAprovisionamento: React.FC = () => {
                     </Button>
                     
                     {atribuicao.estado === 'ATIVO' && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => navigate(`/aprovisionamento/devolucao/${atribuicao.id}`)}
-                        className="text-blue-600 hover:text-blue-700"
-                      >
-                        <RotateCcw className="h-4 w-4 mr-1" />
-                        Devolver
-                      </Button>
+                      <>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => navigate(`/aprovisionamento/editar-atribuicao/${atribuicao.id}`)}
+                          className="text-green-600 hover:text-green-700"
+                        >
+                          <Package className="h-4 w-4 mr-1" />
+                          Editar
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => navigate(`/aprovisionamento/devolucao/${atribuicao.id}`)}
+                          className="text-blue-600 hover:text-blue-700"
+                        >
+                          <RotateCcw className="h-4 w-4 mr-1" />
+                          Devolver
+                        </Button>
+                      </>
                     )}
                   </div>
                 </div>

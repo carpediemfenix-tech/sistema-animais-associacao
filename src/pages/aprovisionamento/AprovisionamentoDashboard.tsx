@@ -21,7 +21,9 @@ import {
   Sparkles,
   Camera,
   Gift,
-  BarChart3
+  BarChart3,
+  Edit,
+  Trash2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -582,8 +584,9 @@ const AprovisionamentoDashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Ações Rápidas - Placeholder para próximas fases */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+        {/* Ações Rápidas Completas */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
+          {/* Gestão de Atribuições */}
           <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/aprovisionamento/atribuicoes')}>
             <CardContent className="p-6 text-center">
               <Users className="h-12 w-12 text-blue-600 mx-auto mb-4" />
@@ -593,24 +596,105 @@ const AprovisionamentoDashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-md transition-shadow cursor-pointer opacity-60" onClick={() => toast({ title: "Em desenvolvimento", description: "Funcionalidade será implementada na próxima fase" })}>
+          {/* Nova Atribuição */}
+          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/aprovisionamento/nova-atribuicao')}>
             <CardContent className="p-6 text-center">
-              <PawPrint className="h-12 w-12 text-green-600 mx-auto mb-4" />
-              <h3 className="font-semibold text-gray-900 mb-2">Atribuições a Animais</h3>
-              <p className="text-sm text-gray-600">Gerir consumíveis atribuídos a animais</p>
-              <Badge variant="outline" className="mt-2">Próxima fase</Badge>
+              <Plus className="h-12 w-12 text-green-600 mx-auto mb-4" />
+              <h3 className="font-semibold text-gray-900 mb-2">Nova Atribuição</h3>
+              <p className="text-sm text-gray-600">Criar nova atribuição de item</p>
+              <Badge variant="default" className="mt-2 bg-green-600">✅ Disponível</Badge>
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-md transition-shadow cursor-pointer opacity-60" onClick={() => toast({ title: "Em desenvolvimento", description: "Funcionalidade será implementada na próxima fase" })}>
+          {/* Itens Desativados */}
+          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/aprovisionamento/itens')}>
             <CardContent className="p-6 text-center">
-              <Target className="h-12 w-12 text-purple-600 mx-auto mb-4" />
-              <h3 className="font-semibold text-gray-900 mb-2">Atribuições a Missões</h3>
-              <p className="text-sm text-gray-600">Gerir equipamentos atribuídos a missões</p>
+              <AlertTriangle className="h-12 w-12 text-orange-600 mx-auto mb-4" />
+              <h3 className="font-semibold text-gray-900 mb-2">Itens Desativados</h3>
+              <p className="text-sm text-gray-600">Ver e reativar itens desativados</p>
+              <Badge variant="default" className="mt-2 bg-orange-600">✅ Disponível</Badge>
+            </CardContent>
+          </Card>
+
+          {/* Relatórios (Próxima fase) */}
+          <Card className="hover:shadow-md transition-shadow cursor-pointer opacity-60" onClick={() => toast({ title: "Em desenvolvimento", description: "Relatórios serão implementados na próxima fase" })}>
+            <CardContent className="p-6 text-center">
+              <BarChart3 className="h-12 w-12 text-purple-600 mx-auto mb-4" />
+              <h3 className="font-semibold text-gray-900 mb-2">Relatórios</h3>
+              <p className="text-sm text-gray-600">Analytics e relatórios avançados</p>
               <Badge variant="outline" className="mt-2">Próxima fase</Badge>
             </CardContent>
           </Card>
         </div>
+
+        {/* Menu de Administração */}
+        <Card className="mt-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5" />
+              Administração do Sistema
+            </CardTitle>
+            <CardDescription>
+              Acesso completo a todas as funcionalidades para administradores
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Ver Itens Desativados */}
+              <Button 
+                variant="outline" 
+                className="h-auto p-4 flex flex-col items-center gap-2"
+                onClick={() => {
+                  navigate('/aprovisionamento/itens');
+                  // Simular clique no filtro "Itens Desativados" após navegação
+                  setTimeout(() => {
+                    toast({
+                      title: "Dica",
+                      description: "Use o filtro 'Status Item' para ver itens desativados",
+                    });
+                  }, 1000);
+                }}
+              >
+                <Trash2 className="h-6 w-6 text-red-600" />
+                <div className="text-center">
+                  <div className="font-medium">Itens Desativados</div>
+                  <div className="text-xs text-gray-600">Ver e reativar</div>
+                </div>
+              </Button>
+
+              {/* Editar Atribuições */}
+              <Button 
+                variant="outline" 
+                className="h-auto p-4 flex flex-col items-center gap-2"
+                onClick={() => navigate('/aprovisionamento/atribuicoes')}
+              >
+                <Edit className="h-6 w-6 text-blue-600" />
+                <div className="text-center">
+                  <div className="font-medium">Editar Atribuições</div>
+                  <div className="text-xs text-gray-600">Modificar atribuições ativas</div>
+                </div>
+              </Button>
+
+              {/* Gestão Completa */}
+              <Button 
+                variant="outline" 
+                className="h-auto p-4 flex flex-col items-center gap-2"
+                onClick={() => {
+                  toast({
+                    title: "Acesso Administrativo",
+                    description: "Você tem acesso completo a todas as funcionalidades do sistema",
+                  });
+                }}
+              >
+                <CheckCircle className="h-6 w-6 text-green-600" />
+                <div className="text-center">
+                  <div className="font-medium">Acesso Total</div>
+                  <div className="text-xs text-gray-600">Todas as permissões</div>
+                </div>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
       
       <EnhancedFooter />

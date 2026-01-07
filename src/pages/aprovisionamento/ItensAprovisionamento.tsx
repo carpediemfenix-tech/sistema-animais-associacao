@@ -114,6 +114,7 @@ const ItensAprovisionamento = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategoria, setFilterCategoria] = useState<string>('all');
   const [filterAlerta, setFilterAlerta] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<string>('ativos'); // 'ativos', 'inativos', 'todos'
   
   // Estados para paginação e ordenação
   const [currentPage, setCurrentPage] = useState(1);
@@ -162,11 +163,18 @@ const ItensAprovisionamento = () => {
   useEffect(() => {
     loadData();
   }, []);
+  
+  // Recarregar dados quando filtro de status mudar
+  useEffect(() => {
+    if (filterStatus) {
+      loadData();
+    }
+  }, [filterStatus]);
 
   // Reset paginação quando filtros mudarem
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, filterCategoria, filterAlerta]);
+  }, [searchTerm, filterCategoria, filterAlerta, filterStatus]);
 
   const loadData = async () => {
     try {
@@ -196,8 +204,8 @@ const ItensAprovisionamento = () => {
       if (tiposError) throw tiposError;
       setTipos(tiposData || []);
 
-      // Carregar itens
-      const { data: itensData, error: itensError } = await supabase
+      // Carregar itens (baseado no filtro de status)
+      let itensQuery = supabase
         .from('itens_aprovisionamento_2026_01_06')
         .select(`
           *,
@@ -205,9 +213,17 @@ const ItensAprovisionamento = () => {
             *,
             categoria:categorias_aprovisionamento_2026_01_06(*)
           )
-        `)
-        .eq('ativo', true)
-        .order('nome');
+        `);
+      
+      // Aplicar filtro de status
+      if (filterStatus === 'ativos') {
+        itensQuery = itensQuery.eq('ativo', true);
+      } else if (filterStatus === 'inativos') {
+        itensQuery = itensQuery.eq('ativo', false);
+      }
+      // Se filterStatus === 'todos', não aplica filtro
+      
+      const { data: itensData, error: itensError } = await itensQuery.order('nome');
 
       if (itensError) throw itensError;
       setItens(itensData || []);
@@ -356,6 +372,33 @@ const ItensAprovisionamento = () => {
       toast({
         title: "Erro",
         description: "Erro ao desativar item",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleReactivate = async (id: string) => {
+    if (!confirm('Tem certeza que deseja reativar este item?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('itens_aprovisionamento_2026_01_06')
+        .update({ ativo: true })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Item reativado com sucesso",
+      });
+
+      loadData();
+    } catch (error: any) {
+      console.error('Erro ao reativar item:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao reativar item",
         variant: "destructive",
       });
     }
@@ -771,7 +814,7 @@ const ItensAprovisionamento = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               <div>
                 <Label htmlFor="search">Pesquisar</Label>
                 <div className="relative">
@@ -817,6 +860,20 @@ const ItensAprovisionamento = () => {
                 </Select>
               </div>
 
+              <div>
+                <Label htmlFor="status">Status Item</Label>
+                <Select value={filterStatus} onValueChange={setFilterStatus}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Status do item" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ativos">✅ Itens Ativos</SelectItem>
+                    <SelectItem value="inativos">❌ Itens Desativados</SelectItem>
+                    <SelectItem value="todos">📋 Todos os Itens</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="flex items-end">
                 <Button 
                   variant="outline" 
@@ -824,6 +881,7 @@ const ItensAprovisionamento = () => {
                     setSearchTerm('');
                     setFilterCategoria('all');
                     setFilterAlerta('all');
+                    setFilterStatus('ativos');
                   }}
                   className="w-full"
                 >
@@ -960,18 +1018,33 @@ const ItensAprovisionamento = () => {
         {/* Lista de Itens */}
         <div className="grid grid-cols-1 gap-4">
           {paginatedItens.map((item) => (
-            <Card key={item.id} className={`${item.alerta_stock_baixo ? 'border-red-300 bg-red-50' : ''}`}>
+            <Card key={item.id} className={`${
+              !item.ativo 
+                ? 'border-gray-300 bg-gray-50 opacity-75' 
+                : item.alerta_stock_baixo 
+                  ? 'border-red-300 bg-red-50' 
+                  : ''
+            }`}>
               <CardContent className="p-6">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-lg font-semibold">{item.nome}</h3>
-                      {item.alerta_stock_baixo && (
+                      <h3 className={`text-lg font-semibold ${!item.ativo ? 'text-gray-500' : ''}`}>{item.nome}</h3>
+                      
+                      {!item.ativo && (
+                        <Badge variant="destructive">
+                          <Trash2 className="h-3 w-3 mr-1" />
+                          Desativado
+                        </Badge>
+                      )}
+                      
+                      {item.ativo && item.alerta_stock_baixo && (
                         <Badge variant="destructive" className="animate-pulse">
                           <AlertTriangle className="h-3 w-3 mr-1" />
                           Stock Baixo
                         </Badge>
                       )}
+                      
                       <Badge variant="outline">
                         {item.tipo?.categoria?.nome}
                       </Badge>
@@ -1032,54 +1105,84 @@ const ItensAprovisionamento = () => {
                   </div>
 
                   <div className="flex flex-col gap-2 ml-4">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => openMovimentoForm(item, 'ENTRADA_COMPRA')}
-                      className="text-green-600 hover:text-green-700"
-                    >
-                      <TrendingUp className="h-4 w-4 mr-1" />
-                      Entrada
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => openMovimentoForm(item, 'SAIDA_CONSUMO')}
-                      className="text-red-600 hover:text-red-700"
-                      disabled={item.quantidade_atual === 0}
-                    >
-                      <TrendingDown className="h-4 w-4 mr-1" />
-                      Saída
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setItemHistorico(item);
-                        setShowHistorico(true);
-                      }}
-                      className="text-blue-600 hover:text-blue-700"
-                    >
-                      <History className="h-4 w-4 mr-1" />
-                      Histórico
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleEdit(item)}
-                    >
-                      <Edit className="h-4 w-4 mr-1" />
-                      Editar
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleDelete(item.id)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="h-4 w-4 mr-1" />
-                      Desativar
-                    </Button>
+                    {item.ativo ? (
+                      // Botões para itens ativos
+                      <>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => openMovimentoForm(item, 'ENTRADA_COMPRA')}
+                          className="text-green-600 hover:text-green-700"
+                        >
+                          <TrendingUp className="h-4 w-4 mr-1" />
+                          Entrada
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => openMovimentoForm(item, 'SAIDA_CONSUMO')}
+                          className="text-red-600 hover:text-red-700"
+                          disabled={item.quantidade_atual === 0}
+                        >
+                          <TrendingDown className="h-4 w-4 mr-1" />
+                          Saída
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setItemHistorico(item);
+                            setShowHistorico(true);
+                          }}
+                          className="text-blue-600 hover:text-blue-700"
+                        >
+                          <History className="h-4 w-4 mr-1" />
+                          Histórico
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleEdit(item)}
+                        >
+                          <Edit className="h-4 w-4 mr-1" />
+                          Editar
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleDelete(item.id)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Desativar
+                        </Button>
+                      </>
+                    ) : (
+                      // Botões para itens desativados
+                      <>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setItemHistorico(item);
+                            setShowHistorico(true);
+                          }}
+                          className="text-blue-600 hover:text-blue-700"
+                        >
+                          <History className="h-4 w-4 mr-1" />
+                          Histórico
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleReactivate(item.id)}
+                          className="text-green-600 hover:text-green-700"
+                        >
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          Reativar
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
               </CardContent>
@@ -1180,7 +1283,7 @@ const ItensAprovisionamento = () => {
                 Nenhum item encontrado
               </h3>
               <p className="text-gray-500 mb-4">
-                {searchTerm || filterCategoria !== 'all' || filterAlerta !== 'all'
+                {searchTerm || filterCategoria !== 'all' || filterAlerta !== 'all' || filterStatus !== 'ativos'
                   ? 'Tente ajustar os filtros ou criar um novo item.'
                   : 'Comece criando o seu primeiro item de aprovisionamento.'}
               </p>
