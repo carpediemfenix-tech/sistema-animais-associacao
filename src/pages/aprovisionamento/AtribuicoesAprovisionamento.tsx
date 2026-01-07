@@ -129,72 +129,153 @@ const AtribuicoesAprovisionamento: React.FC = () => {
     try {
       setLoading(true);
       
-      // Carregar atribuições com dados dos itens
+      console.log('🔍 DEBUG - Iniciando carregamento de dados...');
+      
+      // Carregar atribuições (consulta simples primeiro)
       const { data: atribuicoesData, error: atribuicoesError } = await supabase
         .from('atribuicoes_itens_2026_01_07_00_52')
-        .select(`
-          *,
-          item:itens_aprovisionamento_2026_01_06(
-            id,
-            nome,
-            descricao,
-            quantidade_atual,
-            stock_minimo,
-            preco_unitario,
-            valor_total_stock,
-            tipo:tipos_aprovisionamento_2026_01_06(
-              nome,
-              categoria:categorias_aprovisionamento_2026_01_06(
-                id,
-                nome,
-                cor
-              )
-            )
-          )
-        `)
-        .order('data_atribuicao', { ascending: false });
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      console.log('📊 DEBUG - Atribuições carregadas:', { atribuicoesData, atribuicoesError });
 
       if (atribuicoesError) {
-        console.error('Erro ao carregar atribuições:', atribuicoesError);
+        console.error('❌ Erro ao carregar atribuições:', atribuicoesError);
         toast({
           title: "Erro ao carregar atribuições",
-          description: atribuicoesError.message,
+          description: `${atribuicoesError.message} (Código: ${atribuicoesError.code || 'N/A'})`,
           variant: "destructive",
         });
+        // Continuar mesmo com erro para tentar carregar outros dados
+        setAtribuicoes([]);
       } else {
-        // Processar dados das atribuições
-        const processedAtribuicoes = atribuicoesData?.map(atribuicao => ({
-          ...atribuicao,
-          entidade_nome: getEntidadeNome(atribuicao),
-          dias_restantes: atribuicao.data_devolucao_prevista 
-            ? Math.ceil((new Date(atribuicao.data_devolucao_prevista).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
-            : null
-        })) || [];
+        // Carregar dados dos itens separadamente para cada atribuição
+        const processedAtribuicoes = [];
         
+        for (const atribuicao of atribuicoesData || []) {
+          try {
+            // Buscar dados do item
+            const { data: itemData } = await supabase
+              .from('itens_aprovisionamento_2026_01_06')
+              .select('id, nome, descricao, quantidade_atual, preco_unitario, tipo_id')
+              .eq('id', atribuicao.item_id)
+              .single();
+
+            // Buscar dados do tipo se o item existir
+            let tipoData = null;
+            if (itemData?.tipo_id) {
+              const { data: tipo } = await supabase
+                .from('tipos_aprovisionamento_2026_01_06')
+                .select('nome, categoria_id')
+                .eq('id', itemData.tipo_id)
+                .single();
+              
+              tipoData = tipo;
+              
+              // Buscar dados da categoria se o tipo existir
+              if (tipo?.categoria_id) {
+                const { data: categoria } = await supabase
+                  .from('categorias_aprovisionamento_2026_01_06')
+                  .select('id, nome, cor')
+                  .eq('id', tipo.categoria_id)
+                  .single();
+                
+                if (categoria) {
+                  tipoData.categoria = categoria;
+                }
+              }
+            }
+
+            processedAtribuicoes.push({
+              ...atribuicao,
+              item: itemData ? {
+                ...itemData,
+                tipo: tipoData
+              } : null,
+              entidade_nome: getEntidadeNome(atribuicao),
+              dias_restantes: atribuicao.data_devolucao_prevista 
+                ? Math.ceil((new Date(atribuicao.data_devolucao_prevista).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+                : null
+            });
+          } catch (itemError) {
+            console.error('⚠️ Erro ao carregar dados do item:', itemError);
+            // Adicionar atribuição mesmo sem dados do item
+            processedAtribuicoes.push({
+              ...atribuicao,
+              item: { nome: 'Item não encontrado' },
+              entidade_nome: getEntidadeNome(atribuicao),
+              dias_restantes: atribuicao.data_devolucao_prevista 
+                ? Math.ceil((new Date(atribuicao.data_devolucao_prevista).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+                : null
+            });
+          }
+        }
+        
+        console.log('✅ Atribuições processadas:', processedAtribuicoes);
         setAtribuicoes(processedAtribuicoes);
       }
 
-      // Carregar itens disponíveis
+      // Carregar itens disponíveis (consulta simples)
       const { data: itensData, error: itensError } = await supabase
         .from('itens_aprovisionamento_2026_01_06')
-        .select(`
-          *,
-          tipo:tipos_aprovisionamento_2026_01_06(
-            nome,
-            categoria:categorias_aprovisionamento_2026_01_06(
-              id,
-              nome,
-              cor
-            )
-          )
-        `)
+        .select('*')
         .eq('ativo', true)
         .order('nome');
 
+      console.log('📦 DEBUG - Itens carregados:', { itensData, itensError });
+
       if (itensError) {
-        console.error('Erro ao carregar itens:', itensError);
+        console.error('❌ Erro ao carregar itens:', itensError);
+        toast({
+          title: "Erro ao carregar itens",
+          description: `${itensError.message} (Código: ${itensError.code || 'N/A'})`,
+          variant: "destructive",
+        });
+        setItens([]);
       } else {
-        setItens(itensData || []);
+        // Processar itens com dados de tipo e categoria
+        const processedItens = [];
+        
+        for (const item of itensData || []) {
+          try {
+            let tipoData = null;
+            if (item.tipo_id) {
+              const { data: tipo } = await supabase
+                .from('tipos_aprovisionamento_2026_01_06')
+                .select('nome, categoria_id')
+                .eq('id', item.tipo_id)
+                .single();
+              
+              tipoData = tipo;
+              
+              if (tipo?.categoria_id) {
+                const { data: categoria } = await supabase
+                  .from('categorias_aprovisionamento_2026_01_06')
+                  .select('id, nome, cor')
+                  .eq('id', tipo.categoria_id)
+                  .single();
+                
+                if (categoria) {
+                  tipoData.categoria = categoria;
+                }
+              }
+            }
+
+            processedItens.push({
+              ...item,
+              tipo: tipoData
+            });
+          } catch (tipoError) {
+            console.error('⚠️ Erro ao carregar tipo do item:', tipoError);
+            processedItens.push({
+              ...item,
+              tipo: null
+            });
+          }
+        }
+        
+        console.log('✅ Itens processados:', processedItens);
+        setItens(processedItens);
       }
 
       // Carregar configurações
@@ -202,19 +283,22 @@ const AtribuicoesAprovisionamento: React.FC = () => {
         .from('config_atribuicoes_2026_01_07_00_52')
         .select('*');
 
+      console.log('⚙️ DEBUG - Configurações carregadas:', { configsData, configsError });
+
       if (configsError) {
-        console.error('Erro ao carregar configurações:', configsError);
+        console.error('❌ Erro ao carregar configurações:', configsError);
+        setConfigs([]);
       } else {
         setConfigs(configsData || []);
       }
 
     } catch (error) {
-      console.error('Erro geral ao carregar dados:', error);
+      console.error('🚫 Erro geral ao carregar dados:', error);
       toast({
         title: "Erro ao carregar dados",
         description: "Ocorreu um erro inesperado ao carregar os dados.",
         variant: "destructive",
-      });
+        });
     } finally {
       setLoading(false);
     }
