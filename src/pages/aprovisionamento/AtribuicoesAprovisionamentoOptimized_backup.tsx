@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+
 import { 
   Package, 
   Plus, 
@@ -102,6 +103,8 @@ const AtribuicoesAprovisionamento: React.FC = () => {
   const [filterTipo, setFilterTipo] = useState<string>('all');
   const [filterEstado, setFilterEstado] = useState<string>('all');
   const [filterVencimento, setFilterVencimento] = useState<string>('all');
+  
+
 
   // 🚀 CARREGAMENTO OTIMIZADO - Elimina N+1 queries
   const loadData = async () => {
@@ -283,6 +286,10 @@ const AtribuicoesAprovisionamento: React.FC = () => {
     }
     return 'Entidade não identificada';
   };
+
+
+
+
 
   // Filtrar atribuições
   const filteredAtribuicoes = atribuicoes.filter(atribuicao => {
@@ -633,6 +640,275 @@ const AtribuicoesAprovisionamento: React.FC = () => {
           </Card>
         )}
       </div>
+
+      <EnhancedFooter />
+    </div>
+  );
+};
+
+export default AtribuicoesAprovisionamento;
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5" />
+              Nova Atribuição de Item
+            </DialogTitle>
+            <DialogDescription>
+              Atribuir um item do stock a um voluntário, animal ou missão.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            {/* Seleção do Item */}
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="item" className="text-right">
+                Item *
+              </Label>
+              <div className="col-span-3">
+                <Select value={formData.item_id} onValueChange={(value) => setFormData({...formData, item_id: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um item" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {itens.map((item) => (
+                      <SelectItem key={item.id} value={item.id}>
+                        {item.nome} - Stock: {item.quantidade_atual} - {item.tipo?.categoria?.nome || 'Sem categoria'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Tipo de Atribuição */}
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="tipo" className="text-right">
+                Tipo *
+              </Label>
+              <div className="col-span-3">
+                <Select value={formData.tipo_atribuicao} onValueChange={(value: 'VOLUNTARIO' | 'ANIMAL' | 'MISSAO') => setFormData({...formData, tipo_atribuicao: value})}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="VOLUNTARIO">
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4" />
+                        Voluntário
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="ANIMAL">
+                      <div className="flex items-center gap-2">
+                        <Heart className="h-4 w-4" />
+                        Animal
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="MISSAO">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4" />
+                        Missão
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* ID da Entidade */}
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="entidade" className="text-right">
+                {formData.tipo_atribuicao === 'VOLUNTARIO' ? 'ID Voluntário' :
+                 formData.tipo_atribuicao === 'ANIMAL' ? 'ID Animal' : 'ID Missão'} *
+              </Label>
+              <div className="col-span-3">
+                <Input
+                  id="entidade"
+                  value={formData.entidade_id}
+                  onChange={(e) => setFormData({...formData, entidade_id: e.target.value})}
+                  placeholder={`Digite o ID do ${formData.tipo_atribuicao.toLowerCase()}`}
+                />
+              </div>
+            </div>
+
+            {/* Quantidade */}
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="quantidade" className="text-right">
+                Quantidade *
+              </Label>
+              <div className="col-span-3">
+                <Input
+                  id="quantidade"
+                  type="number"
+                  min="1"
+                  value={formData.quantidade}
+                  onChange={(e) => setFormData({...formData, quantidade: parseInt(e.target.value) || 1})}
+                />
+              </div>
+            </div>
+
+            {/* Data de Devolução Prevista */}
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="data_devolucao" className="text-right">
+                Devolução Prevista
+              </Label>
+              <div className="col-span-3">
+                <Input
+                  id="data_devolucao"
+                  type="date"
+                  value={formData.data_devolucao_prevista}
+                  onChange={(e) => setFormData({...formData, data_devolucao_prevista: e.target.value})}
+                />
+              </div>
+            </div>
+
+            {/* Motivo */}
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="motivo" className="text-right">
+                Motivo
+              </Label>
+              <div className="col-span-3">
+                <Input
+                  id="motivo"
+                  value={formData.motivo}
+                  onChange={(e) => setFormData({...formData, motivo: e.target.value})}
+                  placeholder="Motivo da atribuição"
+                />
+              </div>
+            </div>
+
+            {/* Observações */}
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="observacoes" className="text-right">
+                Observações
+              </Label>
+              <div className="col-span-3">
+                <Textarea
+                  id="observacoes"
+                  value={formData.observacoes}
+                  onChange={(e) => setFormData({...formData, observacoes: e.target.value})}
+                  placeholder="Observações adicionais"
+                  rows={3}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setShowNewForm(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleCreateAtribuicao}>
+              <Plus className="h-4 w-4 mr-2" />
+              Criar Atribuição
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Devolução */}
+      <Dialog open={showDevolucaoForm} onOpenChange={setShowDevolucaoForm}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <RotateCcw className="h-5 w-5" />
+              Processar Devolução
+            </DialogTitle>
+            <DialogDescription>
+              Registar a devolução do item e o seu estado.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {atribuicaoDevolvendo && (
+            <div className="py-4">
+              {/* Informações da Atribuição */}
+              <div className="bg-gray-50 p-4 rounded-lg mb-4">
+                <h4 className="font-semibold mb-2">Item a Devolver:</h4>
+                <p><strong>Item:</strong> {atribuicaoDevolvendo.item?.nome}</p>
+                <p><strong>Entidade:</strong> {atribuicaoDevolvendo.entidade_nome}</p>
+                <p><strong>Quantidade Atribuída:</strong> {atribuicaoDevolvendo.quantidade_atribuida}</p>
+                <p><strong>Data Atribuição:</strong> {new Date(atribuicaoDevolvendo.data_atribuicao).toLocaleDateString('pt-PT')}</p>
+              </div>
+
+              <div className="grid gap-4">
+                {/* Quantidade Devolvida */}
+                <div>
+                  <Label htmlFor="quantidade_devolvida">
+                    Quantidade Devolvida *
+                  </Label>
+                  <Input
+                    id="quantidade_devolvida"
+                    type="number"
+                    min="1"
+                    max={atribuicaoDevolvendo.quantidade_atribuida}
+                    value={devolucaoData.quantidade_devolvida}
+                    onChange={(e) => setDevolucaoData({...devolucaoData, quantidade_devolvida: parseInt(e.target.value) || 1})}
+                  />
+                </div>
+
+                {/* Estado da Devolução */}
+                <div>
+                  <Label htmlFor="estado_devolucao">
+                    Estado do Item *
+                  </Label>
+                  <Select value={devolucaoData.estado_devolucao} onValueChange={(value) => setDevolucaoData({...devolucaoData, estado_devolucao: value})}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="BOM">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                          Bom Estado
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="DANIFICADO">
+                        <div className="flex items-center gap-2">
+                          <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                          Danificado
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="PERDIDO">
+                        <div className="flex items-center gap-2">
+                          <AlertTriangle className="h-4 w-4 text-red-600" />
+                          Perdido
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="CONSUMIDO">
+                        <div className="flex items-center gap-2">
+                          <Package className="h-4 w-4 text-blue-600" />
+                          Consumido
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Observações de Verificação */}
+                <div>
+                  <Label htmlFor="observacoes_verificacao">
+                    Observações de Verificação
+                  </Label>
+                  <Textarea
+                    id="observacoes_verificacao"
+                    value={devolucaoData.observacoes_verificacao}
+                    onChange={(e) => setDevolucaoData({...devolucaoData, observacoes_verificacao: e.target.value})}
+                    placeholder="Descreva o estado do item, danos, etc."
+                    rows={3}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setShowDevolucaoForm(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleProcessarDevolucao}>
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Processar Devolução
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <EnhancedFooter />
     </div>
