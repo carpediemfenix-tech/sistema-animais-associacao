@@ -100,7 +100,7 @@ import AprovisionamentoDashboard from "./pages/aprovisionamento/Aprovisionamento
 import CategoriasAprovisionamento from "./pages/aprovisionamento/CategoriasAprovisionamento";
 import TiposAprovisionamento from "./pages/aprovisionamento/TiposAprovisionamento";
 import ItensAprovisionamento from "./pages/aprovisionamento/ItensAprovisionamento";
-import AtribuicoesAprovisionamento from "./pages/aprovisionamento/AtribuicoesAprovisionamento";
+import AtribuicoesAprovisionamento from "./pages/aprovisionamento/AtribuicoesAprovisionamentoOptimized";
 import TestAprovisionamento from "./pages/aprovisionamento/TestAprovisionamento";
 
 // Módulo de Denúncias - Fase 2
