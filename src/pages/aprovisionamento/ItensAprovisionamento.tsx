@@ -21,7 +21,13 @@ import {
   Eye,
   ShoppingCart,
   Minus,
-  History
+  History,
+  ChevronUp,
+  ChevronDown,
+  ChevronsLeft,
+  ChevronsRight,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -156,6 +162,11 @@ const ItensAprovisionamento = () => {
   useEffect(() => {
     loadData();
   }, []);
+
+  // Reset paginação quando filtros mudarem
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterCategoria, filterAlerta]);
 
   const loadData = async () => {
     try {
@@ -619,7 +630,7 @@ const ItensAprovisionamento = () => {
     setShowMovimentoForm(true);
   };
 
-  // Filtrar itens
+  // Filtrar, ordenar e paginar itens
   const filteredItens = itens.filter(item => {
     const matchesSearch = item.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          item.descricao?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -634,6 +645,72 @@ const ItensAprovisionamento = () => {
     
     return matchesSearch && matchesCategoria && matchesAlerta;
   });
+
+  // Ordenar itens
+  const sortedItens = [...filteredItens].sort((a, b) => {
+    let aValue: any;
+    let bValue: any;
+
+    switch (sortBy) {
+      case 'nome':
+        aValue = a.nome.toLowerCase();
+        bValue = b.nome.toLowerCase();
+        break;
+      case 'categoria':
+        aValue = a.tipo?.categoria?.nome?.toLowerCase() || '';
+        bValue = b.tipo?.categoria?.nome?.toLowerCase() || '';
+        break;
+      case 'stock':
+        aValue = a.quantidade_atual || 0;
+        bValue = b.quantidade_atual || 0;
+        break;
+      case 'valor':
+        aValue = a.valor_total_stock || 0;
+        bValue = b.valor_total_stock || 0;
+        break;
+      case 'data':
+        aValue = new Date(a.created_at || 0);
+        bValue = new Date(b.created_at || 0);
+        break;
+      default:
+        aValue = a.nome.toLowerCase();
+        bValue = b.nome.toLowerCase();
+    }
+
+    if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
+    if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  // Paginar itens
+  const totalPages = Math.ceil(sortedItens.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedItens = sortedItens.slice(startIndex, endIndex);
+
+  // Funções de ordenação
+  const handleSort = (field: string) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('asc');
+    }
+    setCurrentPage(1); // Reset para primeira página ao ordenar
+  };
+
+  // Funções de paginação
+  const goToPage = (page: number) => {
+    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+  };
+
+  const goToNextPage = () => {
+    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+  };
+
+  const goToPrevPage = () => {
+    if (currentPage > 1) setCurrentPage(currentPage - 1);
+  };
 
   if (loading) {
     return (
@@ -764,7 +841,7 @@ const ItensAprovisionamento = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Total de Itens</p>
-                  <p className="text-2xl font-bold">{filteredItens.length}</p>
+                  <p className="text-2xl font-bold">{sortedItens.length}</p>
                 </div>
                 <Package className="h-8 w-8 text-blue-600" />
               </div>
@@ -777,7 +854,7 @@ const ItensAprovisionamento = () => {
                 <div>
                   <p className="text-sm text-gray-600">Alertas Stock</p>
                   <p className="text-2xl font-bold text-red-600">
-                    {filteredItens.filter(item => item.alerta_stock_baixo).length}
+                    {sortedItens.filter(item => item.alerta_stock_baixo).length}
                   </p>
                 </div>
                 <AlertTriangle className="h-8 w-8 text-red-600" />
@@ -791,7 +868,7 @@ const ItensAprovisionamento = () => {
                 <div>
                   <p className="text-sm text-gray-600">Valor Total</p>
                   <p className="text-2xl font-bold text-green-600">
-                    €{filteredItens.reduce((sum, item) => sum + (item.valor_total_stock || 0), 0).toFixed(2)}
+                    €{sortedItens.reduce((sum, item) => sum + (item.valor_total_stock || 0), 0).toFixed(2)}
                   </p>
                 </div>
                 <TrendingUp className="h-8 w-8 text-green-600" />
@@ -805,7 +882,7 @@ const ItensAprovisionamento = () => {
                 <div>
                   <p className="text-sm text-gray-600">Stock OK</p>
                   <p className="text-2xl font-bold text-green-600">
-                    {filteredItens.filter(item => !item.alerta_stock_baixo).length}
+                    {sortedItens.filter(item => !item.alerta_stock_baixo).length}
                   </p>
                 </div>
                 <CheckCircle className="h-8 w-8 text-green-600" />
@@ -814,9 +891,75 @@ const ItensAprovisionamento = () => {
           </Card>
         </div>
 
+        {/* Cabeçalhos de Ordenação */}
+        <Card className="mb-4">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Lista de Itens ({sortedItens.length})</h3>
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-gray-600">
+                  Página {currentPage} de {totalPages} ({paginatedItens.length} itens)
+                </span>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-sm font-medium text-gray-700">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleSort('nome')}
+                className="justify-start"
+              >
+                Nome
+                {sortBy === 'nome' && (
+                  sortOrder === 'asc' ? <ChevronUp className="h-4 w-4 ml-1" /> : <ChevronDown className="h-4 w-4 ml-1" />
+                )}
+              </Button>
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleSort('categoria')}
+                className="justify-start"
+              >
+                Categoria
+                {sortBy === 'categoria' && (
+                  sortOrder === 'asc' ? <ChevronUp className="h-4 w-4 ml-1" /> : <ChevronDown className="h-4 w-4 ml-1" />
+                )}
+              </Button>
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleSort('stock')}
+                className="justify-start"
+              >
+                Stock
+                {sortBy === 'stock' && (
+                  sortOrder === 'asc' ? <ChevronUp className="h-4 w-4 ml-1" /> : <ChevronDown className="h-4 w-4 ml-1" />
+                )}
+              </Button>
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleSort('valor')}
+                className="justify-start"
+              >
+                Valor
+                {sortBy === 'valor' && (
+                  sortOrder === 'asc' ? <ChevronUp className="h-4 w-4 ml-1" /> : <ChevronDown className="h-4 w-4 ml-1" />
+                )}
+              </Button>
+              
+              <div className="text-center">Ações</div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Lista de Itens */}
         <div className="grid grid-cols-1 gap-4">
-          {filteredItens.map((item) => (
+          {paginatedItens.map((item) => (
             <Card key={item.id} className={`${item.alerta_stock_baixo ? 'border-red-300 bg-red-50' : ''}`}>
               <CardContent className="p-6">
                 <div className="flex items-start justify-between">
@@ -944,7 +1087,92 @@ const ItensAprovisionamento = () => {
           ))}
         </div>
 
-        {filteredItens.length === 0 && (
+        {/* Controles de Paginação */}
+        {totalPages > 1 && (
+          <Card className="mt-6">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">
+                    Mostrando {startIndex + 1}-{Math.min(endIndex, sortedItens.length)} de {sortedItens.length} itens
+                  </span>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  {/* Primeira página */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => goToPage(1)}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronsLeft className="h-4 w-4" />
+                  </Button>
+                  
+                  {/* Página anterior */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={goToPrevPage}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  
+                  {/* Números das páginas */}
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+                      
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={currentPage === pageNum ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => goToPage(pageNum)}
+                          className="w-8 h-8 p-0"
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  
+                  {/* Página seguinte */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={goToNextPage}
+                    disabled={currentPage === totalPages}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  
+                  {/* Última página */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => goToPage(totalPages)}
+                    disabled={currentPage === totalPages}
+                  >
+                    <ChevronsRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {sortedItens.length === 0 && (
           <Card>
             <CardContent className="p-12 text-center">
               <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
