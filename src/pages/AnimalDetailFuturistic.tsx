@@ -48,7 +48,7 @@ import EnhancedHeader from "@/components/EnhancedHeader";
 import EnhancedFooter from "@/components/EnhancedFooter";
 import { convertGoogleDriveUrl } from "@/lib/utils";
 import PageActionBar from "@/components/PageActionBar";
-import IntakeAssessmentDisplay from "@/components/DebugLogger"; // Componente de ficha de admissão
+import { IntakeAssessmentDisplay } from "@/components/DebugLogger"; // Componente de ficha de admissão
 
 const AnimalDetailFuturistic = () => {
   const { id } = useParams();

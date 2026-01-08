@@ -1,0 +1,70 @@
+-- Inserir dados de teste para ficha de admissão
+INSERT INTO public.animal_intake_assessments (
+    animal_id,
+    assessor_name,
+    intake_origin,
+    intake_reason,
+    circumstances_details,
+    general_condition,
+    behavior_entry,
+    body_condition,
+    weight_kg,
+    temperature_celsius,
+    symptoms,
+    physical_exam_notes,
+    behavioral_notes,
+    immediate_actions,
+    immediate_actions_notes,
+    prognosis,
+    treatment_plan,
+    special_needs,
+    is_complete
+) VALUES (
+    '67daf5d6-b573-4c74-81d7-a1065f8786e1'::uuid,
+    'Dr. Ana Silva',
+    'found_street',
+    'abandonment',
+    'Animal encontrado numa caixa de cartão junto ao contentor do lixo na Rua das Flores. Aparentava estar há várias horas no local, com sinais de desidratação e medo.',
+    'poor',
+    'fearful',
+    'underweight',
+    12.3,
+    37.8,
+    '["vomiting", "diarrhea", "discharge_eyes"]'::jsonb,
+    'Animal apresenta sinais de desnutrição moderada. Costelas ligeiramente visíveis, pelagem baça. Presença de parasitas externos (pulgas). Mucosas pálidas indicando possível anemia ligeira. Ferida superficial na pata traseira direita.',
+    'Muito assustado inicialmente, evita contacto visual. Tremores ocasionais, possivelmente devido ao stress. Não demonstra agressividade. Responde positivamente a voz calma e movimentos lentos. Mostra interesse por comida.',
+    '["veterinary_exam", "wound_cleaning", "fluid_therapy", "deworming"]'::jsonb,
+    'Administrada fluidoterapia subcutânea (150ml). Limpeza e desinfeção da ferida na pata. Aplicado antiparasitário tópico. Oferecida alimentação húmida de fácil digestão. Colocado em área calma para observação.',
+    'good',
+    'Tratamento de suporte com fluidoterapia durante 2 dias. Dieta de recuperação com alimentação 3x/dia. Antibiótico preventivo. Reavaliação em 24h para monitorizar progresso. Socialização gradual.',
+    'Necessita de ambiente calmo nas primeiras 48h. Socialização gradual com humanos. Monitorização do apetite e hidratação.',
+    true
+) ON CONFLICT (animal_id) DO UPDATE SET
+    assessor_name = EXCLUDED.assessor_name,
+    intake_origin = EXCLUDED.intake_origin,
+    intake_reason = EXCLUDED.intake_reason,
+    circumstances_details = EXCLUDED.circumstances_details,
+    general_condition = EXCLUDED.general_condition,
+    behavior_entry = EXCLUDED.behavior_entry,
+    body_condition = EXCLUDED.body_condition,
+    weight_kg = EXCLUDED.weight_kg,
+    temperature_celsius = EXCLUDED.temperature_celsius,
+    symptoms = EXCLUDED.symptoms,
+    physical_exam_notes = EXCLUDED.physical_exam_notes,
+    behavioral_notes = EXCLUDED.behavioral_notes,
+    immediate_actions = EXCLUDED.immediate_actions,
+    immediate_actions_notes = EXCLUDED.immediate_actions_notes,
+    prognosis = EXCLUDED.prognosis,
+    treatment_plan = EXCLUDED.treatment_plan,
+    special_needs = EXCLUDED.special_needs,
+    is_complete = EXCLUDED.is_complete,
+    updated_at = NOW();
+
+-- Verificar dados inseridos
+SELECT 
+    'Ficha de admissão criada' as status,
+    animal_id,
+    assessor_name,
+    prognosis
+FROM public.animal_intake_assessments 
+WHERE animal_id = '67daf5d6-b573-4c74-81d7-a1065f8786e1'::uuid;

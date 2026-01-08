@@ -75,7 +75,7 @@ const HistoricoNomesAnimais = () => {
   useEffect(() => {
     loadHistoricos();
     loadAnimais();
-  }, []);
+  }, [animalId]); // Recarregar quando animalId mudar
 
   useEffect(() => {
     if (animalId) {
