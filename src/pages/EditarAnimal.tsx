@@ -75,6 +75,28 @@ const EditarAnimal = () => {
   
   // Estado para abas
   const [activeTab, setActiveTab] = useState("basico");
+  
+  // Estados para ficha de admissão
+  const [intakeOptions, setIntakeOptions] = useState<Record<string, any[]>>({});
+  const [admissaoData, setAdmissaoData] = useState({
+    intake_origin: "",
+    intake_reason: "",
+    circumstances_details: "",
+    general_condition: "",
+    behavior_entry: "",
+    body_condition: "",
+    weight_kg: "",
+    temperature_celsius: "",
+    symptoms: [] as string[],
+    physical_exam_notes: "",
+    behavioral_notes: "",
+    immediate_actions: [] as string[],
+    immediate_actions_notes: "",
+    prognosis: "",
+    treatment_plan: "",
+    special_needs: "",
+    injuries: [] as any[]
+  });
 
   useEffect(() => {
     if (id) {
@@ -84,6 +106,8 @@ const EditarAnimal = () => {
       fetchGrupos();
       fetchVoluntarios();
       fetchTiposEstado();
+      fetchIntakeOptions();
+      fetchIntakeAssessment();
     }
   }, [id]);
 
@@ -460,6 +484,69 @@ const EditarAnimal = () => {
     }
   };
 
+  // Funções para ficha de admissão
+  const fetchIntakeOptions = async () => {
+    try {
+      const { data, error } = await supabase.rpc('get_intake_config_options');
+      if (error) throw error;
+      
+      const groupedOptions = data.reduce((acc: any, option: any) => {
+        if (!acc[option.domain]) acc[option.domain] = [];
+        acc[option.domain].push(option);
+        return acc;
+      }, {});
+      
+      setIntakeOptions(groupedOptions);
+    } catch (error) {
+      console.error('Erro ao carregar opções de admissão:', error);
+    }
+  };
+
+  const fetchIntakeAssessment = async () => {
+    try {
+      const { data, error } = await supabase.rpc('get_animal_intake_assessment', { animal_uuid: id });
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        const assessment = data[0];
+        setAdmissaoData({
+          intake_origin: assessment.intake_origin || "",
+          intake_reason: assessment.intake_reason || "",
+          circumstances_details: assessment.circumstances_details || "",
+          general_condition: assessment.general_condition || "",
+          behavior_entry: assessment.behavior_entry || "",
+          body_condition: assessment.body_condition || "",
+          weight_kg: assessment.weight_kg?.toString() || "",
+          temperature_celsius: assessment.temperature_celsius?.toString() || "",
+          symptoms: assessment.symptoms || [],
+          physical_exam_notes: assessment.physical_exam_notes || "",
+          behavioral_notes: assessment.behavioral_notes || "",
+          immediate_actions: assessment.immediate_actions || [],
+          immediate_actions_notes: assessment.immediate_actions_notes || "",
+          prognosis: assessment.prognosis || "",
+          treatment_plan: assessment.treatment_plan || "",
+          special_needs: assessment.special_needs || "",
+          injuries: []
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao carregar ficha de admissão:', error);
+    }
+  };
+
+  const handleAdmissaoChange = (field: string, value: any) => {
+    setAdmissaoData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleMultiSelectChange = (field: string, value: string, checked: boolean) => {
+    setAdmissaoData(prev => ({
+      ...prev,
+      [field]: checked 
+        ? [...(prev[field as keyof typeof prev] as string[]), value]
+        : (prev[field as keyof typeof prev] as string[]).filter(item => item !== value)
+    }));
+  };
+
   if (loadingData) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -828,10 +915,10 @@ const EditarAnimal = () => {
                   <div className="space-y-2">
                     <Label className="text-gray-700 font-semibold text-sm uppercase tracking-wide">Voluntário Responsável</Label>
                     <VoluntarioSelector
-                      voluntarios={voluntarios}
-                      selectedVoluntario={formData.voluntario_responsavel}
-                      onVoluntarioChange={(voluntarioId) => handleInputChange("voluntario_responsavel", voluntarioId)}
+                      value={formData.voluntario_responsavel}
+                      onValueChange={(voluntarioId) => handleInputChange("voluntario_responsavel", voluntarioId)}
                       placeholder="Selecione o voluntário responsável"
+                      showFullName={true}
                       className="h-12 text-lg border-2 border-gray-300 hover:border-green-400 focus:border-green-500"
                     />
                   </div>
@@ -851,11 +938,163 @@ const EditarAnimal = () => {
                     Informações sobre a condição à entrada do animal
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="p-6">
-                  <div className="text-center py-12 text-gray-500">
-                    <Clipboard className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-                    <p className="text-lg font-medium">Ficha de Admissão</p>
-                    <p className="text-sm">Esta funcionalidade estará disponível em breve</p>
+                <CardContent className="space-y-6 p-6">
+                  {/* Circunstâncias da Admissão */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-purple-800 flex items-center">
+                      <span className="mr-2">📝</span>
+                      Circunstâncias da Admissão
+                    </h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-gray-700 font-semibold text-sm uppercase tracking-wide">Origem</Label>
+                        <Select 
+                          value={admissaoData.intake_origin} 
+                          onValueChange={(value) => handleAdmissaoChange("intake_origin", value)}
+                        >
+                          <SelectTrigger className="h-12 text-lg border-2 border-gray-300 hover:border-purple-400 focus:border-purple-500">
+                            <SelectValue placeholder="Como chegou à instituição?" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {(intakeOptions.intake_origin || []).map((option) => (
+                              <SelectItem key={option.code} value={option.code} className="text-lg">
+                                {option.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-gray-700 font-semibold text-sm uppercase tracking-wide">Razão da Admissão</Label>
+                        <Select 
+                          value={admissaoData.intake_reason} 
+                          onValueChange={(value) => handleAdmissaoChange("intake_reason", value)}
+                        >
+                          <SelectTrigger className="h-12 text-lg border-2 border-gray-300 hover:border-purple-400 focus:border-purple-500">
+                            <SelectValue placeholder="Motivo principal" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {(intakeOptions.intake_reason || []).map((option) => (
+                              <SelectItem key={option.code} value={option.code} className="text-lg">
+                                {option.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-gray-700 font-semibold text-sm uppercase tracking-wide">Detalhes das Circunstâncias</Label>
+                      <Textarea
+                        value={admissaoData.circumstances_details}
+                        onChange={(e) => handleAdmissaoChange("circumstances_details", e.target.value)}
+                        placeholder="Descreva as circunstâncias detalhadas da admissão..."
+                        rows={4}
+                        className="text-lg font-medium border-2 border-gray-300 hover:border-purple-400 focus:border-purple-500 transition-all duration-200 resize-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Triagem Imediata */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-purple-800 flex items-center">
+                      <span className="mr-2">🩺</span>
+                      Triagem Imediata
+                    </h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-gray-700 font-semibold text-sm uppercase tracking-wide">Condição Geral</Label>
+                        <Select 
+                          value={admissaoData.general_condition} 
+                          onValueChange={(value) => handleAdmissaoChange("general_condition", value)}
+                        >
+                          <SelectTrigger className="h-12 text-lg border-2 border-gray-300 hover:border-purple-400 focus:border-purple-500">
+                            <SelectValue placeholder="Estado geral" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {(intakeOptions.general_condition || []).map((option) => (
+                              <SelectItem key={option.code} value={option.code} className="text-lg">
+                                {option.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-gray-700 font-semibold text-sm uppercase tracking-wide">Comportamento</Label>
+                        <Select 
+                          value={admissaoData.behavior_entry} 
+                          onValueChange={(value) => handleAdmissaoChange("behavior_entry", value)}
+                        >
+                          <SelectTrigger className="h-12 text-lg border-2 border-gray-300 hover:border-purple-400 focus:border-purple-500">
+                            <SelectValue placeholder="Comportamento observado" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {(intakeOptions.behavior_entry || []).map((option) => (
+                              <SelectItem key={option.code} value={option.code} className="text-lg">
+                                {option.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-gray-700 font-semibold text-sm uppercase tracking-wide">Condição Corporal</Label>
+                        <Select 
+                          value={admissaoData.body_condition} 
+                          onValueChange={(value) => handleAdmissaoChange("body_condition", value)}
+                        >
+                          <SelectTrigger className="h-12 text-lg border-2 border-gray-300 hover:border-purple-400 focus:border-purple-500">
+                            <SelectValue placeholder="Condição física" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {(intakeOptions.body_condition || []).map((option) => (
+                              <SelectItem key={option.code} value={option.code} className="text-lg">
+                                {option.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Observações Clínicas */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-purple-800 flex items-center">
+                      <span className="mr-2">👩‍⚕️</span>
+                      Observações Clínicas
+                    </h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-gray-700 font-semibold text-sm uppercase tracking-wide">Exame Físico</Label>
+                        <Textarea
+                          value={admissaoData.physical_exam_notes}
+                          onChange={(e) => handleAdmissaoChange("physical_exam_notes", e.target.value)}
+                          placeholder="Observações do exame físico..."
+                          rows={4}
+                          className="text-lg font-medium border-2 border-gray-300 hover:border-purple-400 focus:border-purple-500 transition-all duration-200 resize-none"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-gray-700 font-semibold text-sm uppercase tracking-wide">Observações Comportamentais</Label>
+                        <Textarea
+                          value={admissaoData.behavioral_notes}
+                          onChange={(e) => handleAdmissaoChange("behavioral_notes", e.target.value)}
+                          placeholder="Observações sobre o comportamento..."
+                          rows={4}
+                          className="text-lg font-medium border-2 border-gray-300 hover:border-purple-400 focus:border-purple-500 transition-all duration-200 resize-none"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -926,6 +1165,17 @@ const EditarAnimal = () => {
                       rows={6}
                       className="text-lg font-medium border-2 border-gray-300 hover:border-orange-400 focus:border-orange-500 transition-all duration-200 resize-none"
                     />
+                  </div>
+                  
+                  {/* Anexos Adicionais */}
+                  <div className="text-center py-8 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-xl border-2 border-dashed border-orange-200 shadow-sm">
+                    <Paperclip className="h-16 w-16 text-orange-400 mx-auto mb-4" />
+                    <h3 className="text-xl font-bold text-orange-800 mb-2">
+                      Anexos Adicionais
+                    </h3>
+                    <p className="text-orange-600 font-medium">
+                      Funcionalidade para múltiplas fotos e documentos será implementada futuramente
+                    </p>
                   </div>
                 </CardContent>
               </Card>
