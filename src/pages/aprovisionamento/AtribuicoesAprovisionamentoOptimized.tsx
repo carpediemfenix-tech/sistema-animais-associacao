@@ -578,6 +578,11 @@ const AtribuicoesAprovisionamento: React.FC = () => {
                             atribuicao.quantidade_atribuida
                           )}
                         </p>
+                        
+                        {/* Mostrar ID para debug */}
+                        <p className="text-xs text-gray-400 font-mono">
+                          <strong>ID:</strong> {atribuicao.id}
+                        </p>
                         <p><strong>Categoria:</strong> {atribuicao.item?.tipo?.categoria?.nome || 'N/A'}</p>
                       </div>
                       
