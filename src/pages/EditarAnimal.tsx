@@ -6,7 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Save, AlertCircle, AlertTriangle } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, Save, AlertCircle, AlertTriangle, PawPrint, Archive, User, FileText, Clipboard, Paperclip } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import VoluntarioSelector from "@/components/VoluntarioSelector";
@@ -14,7 +16,6 @@ import { convertGoogleDriveUrl } from "@/lib/utils";
 import PageActionBar from "@/components/PageActionBar";
 import EnhancedHeader from "@/components/EnhancedHeader";
 import EnhancedFooter from "@/components/EnhancedFooter";
-import { PawPrint, Archive } from "lucide-react";
 
 // Interfaces para tipos de dados
 interface Especie {
@@ -71,6 +72,9 @@ const EditarAnimal = () => {
   const [tiposEstado, setTiposEstado] = useState<any[]>([]);
   const [estadoOriginal, setEstadoOriginal] = useState<string>("");
   const [incompatibilityAlert, setIncompatibilityAlert] = useState<{show: boolean, message: string}>({show: false, message: ""});
+  
+  // Estado para abas
+  const [activeTab, setActiveTab] = useState("basico");
 
   useEffect(() => {
     if (id) {
@@ -533,9 +537,63 @@ const EditarAnimal = () => {
           </div>
         )}
         
-        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
-          {/* Informações Básicas */}
-          <Card>
+        {/* Resumo Fixo do Animal */}
+        <Card className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+                  <PawPrint className="h-8 w-8 text-blue-600" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">
+                    {formData.nome || 'Nome do Animal'}
+                  </h2>
+                  <div className="flex items-center space-x-4 text-sm text-gray-600">
+                    <span>Nº Processo: {numeroProcesso || 'N/A'}</span>
+                    <span>•</span>
+                    <span>Espécie: {especies.find(e => e.id === formData.especie)?.nome || 'N/A'}</span>
+                    <span>•</span>
+                    <span>Estado: {tiposEstado.find(e => e.id === formData.estado)?.nome || 'N/A'}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="text-right">
+                <Badge variant="outline" className="mb-2">
+                  Editando Animal
+                </Badge>
+                <p className="text-xs text-gray-500">
+                  Última atualização: {new Date().toLocaleDateString('pt-PT')}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <form onSubmit={handleSubmit}>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="basico" className="flex items-center gap-2">
+                <User className="h-4 w-4" />
+                Básico
+              </TabsTrigger>
+              <TabsTrigger value="adicionais" className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Adicionais
+              </TabsTrigger>
+              <TabsTrigger value="admissao" className="flex items-center gap-2">
+                <Clipboard className="h-4 w-4" />
+                Admissão
+              </TabsTrigger>
+              <TabsTrigger value="anexos" className="flex items-center gap-2">
+                <Paperclip className="h-4 w-4" />
+                Anexos
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Aba Básico */}
+            <TabsContent value="basico" className="space-y-6">
+              <Card>
             <CardHeader>
               <CardTitle>Informações Básicas</CardTitle>
               <CardDescription>
@@ -955,12 +1013,14 @@ const EditarAnimal = () => {
           </Card>
 
           {/* Botões removidos - agora estão no PageActionBar */}
-        </form>
-      </div>
-      
-      <EnhancedFooter />
-    </div>
-  );
+        </TabsContent>
+      </Tabs>
+    </form>
+  </div>
+  
+  <EnhancedFooter />
+</div>
+);
 };
 
 export default EditarAnimal;

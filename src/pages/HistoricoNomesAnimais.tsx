@@ -55,6 +55,11 @@ interface HistoricoComAnimal extends HistoricoNome {
 
 const HistoricoNomesAnimais = () => {
   const { animalId } = useParams();
+  
+  // Debug: Verificar se animalId está sendo obtido
+  console.log('🔍 [HISTORICO] Component mounted with animalId:', animalId);
+  console.log('🔍 [HISTORICO] URL params:', useParams());
+  
   const [historicos, setHistoricos] = useState<HistoricoComAnimal[]>([]);
   const [animais, setAnimais] = useState<Animal[]>([]);
   const [loading, setLoading] = useState(true);
@@ -125,6 +130,9 @@ const HistoricoNomesAnimais = () => {
         }
       }
 
+      console.log('📊 [HISTORICO] Históricos processados:', historicosComAnimais.length);
+      console.log('🔍 [HISTORICO] Dados finais:', historicosComAnimais.map(h => ({ animal_id: h.animal_id, nome: h.nome, animal_nome: h.animal?.nome })));
+      
       setHistoricos(historicosComAnimais);
     } catch (error: any) {
       console.error('Erro ao carregar históricos:', error);
