@@ -30,6 +30,7 @@ import EnhancedHeader from "@/components/EnhancedHeader";
 import EnhancedFooter from "@/components/EnhancedFooter";
 import { convertGoogleDriveUrl } from "@/lib/utils";
 import PageActionBar from "@/components/PageActionBar";
+import IntakeAssessmentDisplay from "@/components/MockDataIndicator"; // Componente de ficha de admissão
 
 const AnimalDetail = () => {
   const { id } = useParams();
@@ -676,6 +677,21 @@ const AnimalDetail = () => {
                 </Card>
               </Link>
               
+            </div>
+            
+            {/* Seção da Ficha de Admissão */}
+            <div className="mt-8">
+              <IntakeAssessmentDisplay 
+                animalId={id!} 
+                onEdit={(assessment) => {
+                  // TODO: Implementar edição da ficha de admissão
+                  toast({
+                    title: "Funcionalidade em desenvolvimento",
+                    description: "A edição da ficha de admissão estará disponível em breve.",
+                  });
+                }}
+                showEditButton={hasPermission('admin') || hasPermission('tecnico')}
+              />
             </div>
           </CardContent>
         </Card>

@@ -1,68 +1,67 @@
--- FASE 1: TABELAS PRINCIPAIS PARA FICHA DE ADMISSÃO
+-- ===== FASE 1: TABELAS PRINCIPAIS PARA FICHA DE ADMISSÃO =====
 -- Data: 2026-01-08 02:00 UTC
+-- Descrição: Criar tabelas para armazenar avaliações de admissão e lesões
 
--- Tabela principal de avaliações de admissão
+-- Tabela principal de avaliação de admissão
 CREATE TABLE IF NOT EXISTS public.animal_intake_assessments (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  animal_id UUID NOT NULL REFERENCES public.animais(id) ON DELETE CASCADE,
-  assessment_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  assessed_by UUID REFERENCES public.voluntarios(id), -- Quem fez a avaliação
-  
-  -- Circunstâncias da Admissão
-  intake_origin VARCHAR(50), -- Referência para intake_config_options
-  intake_reason VARCHAR(50), -- Referência para intake_config_options
-  circumstances_details TEXT, -- Detalhes das circunstâncias
-  
-  -- Triagem Imediata
-  general_condition VARCHAR(50), -- Referência para intake_config_options
-  behavior_entry VARCHAR(50), -- Referência para intake_config_options
-  body_condition VARCHAR(50), -- Referência para intake_config_options
-  weight_kg DECIMAL(5,2), -- Peso na admissão
-  temperature_celsius DECIMAL(4,1), -- Temperatura corporal
-  
-  -- Avaliação Física (Multi-select usando JSONB)
-  symptoms JSONB DEFAULT '[]', -- Array de códigos de sintomas
-  
-  -- Observações Gerais
-  physical_exam_notes TEXT, -- Notas do exame físico
-  behavioral_notes TEXT, -- Observações comportamentais
-  
-  -- Ações Imediatas (Multi-select usando JSONB)
-  immediate_actions JSONB DEFAULT '[]', -- Array de códigos de ações
-  immediate_actions_notes TEXT, -- Detalhes das ações tomadas
-  
-  -- Prognóstico e Recomendações
-  prognosis VARCHAR(20) CHECK (prognosis IN ('excellent', 'good', 'fair', 'guarded', 'poor')),
-  treatment_plan TEXT, -- Plano de tratamento
-  special_needs TEXT, -- Necessidades especiais
-  
-  -- Metadados
-  is_complete BOOLEAN DEFAULT false, -- Se a avaliação está completa
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  created_by UUID REFERENCES auth.users(id)
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    animal_id UUID NOT NULL, -- Referência ao animal (sem FK por enquanto)
+    assessment_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    assessed_by UUID, -- Referência ao voluntário que fez a avaliação (sem FK por enquanto)
+    assessor_name VARCHAR(200), -- Nome do avaliador (backup)
+    
+    -- Circunstâncias da Admissão
+    intake_origin VARCHAR(100), -- Código da origem (referência a intake_config_options)
+    intake_reason VARCHAR(100), -- Código da razão (referência a intake_config_options)
+    circumstances_details TEXT, -- Detalhes das circunstâncias
+    
+    -- Triagem Imediata
+    general_condition VARCHAR(100), -- Código do estado geral
+    behavior_entry VARCHAR(100), -- Código do comportamento
+    body_condition VARCHAR(100), -- Código da condição corporal
+    weight_kg DECIMAL(5,2), -- Peso em kg
+    temperature_celsius DECIMAL(4,1), -- Temperatura em Celsius
+    
+    -- Avaliação Física (arrays JSONB para multi-select)
+    symptoms JSONB DEFAULT '[]', -- Array de códigos de sintomas
+    
+    -- Observações
+    physical_exam_notes TEXT, -- Notas do exame físico
+    behavioral_notes TEXT, -- Observações comportamentais
+    
+    -- Ações Imediatas (arrays JSONB para multi-select)
+    immediate_actions JSONB DEFAULT '[]', -- Array de códigos de ações
+    immediate_actions_notes TEXT, -- Detalhes das ações realizadas
+    
+    -- Prognóstico
+    prognosis VARCHAR(20) CHECK (prognosis IN ('excellent', 'good', 'fair', 'guarded', 'poor')),
+    treatment_plan TEXT, -- Plano de tratamento
+    special_needs TEXT, -- Necessidades especiais
+    
+    -- Metadados
+    is_complete BOOLEAN DEFAULT false, -- Se a avaliação está completa
+    injury_count INTEGER DEFAULT 0, -- Número de lesões registadas
+    
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_by UUID REFERENCES auth.users(id)
 );
 
--- Tabela para ferimentos/lesões específicas (1:N com assessments)
+-- Tabela de lesões (relacionamento 1:N com avaliações)
 CREATE TABLE IF NOT EXISTS public.animal_intake_injuries (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  assessment_id UUID NOT NULL REFERENCES public.animal_intake_assessments(id) ON DELETE CASCADE,
-  
-  -- Detalhes da Lesão
-  injury_type VARCHAR(50), -- Referência para intake_config_options
-  injury_severity VARCHAR(50), -- Referência para intake_config_options
-  body_location VARCHAR(100), -- Localização no corpo
-  description TEXT, -- Descrição detalhada
-  
-  -- Tratamento
-  treatment_given TEXT, -- Tratamento aplicado
-  requires_followup BOOLEAN DEFAULT false,
-  followup_date DATE, -- Data para reavaliação
-  
-  -- Metadados
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  created_by UUID REFERENCES auth.users(id)
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    assessment_id UUID NOT NULL REFERENCES public.animal_intake_assessments(id) ON DELETE CASCADE,
+    injury_type VARCHAR(100) NOT NULL, -- Código do tipo de lesão
+    injury_severity VARCHAR(100) NOT NULL, -- Código da severidade
+    body_location VARCHAR(200) NOT NULL, -- Localização no corpo
+    description TEXT, -- Descrição detalhada
+    treatment_given TEXT, -- Tratamento aplicado
+    requires_followup BOOLEAN DEFAULT false, -- Requer acompanhamento
+    followup_date DATE, -- Data de acompanhamento
+    
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_by UUID REFERENCES auth.users(id)
 );
 
 -- Índices para performance
@@ -72,160 +71,189 @@ CREATE INDEX IF NOT EXISTS idx_intake_assessments_assessor ON public.animal_inta
 CREATE INDEX IF NOT EXISTS idx_intake_injuries_assessment ON public.animal_intake_injuries(assessment_id);
 
 -- Triggers para updated_at
-CREATE OR REPLACE FUNCTION update_intake_assessment_updated_at()
+CREATE OR REPLACE FUNCTION public.update_intake_assessments_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
-  NEW.updated_at = NOW();
-  RETURN NEW;
+    NEW.updated_at = NOW();
+    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trigger_intake_assessment_updated_at
-  BEFORE UPDATE ON public.animal_intake_assessments
-  FOR EACH ROW EXECUTE FUNCTION update_intake_assessment_updated_at();
+DROP TRIGGER IF EXISTS trigger_update_intake_assessments_updated_at ON public.animal_intake_assessments;
+CREATE TRIGGER trigger_update_intake_assessments_updated_at
+    BEFORE UPDATE ON public.animal_intake_assessments
+    FOR EACH ROW EXECUTE FUNCTION public.update_intake_assessments_updated_at();
 
-CREATE TRIGGER trigger_intake_injury_updated_at
-  BEFORE UPDATE ON public.animal_intake_injuries
-  FOR EACH ROW EXECUTE FUNCTION update_intake_assessment_updated_at();
+DROP TRIGGER IF EXISTS trigger_update_intake_injuries_updated_at ON public.animal_intake_injuries;
+CREATE TRIGGER trigger_update_intake_injuries_updated_at
+    BEFORE UPDATE ON public.animal_intake_injuries
+    FOR EACH ROW EXECUTE FUNCTION public.update_intake_assessments_updated_at();
 
--- Trigger para sincronizar peso com tabela animais
-CREATE OR REPLACE FUNCTION sync_animal_weight()
+-- Trigger para sincronizar peso com tabela de animais (se existir)
+CREATE OR REPLACE FUNCTION public.sync_animal_weight_from_intake()
 RETURNS TRIGGER AS $$
 BEGIN
-  -- Atualizar peso na tabela animais se foi fornecido
-  IF NEW.weight_kg IS NOT NULL THEN
-    UPDATE public.animais 
-    SET peso = NEW.weight_kg,
-        updated_at = NOW()
-    WHERE id = NEW.animal_id;
-  END IF;
-  
-  RETURN NEW;
+    -- Tentar atualizar o peso na tabela de animais se existir
+    BEGIN
+        UPDATE public.animais_2025_12_18_14_15 
+        SET peso = NEW.weight_kg, updated_at = NOW()
+        WHERE id = NEW.animal_id::text
+        AND (peso IS NULL OR peso != NEW.weight_kg);
+    EXCEPTION WHEN OTHERS THEN
+        -- Ignorar erro se tabela não existir
+        NULL;
+    END;
+    
+    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trigger_sync_animal_weight ON public.animal_intake_assessments;
 CREATE TRIGGER trigger_sync_animal_weight
-  AFTER INSERT OR UPDATE ON public.animal_intake_assessments
-  FOR EACH ROW EXECUTE FUNCTION sync_animal_weight();
+    AFTER INSERT OR UPDATE OF weight_kg ON public.animal_intake_assessments
+    FOR EACH ROW 
+    WHEN (NEW.weight_kg IS NOT NULL)
+    EXECUTE FUNCTION public.sync_animal_weight_from_intake();
 
--- RLS Policies
+-- RLS (Row Level Security)
 ALTER TABLE public.animal_intake_assessments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.animal_intake_injuries ENABLE ROW LEVEL SECURITY;
 
--- Policies para animal_intake_assessments
+-- Políticas RLS para animal_intake_assessments
+DROP POLICY IF EXISTS "intake_assessments_select_policy" ON public.animal_intake_assessments;
 CREATE POLICY "intake_assessments_select_policy" ON public.animal_intake_assessments
-  FOR SELECT USING (true);
+    FOR SELECT USING (true); -- Todos podem ler
 
+DROP POLICY IF EXISTS "intake_assessments_insert_policy" ON public.animal_intake_assessments;
 CREATE POLICY "intake_assessments_insert_policy" ON public.animal_intake_assessments
-  FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+    FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 
+DROP POLICY IF EXISTS "intake_assessments_update_policy" ON public.animal_intake_assessments;
 CREATE POLICY "intake_assessments_update_policy" ON public.animal_intake_assessments
-  FOR UPDATE USING (auth.role() = 'authenticated');
+    FOR UPDATE USING (auth.role() = 'authenticated');
 
+DROP POLICY IF EXISTS "intake_assessments_delete_policy" ON public.animal_intake_assessments;
 CREATE POLICY "intake_assessments_delete_policy" ON public.animal_intake_assessments
-  FOR DELETE USING (auth.role() = 'authenticated');
+    FOR DELETE USING (auth.role() = 'authenticated');
 
--- Policies para animal_intake_injuries
+-- Políticas RLS para animal_intake_injuries
+DROP POLICY IF EXISTS "intake_injuries_select_policy" ON public.animal_intake_injuries;
 CREATE POLICY "intake_injuries_select_policy" ON public.animal_intake_injuries
-  FOR SELECT USING (true);
+    FOR SELECT USING (true); -- Todos podem ler
 
+DROP POLICY IF EXISTS "intake_injuries_insert_policy" ON public.animal_intake_injuries;
 CREATE POLICY "intake_injuries_insert_policy" ON public.animal_intake_injuries
-  FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+    FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 
+DROP POLICY IF EXISTS "intake_injuries_update_policy" ON public.animal_intake_injuries;
 CREATE POLICY "intake_injuries_update_policy" ON public.animal_intake_injuries
-  FOR UPDATE USING (auth.role() = 'authenticated');
+    FOR UPDATE USING (auth.role() = 'authenticated');
 
+DROP POLICY IF EXISTS "intake_injuries_delete_policy" ON public.animal_intake_injuries;
 CREATE POLICY "intake_injuries_delete_policy" ON public.animal_intake_injuries
-  FOR DELETE USING (auth.role() = 'authenticated');
+    FOR DELETE USING (auth.role() = 'authenticated');
 
--- Funções helper
-CREATE OR REPLACE FUNCTION get_animal_intake_assessment(animal_uuid UUID)
+-- Função helper para buscar avaliação de admissão de um animal
+CREATE OR REPLACE FUNCTION public.get_animal_intake_assessment(
+    animal_uuid UUID
+)
 RETURNS TABLE (
-  id UUID,
-  animal_id UUID,
-  assessment_date TIMESTAMP WITH TIME ZONE,
-  assessed_by UUID,
-  assessor_name VARCHAR(255),
-  intake_origin VARCHAR(50),
-  intake_reason VARCHAR(50),
-  circumstances_details TEXT,
-  general_condition VARCHAR(50),
-  behavior_entry VARCHAR(50),
-  body_condition VARCHAR(50),
-  weight_kg DECIMAL(5,2),
-  temperature_celsius DECIMAL(4,1),
-  symptoms JSONB,
-  physical_exam_notes TEXT,
-  behavioral_notes TEXT,
-  immediate_actions JSONB,
-  immediate_actions_notes TEXT,
-  prognosis VARCHAR(20),
-  treatment_plan TEXT,
-  special_needs TEXT,
-  is_complete BOOLEAN,
-  injury_count INTEGER
+    id UUID,
+    animal_id UUID,
+    assessment_date TIMESTAMP WITH TIME ZONE,
+    assessed_by UUID,
+    assessor_name VARCHAR(200),
+    intake_origin VARCHAR(100),
+    intake_reason VARCHAR(100),
+    circumstances_details TEXT,
+    general_condition VARCHAR(100),
+    behavior_entry VARCHAR(100),
+    body_condition VARCHAR(100),
+    weight_kg DECIMAL(5,2),
+    temperature_celsius DECIMAL(4,1),
+    symptoms JSONB,
+    physical_exam_notes TEXT,
+    behavioral_notes TEXT,
+    immediate_actions JSONB,
+    immediate_actions_notes TEXT,
+    prognosis VARCHAR(20),
+    treatment_plan TEXT,
+    special_needs TEXT,
+    is_complete BOOLEAN,
+    injury_count INTEGER,
+    created_at TIMESTAMP WITH TIME ZONE,
+    updated_at TIMESTAMP WITH TIME ZONE
 ) AS $$
 BEGIN
-  RETURN QUERY
-  SELECT 
-    aia.id,
-    aia.animal_id,
-    aia.assessment_date,
-    aia.assessed_by,
-    v.nome as assessor_name,
-    aia.intake_origin,
-    aia.intake_reason,
-    aia.circumstances_details,
-    aia.general_condition,
-    aia.behavior_entry,
-    aia.body_condition,
-    aia.weight_kg,
-    aia.temperature_celsius,
-    aia.symptoms,
-    aia.physical_exam_notes,
-    aia.behavioral_notes,
-    aia.immediate_actions,
-    aia.immediate_actions_notes,
-    aia.prognosis,
-    aia.treatment_plan,
-    aia.special_needs,
-    aia.is_complete,
-    COALESCE(injury_counts.injury_count, 0)::INTEGER as injury_count
-  FROM public.animal_intake_assessments aia
-  LEFT JOIN public.voluntarios v ON aia.assessed_by = v.id
-  LEFT JOIN (
-    SELECT assessment_id, COUNT(*) as injury_count
-    FROM public.animal_intake_injuries
-    GROUP BY assessment_id
-  ) injury_counts ON aia.id = injury_counts.assessment_id
-  WHERE aia.animal_id = animal_uuid
-  ORDER BY aia.assessment_date DESC;
+    RETURN QUERY
+    SELECT 
+        aia.id,
+        aia.animal_id,
+        aia.assessment_date,
+        aia.assessed_by,
+        aia.assessor_name,
+        aia.intake_origin,
+        aia.intake_reason,
+        aia.circumstances_details,
+        aia.general_condition,
+        aia.behavior_entry,
+        aia.body_condition,
+        aia.weight_kg,
+        aia.temperature_celsius,
+        aia.symptoms,
+        aia.physical_exam_notes,
+        aia.behavioral_notes,
+        aia.immediate_actions,
+        aia.immediate_actions_notes,
+        aia.prognosis,
+        aia.treatment_plan,
+        aia.special_needs,
+        aia.is_complete,
+        aia.injury_count,
+        aia.created_at,
+        aia.updated_at
+    FROM public.animal_intake_assessments aia
+    WHERE aia.animal_id = animal_uuid
+    ORDER BY aia.assessment_date DESC
+    LIMIT 1;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-CREATE OR REPLACE FUNCTION get_intake_statistics()
+-- Função para estatísticas de admissão
+CREATE OR REPLACE FUNCTION public.get_intake_statistics()
 RETURNS TABLE (
-  total_assessments BIGINT,
-  assessments_this_month BIGINT,
-  incomplete_assessments BIGINT,
-  critical_conditions BIGINT,
-  most_common_origin VARCHAR(50),
-  most_common_reason VARCHAR(50)
+    total_assessments BIGINT,
+    assessments_this_month BIGINT,
+    incomplete_assessments BIGINT,
+    critical_conditions BIGINT,
+    most_common_origin TEXT,
+    most_common_reason TEXT
 ) AS $$
 BEGIN
-  RETURN QUERY
-  SELECT 
-    COUNT(*) as total_assessments,
-    COUNT(*) FILTER (WHERE assessment_date >= date_trunc('month', CURRENT_DATE)) as assessments_this_month,
-    COUNT(*) FILTER (WHERE is_complete = false) as incomplete_assessments,
-    COUNT(*) FILTER (WHERE general_condition = 'critical') as critical_conditions,
-    MODE() WITHIN GROUP (ORDER BY intake_origin) as most_common_origin,
-    MODE() WITHIN GROUP (ORDER BY intake_reason) as most_common_reason
-  FROM public.animal_intake_assessments;
+    RETURN QUERY
+    SELECT 
+        (SELECT COUNT(*) FROM public.animal_intake_assessments) as total_assessments,
+        (SELECT COUNT(*) FROM public.animal_intake_assessments 
+         WHERE assessment_date >= date_trunc('month', CURRENT_DATE)) as assessments_this_month,
+        (SELECT COUNT(*) FROM public.animal_intake_assessments 
+         WHERE is_complete = false) as incomplete_assessments,
+        (SELECT COUNT(*) FROM public.animal_intake_assessments 
+         WHERE general_condition = 'critical') as critical_conditions,
+        (SELECT intake_origin FROM public.animal_intake_assessments 
+         WHERE intake_origin IS NOT NULL 
+         GROUP BY intake_origin 
+         ORDER BY COUNT(*) DESC 
+         LIMIT 1) as most_common_origin,
+        (SELECT intake_reason FROM public.animal_intake_assessments 
+         WHERE intake_reason IS NOT NULL 
+         GROUP BY intake_reason 
+         ORDER BY COUNT(*) DESC 
+         LIMIT 1) as most_common_reason;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Verificar criação
 SELECT 'Tabelas de admissão criadas com sucesso' as status;
-SELECT COUNT(*) as total_assessments FROM public.animal_intake_assessments;
-SELECT COUNT(*) as total_injuries FROM public.animal_intake_injuries;
+SELECT 
+    (SELECT COUNT(*) FROM public.animal_intake_assessments) as total_avaliacoes,
+    (SELECT COUNT(*) FROM public.animal_intake_injuries) as total_lesoes;

@@ -48,6 +48,7 @@ import EnhancedHeader from "@/components/EnhancedHeader";
 import EnhancedFooter from "@/components/EnhancedFooter";
 import { convertGoogleDriveUrl } from "@/lib/utils";
 import PageActionBar from "@/components/PageActionBar";
+import IntakeAssessmentDisplay from "@/components/MockDataIndicator"; // Componente de ficha de admissão
 
 const AnimalDetailFuturistic = () => {
   const { id } = useParams();
@@ -918,6 +919,27 @@ const AnimalDetailFuturistic = () => {
             </div>
           </div>
         )}
+        
+        {/* Seção da Ficha de Admissão Futuristica */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent mb-6 flex items-center">
+            <FileText className="h-6 w-6 mr-3 text-blue-400" />
+            Ficha de Admissão
+          </h2>
+          <div className="bg-gradient-to-br from-gray-900/50 to-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 shadow-2xl">
+            <IntakeAssessmentDisplay 
+              animalId={id!} 
+              onEdit={(assessment) => {
+                // TODO: Implementar edição da ficha de admissão
+                toast({
+                  title: "Funcionalidade em desenvolvimento",
+                  description: "A edição da ficha de admissão estará disponível em breve.",
+                });
+              }}
+              showEditButton={hasPermission('admin') || hasPermission('tecnico')}
+            />
+          </div>
+        </div>
       </div>
       
       <EnhancedFooter />
