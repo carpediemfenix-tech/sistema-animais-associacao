@@ -72,6 +72,7 @@ const EditarAnimal = () => {
   const [voluntarios, setVoluntarios] = useState<any[]>([]);
   const [tiposEstado, setTiposEstado] = useState<any[]>([]);
   const [estadoOriginal, setEstadoOriginal] = useState<string>("");
+  const [fichaAdmissaoSalva, setFichaAdmissaoSalva] = useState<boolean>(false); // Flag para controlar recarregamento
   const [incompatibilityAlert, setIncompatibilityAlert] = useState<{show: boolean, message: string}>({show: false, message: ""});
   
   // Estado para abas
@@ -488,6 +489,8 @@ const EditarAnimal = () => {
 
       // Salvar dados da ficha de admissão
       console.log('💾 [EDITAR] Salvando ficha de admissão...');
+      console.log('📋 [EDITAR] Dados da admissão a salvar:', admissaoData);
+      
       try {
         // Verificar se já existe uma avaliação de admissão
         const { data: existingAssessment, error: checkError } = await supabase
@@ -495,6 +498,8 @@ const EditarAnimal = () => {
           .select('id')
           .eq('animal_id', id)
           .single();
+
+        console.log('🔍 [EDITAR] Verificação de ficha existente:', { existingAssessment, checkError });
 
         const assessmentData = {
           animal_id: id,
@@ -517,35 +522,45 @@ const EditarAnimal = () => {
           is_complete: true,
           updated_at: new Date().toISOString()
         };
+        
+        console.log('📦 [EDITAR] Dados preparados para salvamento:', assessmentData);
 
         if (existingAssessment) {
           // Atualizar avaliação existente
-          const { error: updateError } = await supabase
+          console.log('🔄 [EDITAR] Atualizando ficha existente com ID:', existingAssessment.id);
+          const { data: updateData, error: updateError } = await supabase
             .from('animal_intake_assessments')
             .update(assessmentData)
-            .eq('id', existingAssessment.id);
+            .eq('id', existingAssessment.id)
+            .select();
 
           if (updateError) {
-            console.warn('Aviso: Erro ao atualizar ficha de admissão:', updateError);
-          } else {
-            console.log('✅ [EDITAR] Ficha de admissão atualizada com sucesso');
+            console.error('❌ [EDITAR] Erro ao atualizar ficha:', updateError);
+            throw updateError;
           }
+          console.log('✅ [EDITAR] Ficha atualizada com sucesso:', updateData);
         } else {
           // Criar nova avaliação
-          const { error: insertError } = await supabase
+          console.log('➕ [EDITAR] Criando nova ficha de admissão');
+          const { data: insertData, error: insertError } = await supabase
             .from('animal_intake_assessments')
-            .insert({
+            .insert([{
               ...assessmentData,
               assessor_name: 'Sistema', // TODO: Usar usuário atual
               created_at: new Date().toISOString()
-            });
+            }])
+            .select();
 
           if (insertError) {
-            console.warn('Aviso: Erro ao criar ficha de admissão:', insertError);
-          } else {
-            console.log('✅ [EDITAR] Ficha de admissão criada com sucesso');
+            console.error('❌ [EDITAR] Erro ao criar ficha:', insertError);
+            throw insertError;
           }
+          console.log('✅ [EDITAR] Nova ficha criada com sucesso:', insertData);
         }
+        
+        // Marcar que a ficha foi salva para não recarregar
+        setFichaAdmissaoSalva(true);
+        console.log('🏁 [EDITAR] Ficha de admissão salva - não será recarregada');
       } catch (admissionError) {
         console.warn('Aviso: Erro ao processar ficha de admissão:', admissionError);
         // Não falha a operação principal
@@ -565,10 +580,10 @@ const EditarAnimal = () => {
       await new Promise(resolve => setTimeout(resolve, 500));
       console.log('⏱️ [EDITAR] Delay aplicado, iniciando recarregamento...');
       
-      // Forçar recarregamento completo dos dados
+      // Forçar recarregamento completo dos dados (EXCETO ficha de admissão)
       await Promise.all([
         fetchAnimal(),
-        fetchIntakeAssessment(),
+        // fetchIntakeAssessment(), // ❌ NÃO recarregar ficha - manter dados que o usuário salvou
         fetchEspecies(),
         fetchSexos(),
         fetchGrupos(),
@@ -577,7 +592,7 @@ const EditarAnimal = () => {
         fetchIntakeOptions()
       ]);
       
-      console.log('✅ [EDITAR] Dados recarregados com sucesso');
+      console.log('✅ [EDITAR] Dados recarregados (exceto ficha de admissão para preservar alterações)');
 
       toast({
         title: "Animal atualizado com sucesso!",
@@ -667,12 +682,26 @@ const EditarAnimal = () => {
 
   const fetchIntakeAssessment = async () => {
     try {
+      console.log('🔄 [EDITAR] Carregando ficha de admissão para animal:', id);
+      
+      // Adicionar timestamp para evitar cache
+      const timestamp = new Date().getTime();
+      console.log('🕐 [EDITAR] Timestamp para cache busting na ficha:', timestamp);
+      
       const { data, error } = await supabase.rpc('get_animal_intake_assessment', { animal_uuid: id });
-      if (error) throw error;
+      
+      if (error) {
+        console.error('❌ [EDITAR] Erro ao carregar ficha de admissão:', error);
+        throw error;
+      }
+      
+      console.log('📊 [EDITAR] Dados da ficha recebidos do banco:', data);
       
       if (data && data.length > 0) {
         const assessment = data[0];
-        setAdmissaoData({
+        console.log('📋 [EDITAR] Primeira avaliação encontrada:', assessment);
+        
+        const newAdmissaoData = {
           intake_origin: assessment.intake_origin || "",
           intake_reason: assessment.intake_reason || "",
           circumstances_details: assessment.circumstances_details || "",
@@ -690,7 +719,14 @@ const EditarAnimal = () => {
           treatment_plan: assessment.treatment_plan || "",
           special_needs: assessment.special_needs || "",
           injuries: []
-        });
+        };
+        
+        console.log('📝 [EDITAR] Dados processados para admissaoData:', newAdmissaoData);
+        setAdmissaoData(newAdmissaoData);
+        console.log('✅ [EDITAR] AdmissaoData atualizado com sucesso');
+      } else {
+        console.log('ℹ️ [EDITAR] Nenhuma ficha de admissão encontrada, mantendo dados atuais');
+        // Não limpar os dados se não houver ficha - manter o que o usuário preencheu
       }
     } catch (error) {
       console.error('Erro ao carregar ficha de admissão:', error);
