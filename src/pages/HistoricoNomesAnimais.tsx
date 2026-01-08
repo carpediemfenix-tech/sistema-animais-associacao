@@ -87,18 +87,26 @@ const HistoricoNomesAnimais = () => {
     try {
       setLoading(true);
       
+      console.log('🔍 [HISTORICO] Carregando históricos para animalId:', animalId);
+      
       let query = supabase
         .from('historico_nomes_animais')
         .select('*')
         .order('data_inicio', { ascending: false });
 
       if (animalId) {
+        console.log('🎯 [HISTORICO] Aplicando filtro por animal:', animalId);
         query = query.eq('animal_id', animalId);
+      } else {
+        console.log('🌍 [HISTORICO] Carregando todos os históricos (sem filtro)');
       }
 
       const { data: historicosData, error } = await query;
 
       if (error) throw error;
+      
+      console.log('✅ [HISTORICO] Dados recebidos:', historicosData?.length || 0, 'registos');
+      console.log('🔍 [HISTORICO] Primeiros dados:', historicosData?.slice(0, 2));
 
       // Buscar dados dos animais para cada histórico
       const historicosComAnimais = [];
@@ -297,8 +305,13 @@ const HistoricoNomesAnimais = () => {
                          (hist.animal?.nome && hist.animal.nome.toLowerCase().includes(searchTerm.toLowerCase())) ||
                          (hist.animal?.numero_processo && hist.animal.numero_processo.toLowerCase().includes(searchTerm.toLowerCase()));
     
-    const matchesAnimal = animalSelecionado === 'todos' || hist.animal_id === animalSelecionado;
+    // Se há animalId na URL, o filtro SQL já filtrou, então só aplicar filtro de pesquisa
+    if (animalId) {
+      return matchesSearch;
+    }
     
+    // Caso contrário, aplicar ambos os filtros
+    const matchesAnimal = animalSelecionado === 'todos' || hist.animal_id === animalSelecionado;
     return matchesSearch && matchesAnimal;
   });
 
