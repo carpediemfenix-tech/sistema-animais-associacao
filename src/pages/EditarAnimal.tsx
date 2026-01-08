@@ -116,6 +116,12 @@ const EditarAnimal = () => {
     try {
       setLoadingData(true);
       
+      console.log('🔄 [EDITAR] Carregando dados do animal:', id);
+      
+      // Adicionar timestamp para evitar cache
+      const timestamp = new Date().getTime();
+      console.log('🕐 [EDITAR] Timestamp para cache busting:', timestamp);
+      
       const { data, error } = await supabase
         .from('animais')
         .select(`
@@ -125,7 +131,15 @@ const EditarAnimal = () => {
         .eq('id', id)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ [EDITAR] Erro ao carregar animal:', error);
+        throw error;
+      }
+
+      console.log('📊 [EDITAR] Dados recebidos do banco:', data);
+      console.log('📊 [EDITAR] Nome atual no banco:', data.nome);
+      console.log('📊 [EDITAR] Estado atual no banco:', data.estado);
+      console.log('📊 [EDITAR] Updated_at no banco:', data.updated_at);
 
       // Definir número do processo e grupo
       setNumeroProcesso(data.numero_processo || "N/A");
@@ -166,6 +180,13 @@ const EditarAnimal = () => {
 
       // Armazenar estado original para detectar mudanças
       setEstadoOriginal(data.estado || "");
+
+      console.log('✅ [EDITAR] FormData será atualizado com dados do banco');
+      console.log('📊 [EDITAR] Dados que serão aplicados ao formData:', {
+        nome: data.nome || "",
+        estado: data.estado || "",
+        updated_at: data.updated_at
+      });
 
     } catch (error: any) {
       console.error('Erro ao carregar animal:', error);
@@ -539,11 +560,33 @@ const EditarAnimal = () => {
 
       // Recarregar dados para garantir sincronização
       console.log('🔄 [EDITAR] Recarregando dados do animal...');
-      await fetchAnimal();
-      await fetchIntakeAssessment();
+      
+      // Aguardar um momento para garantir que os dados foram commitados
+      await new Promise(resolve => setTimeout(resolve, 500));
+      console.log('⏱️ [EDITAR] Delay aplicado, iniciando recarregamento...');
+      
+      // Forçar recarregamento completo dos dados
+      await Promise.all([
+        fetchAnimal(),
+        fetchIntakeAssessment(),
+        fetchEspecies(),
+        fetchSexos(),
+        fetchGrupos(),
+        fetchVoluntarios(),
+        fetchTiposEstado(),
+        fetchIntakeOptions()
+      ]);
+      
+      console.log('✅ [EDITAR] Dados recarregados com sucesso');
 
-      // Navegar para a página de detalhes
-      navigate(`/animal/${id}`);
+      toast({
+        title: "Animal atualizado com sucesso!",
+        description: `${formData.nome} foi atualizado. Os dados foram recarregados.`,
+        duration: 5000,
+      });
+
+      // Não navegar automaticamente - permitir que o usuário veja os dados atualizados
+      // navigate(`/animal/${id}`);
 
     } catch (error: any) {
       console.error('❌ [EDITAR] Erro completo:', error);

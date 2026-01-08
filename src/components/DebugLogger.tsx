@@ -45,9 +45,12 @@ const IntakeAssessmentDisplay: React.FC<IntakeAssessmentDisplayProps> = ({
       setLoading(true);
       setError(null);
 
+      console.log('🔄 [INTAKE_DISPLAY] Carregando ficha de admissão para animal:', animalId);
+      const timestamp = new Date().getTime();
+      console.log('🕐 [INTAKE_DISPLAY] Timestamp para cache busting:', timestamp);
+
       const { data, error } = await supabase
         .rpc('get_animal_intake_assessment', { animal_uuid: animalId });
-
       if (error) {
         console.error('Erro ao carregar ficha de admissão:', error);
         if (error.code === 'PGRST116') {
