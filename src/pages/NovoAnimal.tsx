@@ -434,14 +434,15 @@ const NovoAnimal = () => {
           { label: "Animais", href: "/animais" },
           { label: "Novo Animal", href: "/novo-animal" }
         ]}
-        primaryActions={[
-          {
-            label: "Voltar",
-            href: "/animais",
-            variant: "outline",
-            icon: ArrowLeft
-          }
-        ]}
+        primaryActions={
+          <Button
+            variant="outline"
+            onClick={() => navigate('/animais')}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Voltar
+          </Button>
+        }
       />
 
       <div className="container mx-auto px-4 py-8">
