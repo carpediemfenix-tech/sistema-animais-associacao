@@ -238,7 +238,8 @@ const AnimalLocalizacoes = () => {
         responsavel_id: localizacaoForm.responsavel_id || null,
         motivo_transferencia: localizacaoForm.motivo_transferencia,
         observacoes: localizacaoForm.observacoes,
-        ativo: !editingLocalizacao // Nova localização sempre ativa, edição mantém estado
+        // CORREÇÃO: Manter o status ativo quando editando, definir como ativo apenas para novas localizações
+        ativo: editingLocalizacao ? editingLocalizacao.ativo : true
       };
 
       let error;
