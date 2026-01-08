@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Save, AlertCircle, AlertTriangle, PawPrint, Archive, User, FileText, Clipboard, Paperclip } from "lucide-react";
@@ -329,6 +330,10 @@ const EditarAnimal = () => {
       newErrors.data_entrada = "Data de entrada é obrigatória";
     }
 
+    if (!formData.estado) {
+      newErrors.estado = "Estado é obrigatório";
+    }
+
     if (formData.idade_estimada && (isNaN(Number(formData.idade_estimada)) || Number(formData.idade_estimada) < 0)) {
       newErrors.idade_estimada = "Idade deve ser um número válido";
     }
@@ -359,6 +364,9 @@ const EditarAnimal = () => {
     }
 
     setLoading(true);
+    
+    console.log('🔄 [EDITAR] Iniciando salvamento para animal:', id);
+    console.log('📝 [EDITAR] Dados do formulário:', formData);
 
     try {
       const updateData = {
@@ -385,12 +393,19 @@ const EditarAnimal = () => {
         updated_at: new Date().toISOString()
       };
 
+      console.log('💾 [EDITAR] Dados para atualização:', updateData);
+
       const { error } = await supabase
         .from('animais')
         .update(updateData)
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ [EDITAR] Erro na atualização:', error);
+        throw error;
+      }
+      
+      console.log('✅ [EDITAR] Animal atualizado com sucesso no banco de dados');
 
       // Se o estado mudou, criar registro no histórico de estados
       if (formData.estado !== estadoOriginal && formData.estado) {
@@ -433,11 +448,84 @@ const EditarAnimal = () => {
         }
       }
 
+      // Salvar dados da ficha de admissão
+      console.log('💾 [EDITAR] Salvando ficha de admissão...');
+      try {
+        // Verificar se já existe uma avaliação de admissão
+        const { data: existingAssessment, error: checkError } = await supabase
+          .from('animal_intake_assessments')
+          .select('id')
+          .eq('animal_id', id)
+          .single();
+
+        const assessmentData = {
+          animal_id: id,
+          intake_origin: admissaoData.intake_origin || null,
+          intake_reason: admissaoData.intake_reason || null,
+          circumstances_details: admissaoData.circumstances_details || null,
+          general_condition: admissaoData.general_condition || null,
+          behavior_entry: admissaoData.behavior_entry || null,
+          body_condition: admissaoData.body_condition || null,
+          weight_kg: admissaoData.weight_kg ? parseFloat(admissaoData.weight_kg) : null,
+          temperature_celsius: admissaoData.temperature_celsius ? parseFloat(admissaoData.temperature_celsius) : null,
+          symptoms: admissaoData.symptoms,
+          physical_exam_notes: admissaoData.physical_exam_notes || null,
+          behavioral_notes: admissaoData.behavioral_notes || null,
+          immediate_actions: admissaoData.immediate_actions,
+          immediate_actions_notes: admissaoData.immediate_actions_notes || null,
+          prognosis: admissaoData.prognosis || null,
+          treatment_plan: admissaoData.treatment_plan || null,
+          special_needs: admissaoData.special_needs || null,
+          is_complete: true,
+          updated_at: new Date().toISOString()
+        };
+
+        if (existingAssessment) {
+          // Atualizar avaliação existente
+          const { error: updateError } = await supabase
+            .from('animal_intake_assessments')
+            .update(assessmentData)
+            .eq('id', existingAssessment.id);
+
+          if (updateError) {
+            console.warn('Aviso: Erro ao atualizar ficha de admissão:', updateError);
+          } else {
+            console.log('✅ [EDITAR] Ficha de admissão atualizada com sucesso');
+          }
+        } else {
+          // Criar nova avaliação
+          const { error: insertError } = await supabase
+            .from('animal_intake_assessments')
+            .insert({
+              ...assessmentData,
+              assessor_name: 'Sistema', // TODO: Usar usuário atual
+              created_at: new Date().toISOString()
+            });
+
+          if (insertError) {
+            console.warn('Aviso: Erro ao criar ficha de admissão:', insertError);
+          } else {
+            console.log('✅ [EDITAR] Ficha de admissão criada com sucesso');
+          }
+        }
+      } catch (admissionError) {
+        console.warn('Aviso: Erro ao processar ficha de admissão:', admissionError);
+        // Não falha a operação principal
+      }
+
+      console.log('🎉 [EDITAR] Salvamento concluído com sucesso');
+
       toast({
         title: "Animal atualizado com sucesso!",
         description: `${formData.nome} foi atualizado`,
       });
 
+      // Recarregar dados para garantir sincronização
+      console.log('🔄 [EDITAR] Recarregando dados do animal...');
+      await fetchAnimal();
+      await fetchIntakeAssessment();
+
+      // Navegar para a página de detalhes
       navigate(`/animal/${id}`);
 
     } catch (error: any) {
@@ -871,6 +959,21 @@ const EditarAnimal = () => {
                       className="text-lg font-medium border-2 border-gray-300 hover:border-blue-400 focus:border-blue-500 transition-all duration-200"
                     />
                   </div>
+
+                  {/* Transponder/Chip */}
+                  <div className="space-y-2">
+                    <Label htmlFor="transponder" className="text-gray-700 font-semibold text-sm uppercase tracking-wide">Transponder/Chip</Label>
+                    <Input
+                      id="transponder"
+                      value={formData.transponder}
+                      onChange={(e) => handleInputChange("transponder", e.target.value)}
+                      placeholder="Número do chip/transponder (se aplicável)"
+                      className="h-12 text-lg font-medium border-2 border-gray-300 hover:border-blue-400 focus:border-blue-500 transition-all duration-200"
+                    />
+                    <p className="text-xs text-blue-600 mt-1 font-medium">
+                      💾 Número de identificação do microchip implantado no animal
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -922,6 +1025,129 @@ const EditarAnimal = () => {
                       className="h-12 text-lg border-2 border-gray-300 hover:border-green-400 focus:border-green-500"
                     />
                   </div>
+
+                  {/* Grupo (Matilha/Colónia) */}
+                  <div className="space-y-2">
+                    <Label htmlFor="grupo_id" className="text-gray-700 font-semibold text-sm uppercase tracking-wide">Grupo (Matilha/Colónia)</Label>
+                    <Select 
+                      value={formData.grupo_id || "none"} 
+                      onValueChange={(value) => handleInputChange("grupo_id", value === "none" ? "" : value)}
+                    >
+                      <SelectTrigger className="h-12 text-lg font-medium border-2 border-gray-300 hover:border-green-400 focus:border-green-500 transition-all duration-200">
+                        <SelectValue placeholder="Selecionar grupo (opcional)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none" className="text-lg">Nenhum grupo</SelectItem>
+                        {grupos
+                          .filter(grupo => {
+                            if (!formData.especie) return true;
+                            
+                            if (formData.especie === 'Cão') {
+                              return !(grupo.tipo && (grupo.tipo.toLowerCase().includes('colónia') || grupo.tipo.toLowerCase().includes('colonia')));
+                            } else if (formData.especie === 'Gato') {
+                              return !(grupo.tipo && grupo.tipo.toLowerCase().includes('matilha'));
+                            } else {
+                              return !(grupo.tipo && (
+                                grupo.tipo.toLowerCase().includes('matilha') || 
+                                grupo.tipo.toLowerCase().includes('colónia') || 
+                                grupo.tipo.toLowerCase().includes('colonia')
+                              ));
+                            }
+                          })
+                          .map((grupo) => (
+                            <SelectItem key={grupo.id} value={grupo.id} className="text-lg">
+                              <div className="flex items-center">
+                                {grupo.tipo && grupo.tipo.toLowerCase().includes('matilha') ? '🐕' : 
+                                 grupo.tipo && (grupo.tipo.toLowerCase().includes('colónia') || grupo.tipo.toLowerCase().includes('colonia')) ? '🐱' : '🏠'} {grupo.nome}
+                                <span className="text-xs text-gray-500 ml-2">({grupo.tipo})</span>
+                              </div>
+                            </SelectItem>
+                          ))
+                        }
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-green-600 mt-1 font-medium">
+                      🏠 Grupos são filtrados automaticamente por espécie
+                    </p>
+                  </div>
+
+                  {/* Estado do Animal */}
+                  <div className="space-y-2">
+                    <Label htmlFor="estado" className="text-gray-700 font-semibold text-sm uppercase tracking-wide">Estado *</Label>
+                    <Select value={formData.estado} onValueChange={(value) => handleInputChange("estado", value)}>
+                      <SelectTrigger className={`h-12 text-lg font-medium border-2 transition-all duration-200 ${
+                        errors.estado ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-green-400 focus:border-green-500"
+                      }`}>
+                        <SelectValue placeholder="Selecione o estado atual" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {tiposEstado.map((estado) => (
+                          <SelectItem key={estado.id} value={estado.nome} className="text-lg">
+                            <div className="flex items-center">
+                              <div 
+                                className="w-3 h-3 rounded-full mr-2" 
+                                style={{ backgroundColor: estado.cor || '#gray' }}
+                              ></div>
+                              {estado.nome}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.estado && (
+                      <p className="text-sm text-red-600 mt-1 flex items-center font-medium">
+                        <AlertCircle className="h-4 w-4 mr-1" />
+                        {errors.estado}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Campos de Adotante - Aparecem apenas quando Estado = "Adotado" */}
+                  {formData.estado === 'Adotado' && (
+                    <>
+                      <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                        <h4 className="text-green-800 font-semibold mb-3 flex items-center">
+                          <span className="mr-2">🏡</span>
+                          Informações do Adotante
+                        </h4>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="data_adocao" className="text-gray-700 font-semibold text-sm uppercase tracking-wide">Data de Adoção</Label>
+                            <Input
+                              id="data_adocao"
+                              type="date"
+                              value={formData.data_adocao}
+                              onChange={(e) => handleInputChange("data_adocao", e.target.value)}
+                              className="h-12 text-lg font-medium border-2 border-gray-300 hover:border-green-400 focus:border-green-500 transition-all duration-200"
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="adotante_nome" className="text-gray-700 font-semibold text-sm uppercase tracking-wide">Nome do Adotante</Label>
+                            <Input
+                              id="adotante_nome"
+                              value={formData.adotante_nome}
+                              onChange={(e) => handleInputChange("adotante_nome", e.target.value)}
+                              placeholder="Nome completo do adotante"
+                              className="h-12 text-lg font-medium border-2 border-gray-300 hover:border-green-400 focus:border-green-500 transition-all duration-200"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="mt-4 space-y-2">
+                          <Label htmlFor="adotante_contacto" className="text-gray-700 font-semibold text-sm uppercase tracking-wide">Contacto do Adotante</Label>
+                          <Input
+                            id="adotante_contacto"
+                            value={formData.adotante_contacto}
+                            onChange={(e) => handleInputChange("adotante_contacto", e.target.value)}
+                            placeholder="Telefone ou email do adotante"
+                            className="h-12 text-lg font-medium border-2 border-gray-300 hover:border-green-400 focus:border-green-500 transition-all duration-200"
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -1091,6 +1317,84 @@ const EditarAnimal = () => {
                           onChange={(e) => handleAdmissaoChange("behavioral_notes", e.target.value)}
                           placeholder="Observações sobre o comportamento..."
                           rows={4}
+                          className="text-lg font-medium border-2 border-gray-300 hover:border-purple-400 focus:border-purple-500 transition-all duration-200 resize-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Sinais e Sintomas Observados */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-purple-800 flex items-center">
+                      <span className="mr-2">🩺</span>
+                      Sinais e Sintomas Observados
+                    </h3>
+                    
+                    <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                      <Label className="text-gray-700 font-semibold text-sm uppercase tracking-wide mb-3 block">
+                        Selecione todos os sintomas observados
+                      </Label>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {(intakeOptions.symptoms || []).map((symptom) => (
+                          <div key={symptom.code} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`symptom-${symptom.code}`}
+                              checked={admissaoData.symptoms.includes(symptom.code)}
+                              onCheckedChange={(checked) => 
+                                handleMultiSelectChange("symptoms", symptom.code, checked as boolean)
+                              }
+                            />
+                            <Label 
+                              htmlFor={`symptom-${symptom.code}`}
+                              className="text-sm font-normal cursor-pointer"
+                            >
+                              {symptom.name}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Ações Imediatas Realizadas */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-purple-800 flex items-center">
+                      <span className="mr-2">⚡</span>
+                      Ações Imediatas Realizadas
+                    </h3>
+                    
+                    <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                      <Label className="text-gray-700 font-semibold text-sm uppercase tracking-wide mb-3 block">
+                        Selecione todas as ações que foram tomadas imediatamente
+                      </Label>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {(intakeOptions.immediate_actions || []).map((action) => (
+                          <div key={action.code} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`action-${action.code}`}
+                              checked={admissaoData.immediate_actions.includes(action.code)}
+                              onCheckedChange={(checked) => 
+                                handleMultiSelectChange("immediate_actions", action.code, checked as boolean)
+                              }
+                            />
+                            <Label 
+                              htmlFor={`action-${action.code}`}
+                              className="text-sm font-normal cursor-pointer"
+                            >
+                              {action.name}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Detalhes das Ações */}
+                      <div className="mt-4 space-y-2">
+                        <Label className="text-gray-700 font-semibold text-sm uppercase tracking-wide">Detalhes das Ações Realizadas</Label>
+                        <Textarea
+                          value={admissaoData.immediate_actions_notes}
+                          onChange={(e) => handleAdmissaoChange("immediate_actions_notes", e.target.value)}
+                          placeholder="Descreva detalhadamente as ações tomadas..."
+                          rows={3}
                           className="text-lg font-medium border-2 border-gray-300 hover:border-purple-400 focus:border-purple-500 transition-all duration-200 resize-none"
                         />
                       </div>
