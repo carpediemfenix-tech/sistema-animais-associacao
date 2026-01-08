@@ -52,22 +52,35 @@ const IntakeAssessmentDisplay: React.FC<IntakeAssessmentDisplayProps> = ({
       const { data, error } = await supabase
         .rpc('get_animal_intake_assessment', { animal_uuid: animalId });
       if (error) {
-        console.error('Erro ao carregar ficha de admissão:', error);
+        console.error('❌ [INTAKE_DISPLAY] Erro ao carregar ficha:', error);
+        console.error('❌ [INTAKE_DISPLAY] Código do erro:', error.code);
+        console.error('❌ [INTAKE_DISPLAY] Mensagem:', error.message);
+        
         if (error.code === 'PGRST116') {
           // Função não encontrada - sem ficha de admissão
+          console.log('ℹ️ [INTAKE_DISPLAY] Função RPC não encontrada - sem ficha');
           setAssessment(null);
           return;
         }
-        throw error;
+        
+        setError(`Erro ao carregar ficha: ${error.message}`);
+        return;
       }
+
+      console.log('📊 [INTAKE_DISPLAY] Dados recebidos da RPC:', data);
 
       if (data && data.length > 0) {
         const assessmentData = data[0];
+        console.log('✅ [INTAKE_DISPLAY] Primeira ficha encontrada:', assessmentData);
+        
         // Converter JSONB para arrays
         assessmentData.symptoms = assessmentData.symptoms || [];
         assessmentData.immediate_actions = assessmentData.immediate_actions || [];
+        
         setAssessment(assessmentData);
+        console.log('✅ [INTAKE_DISPLAY] Assessment definido no estado');
       } else {
+        console.log('ℹ️ [INTAKE_DISPLAY] Nenhuma ficha encontrada para este animal');
         setAssessment(null);
       }
     } catch (error: any) {

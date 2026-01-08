@@ -561,9 +561,23 @@ const EditarAnimal = () => {
         // Marcar que a ficha foi salva para não recarregar
         setFichaAdmissaoSalva(true);
         console.log('🏁 [EDITAR] Ficha de admissão salva - não será recarregada');
-      } catch (admissionError) {
-        console.warn('Aviso: Erro ao processar ficha de admissão:', admissionError);
-        // Não falha a operação principal
+      } catch (admissionError: any) {
+        console.error('❌ [EDITAR] ERRO CRÍTICO ao salvar ficha de admissão:', admissionError);
+        console.error('❌ [EDITAR] Detalhes do erro:', {
+          message: admissionError.message,
+          details: admissionError.details,
+          hint: admissionError.hint,
+          code: admissionError.code
+        });
+        
+        // Mostrar erro específico para o usuário
+        toast({
+          title: "Erro na ficha de admissão",
+          description: `Problema ao salvar ficha: ${admissionError.message || 'Erro desconhecido'}`,
+          variant: "destructive",
+        });
+        
+        // Não falha a operação principal, mas registra o erro
       }
 
       console.log('🎉 [EDITAR] Salvamento concluído com sucesso');
