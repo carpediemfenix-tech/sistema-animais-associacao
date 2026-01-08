@@ -519,6 +519,13 @@ const AtribuicoesAprovisionamento: React.FC = () => {
                     <div className="flex items-center gap-3 mb-2">
                       <h3 className="text-lg font-semibold">{atribuicao.item?.nome}</h3>
                       
+                      {/* Indicador visual para dados de teste */}
+                      {(atribuicao.item?.nome?.includes('TESTE') || atribuicao.entidade_nome?.includes('TESTE')) && (
+                        <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+                          TESTE
+                        </span>
+                      )}
+                      
                       {/* Badge do tipo de atribuição */}
                       <Badge variant={
                         atribuicao.tipo_atribuicao === 'VOLUNTARIO' ? 'default' :

@@ -412,6 +412,16 @@ const ProcessarDevolucao: React.FC = () => {
               <p className="text-gray-600">
                 Registar a devolução do item e o seu estado atual.
               </p>
+              
+              {/* Informações de debug para facilitar teste */}
+              {atribuicao && (atribuicao.item?.nome?.includes('TESTE') || atribuicao.entidade_nome?.includes('TESTE')) && (
+                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    <strong>🧪 MODO TESTE:</strong> Esta é uma atribuição de teste. 
+                    ID: {id} | Função SQL: processar_devolucao_parcial_v2
+                  </p>
+                </div>
+              )}
             </CardHeader>
           </Card>
 
