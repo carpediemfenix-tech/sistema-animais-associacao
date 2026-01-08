@@ -436,7 +436,7 @@ const WizardDenuncia: React.FC = () => {
         local_completo: formData.local_encontrado,
         data_entrada: formData.data_denuncia,
         observacoes: animal.observacoes || `Animal resgatado via denúncia ${codigoDenuncia}`,
-        responsavel_id: formData.voluntario_responsavel_id,
+        voluntario_responsavel: formData.voluntario_responsavel_id, // ✅ CORRIGIDO: usar voluntario_responsavel
         ativo: true,
         created_by: user?.id || null,
         updated_by: user?.id || null

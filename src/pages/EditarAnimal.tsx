@@ -332,6 +332,8 @@ const EditarAnimal = () => {
 
     if (!formData.estado) {
       newErrors.estado = "Estado é obrigatório";
+      // Definir estado padrão se não estiver definido
+      setFormData(prev => ({ ...prev, estado: 'Ativo' }));
     }
 
     if (formData.idade_estimada && (isNaN(Number(formData.idade_estimada)) || Number(formData.idade_estimada) < 0)) {
@@ -394,6 +396,21 @@ const EditarAnimal = () => {
       };
 
       console.log('💾 [EDITAR] Dados para atualização:', updateData);
+      console.log('🔍 [EDITAR] ID do animal:', id);
+
+      // Verificar se o animal existe antes de tentar atualizar
+      const { data: existingAnimal, error: checkError } = await supabase
+        .from('animais')
+        .select('id, nome, created_at')
+        .eq('id', id)
+        .single();
+
+      if (checkError) {
+        console.error('❌ [EDITAR] Animal não encontrado:', checkError);
+        throw new Error(`Animal com ID ${id} não encontrado: ${checkError.message}`);
+      }
+
+      console.log('✅ [EDITAR] Animal encontrado:', existingAnimal);
 
       const { error } = await supabase
         .from('animais')
@@ -529,10 +546,25 @@ const EditarAnimal = () => {
       navigate(`/animal/${id}`);
 
     } catch (error: any) {
-      console.error('Erro ao atualizar animal:', error);
+      console.error('❌ [EDITAR] Erro completo:', error);
+      console.error('❌ [EDITAR] Tipo do erro:', typeof error);
+      console.error('❌ [EDITAR] Stack trace:', error.stack);
+      
+      let errorMessage = "Ocorreu um erro inesperado";
+      
+      if (error.message) {
+        errorMessage = error.message;
+      } else if (error.error_description) {
+        errorMessage = error.error_description;
+      } else if (error.details) {
+        errorMessage = error.details;
+      }
+      
+      console.error('❌ [EDITAR] Mensagem de erro processada:', errorMessage);
+      
       toast({
         title: "Erro ao atualizar animal",
-        description: error.message || "Ocorreu um erro inesperado",
+        description: `${errorMessage}. Verifique os dados e tente novamente.`,
         variant: "destructive",
       });
     } finally {
