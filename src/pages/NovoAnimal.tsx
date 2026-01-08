@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Save, AlertCircle, CheckCircle, PawPrint, Plus } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArrowLeft, Save, AlertCircle, CheckCircle, PawPrint, Plus, FileText, Clipboard, Heart, Paperclip } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import EnhancedHeader from "@/components/EnhancedHeader";
@@ -20,6 +21,7 @@ const NovoAnimal = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [numeroProcesso, setNumeroProcesso] = useState<string>("");
+  const [activeTab, setActiveTab] = useState("basico");
 
   const [formData, setFormData] = useState({
     nome: "",
@@ -35,8 +37,8 @@ const NovoAnimal = () => {
     local_encontrado: "",
     observacoes: "",
     grupo_id: "",
-    url_fotografia: "", // Nova: URL da fotografia
-    voluntario_responsavel: "", // Nova: Voluntário responsável (obrigatório)
+    url_fotografia: "",
+    voluntario_responsavel: "",
     data_entrada: new Date().toISOString().split('T')[0]
   });
 
@@ -46,12 +48,63 @@ const NovoAnimal = () => {
   const [sexos, setSexos] = useState<any[]>([]);
   const [voluntarios, setVoluntarios] = useState<any[]>([]);
 
+  // Auto-save draft quando muda de aba
+  const [draftSaved, setDraftSaved] = useState(false);
+
+  // Função para salvar rascunho
+  const saveDraft = () => {
+    try {
+      localStorage.setItem('novo_animal_draft', JSON.stringify({
+        formData,
+        timestamp: new Date().toISOString(),
+        activeTab
+      }));
+      setDraftSaved(true);
+      setTimeout(() => setDraftSaved(false), 2000);
+    } catch (error) {
+      console.error('Erro ao salvar rascunho:', error);
+    }
+  };
+
+  // Carregar rascunho ao iniciar
+  useEffect(() => {
+    try {
+      const draft = localStorage.getItem('novo_animal_draft');
+      if (draft) {
+        const { formData: draftData, timestamp, activeTab: draftTab } = JSON.parse(draft);
+        const draftAge = Date.now() - new Date(timestamp).getTime();
+        
+        // Se o rascunho tem menos de 24 horas
+        if (draftAge < 24 * 60 * 60 * 1000) {
+          toast({
+            title: "📝 Rascunho Encontrado",
+            description: `Rascunho de ${new Date(timestamp).toLocaleString('pt-PT')} carregado`,
+          });
+          setFormData(draftData);
+          setActiveTab(draftTab || "basico");
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao carregar rascunho:', error);
+    }
+  }, []);
+
+  // Auto-save quando formData muda
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (formData.nome || formData.especie) { // Só salva se tem dados
+        saveDraft();
+      }
+    }, 2000); // 2 segundos após parar de digitar
+
+    return () => clearTimeout(timer);
+  }, [formData]);
+
   // Função para obter ícone da espécie
   const getEspecieIcon = (especie: any) => {
     if (especie.icone) {
       return especie.icone;
     }
-    // Ícones padrão baseados no nome
     const nome = especie.nome.toLowerCase();
     if (nome.includes('cão') || nome.includes('cao')) return '🐕';
     if (nome.includes('gato')) return '🐱';
@@ -60,7 +113,7 @@ const NovoAnimal = () => {
     if (nome.includes('pássaro') || nome.includes('passaro') || nome.includes('ave')) return '🐦';
     if (nome.includes('peixe')) return '🐠';
     if (nome.includes('tartaruga')) return '🐢';
-    return '🐾'; // Ícone padrão
+    return '🐾';
   };
 
   // Função para obter ícone do sexo
@@ -72,29 +125,21 @@ const NovoAnimal = () => {
     return '';
   };
 
-  // Função para sugerir grupo automaticamente baseado na espécie - CORRIGIDA
+  // Função para sugerir grupo automaticamente baseado na espécie
   const suggestGroupForSpecies = (especie: string) => {
     if (!especie || grupos.length === 0) return;
-    
-    console.log('🔍 Sugerindo grupo para espécie:', especie);
-    console.log('📋 Grupos disponíveis:', grupos.map(g => ({ nome: g.nome, tipo: g.tipo })));
     
     let suggestedGroup = null;
     
     if (especie === 'Cão') {
-      // Procurar matilha disponível (tipo contém "Matilha")
       suggestedGroup = grupos.find(grupo => 
         grupo.tipo && grupo.tipo.toLowerCase().includes('matilha') && grupo.ativo
       );
-      console.log('🐕 Matilha encontrada:', suggestedGroup);
     } else if (especie === 'Gato') {
-      // Procurar colónia disponível (tipo contém "colónia" ou "colonia")
       suggestedGroup = grupos.find(grupo => 
         grupo.tipo && (grupo.tipo.toLowerCase().includes('colónia') || grupo.tipo.toLowerCase().includes('colonia')) && grupo.ativo
       );
-      console.log('🐱 Colónia encontrada:', suggestedGroup);
     } else {
-      // Para outras espécies, procurar grupos que não sejam matilha nem colónia
       suggestedGroup = grupos.find(grupo => 
         grupo.tipo && 
         !grupo.tipo.toLowerCase().includes('matilha') && 
@@ -102,7 +147,6 @@ const NovoAnimal = () => {
         !grupo.tipo.toLowerCase().includes('colonia') && 
         grupo.ativo
       );
-      console.log('🐾 Grupo genérico encontrado:', suggestedGroup);
     }
     
     if (suggestedGroup && !formData.grupo_id) {
@@ -111,41 +155,29 @@ const NovoAnimal = () => {
         title: "🏠 Grupo Sugerido",
         description: `${especie === 'Cão' ? '🐕' : especie === 'Gato' ? '🐱' : '🐾'} Sugerimos o grupo "${suggestedGroup.nome}" para esta espécie`,
       });
-      console.log('✅ Grupo sugerido e selecionado:', suggestedGroup.nome);
-    } else {
-      console.log('❌ Nenhum grupo adequado encontrado ou já existe seleção');
     }
   };
 
   const generateNextProcessNumber = async (): Promise<string> => {
     try {
-      console.log('Gerando número de processo...');
-      
       const currentYear = new Date().getFullYear();
       const yearSuffix = currentYear.toString().slice(-2);
       
-      // Buscar todos os animais para encontrar o último número
       const { data, error } = await supabase
         .from('animais')
         .select('numero_processo')
         .not('numero_processo', 'is', null)
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Erro ao buscar animais:', error);
-        throw error;
-      }
-
-      console.log('Animais encontrados:', data?.length || 0);
+      if (error) throw error;
       
       let nextSequence = 1;
       
       if (data && data.length > 0) {
-        // Filtrar apenas os números do ano atual e encontrar o maior
         const currentYearNumbers = data
           .filter(animal => animal.numero_processo && animal.numero_processo.startsWith(`P${yearSuffix}`))
           .map(animal => {
-            const match = animal.numero_processo.match(/P\d{2}(\d{3})/);
+            const match = animal.numero_processo.match(/P\\d{2}(\\d{3})/);
             return match ? parseInt(match[1]) : 0;
           })
           .filter(num => num > 0);
@@ -155,19 +187,14 @@ const NovoAnimal = () => {
         }
       }
 
-      const processNumber = `P${yearSuffix}${nextSequence.toString().padStart(3, '0')}`;
-      console.log('Número de processo gerado:', processNumber);
-      return processNumber;
+      return `P${yearSuffix}${nextSequence.toString().padStart(3, '0')}`;
 
     } catch (error) {
       console.error('Erro ao gerar número de processo:', error);
-      // Fallback: usar timestamp
       const currentYear = new Date().getFullYear();
       const yearSuffix = currentYear.toString().slice(-2);
       const timestamp = Date.now().toString().slice(-3);
-      const fallbackNumber = `P${yearSuffix}${timestamp}`;
-      console.log('Usando número fallback:', fallbackNumber);
-      return fallbackNumber;
+      return `P${yearSuffix}${timestamp}`;
     }
   };
 
@@ -176,13 +203,12 @@ const NovoAnimal = () => {
       const { data, error } = await supabase
         .from('grupos')
         .select('*')
-        .eq('ativo', true) // Apenas grupos ativos
+        .eq('ativo', true)
         .order('tipo')
         .order('nome');
 
       if (error) throw error;
       setGrupos(data || []);
-      console.log('📋 Grupos carregados:', data?.map(g => ({ nome: g.nome, tipo: g.tipo })));
     } catch (error: any) {
       console.error('Erro ao carregar grupos:', error);
     }
@@ -213,55 +239,47 @@ const NovoAnimal = () => {
 
       if (error) throw error;
       setSexos(data || []);
-      console.log('⚧ Sexos carregados:', data?.map(s => s.nome));
     } catch (error: any) {
       console.error('Erro ao carregar sexos:', error);
     }
   };
 
-  // CORREÇÃO: Implementação simples que funcionava antes
   const fetchVoluntarios = async () => {
     try {
-      console.log('🔄 Carregando voluntários...');
-      
       const { data, error } = await supabase
         .from('voluntarios')
         .select('*')
         .eq('ativo', true)
         .order('nome');
 
-      if (error) {
-        console.error('❌ Erro ao carregar voluntários:', error);
-        throw error;
-      }
-
-      console.log('✅ Voluntários carregados:', data?.length || 0);
-      console.log('📋 Dados dos voluntários:', data);
+      if (error) throw error;
       setVoluntarios(data || []);
-      
     } catch (error: any) {
-      console.error('❌ Erro geral ao carregar voluntários:', error);
-      toast({
-        title: "Erro ao carregar voluntários",
-        description: error.message || "Não foi possível carregar a lista de voluntários",
-        variant: "destructive",
-      });
+      console.error('Erro ao carregar voluntários:', error);
     }
   };
 
   useEffect(() => {
-    const initializeData = async () => {
-      await Promise.all([
-        generateNextProcessNumber().then(setNumeroProcesso),
-        fetchGrupos(),
-        fetchEspecies(),
-        fetchSexos(),
-        fetchVoluntarios()
-      ]);
-    };
-
-    initializeData();
+    fetchGrupos();
+    fetchEspecies();
+    fetchSexos();
+    fetchVoluntarios();
+    generateNextProcessNumber().then(setNumeroProcesso);
   }, []);
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // Limpar erro do campo quando o usuário começa a digitar
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: "" }));
+    }
+
+    // Sugerir grupo quando espécie muda
+    if (field === 'especie') {
+      suggestGroupForSpecies(value);
+    }
+  };
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -278,20 +296,12 @@ const NovoAnimal = () => {
       newErrors.sexo = "Sexo é obrigatório";
     }
 
-    if (!formData.data_entrada) {
-      newErrors.data_entrada = "Data de entrada é obrigatória";
-    }
-
     if (!formData.voluntario_responsavel) {
       newErrors.voluntario_responsavel = "Voluntário responsável é obrigatório";
     }
 
-    if (formData.idade_estimada && (isNaN(Number(formData.idade_estimada)) || Number(formData.idade_estimada) < 0)) {
-      newErrors.idade_estimada = "Idade deve ser um número válido";
-    }
-
-    if (formData.peso && (isNaN(Number(formData.peso)) || Number(formData.peso) <= 0)) {
-      newErrors.peso = "Peso deve ser um número válido maior que zero";
+    if (!formData.data_entrada) {
+      newErrors.data_entrada = "Data de entrada é obrigatória";
     }
 
     setErrors(newErrors);
@@ -303,8 +313,8 @@ const NovoAnimal = () => {
     
     if (!validateForm()) {
       toast({
-        title: "Erro de validação",
-        description: "Por favor, corrija os campos em destaque",
+        title: "❌ Erro de Validação",
+        description: "Por favor, preencha todos os campos obrigatórios",
         variant: "destructive",
       });
       return;
@@ -313,10 +323,8 @@ const NovoAnimal = () => {
     setLoading(true);
 
     try {
-      const numeroProcessoGerado = numeroProcesso || await generateNextProcessNumber();
-
       const animalData = {
-        numero_processo: numeroProcessoGerado,
+        numero_processo: numeroProcesso,
         nome: formData.nome.trim(),
         especie: formData.especie,
         raca: formData.raca.trim() || null,
@@ -327,32 +335,14 @@ const NovoAnimal = () => {
         cor: formData.cor.trim() || null,
         caracteristicas_fisicas: formData.caracteristicas_fisicas.trim() || null,
         transponder: formData.transponder.trim() || null,
-        data_entrada: formData.data_entrada,
         local_encontrado: formData.local_encontrado.trim() || null,
         observacoes: formData.observacoes.trim() || null,
         grupo_id: formData.grupo_id || null,
-        url_fotografia: formData.url_fotografia.trim() || null,
-        voluntario_responsavel: formData.voluntario_responsavel || null,
-        estado: 'Ativo',
-        arquivado: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        url_fotografia: formData.url_fotografia ? convertGoogleDriveUrl(formData.url_fotografia) : null,
+        voluntario_responsavel: formData.voluntario_responsavel,
+        data_entrada: formData.data_entrada,
+        estado: 'Ativo'
       };
-
-      // LOGS DETALHADOS PARA DIAGNÓSTICO
-      console.log('🔍 === DIAGNÓSTICO DE CADASTRO ===');
-      console.log('📋 Dados do formulário:', formData);
-      console.log('📋 Dados para inserção:', animalData);
-      console.log('📅 Campo data_nascimento:', {
-        original: formData.data_nascimento,
-        processado: animalData.data_nascimento,
-        tipo: typeof animalData.data_nascimento,
-        vazio: !animalData.data_nascimento,
-        valor: animalData.data_nascimento
-      });
-      console.log('🔢 Número de campos:', Object.keys(animalData).length);
-      console.log('📋 Campos do objeto:', Object.keys(animalData));
-      console.log('🎯 Tentando inserir na tabela animais...');
 
       const { data, error } = await supabase
         .from('animais')
@@ -360,66 +350,22 @@ const NovoAnimal = () => {
         .select()
         .single();
 
-      if (error) {
-        console.error('❌ === ERRO DETALHADO ===');
-        console.error('📋 Erro completo:', error);
-        console.error('📋 Mensagem:', error.message);
-        console.error('📋 Código:', error.code);
-        console.error('📋 Detalhes:', error.details);
-        console.error('📋 Hint:', error.hint);
-        throw error;
-      }
+      if (error) throw error;
 
-      console.log('✅ === SUCESSO ===');
-      console.log('📋 Animal criado:', data);
-
-      // Criar responsabilidade do voluntário (se foi selecionado)
-      if (formData.voluntario_responsavel) {
-        const responsabilidadeData = {
-          animal_id: data.id,
-          voluntario_id: formData.voluntario_responsavel,
-          tipo_responsabilidade: 'Cuidador Principal',
-          data_inicio: formData.data_entrada,
-          ativo: true,
-          observacoes: `Responsabilidade atribuída automaticamente no cadastro do animal ${formData.nome}`,
-          created_at: new Date().toISOString()
-        };
-
-      const { error: responsabilidadeError } = await supabase
-        .from('responsabilidades_voluntarios')
-        .insert([responsabilidadeData]);
-
-      if (responsabilidadeError) {
-        console.error('Erro ao criar responsabilidade:', responsabilidadeError);
-        // Não falhar o cadastro por causa disso, apenas avisar
-        toast({
-          title: "Aviso",
-          description: "Animal cadastrado, mas houve erro ao atribuir responsabilidade",
-          variant: "destructive",
-        });
-        } else {
-          console.log('Responsabilidade criada com sucesso');
-        }
-      } else {
-        console.log('Nenhum voluntário responsável selecionado, responsabilidade não criada');
-      }
+      // Limpar rascunho após sucesso
+      localStorage.removeItem('novo_animal_draft');
 
       toast({
-        title: "Animal cadastrado com sucesso!",
-        description: `${formData.nome} foi registado com o processo ${numeroProcessoGerado}`,
+        title: "✅ Animal Registado com Sucesso!",
+        description: `${formData.nome} foi adicionado com o número de processo ${numeroProcesso}`,
       });
 
-      // Redirecionar para a página de detalhes do animal
       navigate(`/animal/${data.id}`);
 
     } catch (error: any) {
-      console.error('❌ === ERRO GERAL DE CADASTRO ===');
-      console.error('📋 Erro capturado:', error);
-      console.error('📋 Mensagem do erro:', error.message);
-      console.error('📋 Stack trace:', error.stack);
-      
+      console.error('Erro ao criar animal:', error);
       toast({
-        title: "Erro ao cadastrar animal",
+        title: "❌ Erro ao Registar Animal",
         description: error.message || "Ocorreu um erro inesperado",
         variant: "destructive",
       });
@@ -428,418 +374,513 @@ const NovoAnimal = () => {
     }
   };
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    
-    // Sugerir grupo automaticamente quando a espécie for alterada
-    if (field === 'especie' && value) {
-      // Usar setTimeout para garantir que o estado seja atualizado primeiro
-      setTimeout(() => {
-        suggestGroupForSpecies(value);
-      }, 100);
-    }
-    
-    // Limpar erro do campo quando o usuário começar a digitar
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: "" }));
-    }
-  };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
-      <EnhancedHeader />
-      
-      {/* Barra de Navegação e Ações */}
-      <PageActionBar
-        breadcrumbs={[
-          { label: 'Animais', href: '/animais', icon: <PawPrint className="h-4 w-4" /> },
-          { label: 'Novo Animal', icon: <Plus className="h-4 w-4" /> }
-        ]}
-        primaryActions={
-          <>
-            {numeroProcesso && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
-                <p className="text-xs text-blue-600 font-medium">Processo</p>
-                <p className="text-sm font-bold text-blue-900">{numeroProcesso}</p>
+  // Componente de resumo fixo
+  const ResumoFixo = () => (
+    <Card className="mb-6 bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <PawPrint className="h-5 w-5 text-blue-600" />
+              <span className="font-semibold text-gray-800">
+                {formData.nome || "Novo Animal"}
+              </span>
+            </div>
+            {formData.especie && (
+              <div className="flex items-center space-x-1">
+                <span className="text-lg">
+                  {especies.find(e => e.nome === formData.especie) ? 
+                    getEspecieIcon(especies.find(e => e.nome === formData.especie)) : '🐾'}
+                </span>
+                <span className="text-sm text-gray-600">{formData.especie}</span>
               </div>
             )}
-            <Button 
-              onClick={handleSubmit}
-              disabled={loading}
-              className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 h-9"
-            >
-              {loading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Cadastrando...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  Cadastrar Animal
-                </>
-              )}
-            </Button>
-          </>
-        }
-      />
+            {formData.sexo && (
+              <div className="flex items-center space-x-1">
+                <span className="text-lg">
+                  {sexos.find(s => s.nome === formData.sexo) ? 
+                    getSexoIcon(sexos.find(s => s.nome === formData.sexo)) : ''}
+                </span>
+                <span className="text-sm text-gray-600">{formData.sexo}</span>
+              </div>
+            )}
+          </div>
+          <div className="flex items-center space-x-4 text-sm text-gray-600">
+            <div>
+              <strong>Data Entrada:</strong> {formData.data_entrada || 'Não definida'}
+            </div>
+            <div>
+              <strong>Processo:</strong> {numeroProcesso}
+            </div>
+            {draftSaved && (
+              <div className="flex items-center space-x-1 text-green-600">
+                <CheckCircle className="h-4 w-4" />
+                <span>Rascunho salvo</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <EnhancedHeader />
       
+      <PageActionBar
+        breadcrumbs={[
+          { label: "Início", href: "/" },
+          { label: "Animais", href: "/animais" },
+          { label: "Novo Animal", href: "/novo-animal" }
+        ]}
+        primaryActions={[
+          {
+            label: "Voltar",
+            href: "/animais",
+            variant: "outline",
+            icon: ArrowLeft
+          }
+        ]}
+      />
 
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto">
+          
+          {/* Resumo Fixo */}
+          <ResumoFixo />
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Informações Básicas */}
-          <Card className="border-l-4 border-l-blue-500 shadow-lg hover:shadow-xl transition-shadow">
-            <CardHeader className="bg-gradient-to-r from-blue-50 to-white">
-              <CardTitle className="text-xl font-bold text-gray-900 flex items-center">
-                <div className="bg-blue-500 text-white p-2 rounded-lg mr-3">
-                  🐾
-                </div>
-                Informações Básicas
+          {/* Sistema de Abas */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Plus className="h-6 w-6" />
+                Registar Novo Animal
               </CardTitle>
-              <CardDescription className="text-gray-600">
-                Dados essenciais do animal (campos obrigatórios marcados com *)
+              <CardDescription>
+                Preencha as informações do animal. A ficha de admissão é opcional e pode ser preenchida posteriormente.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                <div>
-                  <Label htmlFor="nome">Nome *</Label>
-                  <Input
-                    id="nome"
-                    value={formData.nome}
-                    onChange={(e) => handleInputChange("nome", e.target.value)}
-                    placeholder="Nome do animal"
-                    className={errors.nome ? "border-red-500" : ""}
-                  />
-                  {errors.nome && (
-                    <p className="text-sm text-red-500 mt-1 flex items-center">
-                      <AlertCircle className="h-4 w-4 mr-1" />
-                      {errors.nome}
-                    </p>
-                  )}
-                </div>
+            
+            <CardContent>
+              <form onSubmit={handleSubmit}>
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                  <TabsList className="grid w-full grid-cols-4">
+                    <TabsTrigger value="basico" className="flex items-center gap-2">
+                      <PawPrint className="h-4 w-4" />
+                      Básico
+                    </TabsTrigger>
+                    <TabsTrigger value="adicionais" className="flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      Adicionais
+                    </TabsTrigger>
+                    <TabsTrigger value="admissao" className="flex items-center gap-2">
+                      <Clipboard className="h-4 w-4" />
+                      Admissão
+                      <span className="text-xs bg-blue-100 text-blue-800 px-1 rounded">Opcional</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="anexos" className="flex items-center gap-2">
+                      <Paperclip className="h-4 w-4" />
+                      Anexos
+                    </TabsTrigger>
+                  </TabsList>
 
-                <div>
-                  <Label htmlFor="especie">Espécie *</Label>
-                  <Select value={formData.especie} onValueChange={(value) => handleInputChange("especie", value)}>
-                    <SelectTrigger className={errors.especie ? "border-red-500" : ""}>
-                      <SelectValue placeholder="Selecione a espécie" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {especies.map((especie) => (
-                        <SelectItem key={especie.id} value={especie.nome}>
-                          {getEspecieIcon(especie)} {especie.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {errors.especie && (
-                    <p className="text-sm text-red-500 mt-1 flex items-center">
-                      <AlertCircle className="h-4 w-4 mr-1" />
-                      {errors.especie}
-                    </p>
-                  )}
-                </div>
+                  {/* ABA 1: BÁSICO */}
+                  <TabsContent value="basico" className="space-y-6 mt-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      
+                      {/* Nome */}
+                      <div>
+                        <Label htmlFor="nome">Nome *</Label>
+                        <Input
+                          id="nome"
+                          value={formData.nome}
+                          onChange={(e) => handleInputChange("nome", e.target.value)}
+                          placeholder="Nome do animal"
+                          className={errors.nome ? "border-red-500" : ""}
+                        />
+                        {errors.nome && (
+                          <p className="text-sm text-red-500 mt-1 flex items-center">
+                            <AlertCircle className="h-4 w-4 mr-1" />
+                            {errors.nome}
+                          </p>
+                        )}
+                      </div>
 
-                <div>
-                  <Label htmlFor="raca">Raça</Label>
-                  <Input
-                    id="raca"
-                    value={formData.raca}
-                    onChange={(e) => handleInputChange("raca", e.target.value)}
-                    placeholder="Raça do animal (opcional)"
-                  />
-                </div>
+                      {/* Espécie */}
+                      <div>
+                        <Label htmlFor="especie">Espécie *</Label>
+                        <Select 
+                          value={formData.especie} 
+                          onValueChange={(value) => handleInputChange("especie", value)}
+                        >
+                          <SelectTrigger className={errors.especie ? "border-red-500" : ""}>
+                            <SelectValue placeholder="Selecionar espécie" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {especies.map((especie) => (
+                              <SelectItem key={especie.id} value={especie.nome}>
+                                <div className="flex items-center">
+                                  <span className="mr-2">{getEspecieIcon(especie)}</span>
+                                  {especie.nome}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {errors.especie && (
+                          <p className="text-sm text-red-500 mt-1 flex items-center">
+                            <AlertCircle className="h-4 w-4 mr-1" />
+                            {errors.especie}
+                          </p>
+                        )}
+                      </div>
 
-                <div>
-                  <Label htmlFor="sexo">Sexo *</Label>
-                  <Select value={formData.sexo} onValueChange={(value) => handleInputChange("sexo", value)}>
-                    <SelectTrigger className={errors.sexo ? "border-red-500" : ""}>
-                      <SelectValue placeholder="Selecione o sexo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {sexos.map((sexo) => (
-                        <SelectItem key={sexo.id} value={sexo.nome}>
-                          {getSexoIcon(sexo)} {sexo.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {errors.sexo && (
-                    <p className="text-sm text-red-500 mt-1 flex items-center">
-                      <AlertCircle className="h-4 w-4 mr-1" />
-                      {errors.sexo}
-                    </p>
-                  )}
-                </div>
+                      {/* Raça */}
+                      <div>
+                        <Label htmlFor="raca">Raça</Label>
+                        <Input
+                          id="raca"
+                          value={formData.raca}
+                          onChange={(e) => handleInputChange("raca", e.target.value)}
+                          placeholder="Raça do animal (opcional)"
+                        />
+                      </div>
 
-                <div>
-                  <Label htmlFor="idade_estimada">Idade Estimada (meses)</Label>
-                  <Input
-                    id="idade_estimada"
-                    type="number"
-                    min="0"
-                    value={formData.idade_estimada}
-                    onChange={(e) => handleInputChange("idade_estimada", e.target.value)}
-                    placeholder="Ex: 24 (para 2 anos)"
-                    className={errors.idade_estimada ? "border-red-500" : ""}
-                  />
-                  {errors.idade_estimada && (
-                    <p className="text-sm text-red-500 mt-1 flex items-center">
-                      <AlertCircle className="h-4 w-4 mr-1" />
-                      {errors.idade_estimada}
-                    </p>
-                  )}
-                </div>
+                      {/* Sexo */}
+                      <div>
+                        <Label htmlFor="sexo">Sexo *</Label>
+                        <Select 
+                          value={formData.sexo} 
+                          onValueChange={(value) => handleInputChange("sexo", value)}
+                        >
+                          <SelectTrigger className={errors.sexo ? "border-red-500" : ""}>
+                            <SelectValue placeholder="Selecionar sexo" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {sexos.map((sexo) => (
+                              <SelectItem key={sexo.id} value={sexo.nome}>
+                                <div className="flex items-center">
+                                  <span className="mr-2">{getSexoIcon(sexo)}</span>
+                                  {sexo.nome}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {errors.sexo && (
+                          <p className="text-sm text-red-500 mt-1 flex items-center">
+                            <AlertCircle className="h-4 w-4 mr-1" />
+                            {errors.sexo}
+                          </p>
+                        )}
+                      </div>
 
-                <div>
-                  <Label htmlFor="data_nascimento">Data de Nascimento</Label>
-                  <Input
-                    id="data_nascimento"
-                    type="date"
-                    value={formData.data_nascimento}
-                    onChange={(e) => handleInputChange("data_nascimento", e.target.value)}
-                    className={errors.data_nascimento ? "border-red-500" : ""}
-                  />
-                  {errors.data_nascimento && (
-                    <p className="text-sm text-red-500 mt-1 flex items-center">
-                      <AlertCircle className="h-4 w-4 mr-1" />
-                      {errors.data_nascimento}
-                    </p>
-                  )}
-                </div>
+                      {/* Idade Estimada */}
+                      <div>
+                        <Label htmlFor="idade_estimada">Idade Estimada (meses)</Label>
+                        <Input
+                          id="idade_estimada"
+                          type="number"
+                          min="0"
+                          max="300"
+                          value={formData.idade_estimada}
+                          onChange={(e) => handleInputChange("idade_estimada", e.target.value)}
+                          placeholder="Ex: 24"
+                        />
+                      </div>
 
-                <div>
-                  <Label htmlFor="peso">Peso (kg)</Label>
-                  <Input
-                    id="peso"
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    value={formData.peso}
-                    onChange={(e) => handleInputChange("peso", e.target.value)}
-                    placeholder="Ex: 15.5"
-                    className={errors.peso ? "border-red-500" : ""}
-                  />
-                  {errors.peso && (
-                    <p className="text-sm text-red-500 mt-1 flex items-center">
-                      <AlertCircle className="h-4 w-4 mr-1" />
-                      {errors.peso}
-                    </p>
-                  )}
-                </div>
+                      {/* Data de Nascimento */}
+                      <div>
+                        <Label htmlFor="data_nascimento">Data de Nascimento</Label>
+                        <Input
+                          id="data_nascimento"
+                          type="date"
+                          value={formData.data_nascimento}
+                          onChange={(e) => handleInputChange("data_nascimento", e.target.value)}
+                        />
+                      </div>
 
-                <div>
-                  <Label htmlFor="cor">Cor</Label>
-                  <Input
-                    id="cor"
-                    value={formData.cor}
-                    onChange={(e) => handleInputChange("cor", e.target.value)}
-                    placeholder="Cor predominante"
-                  />
-                </div>
-              </div>
+                      {/* Peso */}
+                      <div>
+                        <Label htmlFor="peso">Peso (kg)</Label>
+                        <Input
+                          id="peso"
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          value={formData.peso}
+                          onChange={(e) => handleInputChange("peso", e.target.value)}
+                          placeholder="Ex: 15.5"
+                        />
+                      </div>
 
-              <div>
-                <Label htmlFor="caracteristicas_fisicas">Características Físicas</Label>
-                <Textarea
-                  id="caracteristicas_fisicas"
-                  value={formData.caracteristicas_fisicas}
-                  onChange={(e) => handleInputChange("caracteristicas_fisicas", e.target.value)}
-                  placeholder="Descreva características físicas distintivas..."
-                  rows={3}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Informações Adicionais */}
-          <Card className="border-l-4 border-l-purple-500 shadow-lg hover:shadow-xl transition-shadow">
-            <CardHeader className="bg-gradient-to-r from-purple-50 to-white">
-              <CardTitle className="text-xl font-bold text-gray-900 flex items-center">
-                <div className="bg-purple-500 text-white p-2 rounded-lg mr-3">
-                  📝
-                </div>
-                Informações Adicionais
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                <div>
-                  <Label htmlFor="transponder">Transponder/Chip</Label>
-                  <Input
-                    id="transponder"
-                    value={formData.transponder}
-                    onChange={(e) => handleInputChange("transponder", e.target.value)}
-                    placeholder="Número do chip (se aplicável)"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="local_encontrado">Local Encontrado</Label>
-                  <Input
-                    id="local_encontrado"
-                    value={formData.local_encontrado}
-                    onChange={(e) => handleInputChange("local_encontrado", e.target.value)}
-                    placeholder="Ex: Rua das Flores, Lisboa"
-                  />
-                </div>
-              </div>
-
-              {/* Voluntário Responsável - CORRIGIDO */}
-<div>
-                <VoluntarioSelector
-                  value={formData.voluntario_responsavel}
-                  onValueChange={(voluntarioId, voluntario) => {
-                    handleInputChange("voluntario_responsavel", voluntarioId);
-                  }}
-                  label="Voluntário Responsável *"
-                  placeholder="Selecionar voluntário responsável..."
-                  showFullName={true}
-                  required={true}
-                  className={errors.voluntario_responsavel ? "border-red-500" : ""}
-                />
-                {errors.voluntario_responsavel && (
-                  <p className="text-sm text-red-500 mt-1 flex items-center">
-                    <AlertCircle className="h-4 w-4 mr-1" />
-                    {errors.voluntario_responsavel}
-                  </p>
-                )}
-                <p className="text-sm text-blue-600 mt-1">
-                  🐾 Este voluntário será responsável pelo cuidado do animal
-                </p>
-              </div>
-
-              {/* Seleção de Grupo - CORRIGIDA */}
-              <div>
-                <Label htmlFor="grupo_id">Grupo (Matilha/Colónia)</Label>
-                <Select 
-                  value={formData.grupo_id} 
-                  onValueChange={(value) => handleInputChange("grupo_id", value === "none" ? "" : value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecionar grupo (opcional)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Nenhum grupo</SelectItem>
-                    {grupos
-                      .filter(grupo => {
-                        // LÓGICA CORRIGIDA: Exclusões específicas por espécie
-                        if (!formData.especie) return true;
-                        
-                        if (formData.especie === 'Cão') {
-                          // Cães: todos os grupos EXCETO colónias
-                          return !(grupo.tipo && (grupo.tipo.toLowerCase().includes('colónia') || grupo.tipo.toLowerCase().includes('colonia')));
-                        } else if (formData.especie === 'Gato') {
-                          // Gatos: todos os grupos EXCETO matilhas
-                          return !(grupo.tipo && grupo.tipo.toLowerCase().includes('matilha'));
-                        } else {
-                          // Outras espécies: todos os grupos EXCETO matilhas e colónias
-                          return !(grupo.tipo && (
-                            grupo.tipo.toLowerCase().includes('matilha') || 
-                            grupo.tipo.toLowerCase().includes('colónia') || 
-                            grupo.tipo.toLowerCase().includes('colonia')
-                          ));
-                        }
-                      })
-                      .map((grupo) => (
-                        <SelectItem key={grupo.id} value={grupo.id}>
-                          <div className="flex items-center">
-                            {grupo.tipo && grupo.tipo.toLowerCase().includes('matilha') ? '🐕' : 
-                             grupo.tipo && (grupo.tipo.toLowerCase().includes('colónia') || grupo.tipo.toLowerCase().includes('colonia')) ? '🐱' : '🏠'} {grupo.nome}
-                            <span className="text-xs text-gray-500 ml-2">({grupo.tipo})</span>
-                          </div>
-                        </SelectItem>
-                      ))
-                    }
-                  </SelectContent>
-                </Select>
-                {formData.especie && grupos.length > 0 && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    {formData.especie === 'Cão' 
-                      ? '🐕 Cães podem escolher todos os grupos exceto colónias'
-                      : formData.especie === 'Gato'
-                      ? '🐱 Gatos podem escolher todos os grupos exceto matilhas'
-                      : '🏠 Esta espécie pode escolher grupos exceto matilhas e colónias'
-                    }
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <Label htmlFor="observacoes">Observações</Label>
-                <Textarea
-                  id="observacoes"
-                  value={formData.observacoes}
-                  onChange={(e) => handleInputChange("observacoes", e.target.value)}
-                  placeholder="Observações gerais sobre o animal..."
-                  rows={4}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="url_fotografia">URL da Fotografia</Label>
-                <Input
-                  id="url_fotografia"
-                  type="url"
-                  value={formData.url_fotografia}
-                  onChange={(e) => handleInputChange("url_fotografia", e.target.value)}
-                  placeholder="Cole o URL do Google Drive ou link direto da imagem"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  📸 Aceita URLs do Google Drive (serão convertidos automaticamente)
-                </p>
-                {formData.url_fotografia && (
-                  <div className="mt-2 space-y-2">
-                    <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
-                      <strong>URL convertido:</strong>
-                      <br />
-                      <code className="text-xs break-all">{convertGoogleDriveUrl(formData.url_fotografia)}</code>
+                      {/* Cor */}
+                      <div>
+                        <Label htmlFor="cor">Cor</Label>
+                        <Input
+                          id="cor"
+                          value={formData.cor}
+                          onChange={(e) => handleInputChange("cor", e.target.value)}
+                          placeholder="Ex: Castanho, Preto e branco"
+                        />
+                      </div>
                     </div>
-                    <img 
-                      src={convertGoogleDriveUrl(formData.url_fotografia)} 
-                      alt="Preview" 
-                      className="w-32 h-32 object-cover rounded-lg border"
-                      onError={(e) => {
-                        const target = e.currentTarget;
-                        target.style.display = 'none';
-                        const errorMsg = document.createElement('div');
-                        errorMsg.className = 'text-xs text-red-600 bg-red-50 p-2 rounded mt-2';
-                        errorMsg.innerHTML = '⚠️ Erro ao carregar imagem. Verifique se o arquivo do Google Drive está com permissões públicas ("Qualquer pessoa com o link pode visualizar")';
-                        target.parentElement?.appendChild(errorMsg);
-                      }}
-                      onLoad={(e) => {
-                        console.log('✅ Imagem carregada com sucesso!');
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
 
-              <div>
-                <Label htmlFor="data_entrada">Data de Entrada *</Label>
-                <Input
-                  id="data_entrada"
-                  type="date"
-                  value={formData.data_entrada}
-                  onChange={(e) => handleInputChange("data_entrada", e.target.value)}
-                  className={errors.data_entrada ? "border-red-500" : ""}
-                />
-                {errors.data_entrada && (
-                  <p className="text-sm text-red-500 mt-1 flex items-center">
-                    <AlertCircle className="h-4 w-4 mr-1" />
-                    {errors.data_entrada}
-                  </p>
-                )}
-              </div>
+                    {/* Características Físicas */}
+                    <div>
+                      <Label htmlFor="caracteristicas_fisicas">Características Físicas</Label>
+                      <Textarea
+                        id="caracteristicas_fisicas"
+                        value={formData.caracteristicas_fisicas}
+                        onChange={(e) => handleInputChange("caracteristicas_fisicas", e.target.value)}
+                        placeholder="Descreva características distintivas do animal..."
+                        rows={3}
+                      />
+                    </div>
+                  </TabsContent>
+
+                  {/* ABA 2: ADICIONAIS */}
+                  <TabsContent value="adicionais" className="space-y-6 mt-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      
+                      {/* Transponder/Chip */}
+                      <div>
+                        <Label htmlFor="transponder">Transponder/Chip</Label>
+                        <Input
+                          id="transponder"
+                          value={formData.transponder}
+                          onChange={(e) => handleInputChange("transponder", e.target.value)}
+                          placeholder="Número do chip (se aplicável)"
+                        />
+                      </div>
+
+                      {/* Local Encontrado */}
+                      <div>
+                        <Label htmlFor="local_encontrado">Local Encontrado</Label>
+                        <Input
+                          id="local_encontrado"
+                          value={formData.local_encontrado}
+                          onChange={(e) => handleInputChange("local_encontrado", e.target.value)}
+                          placeholder="Ex: Rua das Flores, Lisboa"
+                        />
+                      </div>
+
+                      {/* Data de Entrada */}
+                      <div>
+                        <Label htmlFor="data_entrada">Data de Entrada *</Label>
+                        <Input
+                          id="data_entrada"
+                          type="date"
+                          value={formData.data_entrada}
+                          onChange={(e) => handleInputChange("data_entrada", e.target.value)}
+                          className={errors.data_entrada ? "border-red-500" : ""}
+                        />
+                        {errors.data_entrada && (
+                          <p className="text-sm text-red-500 mt-1 flex items-center">
+                            <AlertCircle className="h-4 w-4 mr-1" />
+                            {errors.data_entrada}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Voluntário Responsável - BUG CORRIGIDO */}
+                    <div>
+                      <VoluntarioSelector
+                        value={formData.voluntario_responsavel}
+                        onValueChange={(voluntarioId, voluntario) => {
+                          handleInputChange("voluntario_responsavel", voluntarioId);
+                        }}
+                        label="Voluntário Responsável" // REMOVIDO asterisco duplicado
+                        placeholder="Selecionar voluntário responsável..."
+                        showFullName={true}
+                        required={true}
+                        className={errors.voluntario_responsavel ? "border-red-500" : ""}
+                      />
+                      {errors.voluntario_responsavel && (
+                        <p className="text-sm text-red-500 mt-1 flex items-center">
+                          <AlertCircle className="h-4 w-4 mr-1" />
+                          {errors.voluntario_responsavel}
+                        </p>
+                      )}
+                      <p className="text-sm text-blue-600 mt-1">
+                        🐾 Este voluntário será responsável pelo cuidado do animal
+                      </p>
+                    </div>
+
+                    {/* Seleção de Grupo */}
+                    <div>
+                      <Label htmlFor="grupo_id">Grupo (Matilha/Colónia)</Label>
+                      <Select 
+                        value={formData.grupo_id} 
+                        onValueChange={(value) => handleInputChange("grupo_id", value === "none" ? "" : value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecionar grupo (opcional)" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Nenhum grupo</SelectItem>
+                          {grupos
+                            .filter(grupo => {
+                              if (!formData.especie) return true;
+                              
+                              if (formData.especie === 'Cão') {
+                                return !(grupo.tipo && (grupo.tipo.toLowerCase().includes('colónia') || grupo.tipo.toLowerCase().includes('colonia')));
+                              } else if (formData.especie === 'Gato') {
+                                return !(grupo.tipo && grupo.tipo.toLowerCase().includes('matilha'));
+                              } else {
+                                return !(grupo.tipo && (
+                                  grupo.tipo.toLowerCase().includes('matilha') || 
+                                  grupo.tipo.toLowerCase().includes('colónia') || 
+                                  grupo.tipo.toLowerCase().includes('colonia')
+                                ));
+                              }
+                            })
+                            .map((grupo) => (
+                              <SelectItem key={grupo.id} value={grupo.id}>
+                                <div className="flex items-center">
+                                  {grupo.tipo && grupo.tipo.toLowerCase().includes('matilha') ? '🐕' : 
+                                   grupo.tipo && (grupo.tipo.toLowerCase().includes('colónia') || grupo.tipo.toLowerCase().includes('colonia')) ? '🐱' : '🏠'} {grupo.nome}
+                                  <span className="text-xs text-gray-500 ml-2">({grupo.tipo})</span>
+                                </div>
+                              </SelectItem>
+                            ))
+                          }
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Observações */}
+                    <div>
+                      <Label htmlFor="observacoes">Observações</Label>
+                      <Textarea
+                        id="observacoes"
+                        value={formData.observacoes}
+                        onChange={(e) => handleInputChange("observacoes", e.target.value)}
+                        placeholder="Observações gerais sobre o animal..."
+                        rows={4}
+                      />
+                    </div>
+                  </TabsContent>
+
+                  {/* ABA 3: ADMISSÃO (PLACEHOLDER) */}
+                  <TabsContent value="admissao" className="space-y-6 mt-6">
+                    <div className="text-center py-12 bg-blue-50 rounded-lg border-2 border-dashed border-blue-200">
+                      <Clipboard className="h-16 w-16 text-blue-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                        Ficha de Admissão / Condição à Entrada
+                      </h3>
+                      <p className="text-gray-600 mb-4">
+                        Esta seção será implementada na Fase 3 e incluirá:
+                      </p>
+                      <div className="text-left max-w-md mx-auto space-y-2 text-sm text-gray-600">
+                        <div>• Circunstâncias da ocorrência/admissão</div>
+                        <div>• Triagem imediata (estado geral, comportamento)</div>
+                        <div>• Avaliação física detalhada</div>
+                        <div>• Ferimentos/Lesões</div>
+                        <div>• Sinais e sintomas</div>
+                        <div>• Ações imediatas realizadas</div>
+                      </div>
+                      <p className="text-blue-600 mt-4 font-medium">
+                        ✨ Funcionalidade opcional - não bloqueia a criação do animal
+                      </p>
+                    </div>
+                  </TabsContent>
+
+                  {/* ABA 4: ANEXOS */}
+                  <TabsContent value="anexos" className="space-y-6 mt-6">
+                    <div>
+                      <Label htmlFor="url_fotografia">URL da Fotografia</Label>
+                      <Input
+                        id="url_fotografia"
+                        type="url"
+                        value={formData.url_fotografia}
+                        onChange={(e) => handleInputChange("url_fotografia", e.target.value)}
+                        placeholder="Cole o URL do Google Drive ou link direto da imagem"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        📸 Aceita URLs do Google Drive (serão convertidos automaticamente)
+                      </p>
+                      {formData.url_fotografia && (
+                        <div className="mt-2 space-y-2">
+                          <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
+                            <strong>URL convertido:</strong>
+                            <br />
+                            <code className="text-xs break-all">{convertGoogleDriveUrl(formData.url_fotografia)}</code>
+                          </div>
+                          <img 
+                            src={convertGoogleDriveUrl(formData.url_fotografia)} 
+                            alt="Pré-visualização" 
+                            className="max-w-xs h-32 object-cover rounded border"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+                      <Paperclip className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                        Anexos Adicionais
+                      </h3>
+                      <p className="text-gray-600">
+                        Funcionalidade para múltiplas fotos e documentos será implementada futuramente
+                      </p>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+
+                {/* Botões de Ação */}
+                <div className="flex justify-between items-center mt-8 pt-6 border-t">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      localStorage.removeItem('novo_animal_draft');
+                      navigate('/animais');
+                    }}
+                  >
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Cancelar
+                  </Button>
+                  
+                  <div className="flex space-x-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={saveDraft}
+                    >
+                      💾 Salvar Rascunho
+                    </Button>
+                    
+                    <Button
+                      type="submit"
+                      disabled={loading}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      {loading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Registando...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="h-4 w-4 mr-2" />
+                          Registar Animal
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </form>
             </CardContent>
           </Card>
-
-          {/* Botões removidos - agora estão no PageActionBar */}
-        </form>
+        </div>
       </div>
-      
+
       <EnhancedFooter />
     </div>
   );
