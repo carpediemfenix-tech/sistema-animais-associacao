@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Save, AlertCircle, CheckCircle, PawPrint, Plus, FileText, Clipboard, Heart, Paperclip } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ArrowLeft, Save, AlertCircle, CheckCircle, PawPrint, Plus, FileText, Clipboard, Heart, Paperclip, Trash2, Thermometer, Weight, Stethoscope, Activity } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import EnhancedHeader from "@/components/EnhancedHeader";
@@ -47,6 +48,28 @@ const NovoAnimal = () => {
   const [especies, setEspecies] = useState<any[]>([]);
   const [sexos, setSexos] = useState<any[]>([]);
   const [voluntarios, setVoluntarios] = useState<any[]>([]);
+  
+  // Estados para ficha de admissão
+  const [intakeOptions, setIntakeOptions] = useState<Record<string, any[]>>({});
+  const [admissaoData, setAdmissaoData] = useState({
+    intake_origin: "",
+    intake_reason: "",
+    circumstances_details: "",
+    general_condition: "",
+    behavior_entry: "",
+    body_condition: "",
+    weight_kg: "",
+    temperature_celsius: "",
+    symptoms: [] as string[],
+    physical_exam_notes: "",
+    behavioral_notes: "",
+    immediate_actions: [] as string[],
+    immediate_actions_notes: "",
+    prognosis: "",
+    treatment_plan: "",
+    special_needs: "",
+    injuries: [] as any[]
+  });
 
   // Auto-save draft quando muda de aba
   const [draftSaved, setDraftSaved] = useState(false);
@@ -259,11 +282,34 @@ const NovoAnimal = () => {
     }
   };
 
+  const fetchIntakeOptions = async () => {
+    try {
+      const { data, error } = await supabase
+        .rpc('get_intake_config_options');
+
+      if (error) throw error;
+      
+      // Organizar por domínio
+      const optionsByDomain: Record<string, any[]> = {};
+      (data || []).forEach((option: any) => {
+        if (!optionsByDomain[option.domain]) {
+          optionsByDomain[option.domain] = [];
+        }
+        optionsByDomain[option.domain].push(option);
+      });
+      
+      setIntakeOptions(optionsByDomain);
+    } catch (error: any) {
+      console.error('Erro ao carregar opções de admissão:', error);
+    }
+  };
+
   useEffect(() => {
     fetchGrupos();
     fetchEspecies();
     fetchSexos();
     fetchVoluntarios();
+    fetchIntakeOptions();
     generateNextProcessNumber().then(setNumeroProcesso);
   }, []);
 
@@ -279,6 +325,54 @@ const NovoAnimal = () => {
     if (field === 'especie') {
       suggestGroupForSpecies(value);
     }
+  };
+
+  const handleAdmissaoChange = (field: string, value: string | string[]) => {
+    setAdmissaoData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleMultiSelectChange = (field: string, optionCode: string, checked: boolean) => {
+    setAdmissaoData(prev => {
+      const currentArray = prev[field as keyof typeof prev] as string[];
+      if (checked) {
+        return { ...prev, [field]: [...currentArray, optionCode] };
+      } else {
+        return { ...prev, [field]: currentArray.filter(code => code !== optionCode) };
+      }
+    });
+  };
+
+  const addInjury = () => {
+    const newInjury = {
+      id: Date.now().toString(),
+      injury_type: "",
+      injury_severity: "",
+      body_location: "",
+      description: "",
+      treatment_given: "",
+      requires_followup: false,
+      followup_date: ""
+    };
+    setAdmissaoData(prev => ({
+      ...prev,
+      injuries: [...prev.injuries, newInjury]
+    }));
+  };
+
+  const removeInjury = (injuryId: string) => {
+    setAdmissaoData(prev => ({
+      ...prev,
+      injuries: prev.injuries.filter(injury => injury.id !== injuryId)
+    }));
+  };
+
+  const updateInjury = (injuryId: string, field: string, value: any) => {
+    setAdmissaoData(prev => ({
+      ...prev,
+      injuries: prev.injuries.map(injury => 
+        injury.id === injuryId ? { ...injury, [field]: value } : injury
+      )
+    }));
   };
 
   const validateForm = () => {
@@ -352,13 +446,69 @@ const NovoAnimal = () => {
 
       if (error) throw error;
 
+      // Salvar ficha de admissão se preenchida
+      const hasIntakeData = admissaoData.intake_origin || 
+                           admissaoData.general_condition || 
+                           admissaoData.symptoms.length > 0 || 
+                           admissaoData.immediate_actions.length > 0 ||
+                           admissaoData.physical_exam_notes ||
+                           admissaoData.behavioral_notes;
+
+      if (hasIntakeData) {
+        try {
+          const intakeAssessmentData = {
+            animal_id: data.id,
+            assessment_date: new Date().toISOString(),
+            assessed_by: formData.voluntario_responsavel || null,
+            intake_origin: admissaoData.intake_origin || null,
+            intake_reason: admissaoData.intake_reason || null,
+            circumstances_details: admissaoData.circumstances_details || null,
+            general_condition: admissaoData.general_condition || null,
+            behavior_entry: admissaoData.behavior_entry || null,
+            body_condition: admissaoData.body_condition || null,
+            weight_kg: admissaoData.weight_kg ? parseFloat(admissaoData.weight_kg) : null,
+            temperature_celsius: admissaoData.temperature_celsius ? parseFloat(admissaoData.temperature_celsius) : null,
+            symptoms: JSON.stringify(admissaoData.symptoms),
+            physical_exam_notes: admissaoData.physical_exam_notes || null,
+            behavioral_notes: admissaoData.behavioral_notes || null,
+            immediate_actions: JSON.stringify(admissaoData.immediate_actions),
+            immediate_actions_notes: admissaoData.immediate_actions_notes || null,
+            prognosis: admissaoData.prognosis || null,
+            treatment_plan: admissaoData.treatment_plan || null,
+            special_needs: admissaoData.special_needs || null,
+            is_complete: true
+          };
+
+          const { error: intakeError } = await supabase
+            .from('animal_intake_assessments')
+            .insert([intakeAssessmentData]);
+
+          if (intakeError) {
+            console.error('Erro ao salvar ficha de admissão:', intakeError);
+            // Não bloquear a criação do animal por erro na ficha
+            toast({
+              title: "⚠️ Animal Criado com Aviso",
+              description: "Animal registado, mas houve erro ao salvar a ficha de admissão",
+              variant: "destructive",
+            });
+          } else {
+            toast({
+              title: "✅ Animal e Ficha Registados!",
+              description: `${formData.nome} foi adicionado com ficha de admissão completa`,
+            });
+          }
+        } catch (intakeError) {
+          console.error('Erro ao processar ficha de admissão:', intakeError);
+        }
+      } else {
+        toast({
+          title: "✅ Animal Registado com Sucesso!",
+          description: `${formData.nome} foi adicionado com o número de processo ${numeroProcesso}`,
+        });
+      }
+
       // Limpar rascunho após sucesso
       localStorage.removeItem('novo_animal_draft');
-
-      toast({
-        title: "✅ Animal Registado com Sucesso!",
-        description: `${formData.nome} foi adicionado com o número de processo ${numeroProcesso}`,
-      });
 
       navigate(`/animal/${data.id}`);
 
@@ -765,27 +915,389 @@ const NovoAnimal = () => {
                     </div>
                   </TabsContent>
 
-                  {/* ABA 3: ADMISSÃO (PLACEHOLDER) */}
+                  {/* ABA 3: FICHA DE ADMISSÃO COMPLETA */}
                   <TabsContent value="admissao" className="space-y-6 mt-6">
-                    <div className="text-center py-12 bg-blue-50 rounded-lg border-2 border-dashed border-blue-200">
-                      <Clipboard className="h-16 w-16 text-blue-400 mx-auto mb-4" />
-                      <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                        Ficha de Admissão / Condição à Entrada
-                      </h3>
-                      <p className="text-gray-600 mb-4">
-                        Esta seção será implementada na Fase 3 e incluirá:
-                      </p>
-                      <div className="text-left max-w-md mx-auto space-y-2 text-sm text-gray-600">
-                        <div>• Circunstâncias da ocorrência/admissão</div>
-                        <div>• Triagem imediata (estado geral, comportamento)</div>
-                        <div>• Avaliação física detalhada</div>
-                        <div>• Ferimentos/Lesões</div>
-                        <div>• Sinais e sintomas</div>
-                        <div>• Ações imediatas realizadas</div>
+                    
+                    {/* Cabeçalho da Ficha */}
+                    <div className="bg-gradient-to-r from-blue-50 to-green-50 p-4 rounded-lg border border-blue-200">
+                      <div className="flex items-center gap-3">
+                        <Clipboard className="h-6 w-6 text-blue-600" />
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-800">
+                            Ficha de Admissão / Condição à Entrada
+                          </h3>
+                          <p className="text-sm text-gray-600">
+                            ✨ Opcional - Preencha para um registo mais completo
+                          </p>
+                        </div>
                       </div>
-                      <p className="text-blue-600 mt-4 font-medium">
-                        ✨ Funcionalidade opcional - não bloqueia a criação do animal
-                      </p>
+                    </div>
+
+                    {/* 1. CIRCUNSTÂNCIAS DA ADMISSÃO */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-base">
+                          <FileText className="h-5 w-5 text-blue-600" />
+                          Circunstâncias da Admissão
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          
+                          {/* Origem */}
+                          <div>
+                            <Label>Origem da Admissão</Label>
+                            <Select 
+                              value={admissaoData.intake_origin} 
+                              onValueChange={(value) => handleAdmissaoChange("intake_origin", value)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Como chegou à instituição?" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {(intakeOptions.intake_origin || []).map((option) => (
+                                  <SelectItem key={option.code} value={option.code}>
+                                    {option.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          {/* Razão */}
+                          <div>
+                            <Label>Razão da Admissão</Label>
+                            <Select 
+                              value={admissaoData.intake_reason} 
+                              onValueChange={(value) => handleAdmissaoChange("intake_reason", value)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Motivo principal" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {(intakeOptions.intake_reason || []).map((option) => (
+                                  <SelectItem key={option.code} value={option.code}>
+                                    {option.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+                        {/* Detalhes das Circunstâncias */}
+                        <div>
+                          <Label>Detalhes das Circunstâncias</Label>
+                          <Textarea
+                            value={admissaoData.circumstances_details}
+                            onChange={(e) => handleAdmissaoChange("circumstances_details", e.target.value)}
+                            placeholder="Descreva as circunstâncias detalhadas da admissão..."
+                            rows={3}
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* 2. TRIAGEM IMEDIATA */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-base">
+                          <Stethoscope className="h-5 w-5 text-green-600" />
+                          Triagem Imediata
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          
+                          {/* Estado Geral */}
+                          <div>
+                            <Label>Estado Geral</Label>
+                            <Select 
+                              value={admissaoData.general_condition} 
+                              onValueChange={(value) => handleAdmissaoChange("general_condition", value)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Condição geral" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {(intakeOptions.general_condition || []).map((option) => (
+                                  <SelectItem key={option.code} value={option.code}>
+                                    {option.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          {/* Comportamento */}
+                          <div>
+                            <Label>Comportamento</Label>
+                            <Select 
+                              value={admissaoData.behavior_entry} 
+                              onValueChange={(value) => handleAdmissaoChange("behavior_entry", value)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Comportamento observado" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {(intakeOptions.behavior_entry || []).map((option) => (
+                                  <SelectItem key={option.code} value={option.code}>
+                                    {option.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          {/* Condição Corporal */}
+                          <div>
+                            <Label>Condição Corporal</Label>
+                            <Select 
+                              value={admissaoData.body_condition} 
+                              onValueChange={(value) => handleAdmissaoChange("body_condition", value)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Condição física" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {(intakeOptions.body_condition || []).map((option) => (
+                                  <SelectItem key={option.code} value={option.code}>
+                                    {option.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {/* Peso na Admissão */}
+                          <div>
+                            <Label className="flex items-center gap-2">
+                              <Weight className="h-4 w-4" />
+                              Peso na Admissão (kg)
+                            </Label>
+                            <Input
+                              type="number"
+                              step="0.1"
+                              min="0"
+                              value={admissaoData.weight_kg}
+                              onChange={(e) => handleAdmissaoChange("weight_kg", e.target.value)}
+                              placeholder="Ex: 15.5"
+                            />
+                          </div>
+
+                          {/* Temperatura */}
+                          <div>
+                            <Label className="flex items-center gap-2">
+                              <Thermometer className="h-4 w-4" />
+                              Temperatura (°C)
+                            </Label>
+                            <Input
+                              type="number"
+                              step="0.1"
+                              min="30"
+                              max="45"
+                              value={admissaoData.temperature_celsius}
+                              onChange={(e) => handleAdmissaoChange("temperature_celsius", e.target.value)}
+                              placeholder="Ex: 38.5"
+                            />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* 3. SINAIS E SINTOMAS */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-base">
+                          <Activity className="h-5 w-5 text-orange-600" />
+                          Sinais e Sintomas Observados
+                        </CardTitle>
+                        <CardDescription>
+                          Selecione todos os sintomas observados no momento da admissão
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                          {(intakeOptions.symptoms || []).map((symptom) => (
+                            <div key={symptom.code} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`symptom-${symptom.code}`}
+                                checked={admissaoData.symptoms.includes(symptom.code)}
+                                onCheckedChange={(checked) => 
+                                  handleMultiSelectChange("symptoms", symptom.code, checked as boolean)
+                                }
+                              />
+                              <Label 
+                                htmlFor={`symptom-${symptom.code}`}
+                                className="text-sm font-normal cursor-pointer"
+                              >
+                                {symptom.name}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* 4. AÇÕES IMEDIATAS */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-base">
+                          <Heart className="h-5 w-5 text-red-600" />
+                          Ações Imediatas Realizadas
+                        </CardTitle>
+                        <CardDescription>
+                          Selecione todas as ações que foram tomadas imediatamente
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                          {(intakeOptions.immediate_actions || []).map((action) => (
+                            <div key={action.code} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`action-${action.code}`}
+                                checked={admissaoData.immediate_actions.includes(action.code)}
+                                onCheckedChange={(checked) => 
+                                  handleMultiSelectChange("immediate_actions", action.code, checked as boolean)
+                                }
+                              />
+                              <Label 
+                                htmlFor={`action-${action.code}`}
+                                className="text-sm font-normal cursor-pointer"
+                              >
+                                {action.name}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Detalhes das Ações */}
+                        <div>
+                          <Label>Detalhes das Ações Realizadas</Label>
+                          <Textarea
+                            value={admissaoData.immediate_actions_notes}
+                            onChange={(e) => handleAdmissaoChange("immediate_actions_notes", e.target.value)}
+                            placeholder="Descreva detalhadamente as ações tomadas..."
+                            rows={3}
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* 5. OBSERVAÇÕES CLÍNICAS */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-base">
+                          <FileText className="h-5 w-5 text-purple-600" />
+                          Observações Clínicas
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          
+                          {/* Notas do Exame Físico */}
+                          <div>
+                            <Label>Notas do Exame Físico</Label>
+                            <Textarea
+                              value={admissaoData.physical_exam_notes}
+                              onChange={(e) => handleAdmissaoChange("physical_exam_notes", e.target.value)}
+                              placeholder="Observações do exame físico..."
+                              rows={4}
+                            />
+                          </div>
+
+                          {/* Observações Comportamentais */}
+                          <div>
+                            <Label>Observações Comportamentais</Label>
+                            <Textarea
+                              value={admissaoData.behavioral_notes}
+                              onChange={(e) => handleAdmissaoChange("behavioral_notes", e.target.value)}
+                              placeholder="Comportamento, temperamento, socialização..."
+                              rows={4}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          
+                          {/* Prognóstico */}
+                          <div>
+                            <Label>Prognóstico Inicial</Label>
+                            <Select 
+                              value={admissaoData.prognosis} 
+                              onValueChange={(value) => handleAdmissaoChange("prognosis", value)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Avaliação do prognóstico" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="excellent">Excelente</SelectItem>
+                                <SelectItem value="good">Bom</SelectItem>
+                                <SelectItem value="fair">Razoável</SelectItem>
+                                <SelectItem value="guarded">Reservado</SelectItem>
+                                <SelectItem value="poor">Mau</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          {/* Plano de Tratamento */}
+                          <div>
+                            <Label>Plano de Tratamento</Label>
+                            <Textarea
+                              value={admissaoData.treatment_plan}
+                              onChange={(e) => handleAdmissaoChange("treatment_plan", e.target.value)}
+                              placeholder="Plano de cuidados e tratamento..."
+                              rows={2}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Necessidades Especiais */}
+                        <div>
+                          <Label>Necessidades Especiais</Label>
+                          <Textarea
+                            value={admissaoData.special_needs}
+                            onChange={(e) => handleAdmissaoChange("special_needs", e.target.value)}
+                            placeholder="Cuidados especiais, restrições, medicação..."
+                            rows={2}
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Resumo da Ficha */}
+                    <div className="bg-gray-50 p-4 rounded-lg border">
+                      <h4 className="font-medium text-gray-800 mb-2">Resumo da Ficha de Admissão</h4>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div>
+                          <span className="text-gray-600">Origem:</span>
+                          <div className="font-medium">
+                            {admissaoData.intake_origin ? 
+                              intakeOptions.intake_origin?.find(o => o.code === admissaoData.intake_origin)?.name || 'N/A'
+                              : 'Não definida'
+                            }
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Estado Geral:</span>
+                          <div className="font-medium">
+                            {admissaoData.general_condition ? 
+                              intakeOptions.general_condition?.find(o => o.code === admissaoData.general_condition)?.name || 'N/A'
+                              : 'Não avaliado'
+                            }
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Sintomas:</span>
+                          <div className="font-medium">{admissaoData.symptoms.length} selecionados</div>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Ações:</span>
+                          <div className="font-medium">{admissaoData.immediate_actions.length} realizadas</div>
+                        </div>
+                      </div>
                     </div>
                   </TabsContent>
 
