@@ -30,7 +30,7 @@ import EnhancedHeader from "@/components/EnhancedHeader";
 import EnhancedFooter from "@/components/EnhancedFooter";
 import { convertGoogleDriveUrl } from "@/lib/utils";
 import PageActionBar from "@/components/PageActionBar";
-import IntakeAssessmentDisplay from "@/components/MockDataIndicator"; // Componente de ficha de admissão
+import IntakeAssessmentDisplay from "@/components/WelcomeMessage"; // Componente de ficha de admissão
 
 const AnimalDetail = () => {
   const { id } = useParams();

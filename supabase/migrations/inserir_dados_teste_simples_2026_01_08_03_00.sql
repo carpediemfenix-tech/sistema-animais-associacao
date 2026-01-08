@@ -1,0 +1,71 @@
+-- Inserir dados de teste simples
+INSERT INTO public.animal_intake_assessments (
+    animal_id,
+    assessor_name,
+    intake_origin,
+    intake_reason,
+    circumstances_details,
+    general_condition,
+    behavior_entry,
+    body_condition,
+    weight_kg,
+    temperature_celsius,
+    symptoms,
+    physical_exam_notes,
+    behavioral_notes,
+    immediate_actions,
+    immediate_actions_notes,
+    prognosis,
+    treatment_plan,
+    special_needs,
+    is_complete
+) VALUES (
+    '1685ea69-0598-4850-90c4-536c32323b35'::uuid,
+    'Dr. Maria Santos',
+    'found_street',
+    'abandonment',
+    'Animal encontrado numa caixa de cartão junto ao contentor do lixo na Rua das Flores.',
+    'poor',
+    'fearful',
+    'underweight',
+    8.5,
+    37.2,
+    '["vomiting", "diarrhea", "discharge_eyes"]'::jsonb,
+    'Animal apresenta sinais de desnutrição severa. Costelas visíveis, pelagem baça.',
+    'Muito assustado, evita contacto visual. Tremores constantes.',
+    '["veterinary_exam", "wound_cleaning", "fluid_therapy", "deworming"]'::jsonb,
+    'Administrada fluidoterapia subcutânea. Limpeza e desinfeção da ferida.',
+    'fair',
+    'Tratamento de suporte com fluidoterapia diária durante 3 dias.',
+    'Necessita de ambiente calmo e silencioso para reduzir stress.',
+    true
+) ON CONFLICT (animal_id) DO UPDATE SET
+    assessor_name = EXCLUDED.assessor_name,
+    intake_origin = EXCLUDED.intake_origin,
+    intake_reason = EXCLUDED.intake_reason,
+    circumstances_details = EXCLUDED.circumstances_details,
+    general_condition = EXCLUDED.general_condition,
+    behavior_entry = EXCLUDED.behavior_entry,
+    body_condition = EXCLUDED.body_condition,
+    weight_kg = EXCLUDED.weight_kg,
+    temperature_celsius = EXCLUDED.temperature_celsius,
+    symptoms = EXCLUDED.symptoms,
+    physical_exam_notes = EXCLUDED.physical_exam_notes,
+    behavioral_notes = EXCLUDED.behavioral_notes,
+    immediate_actions = EXCLUDED.immediate_actions,
+    immediate_actions_notes = EXCLUDED.immediate_actions_notes,
+    prognosis = EXCLUDED.prognosis,
+    treatment_plan = EXCLUDED.treatment_plan,
+    special_needs = EXCLUDED.special_needs,
+    is_complete = EXCLUDED.is_complete,
+    updated_at = NOW();
+
+-- Verificar inserção
+SELECT 
+    animal_id,
+    assessor_name,
+    intake_origin,
+    general_condition,
+    prognosis
+FROM public.animal_intake_assessments 
+WHERE animal_id = '1685ea69-0598-4850-90c4-536c32323b35'::uuid;

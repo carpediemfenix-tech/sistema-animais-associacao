@@ -48,7 +48,7 @@ import EnhancedHeader from "@/components/EnhancedHeader";
 import EnhancedFooter from "@/components/EnhancedFooter";
 import { convertGoogleDriveUrl } from "@/lib/utils";
 import PageActionBar from "@/components/PageActionBar";
-import IntakeAssessmentDisplay from "@/components/MockDataIndicator"; // Componente de ficha de admissão
+import IntakeAssessmentDisplay from "@/components/WelcomeMessage"; // Componente de ficha de admissão
 
 const AnimalDetailFuturistic = () => {
   const { id } = useParams();
@@ -913,6 +913,13 @@ const AnimalDetailFuturistic = () => {
                   <Button className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 shadow-lg shadow-purple-500/25">
                     <Shield className="h-4 w-4 mr-2" />
                     Intervenções Autoridades
+                  </Button>
+                </Link>
+                
+                <Link to={`/animal/${id}/historico-nomes`}>
+                  <Button className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg shadow-indigo-500/25">
+                    <Edit className="h-4 w-4 mr-2" />
+                    Histórico de Nomes
                   </Button>
                 </Link>
               </div>
