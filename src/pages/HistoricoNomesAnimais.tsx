@@ -54,7 +54,7 @@ interface HistoricoComAnimal extends HistoricoNome {
 }
 
 const HistoricoNomesAnimais = () => {
-  const { animalId } = useParams();
+  const { id: animalId } = useParams(); // Corrigido: o parâmetro da rota é 'id'
   
   // Debug: Verificar se animalId está sendo obtido
   console.log('🔍 [HISTORICO] Component mounted with animalId:', animalId);

@@ -593,434 +593,350 @@ const EditarAnimal = () => {
 
             {/* Aba Básico */}
             <TabsContent value="basico" className="space-y-6">
-              <Card>
-            <CardHeader>
-              <CardTitle>Informações Básicas</CardTitle>
-              <CardDescription>
-                Dados essenciais do animal (campos obrigatórios marcados com *)
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-6">
-              {/* Campos em Destaque */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6 p-3 sm:p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <div>
-                  <Label className="text-blue-700 font-semibold flex items-center">
-                    <span className="mr-2">📋</span>
-                    Número do Processo
-                  </Label>
-                  <div className="text-lg font-bold text-blue-900 mt-1">{numeroProcesso}</div>
-                </div>
-                <div>
-                  <Label className="text-blue-700 font-semibold flex items-center">
-                    <span className="mr-2">🏠</span>
-                    Grupo
-                  </Label>
-                  <div className="text-lg font-bold text-blue-900 mt-1">{grupoNome}</div>
-                </div>
-              </div>
+              <Card className="border-l-4 border-l-blue-500 shadow-lg">
+                <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-t-lg">
+                  <CardTitle className="text-blue-800 font-bold text-lg flex items-center">
+                    <User className="h-5 w-5 mr-2" />
+                    Informações Básicas
+                  </CardTitle>
+                  <CardDescription className="text-blue-600 font-medium">
+                    Dados essenciais do animal (campos obrigatórios marcados com *)
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6 p-6">
+                  {/* Informações de Destaque */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200 shadow-sm">
+                    <div className="space-y-2">
+                      <Label className="text-blue-700 font-bold text-sm uppercase tracking-wide flex items-center">
+                        <span className="mr-2 text-lg">📋</span>
+                        Número do Processo
+                      </Label>
+                      <div className="text-xl font-black text-blue-900 bg-white px-3 py-2 rounded-lg border">{numeroProcesso || 'N/A'}</div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-blue-700 font-bold text-sm uppercase tracking-wide flex items-center">
+                        <span className="mr-2 text-lg">🏠</span>
+                        Grupo
+                      </Label>
+                      <div className="text-xl font-black text-blue-900 bg-white px-3 py-2 rounded-lg border">{grupoNome || 'Sem grupo'}</div>
+                    </div>
+                  </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                <div>
-                  <Label htmlFor="nome">Nome *</Label>
-                  <Input
-                    id="nome"
-                    value={formData.nome}
-                    onChange={(e) => handleInputChange("nome", e.target.value)}
-                    placeholder="Nome do animal"
-                    className={errors.nome ? "border-red-500" : ""}
-                  />
-                  {errors.nome && (
-                    <p className="text-sm text-red-500 mt-1 flex items-center">
-                      <AlertCircle className="h-4 w-4 mr-1" />
-                      {errors.nome}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <Label htmlFor="especie">Espécie *</Label>
-                  <Select value={formData.especie} onValueChange={(value) => handleInputChange("especie", value)}>
-                    <SelectTrigger className={errors.especie ? "border-red-500" : ""}>
-                      <SelectValue placeholder="Selecione a espécie" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {especies.map((especie) => (
-                        <SelectItem key={especie.id} value={especie.nome}>
-                          {getEspecieIcon(especie)} {especie.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {errors.especie && (
-                    <p className="text-sm text-red-500 mt-1 flex items-center">
-                      <AlertCircle className="h-4 w-4 mr-1" />
-                      {errors.especie}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <Label htmlFor="raca">Raça</Label>
-                  <Input
-                    id="raca"
-                    value={formData.raca}
-                    onChange={(e) => handleInputChange("raca", e.target.value)}
-                    placeholder="Raça do animal (opcional)"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="sexo">Sexo *</Label>
-                  <Select value={formData.sexo} onValueChange={(value) => handleInputChange("sexo", value)}>
-                    <SelectTrigger className={errors.sexo ? "border-red-500" : ""}>
-                      <SelectValue placeholder="Selecione o sexo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {sexos.map((sexo) => (
-                        <SelectItem key={sexo.id} value={sexo.nome}>
-                          {getSexoIcon(sexo)} {sexo.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {errors.sexo && (
-                    <p className="text-sm text-red-500 mt-1 flex items-center">
-                      <AlertCircle className="h-4 w-4 mr-1" />
-                      {errors.sexo}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <Label htmlFor="idade_estimada">Idade Estimada (meses)</Label>
-                  <Input
-                    id="idade_estimada"
-                    type="number"
-                    min="0"
-                    value={formData.idade_estimada}
-                    onChange={(e) => handleInputChange("idade_estimada", e.target.value)}
-                    placeholder="Ex: 24 (para 2 anos)"
-                    className={errors.idade_estimada ? "border-red-500" : ""}
-                  />
-                  {errors.idade_estimada && (
-                    <p className="text-sm text-red-500 mt-1 flex items-center">
-                      <AlertCircle className="h-4 w-4 mr-1" />
-                      {errors.idade_estimada}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <Label htmlFor="data_nascimento">Data de Nascimento</Label>
-                  <Input
-                    id="data_nascimento"
-                    type="date"
-                    value={formData.data_nascimento}
-                    onChange={(e) => handleInputChange("data_nascimento", e.target.value)}
-                    className={errors.data_nascimento ? "border-red-500" : ""}
-                  />
-                  {errors.data_nascimento && (
-                    <p className="text-sm text-red-500 mt-1 flex items-center">
-                      <AlertCircle className="h-4 w-4 mr-1" />
-                      {errors.data_nascimento}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <Label htmlFor="peso">Peso (kg)</Label>
-                  <Input
-                    id="peso"
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    value={formData.peso}
-                    onChange={(e) => handleInputChange("peso", e.target.value)}
-                    placeholder="Ex: 15.5"
-                    className={errors.peso ? "border-red-500" : ""}
-                  />
-                  {errors.peso && (
-                    <p className="text-sm text-red-500 mt-1 flex items-center">
-                      <AlertCircle className="h-4 w-4 mr-1" />
-                      {errors.peso}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <Label htmlFor="cor">Cor</Label>
-                  <Input
-                    id="cor"
-                    value={formData.cor}
-                    onChange={(e) => handleInputChange("cor", e.target.value)}
-                    placeholder="Cor predominante"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="caracteristicas_fisicas">Características Físicas</Label>
-                <Textarea
-                  id="caracteristicas_fisicas"
-                  value={formData.caracteristicas_fisicas}
-                  onChange={(e) => handleInputChange("caracteristicas_fisicas", e.target.value)}
-                  placeholder="Descreva características físicas distintivas..."
-                  rows={3}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Informações Adicionais */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Informações Adicionais</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                <div>
-                  <Label htmlFor="transponder">Transponder/Chip</Label>
-                  <Input
-                    id="transponder"
-                    value={formData.transponder}
-                    onChange={(e) => handleInputChange("transponder", e.target.value)}
-                    placeholder="Número do chip (se aplicável)"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="local_encontrado">Local Encontrado</Label>
-                  <Input
-                    id="local_encontrado"
-                    value={formData.local_encontrado}
-                    onChange={(e) => handleInputChange("local_encontrado", e.target.value)}
-                    placeholder="Onde foi encontrado"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="estado">Estado *</Label>
-                  <Select value={formData.estado} onValueChange={(value) => handleInputChange("estado", value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o estado" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {tiposEstado.map((tipo) => (
-                        <SelectItem key={tipo.id} value={tipo.nome}>
-                          <div className="flex items-center gap-2">
-                            <div 
-                              className="w-3 h-3 rounded-full" 
-                              style={{ backgroundColor: tipo.cor }}
-                            />
-                            {tipo.nome}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="grupo_id">Grupo (Matilha/Colónia)</Label>
-                  <Select 
-                    value={formData.grupo_id || "none"} 
-                    onValueChange={(value) => handleInputChange("grupo_id", value === "none" ? "" : value)}
-                  >
-                    <SelectTrigger className={errors.grupo_id ? "border-red-500" : ""}>
-                      <SelectValue placeholder="Selecionar grupo (opcional)" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Nenhum grupo</SelectItem>
-                      {grupos
-                        .filter(grupo => {
-                          // LÓGICA: Exclusões específicas por espécie
-                          if (!formData.especie) return true;
-                          
-                          if (formData.especie === 'Cão') {
-                            // Cães: todos os grupos EXCETO colónias
-                            return !(grupo.tipo && (grupo.tipo.toLowerCase().includes('colónia') || grupo.tipo.toLowerCase().includes('colonia')));
-                          } else if (formData.especie === 'Gato') {
-                            // Gatos: todos os grupos EXCETO matilhas
-                            return !(grupo.tipo && grupo.tipo.toLowerCase().includes('matilha'));
-                          } else {
-                            // Outras espécies: todos os grupos EXCETO matilhas e colónias
-                            return !(grupo.tipo && (
-                              grupo.tipo.toLowerCase().includes('matilha') || 
-                              grupo.tipo.toLowerCase().includes('colónia') || 
-                              grupo.tipo.toLowerCase().includes('colonia')
-                            ));
-                          }
-                        })
-                        .map((grupo) => (
-                          <SelectItem key={grupo.id} value={grupo.id}>
-                            <div className="flex items-center">
-                              {grupo.tipo && grupo.tipo.toLowerCase().includes('matilha') ? '🐕' : 
-                               grupo.tipo && (grupo.tipo.toLowerCase().includes('colónia') || grupo.tipo.toLowerCase().includes('colonia')) ? '🐱' : '🏠'} {grupo.nome}
-                              <span className="text-xs text-gray-500 ml-2">({grupo.tipo})</span>
-                            </div>
-                          </SelectItem>
-                        ))
-                      }
-                    </SelectContent>
-                  </Select>
-                  {errors.grupo_id && (
-                    <p className="text-sm text-red-500 mt-1 flex items-center">
-                      <AlertCircle className="h-4 w-4 mr-1" />
-                      {errors.grupo_id}
-                    </p>
-                  )}
-                  {formData.especie && grupos.length > 0 && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      {formData.especie === 'Cão' 
-                        ? '🐕 Cães podem escolher todos os grupos exceto colónias'
-                        : formData.especie === 'Gato'
-                        ? '🐱 Gatos podem escolher todos os grupos exceto matilhas'
-                        : '🏠 Esta espécie pode escolher grupos exceto matilhas e colónias'
-                      }
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <Label htmlFor="data_entrada">Data de Entrada *</Label>
-                  <Input
-                    id="data_entrada"
-                    type="date"
-                    value={formData.data_entrada}
-                    onChange={(e) => handleInputChange("data_entrada", e.target.value)}
-                    className={errors.data_entrada ? "border-red-500" : ""}
-                  />
-                  {errors.data_entrada && (
-                    <p className="text-sm text-red-500 mt-1 flex items-center">
-                      <AlertCircle className="h-4 w-4 mr-1" />
-                      {errors.data_entrada}
-                    </p>
-                  )}
-                </div>
-
-                {/* Voluntário Responsável */}
-                <div>
-                  <Label htmlFor="voluntario_responsavel">Voluntário Responsável</Label>
-                  <Select
-                    value={formData.voluntario_responsavel || ""}
-                    onValueChange={(value) => handleInputChange("voluntario_responsavel", value === "none" ? "" : value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione um voluntário responsável" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Sem responsável</SelectItem>
-                      {voluntarios
-                        .filter(v => v.ativo)
-                        .map((voluntario) => (
-                          <SelectItem key={voluntario.id} value={voluntario.id}>
-                            {voluntario.nome}
-                          </SelectItem>
-                        ))
-                      }
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {/* Campos de Adoção */}
-              {formData.estado === "Adotado" && (
-                <>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                    <div>
-                      <Label htmlFor="data_adocao">Data de Adoção</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="nome" className="text-gray-700 font-semibold text-sm uppercase tracking-wide">Nome *</Label>
                       <Input
-                        id="data_adocao"
+                        id="nome"
+                        value={formData.nome}
+                        onChange={(e) => handleInputChange("nome", e.target.value)}
+                        placeholder="Nome do animal"
+                        className={`h-12 text-lg font-medium border-2 transition-all duration-200 focus:ring-2 focus:ring-blue-500 ${
+                          errors.nome ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-blue-400"
+                        }`}
+                      />
+                      {errors.nome && (
+                        <p className="text-sm text-red-600 mt-1 flex items-center font-medium">
+                          <AlertCircle className="h-4 w-4 mr-1" />
+                          {errors.nome}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="especie" className="text-gray-700 font-semibold text-sm uppercase tracking-wide">Espécie *</Label>
+                      <Select value={formData.especie} onValueChange={(value) => handleInputChange("especie", value)}>
+                        <SelectTrigger className={`h-12 text-lg font-medium border-2 transition-all duration-200 ${
+                          errors.especie ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-blue-400 focus:border-blue-500"
+                        }`}>
+                          <SelectValue placeholder="Selecione a espécie" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {especies.map((especie) => (
+                            <SelectItem key={especie.id} value={especie.nome} className="text-lg">
+                              {getEspecieIcon(especie)} {especie.nome}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {errors.especie && (
+                        <p className="text-sm text-red-600 mt-1 flex items-center font-medium">
+                          <AlertCircle className="h-4 w-4 mr-1" />
+                          {errors.especie}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="raca" className="text-gray-700 font-semibold text-sm uppercase tracking-wide">Raça</Label>
+                      <Input
+                        id="raca"
+                        value={formData.raca}
+                        onChange={(e) => handleInputChange("raca", e.target.value)}
+                        placeholder="Raça do animal (opcional)"
+                        className="h-12 text-lg font-medium border-2 border-gray-300 hover:border-blue-400 focus:border-blue-500 transition-all duration-200"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="sexo" className="text-gray-700 font-semibold text-sm uppercase tracking-wide">Sexo *</Label>
+                      <Select value={formData.sexo} onValueChange={(value) => handleInputChange("sexo", value)}>
+                        <SelectTrigger className={`h-12 text-lg font-medium border-2 transition-all duration-200 ${
+                          errors.sexo ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-blue-400 focus:border-blue-500"
+                        }`}>
+                          <SelectValue placeholder="Selecione o sexo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {sexos.map((sexo) => (
+                            <SelectItem key={sexo.id} value={sexo.nome} className="text-lg">
+                              {getSexoIcon(sexo)} {sexo.nome}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {errors.sexo && (
+                        <p className="text-sm text-red-600 mt-1 flex items-center font-medium">
+                          <AlertCircle className="h-4 w-4 mr-1" />
+                          {errors.sexo}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="idade_estimada" className="text-gray-700 font-semibold text-sm uppercase tracking-wide">Idade Estimada (meses)</Label>
+                      <Input
+                        id="idade_estimada"
+                        type="number"
+                        min="0"
+                        value={formData.idade_estimada}
+                        onChange={(e) => handleInputChange("idade_estimada", e.target.value)}
+                        placeholder="Ex: 24 (para 2 anos)"
+                        className={`h-12 text-lg font-medium border-2 transition-all duration-200 ${
+                          errors.idade_estimada ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-blue-400 focus:border-blue-500"
+                        }`}
+                      />
+                      {errors.idade_estimada && (
+                        <p className="text-sm text-red-600 mt-1 flex items-center font-medium">
+                          <AlertCircle className="h-4 w-4 mr-1" />
+                          {errors.idade_estimada}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="data_nascimento" className="text-gray-700 font-semibold text-sm uppercase tracking-wide">Data de Nascimento</Label>
+                      <Input
+                        id="data_nascimento"
                         type="date"
-                        value={formData.data_adocao}
-                        onChange={(e) => handleInputChange("data_adocao", e.target.value)}
+                        value={formData.data_nascimento}
+                        onChange={(e) => handleInputChange("data_nascimento", e.target.value)}
+                        className="h-12 text-lg font-medium border-2 border-gray-300 hover:border-blue-400 focus:border-blue-500 transition-all duration-200"
                       />
                     </div>
+                  </div>
 
-                    <div>
-                      <Label htmlFor="adotante_nome">Nome do Adotante</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="peso" className="text-gray-700 font-semibold text-sm uppercase tracking-wide">Peso (kg)</Label>
                       <Input
-                        id="adotante_nome"
-                        value={formData.adotante_nome}
-                        onChange={(e) => handleInputChange("adotante_nome", e.target.value)}
-                        placeholder="Nome completo do adotante"
+                        id="peso"
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        value={formData.peso}
+                        onChange={(e) => handleInputChange("peso", e.target.value)}
+                        placeholder="Ex: 15.5"
+                        className={`h-12 text-lg font-medium border-2 transition-all duration-200 ${
+                          errors.peso ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-blue-400 focus:border-blue-500"
+                        }`}
+                      />
+                      {errors.peso && (
+                        <p className="text-sm text-red-600 mt-1 flex items-center font-medium">
+                          <AlertCircle className="h-4 w-4 mr-1" />
+                          {errors.peso}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="cor" className="text-gray-700 font-semibold text-sm uppercase tracking-wide">Cor</Label>
+                      <Input
+                        id="cor"
+                        value={formData.cor}
+                        onChange={(e) => handleInputChange("cor", e.target.value)}
+                        placeholder="Cor predominante"
+                        className="h-12 text-lg font-medium border-2 border-gray-300 hover:border-blue-400 focus:border-blue-500 transition-all duration-200"
                       />
                     </div>
                   </div>
 
-                  <div>
-                    <Label htmlFor="adotante_contacto">Contacto do Adotante</Label>
-                    <Input
-                      id="adotante_contacto"
-                      value={formData.adotante_contacto}
-                      onChange={(e) => handleInputChange("adotante_contacto", e.target.value)}
-                      placeholder="Telefone ou email do adotante"
+                  <div className="space-y-2">
+                    <Label htmlFor="caracteristicas_fisicas" className="text-gray-700 font-semibold text-sm uppercase tracking-wide">Características Físicas</Label>
+                    <Textarea
+                      id="caracteristicas_fisicas"
+                      value={formData.caracteristicas_fisicas}
+                      onChange={(e) => handleInputChange("caracteristicas_fisicas", e.target.value)}
+                      placeholder="Descreva características físicas distintivas..."
+                      rows={3}
+                      className="text-lg font-medium border-2 border-gray-300 hover:border-blue-400 focus:border-blue-500 transition-all duration-200"
                     />
                   </div>
-                </>
-              )}
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-              <div>
-                <Label htmlFor="url_fotografia">URL da Fotografia</Label>
-                <Input
-                  id="url_fotografia"
-                  type="url"
-                  value={formData.url_fotografia}
-                  onChange={(e) => handleInputChange("url_fotografia", e.target.value)}
-                  placeholder="Cole o URL do Google Drive ou link direto da imagem"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Aceita URLs do Google Drive (serão convertidos automaticamente)
-                </p>
-                {formData.url_fotografia && (
-                  <div className="mt-2 space-y-2">
-                    <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
-                      <strong>URL convertido:</strong>
-                      <br />
-                      <code className="text-xs break-all">{convertGoogleDriveUrl(formData.url_fotografia)}</code>
+            {/* Aba Adicionais */}
+            <TabsContent value="adicionais" className="space-y-6">
+              <Card className="border-l-4 border-l-green-500 shadow-lg">
+                <CardHeader className="bg-gradient-to-r from-green-50 to-green-100 rounded-t-lg">
+                  <CardTitle className="text-green-800 font-bold text-lg flex items-center">
+                    <FileText className="h-5 w-5 mr-2" />
+                    Informações Adicionais
+                  </CardTitle>
+                  <CardDescription className="text-green-600 font-medium">
+                    Dados complementares e de gestão do animal
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6 p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="local_encontrado" className="text-gray-700 font-semibold text-sm uppercase tracking-wide">Local Encontrado</Label>
+                      <Input
+                        id="local_encontrado"
+                        value={formData.local_encontrado}
+                        onChange={(e) => handleInputChange("local_encontrado", e.target.value)}
+                        placeholder="Onde o animal foi encontrado"
+                        className="h-12 text-lg font-medium border-2 border-gray-300 hover:border-green-400 focus:border-green-500 transition-all duration-200"
+                      />
                     </div>
-                    <img 
-                      src={convertGoogleDriveUrl(formData.url_fotografia)} 
-                      alt="Preview" 
-                      className="w-32 h-32 object-cover rounded-lg border"
-                      onError={(e) => {
-                        const target = e.currentTarget;
-                        target.style.display = 'none';
-                        const errorMsg = document.createElement('div');
-                        errorMsg.className = 'text-xs text-red-600 bg-red-50 p-2 rounded mt-2';
-                        errorMsg.innerHTML = '⚠️ Erro ao carregar imagem. Verifique se o arquivo do Google Drive está com permissões públicas ("Qualquer pessoa com o link pode visualizar")';
-                        target.parentElement?.appendChild(errorMsg);
-                      }}
-                      onLoad={(e) => {
-                        console.log('✅ Imagem carregada com sucesso!');
-                      }}
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="data_entrada" className="text-gray-700 font-semibold text-sm uppercase tracking-wide">Data de Entrada</Label>
+                      <Input
+                        id="data_entrada"
+                        type="date"
+                        value={formData.data_entrada}
+                        onChange={(e) => handleInputChange("data_entrada", e.target.value)}
+                        className="h-12 text-lg font-medium border-2 border-gray-300 hover:border-green-400 focus:border-green-500 transition-all duration-200"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label className="text-gray-700 font-semibold text-sm uppercase tracking-wide">Voluntário Responsável</Label>
+                    <VoluntarioSelector
+                      voluntarios={voluntarios}
+                      selectedVoluntario={formData.voluntario_responsavel}
+                      onVoluntarioChange={(voluntarioId) => handleInputChange("voluntario_responsavel", voluntarioId)}
+                      placeholder="Selecione o voluntário responsável"
+                      className="h-12 text-lg border-2 border-gray-300 hover:border-green-400 focus:border-green-500"
                     />
                   </div>
-                )}
-              </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-              <div>
-                <Label htmlFor="observacoes">Observações</Label>
-                <Textarea
-                  id="observacoes"
-                  value={formData.observacoes}
-                  onChange={(e) => handleInputChange("observacoes", e.target.value)}
-                  placeholder="Observações gerais sobre o animal..."
-                  rows={4}
-                />
-              </div>
-            </CardContent>
-          </Card>
+            {/* Aba Admissão */}
+            <TabsContent value="admissao" className="space-y-6">
+              <Card className="border-l-4 border-l-purple-500 shadow-lg">
+                <CardHeader className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-t-lg">
+                  <CardTitle className="text-purple-800 font-bold text-lg flex items-center">
+                    <Clipboard className="h-5 w-5 mr-2" />
+                    Ficha de Admissão
+                  </CardTitle>
+                  <CardDescription className="text-purple-600 font-medium">
+                    Informações sobre a condição à entrada do animal
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="text-center py-12 text-gray-500">
+                    <Clipboard className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                    <p className="text-lg font-medium">Ficha de Admissão</p>
+                    <p className="text-sm">Esta funcionalidade estará disponível em breve</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-          {/* Botões removidos - agora estão no PageActionBar */}
-        </TabsContent>
-      </Tabs>
-    </form>
-  </div>
-  
-  <EnhancedFooter />
-</div>
-);
+            {/* Aba Anexos */}
+            <TabsContent value="anexos" className="space-y-6">
+              <Card className="border-l-4 border-l-orange-500 shadow-lg">
+                <CardHeader className="bg-gradient-to-r from-orange-50 to-orange-100 rounded-t-lg">
+                  <CardTitle className="text-orange-800 font-bold text-lg flex items-center">
+                    <Paperclip className="h-5 w-5 mr-2" />
+                    Anexos e Fotografias
+                  </CardTitle>
+                  <CardDescription className="text-orange-600 font-medium">
+                    Fotografias e documentos relacionados ao animal
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6 p-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="url_fotografia" className="text-gray-700 font-semibold text-sm uppercase tracking-wide">URL da Fotografia</Label>
+                    <Input
+                      id="url_fotografia"
+                      type="url"
+                      value={formData.url_fotografia}
+                      onChange={(e) => handleInputChange("url_fotografia", e.target.value)}
+                      placeholder="Cole o URL do Google Drive ou link direto da imagem"
+                      className="h-12 text-lg font-medium border-2 border-gray-300 hover:border-orange-400 focus:border-orange-500 transition-all duration-200"
+                    />
+                    <p className="text-xs text-gray-500 mt-1 font-medium">
+                      Aceita URLs do Google Drive (serão convertidos automaticamente)
+                    </p>
+                    {formData.url_fotografia && (
+                      <div className="mt-4 space-y-4">
+                        <div className="text-xs text-gray-600 bg-gray-50 p-3 rounded-lg border">
+                          <strong className="text-gray-800">URL convertido:</strong>
+                          <br />
+                          <code className="text-xs break-all font-mono bg-white p-1 rounded">{convertGoogleDriveUrl(formData.url_fotografia)}</code>
+                        </div>
+                        <div className="flex justify-center">
+                          <img 
+                            src={convertGoogleDriveUrl(formData.url_fotografia)} 
+                            alt="Preview" 
+                            className="w-48 h-48 object-cover rounded-xl border-4 border-orange-200 shadow-lg"
+                            onError={(e) => {
+                              const target = e.currentTarget;
+                              target.style.display = 'none';
+                              const errorMsg = document.createElement('div');
+                              errorMsg.className = 'text-sm text-red-600 bg-red-50 p-3 rounded-lg mt-2 border border-red-200';
+                              errorMsg.innerHTML = '⚠️ Erro ao carregar imagem. Verifique se o arquivo do Google Drive está com permissões públicas ("Qualquer pessoa com o link pode visualizar")';
+                              target.parentElement?.appendChild(errorMsg);
+                            }}
+                            onLoad={(e) => {
+                              console.log('✅ Imagem carregada com sucesso!');
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="observacoes" className="text-gray-700 font-semibold text-sm uppercase tracking-wide">Observações</Label>
+                    <Textarea
+                      id="observacoes"
+                      value={formData.observacoes}
+                      onChange={(e) => handleInputChange("observacoes", e.target.value)}
+                      placeholder="Observações gerais sobre o animal..."
+                      rows={6}
+                      className="text-lg font-medium border-2 border-gray-300 hover:border-orange-400 focus:border-orange-500 transition-all duration-200 resize-none"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </form>
+      </div>
+      
+      <EnhancedFooter />
+    </div>
+  );
 };
 
 export default EditarAnimal;
