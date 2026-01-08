@@ -155,100 +155,178 @@ const IntakeAssessmentDisplay: React.FC<IntakeAssessmentDisplayProps> = ({
 
   if (loading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clipboard className="h-5 w-5 text-blue-600" />
-            Ficha de Admissão
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <span className="ml-2 text-gray-600">A carregar ficha de admissão...</span>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center p-12">
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8 border-4 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin"></div>
+          <span className="text-cyan-300 font-medium">Carregando ficha de admissão...</span>
+        </div>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clipboard className="h-5 w-5 text-red-600" />
-            Ficha de Admissão
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center py-8 text-red-600">
-            <AlertCircle className="h-8 w-8 mr-2" />
-            <span>{error}</span>
+      <div className="bg-gradient-to-br from-red-600/20 to-pink-600/20 backdrop-blur-lg rounded-2xl border border-red-500/30 p-6">
+        <div className="flex items-center space-x-3">
+          <AlertCircle className="h-6 w-6 text-red-400" />
+          <div>
+            <h3 className="text-lg font-semibold text-red-300">Erro ao carregar ficha</h3>
+            <p className="text-red-400/70 text-sm">{error}</p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
   if (!assessment) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clipboard className="h-5 w-5 text-gray-400" />
-            Ficha de Admissão
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8">
-            <Clipboard className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-600 mb-4">
-              Nenhuma ficha de admissão registada para este animal.
-            </p>
-            <p className="text-sm text-gray-500">
-              A ficha de admissão é criada durante o registo do animal e contém informações sobre as condições de entrada.
-            </p>
+      <div className="bg-gradient-to-br from-slate-600/20 to-gray-600/20 backdrop-blur-lg rounded-2xl border border-gray-500/30 p-8 text-center">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="bg-gray-500/20 p-4 rounded-xl border border-gray-400/30">
+            <FileText className="h-8 w-8 text-gray-400" />
           </div>
-        </CardContent>
-      </Card>
+          <div>
+            <h3 className="text-lg font-semibold text-gray-300 mb-2">Ficha de Admissão não encontrada</h3>
+            <p className="text-gray-400/70 text-sm mb-2">Nenhuma ficha de admissão foi registrada para este animal.</p>
+            <p className="text-gray-500/60 text-xs">A ficha é criada durante o registo e contém informações sobre as condições de entrada.</p>
+          </div>
+        </div>
+      </div>
     );
   }
 
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('pt-PT', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const getConditionColor = (condition: string) => {
+    switch (condition?.toLowerCase()) {
+      case 'excellent':
+      case 'excelente':
+      case 'good':
+      case 'bom':
+        return 'from-green-600/30 to-emerald-600/30 border-green-500/30 text-green-300';
+      case 'fair':
+      case 'razoável':
+      case 'stable':
+      case 'estável':
+        return 'from-yellow-600/30 to-orange-600/30 border-yellow-500/30 text-yellow-300';
+      case 'poor':
+      case 'mau':
+      case 'critical':
+      case 'crítico':
+        return 'from-red-600/30 to-pink-600/30 border-red-500/30 text-red-300';
+      default:
+        return 'from-blue-600/30 to-cyan-600/30 border-blue-500/30 text-blue-300';
+    }
+  };
+
   return (
     <div className="space-y-6">
-      {/* Cabeçalho da Ficha */}
+      {/* Header da Ficha */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center space-x-3">
+          <div className="bg-blue-500/20 p-3 rounded-xl border border-blue-400/30">
+            <Clipboard className="h-6 w-6 text-blue-400" />
+          </div>
+          <div>
+            <h3 className="text-xl font-bold text-blue-300">Avaliação de Admissão</h3>
+            <p className="text-blue-400/70 text-sm">
+              Registrada em {formatDate(assessment.created_at)}
+            </p>
+          </div>
+        </div>
+        
+        <div className="flex items-center space-x-3">
+          {assessment.is_complete ? (
+            <Badge className="bg-green-500/20 text-green-400 border border-green-500/50 px-3 py-1">
+              <CheckCircle className="h-3 w-3 mr-1" />
+              Completa
+            </Badge>
+          ) : (
+            <Badge className="bg-yellow-500/20 text-yellow-400 border border-yellow-500/50 px-3 py-1">
+              <Clock className="h-3 w-3 mr-1" />
+              Incompleta
+            </Badge>
+          )}
+          
+          {showEditButton && onEdit && (
+            <Button
+              onClick={() => onEdit(assessment)}
+              className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 shadow-lg shadow-purple-500/25"
+            >
+              <Edit className="h-4 w-4 mr-2" />
+              Editar Ficha
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Grid de Informações Principais */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        
+        {/* Origem da Admissão */}
+        {assessment.intake_origin && (
+          <div className="bg-gradient-to-br from-cyan-600/20 to-blue-600/20 backdrop-blur-lg rounded-2xl border border-cyan-500/30 p-6 shadow-2xl shadow-cyan-500/20">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="bg-cyan-500/20 p-2 rounded-lg border border-cyan-400/30">
+                <MapPin className="h-5 w-5 text-cyan-400" />
+              </div>
+              <h4 className="text-lg font-semibold text-cyan-300">Origem</h4>
+            </div>
+            <p className="text-cyan-200 font-medium">
+              {getOptionName('intake_origin', assessment.intake_origin)}
+            </p>
+            <div className="absolute top-0 right-0 -mt-4 -mr-4 w-16 h-16 bg-cyan-400/10 rounded-full blur-lg"></div>
+          </div>
+        )}
+
+        {/* Condição Geral */}
+        {assessment.general_condition && (
+          <div className={`bg-gradient-to-br ${getConditionColor(assessment.general_condition)} backdrop-blur-lg rounded-2xl border p-6 shadow-2xl relative overflow-hidden`}>
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="bg-white/10 p-2 rounded-lg border border-white/20">
+                <Heart className="h-5 w-5" />
+              </div>
+              <h4 className="text-lg font-semibold">Condição Geral</h4>
+            </div>
+            <p className="font-medium text-lg">
+              {getOptionName('general_condition', assessment.general_condition)}
+            </p>
+            <div className="absolute bottom-0 right-0 -mb-4 -mr-4 w-20 h-20 bg-white/5 rounded-full blur-xl"></div>
+          </div>
+        )}
+
+        {/* Comportamento */}
+        {assessment.behavior_entry && (
+          <div className="bg-gradient-to-br from-purple-600/20 to-indigo-600/20 backdrop-blur-lg rounded-2xl border border-purple-500/30 p-6 shadow-2xl shadow-purple-500/20">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="bg-purple-500/20 p-2 rounded-lg border border-purple-400/30">
+                <User className="h-5 w-5 text-purple-400" />
+              </div>
+              <h4 className="text-lg font-semibold text-purple-300">Comportamento</h4>
+            </div>
+            <p className="text-purple-200 font-medium">
+              {getOptionName('behavior_entry', assessment.behavior_entry)}
+            </p>
+            <div className="absolute top-0 left-0 -mt-4 -ml-4 w-16 h-16 bg-purple-400/10 rounded-full blur-lg"></div>
+          </div>
+        )}
+      </div>
+
+      {/* Resumo da Avaliação */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Clipboard className="h-5 w-5 text-blue-600" />
-              Ficha de Admissão
-            </CardTitle>
-            <div className="flex items-center gap-2">
-              {assessment.is_complete ? (
-                <Badge className="bg-green-600 text-white">
-                  <CheckCircle className="h-3 w-3 mr-1" />
-                  Completa
-                </Badge>
-              ) : (
-                <Badge className="bg-yellow-600 text-white">
-                  <Clock className="h-3 w-3 mr-1" />
-                  Incompleta
-                </Badge>
-              )}
-              {showEditButton && onEdit && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onEdit(assessment)}
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Editar
-                </Button>
-              )}
-            </div>
-          </div>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Clipboard className="h-5 w-5 text-blue-600" />
+            Resumo da Avaliação
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
