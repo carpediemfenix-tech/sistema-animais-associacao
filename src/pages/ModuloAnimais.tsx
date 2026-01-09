@@ -145,7 +145,7 @@ const ModuloAnimais = () => {
 
       // Carregar localizações
       const { data: localizacoes } = await supabase
-        .from('localizacoes')
+        .from('localizacoes_animal')
         .select('id')
         .then(result => ({ data: result.data || [] }))
         .catch(() => ({ data: [] }));

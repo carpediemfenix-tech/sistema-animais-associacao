@@ -135,17 +135,7 @@ const AnimalDetailFuturistic = () => {
         .single();
       
       if (localizacaoData && !localizacaoError) {
-        // Buscar localização separadamente
-        const { data: localizacaoInfo } = await supabase
-          .from('localizacoes')
-          .select('nome, descricao')
-          .eq('id', localizacaoData.localizacao_id)
-          .single();
-        
-        if (localizacaoInfo) {
-          localizacaoData.localizacao = localizacaoInfo;
-        }
-        
+        // A localização já vem como texto na tabela localizacoes_animal
         setLocalizacaoAtual(localizacaoData);
       }
 
