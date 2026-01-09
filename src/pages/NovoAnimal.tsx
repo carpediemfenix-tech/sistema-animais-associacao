@@ -222,41 +222,61 @@ const NovoAnimal = () => {
 
   const generateNextProcessNumber = async (): Promise<string> => {
     try {
-      const currentYear = new Date().getFullYear();
-      const yearSuffix = currentYear.toString().slice(-2);
+      console.log('🔢 [NOVO ANIMAL] Gerando número de processo...');
       
+      // Usar função robusta da base de dados
       const { data, error } = await supabase
-        .from('animais')
-        .select('numero_processo')
-        .not('numero_processo', 'is', null)
-        .order('created_at', { ascending: false });
+        .rpc('generate_next_animal_process_number');
 
-      if (error) throw error;
-      
-      let nextSequence = 1;
-      
-      if (data && data.length > 0) {
-        const currentYearNumbers = data
-          .filter(animal => animal.numero_processo && animal.numero_processo.startsWith(`P${yearSuffix}`))
-          .map(animal => {
-            const match = animal.numero_processo.match(/P\\d{2}(\\d{3})/);
-            return match ? parseInt(match[1]) : 0;
-          })
-          .filter(num => num > 0);
-
-        if (currentYearNumbers.length > 0) {
-          nextSequence = Math.max(...currentYearNumbers) + 1;
-        }
+      if (error) {
+        console.error('❌ [NOVO ANIMAL] Erro na função RPC:', error);
+        throw error;
       }
 
-      return `P${yearSuffix}${nextSequence.toString().padStart(3, '0')}`;
+      if (!data) {
+        throw new Error('Função RPC retornou valor nulo');
+      }
+
+      console.log('✅ [NOVO ANIMAL] Número gerado:', data);
+      
+      // Validar formato do número gerado
+      const isValidFormat = /^P\d{2}\d{3}$/.test(data);
+      if (!isValidFormat) {
+        console.warn('⚠️ [NOVO ANIMAL] Formato inválido:', data);
+        throw new Error(`Formato de número inválido: ${data}`);
+      }
+
+      return data;
 
     } catch (error) {
-      console.error('Erro ao gerar número de processo:', error);
+      console.error('❌ [NOVO ANIMAL] Erro ao gerar número de processo:', error);
+      
+      // Fallback robusto em caso de erro
       const currentYear = new Date().getFullYear();
       const yearSuffix = currentYear.toString().slice(-2);
-      const timestamp = Date.now().toString().slice(-3);
-      return `P${yearSuffix}${timestamp}`;
+      const timestamp = Date.now().toString().slice(-6, -3); // Usar 3 dígitos do timestamp
+      const fallbackNumber = `P${yearSuffix}${timestamp}`;
+      
+      console.log('🔄 [NOVO ANIMAL] Usando fallback:', fallbackNumber);
+      
+      // Verificar se o fallback já existe
+      try {
+        const { data: existingAnimal } = await supabase
+          .from('animais')
+          .select('id')
+          .eq('numero_processo', fallbackNumber)
+          .single();
+          
+        if (existingAnimal) {
+          // Se existe, adicionar sufixo aleatório
+          const randomSuffix = Math.floor(Math.random() * 100).toString().padStart(2, '0');
+          return `P${yearSuffix}${randomSuffix}${Math.floor(Math.random() * 10)}`;
+        }
+      } catch {
+        // Se não existe, usar o fallback
+      }
+      
+      return fallbackNumber;
     }
   };
 
@@ -531,10 +551,51 @@ const NovoAnimal = () => {
     }
 
     setLoading(true);
+    
+    // Validar e regenerar número de processo se necessário
+    let finalProcessNumber = numeroProcesso;
+    
+    try {
+      console.log('🔍 [NOVO ANIMAL] Validando número de processo:', finalProcessNumber);
+      
+      // Verificar se o número atual já existe
+      const { data: existingAnimal, error: checkError } = await supabase
+        .from('animais')
+        .select('id')
+        .eq('numero_processo', finalProcessNumber)
+        .single();
+        
+      if (checkError && checkError.code !== 'PGRST116') {
+        // Erro diferente de "não encontrado"
+        throw checkError;
+      }
+      
+      if (existingAnimal) {
+        console.log('⚠️ [NOVO ANIMAL] Número duplicado detectado, gerando novo...');
+        finalProcessNumber = await generateNextProcessNumber();
+        setNumeroProcesso(finalProcessNumber);
+        
+        toast({
+          title: "🔄 Número Atualizado",
+          description: `Número de processo atualizado para ${finalProcessNumber} para evitar duplicação`,
+          variant: "default",
+        });
+      }
+      
+      console.log('✅ [NOVO ANIMAL] Número de processo validado:', finalProcessNumber);
+      
+    } catch (error) {
+      console.error('❌ [NOVO ANIMAL] Erro na validação do número:', error);
+      toast({
+        title: "⚠️ Aviso",
+        description: "Não foi possível validar o número de processo. Continuando com o número atual.",
+        variant: "default",
+      });
+    }
 
     try {
       const animalData = {
-        numero_processo: numeroProcesso,
+        numero_processo: finalProcessNumber,
         nome: formData.nome.trim(),
         especie: formData.especie,
         raca: formData.raca.trim() || null,
@@ -2225,9 +2286,36 @@ const NovoAnimal = () => {
 
                     {/* Informações Básicas */}
                     <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
+                      <div className="flex justify-between items-center">
                         <span className="text-gray-600">Processo:</span>
-                        <span className="font-medium">{numeroProcesso}</span>
+                        <div className="flex items-center space-x-2">
+                          <span className="font-medium">{numeroProcesso}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={async () => {
+                              try {
+                                const newNumber = await generateNextProcessNumber();
+                                setNumeroProcesso(newNumber);
+                                toast({
+                                  title: "🔄 Número Regenerado",
+                                  description: `Novo número: ${newNumber}`,
+                                });
+                              } catch (error) {
+                                toast({
+                                  title: "❌ Erro",
+                                  description: "Não foi possível gerar novo número",
+                                  variant: "destructive",
+                                });
+                              }
+                            }}
+                            className="h-6 w-6 p-0 text-blue-600 hover:text-blue-800"
+                            title="Regenerar número de processo"
+                          >
+                            🔄
+                          </Button>
+                        </div>
                       </div>
                       
                       <div className="flex justify-between">
