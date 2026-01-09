@@ -471,6 +471,16 @@ const NovoAnimal = () => {
       setIntakeOptions(basicOptions);
       console.log('✅ [INTAKE] Opções básicas aplicadas como fallback final');
     }
+    
+    // Log final para verificar estado
+    setTimeout(() => {
+      console.log('🔍 [INTAKE] Estado final das opções:', {
+        general_condition: intakeOptions.general_condition?.length || 0,
+        behavior: intakeOptions.behavior?.length || 0,
+        body_condition: intakeOptions.body_condition?.length || 0,
+        total_domains: Object.keys(intakeOptions).length
+      });
+    }, 100);
   };
 
   // Função para obter opções condicionais baseadas na origem e razão
@@ -1501,7 +1511,7 @@ const NovoAnimal = () => {
                                 <SelectValue placeholder="Comportamento observado" />
                               </SelectTrigger>
                               <SelectContent>
-                                {(intakeOptions.behavior_entry || []).map((option) => (
+                                {(intakeOptions.behavior || []).map((option) => (
                                   <SelectItem key={option.code} value={option.code}>
                                     {option.name}
                                   </SelectItem>
