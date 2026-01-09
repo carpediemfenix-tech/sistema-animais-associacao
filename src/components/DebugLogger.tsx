@@ -16,7 +16,8 @@ import {
   Edit,
   AlertCircle,
   CheckCircle,
-  Clock
+  Clock,
+  MapPin
 } from 'lucide-react';
 import { AnimalIntakeAssessment, IntakeConfigOption } from '@/types/animal';
 import { supabase } from '@/integrations/supabase/client';
