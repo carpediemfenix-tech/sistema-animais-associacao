@@ -548,11 +548,8 @@ const NovoAnimal = () => {
       ]
     };
     
-    // Forçar uso das opções básicas locais para garantir funcionamento
-    console.log('🔄 [INTAKE] Forçando uso das opções básicas locais');
-    setIntakeOptions(basicOptions);
-    console.log('✅ [INTAKE] Opções básicas forçadas:', Object.keys(basicOptions));
-    return;
+    // ESTRUTURA DA BASE DE DADOS CORRIGIDA - USAR BASE DE DADOS PRIMEIRO
+    console.log('🔄 [INTAKE] Tentando carregar da base de dados (estrutura corrigida)');
     
     try {
       // Tentar carregar opções expandidas da base de dados
@@ -561,6 +558,25 @@ const NovoAnimal = () => {
 
       if (error) {
         console.warn('⚠️ [INTAKE] Erro ao carregar opções expandidas:', error);
+      } else if (data && data.length > 0) {
+        console.log('✅ [INTAKE] Dados carregados da base de dados:', data.length, 'opções');
+        
+        // Organizar por domínio
+        const optionsByDomain: Record<string, any[]> = {};
+        data.forEach((option: any) => {
+          if (!optionsByDomain[option.domain]) {
+            optionsByDomain[option.domain] = [];
+          }
+          optionsByDomain[option.domain].push(option);
+        });
+        
+        setIntakeOptions(optionsByDomain);
+        console.log('🎆 [INTAKE] Opções da BD organizadas:', Object.keys(optionsByDomain));
+        console.log('📊 [INTAKE] Contagens por domínio:', 
+          Object.entries(optionsByDomain).map(([domain, opts]) => `${domain}: ${opts.length}`).join(', '));
+        return;
+      } else {
+        console.warn('⚠️ [INTAKE] Base de dados retornou dados vazios');
         
         // Tentar fallback para função antiga
         try {
