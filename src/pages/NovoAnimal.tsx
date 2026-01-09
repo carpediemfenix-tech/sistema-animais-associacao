@@ -411,6 +411,12 @@ const NovoAnimal = () => {
       ]
     };
     
+    // Forçar uso das opções básicas locais para garantir funcionamento
+    console.log('🔄 [INTAKE] Forçando uso das opções básicas locais');
+    setIntakeOptions(basicOptions);
+    console.log('✅ [INTAKE] Opções básicas forçadas:', Object.keys(basicOptions));
+    return;
+    
     try {
       // Tentar carregar opções expandidas da base de dados
       const { data, error } = await supabase
@@ -478,7 +484,13 @@ const NovoAnimal = () => {
         general_condition: intakeOptions.general_condition?.length || 0,
         behavior: intakeOptions.behavior?.length || 0,
         body_condition: intakeOptions.body_condition?.length || 0,
-        total_domains: Object.keys(intakeOptions).length
+        total_domains: Object.keys(intakeOptions).length,
+        all_keys: Object.keys(intakeOptions),
+        sample_data: {
+          general_condition: intakeOptions.general_condition?.[0],
+          behavior: intakeOptions.behavior?.[0],
+          body_condition: intakeOptions.body_condition?.[0]
+        }
       });
     }, 100);
   };
