@@ -90,7 +90,24 @@ const NovoAnimal = () => {
     // Campos condicionais para nascimento
     mother_id: "",
     litter_size: "",
-    birth_conditions: ""
+    birth_conditions: "",
+    // Campos para exame físico detalhado
+    physical_exam_cardiovascular: [] as string[],
+    physical_exam_respiratory: [] as string[],
+    physical_exam_neurological: [] as string[],
+    physical_exam_gastrointestinal: [] as string[],
+    physical_exam_musculoskeletal: [] as string[],
+    physical_exam_integumentary: [] as string[],
+    // Campos para avaliação comportamental
+    behavioral_assessment_temperament: [] as string[],
+    behavioral_assessment_human_social: [] as string[],
+    behavioral_assessment_animal_social: [] as string[],
+    behavioral_assessment_stimuli: [] as string[],
+    // Campos para plano de cuidados
+    care_plan_immediate: [] as string[],
+    care_plan_medium: [] as string[],
+    care_plan_long: [] as string[],
+    care_plan_notes: ""
   });
 
   // Auto-save draft quando muda de aba
@@ -1554,6 +1571,480 @@ const NovoAnimal = () => {
                             onChange={(e) => handleAdmissaoChange("special_needs", e.target.value)}
                             placeholder="Cuidados especiais, restrições, medicação..."
                             rows={2}
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* 6. EXAME FÍSICO DETALHADO POR SISTEMAS */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-base">
+                          <Stethoscope className="h-5 w-5 text-red-600" />
+                          Exame Físico Detalhado por Sistemas
+                        </CardTitle>
+                        <CardDescription>
+                          Avaliação sistemática de cada sistema orgânico
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-6">
+                        
+                        {/* Sistema Cardiovascular */}
+                        <div>
+                          <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                            ❤️ Sistema Cardiovascular
+                          </h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {[
+                              { code: 'heart_rate_normal', name: 'FC normal' },
+                              { code: 'heart_rate_tachycardia', name: 'Taquicardia' },
+                              { code: 'heart_rate_bradycardia', name: 'Bradicardia' },
+                              { code: 'heart_murmur', name: 'Sopro cardíaco' },
+                              { code: 'arrhythmia', name: 'Arritmia' },
+                              { code: 'pulse_weak', name: 'Pulso fraco' },
+                              { code: 'capillary_refill_normal', name: 'TRC normal' },
+                              { code: 'capillary_refill_delayed', name: 'TRC prolongado' }
+                            ].map((option) => (
+                              <div key={option.code} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={`cardio-${option.code}`}
+                                  checked={admissaoData.physical_exam_cardiovascular.includes(option.code)}
+                                  onCheckedChange={(checked) => 
+                                    handleMultiSelectChange("physical_exam_cardiovascular", option.code, checked as boolean)
+                                  }
+                                />
+                                <Label 
+                                  htmlFor={`cardio-${option.code}`}
+                                  className="text-sm font-normal cursor-pointer"
+                                >
+                                  {option.name}
+                                </Label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Sistema Respiratório */}
+                        <div>
+                          <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                            🐨 Sistema Respiratório
+                          </h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {[
+                              { code: 'breathing_normal', name: 'Respiração normal' },
+                              { code: 'dyspnea_inspiratory', name: 'Dispneia inspiratória' },
+                              { code: 'dyspnea_expiratory', name: 'Dispneia expiratória' },
+                              { code: 'cough_dry', name: 'Tosse seca' },
+                              { code: 'cough_productive', name: 'Tosse produtiva' },
+                              { code: 'wheezing', name: 'Sibilos' },
+                              { code: 'crackles', name: 'Crepitações' },
+                              { code: 'stridor', name: 'Estridor' }
+                            ].map((option) => (
+                              <div key={option.code} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={`resp-${option.code}`}
+                                  checked={admissaoData.physical_exam_respiratory.includes(option.code)}
+                                  onCheckedChange={(checked) => 
+                                    handleMultiSelectChange("physical_exam_respiratory", option.code, checked as boolean)
+                                  }
+                                />
+                                <Label 
+                                  htmlFor={`resp-${option.code}`}
+                                  className="text-sm font-normal cursor-pointer"
+                                >
+                                  {option.name}
+                                </Label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Sistema Neurológico */}
+                        <div>
+                          <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                            🧠 Sistema Neurológico
+                          </h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {[
+                              { code: 'consciousness_alert', name: 'Alerta' },
+                              { code: 'consciousness_lethargic', name: 'Letárgico' },
+                              { code: 'consciousness_stuporous', name: 'Estuporoso' },
+                              { code: 'pupils_normal', name: 'Pupilas normais' },
+                              { code: 'pupils_dilated', name: 'Pupilas dilatadas' },
+                              { code: 'pupils_unequal', name: 'Anisocoria' },
+                              { code: 'reflexes_normal', name: 'Reflexos normais' },
+                              { code: 'reflexes_absent', name: 'Reflexos ausentes' }
+                            ].map((option) => (
+                              <div key={option.code} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={`neuro-${option.code}`}
+                                  checked={admissaoData.physical_exam_neurological.includes(option.code)}
+                                  onCheckedChange={(checked) => 
+                                    handleMultiSelectChange("physical_exam_neurological", option.code, checked as boolean)
+                                  }
+                                />
+                                <Label 
+                                  htmlFor={`neuro-${option.code}`}
+                                  className="text-sm font-normal cursor-pointer"
+                                >
+                                  {option.name}
+                                </Label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Sistema Musculoesquelético */}
+                        <div>
+                          <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                            🦴 Sistema Musculoesquelético
+                          </h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {[
+                              { code: 'gait_normal', name: 'Marcha normal' },
+                              { code: 'lameness_grade1', name: 'Claudicação grau 1' },
+                              { code: 'lameness_grade2', name: 'Claudicação grau 2' },
+                              { code: 'lameness_grade3', name: 'Claudicação grau 3' },
+                              { code: 'muscle_atrophy', name: 'Atrofia muscular' },
+                              { code: 'joint_swelling', name: 'Tumefação articular' },
+                              { code: 'range_motion_limited', name: 'Amplitude limitada' }
+                            ].map((option) => (
+                              <div key={option.code} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={`musculo-${option.code}`}
+                                  checked={admissaoData.physical_exam_musculoskeletal.includes(option.code)}
+                                  onCheckedChange={(checked) => 
+                                    handleMultiSelectChange("physical_exam_musculoskeletal", option.code, checked as boolean)
+                                  }
+                                />
+                                <Label 
+                                  htmlFor={`musculo-${option.code}`}
+                                  className="text-sm font-normal cursor-pointer"
+                                >
+                                  {option.name}
+                                </Label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Sistema Tegumentar */}
+                        <div>
+                          <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                            🐈 Sistema Tegumentar (Pele)
+                          </h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {[
+                              { code: 'skin_normal', name: 'Pele normal' },
+                              { code: 'skin_dry', name: 'Pele seca' },
+                              { code: 'dermatitis', name: 'Dermatite' },
+                              { code: 'alopecia_focal', name: 'Alopécia focal' },
+                              { code: 'alopecia_generalized', name: 'Alopécia generalizada' },
+                              { code: 'wounds_superficial', name: 'Feridas superficiais' },
+                              { code: 'wounds_deep', name: 'Feridas profundas' },
+                              { code: 'ectoparasites', name: 'Ectoparasitas' }
+                            ].map((option) => (
+                              <div key={option.code} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={`skin-${option.code}`}
+                                  checked={admissaoData.physical_exam_integumentary.includes(option.code)}
+                                  onCheckedChange={(checked) => 
+                                    handleMultiSelectChange("physical_exam_integumentary", option.code, checked as boolean)
+                                  }
+                                />
+                                <Label 
+                                  htmlFor={`skin-${option.code}`}
+                                  className="text-sm font-normal cursor-pointer"
+                                >
+                                  {option.name}
+                                </Label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* 7. AVALIAÇÃO COMPORTAMENTAL DETALHADA */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-base">
+                          🐶 Avaliação Comportamental Detalhada
+                        </CardTitle>
+                        <CardDescription>
+                          Testes específicos e observação comportamental
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-6">
+                        
+                        {/* Temperamento Geral */}
+                        <div>
+                          <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                            🎭 Temperamento Geral
+                          </h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {[
+                              { code: 'friendly_confident', name: 'Amigável e confiante' },
+                              { code: 'friendly_shy', name: 'Amigável mas tímido' },
+                              { code: 'neutral_calm', name: 'Neutro e calmo' },
+                              { code: 'fearful_mild', name: 'Medroso ligeiro' },
+                              { code: 'fearful_severe', name: 'Medroso severo' },
+                              { code: 'aggressive_defensive', name: 'Agressivo defensivo' },
+                              { code: 'aggressive_offensive', name: 'Agressivo ofensivo' },
+                              { code: 'hyperactive', name: 'Hiperativo' },
+                              { code: 'lethargic_depressed', name: 'Letárgico/Deprimido' }
+                            ].map((option) => (
+                              <div key={option.code} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={`temp-${option.code}`}
+                                  checked={admissaoData.behavioral_assessment_temperament.includes(option.code)}
+                                  onCheckedChange={(checked) => 
+                                    handleMultiSelectChange("behavioral_assessment_temperament", option.code, checked as boolean)
+                                  }
+                                />
+                                <Label 
+                                  htmlFor={`temp-${option.code}`}
+                                  className="text-sm font-normal cursor-pointer"
+                                >
+                                  {option.name}
+                                </Label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Socialização com Humanos */}
+                        <div>
+                          <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                            👥 Socialização com Humanos
+                          </h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {[
+                              { code: 'excellent_socialization', name: 'Socialização excelente' },
+                              { code: 'good_socialization', name: 'Socialização boa' },
+                              { code: 'moderate_socialization', name: 'Socialização moderada' },
+                              { code: 'poor_socialization', name: 'Socialização pobre' },
+                              { code: 'fear_men', name: 'Medo de homens' },
+                              { code: 'fear_women', name: 'Medo de mulheres' },
+                              { code: 'fear_children', name: 'Medo de crianças' },
+                              { code: 'fear_uniforms', name: 'Medo de uniformes' }
+                            ].map((option) => (
+                              <div key={option.code} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={`human-${option.code}`}
+                                  checked={admissaoData.behavioral_assessment_human_social.includes(option.code)}
+                                  onCheckedChange={(checked) => 
+                                    handleMultiSelectChange("behavioral_assessment_human_social", option.code, checked as boolean)
+                                  }
+                                />
+                                <Label 
+                                  htmlFor={`human-${option.code}`}
+                                  className="text-sm font-normal cursor-pointer"
+                                >
+                                  {option.name}
+                                </Label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Socialização com Animais */}
+                        <div>
+                          <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                            🐕 Socialização com Animais
+                          </h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {[
+                              { code: 'excellent_with_dogs', name: 'Excelente com cães' },
+                              { code: 'good_with_dogs', name: 'Bom com cães' },
+                              { code: 'selective_with_dogs', name: 'Seletivo com cães' },
+                              { code: 'poor_with_dogs', name: 'Mau com cães' },
+                              { code: 'excellent_with_cats', name: 'Excelente com gatos' },
+                              { code: 'good_with_cats', name: 'Bom com gatos' },
+                              { code: 'poor_with_cats', name: 'Mau com gatos' },
+                              { code: 'prey_drive_high', name: 'Instinto de caça elevado' }
+                            ].map((option) => (
+                              <div key={option.code} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={`animal-${option.code}`}
+                                  checked={admissaoData.behavioral_assessment_animal_social.includes(option.code)}
+                                  onCheckedChange={(checked) => 
+                                    handleMultiSelectChange("behavioral_assessment_animal_social", option.code, checked as boolean)
+                                  }
+                                />
+                                <Label 
+                                  htmlFor={`animal-${option.code}`}
+                                  className="text-sm font-normal cursor-pointer"
+                                >
+                                  {option.name}
+                                </Label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Reações a Estímulos */}
+                        <div>
+                          <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                            ⚡ Reações a Estímulos
+                          </h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {[
+                              { code: 'noise_tolerant', name: 'Tolerante a ruídos' },
+                              { code: 'noise_sensitive', name: 'Sensível a ruídos' },
+                              { code: 'noise_phobic', name: 'Fobia a ruídos' },
+                              { code: 'touch_tolerant', name: 'Tolerante ao toque' },
+                              { code: 'touch_sensitive', name: 'Sensível ao toque' },
+                              { code: 'touch_defensive', name: 'Defensivo ao toque' },
+                              { code: 'movement_tolerant', name: 'Tolerante a movimentos' },
+                              { code: 'movement_reactive', name: 'Reativo a movimentos' }
+                            ].map((option) => (
+                              <div key={option.code} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={`stimuli-${option.code}`}
+                                  checked={admissaoData.behavioral_assessment_stimuli.includes(option.code)}
+                                  onCheckedChange={(checked) => 
+                                    handleMultiSelectChange("behavioral_assessment_stimuli", option.code, checked as boolean)
+                                  }
+                                />
+                                <Label 
+                                  htmlFor={`stimuli-${option.code}`}
+                                  className="text-sm font-normal cursor-pointer"
+                                >
+                                  {option.name}
+                                </Label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* 8. PLANO DE CUIDADOS */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-base">
+                          📝 Plano de Cuidados
+                        </CardTitle>
+                        <CardDescription>
+                          Cuidados imediatos, médio prazo e longo prazo
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-6">
+                        
+                        {/* Cuidados Imediatos */}
+                        <div>
+                          <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                            🆘 Cuidados Imediatos (24h)
+                          </h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {[
+                              { code: 'stabilization_vital', name: 'Estabilização vital' },
+                              { code: 'pain_management', name: 'Gestão da dor' },
+                              { code: 'wound_treatment', name: 'Tratamento de feridas' },
+                              { code: 'fluid_support', name: 'Suporte de fluidos' },
+                              { code: 'nutritional_support', name: 'Suporte nutricional' },
+                              { code: 'isolation_precautions', name: 'Precauções de isolamento' },
+                              { code: 'diagnostic_tests', name: 'Exames diagnósticos' },
+                              { code: 'emergency_surgery', name: 'Cirurgia de emergência' }
+                            ].map((option) => (
+                              <div key={option.code} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={`immediate-${option.code}`}
+                                  checked={admissaoData.care_plan_immediate.includes(option.code)}
+                                  onCheckedChange={(checked) => 
+                                    handleMultiSelectChange("care_plan_immediate", option.code, checked as boolean)
+                                  }
+                                />
+                                <Label 
+                                  htmlFor={`immediate-${option.code}`}
+                                  className="text-sm font-normal cursor-pointer"
+                                >
+                                  {option.name}
+                                </Label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Cuidados Médio Prazo */}
+                        <div>
+                          <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                            📅 Cuidados Médio Prazo (1-7 dias)
+                          </h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {[
+                              { code: 'medical_treatment', name: 'Tratamento médico' },
+                              { code: 'surgical_procedures', name: 'Procedimentos cirúrgicos' },
+                              { code: 'rehabilitation_physical', name: 'Reabilitação física' },
+                              { code: 'behavioral_assessment', name: 'Avaliação comportamental' },
+                              { code: 'socialization_basic', name: 'Socialização básica' },
+                              { code: 'vaccination_protocol', name: 'Protocolo vacinal' },
+                              { code: 'parasite_control', name: 'Controlo de parasitas' },
+                              { code: 'dental_care', name: 'Cuidados dentários' }
+                            ].map((option) => (
+                              <div key={option.code} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={`medium-${option.code}`}
+                                  checked={admissaoData.care_plan_medium.includes(option.code)}
+                                  onCheckedChange={(checked) => 
+                                    handleMultiSelectChange("care_plan_medium", option.code, checked as boolean)
+                                  }
+                                />
+                                <Label 
+                                  htmlFor={`medium-${option.code}`}
+                                  className="text-sm font-normal cursor-pointer"
+                                >
+                                  {option.name}
+                                </Label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Cuidados Longo Prazo */}
+                        <div>
+                          <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                            📆 Cuidados Longo Prazo (&gt;7 dias)
+                          </h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {[
+                              { code: 'chronic_management', name: 'Gestão de condições crónicas' },
+                              { code: 'behavioral_modification', name: 'Modificação comportamental' },
+                              { code: 'socialization_advanced', name: 'Socialização avançada' },
+                              { code: 'adoption_preparation', name: 'Preparação para adoção' },
+                              { code: 'foster_placement', name: 'Colocação em família de acolhimento' },
+                              { code: 'specialized_care', name: 'Cuidados especializados' },
+                              { code: 'palliative_care', name: 'Cuidados paliativos' },
+                              { code: 'sanctuary_placement', name: 'Colocação em santuário' }
+                            ].map((option) => (
+                              <div key={option.code} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={`long-${option.code}`}
+                                  checked={admissaoData.care_plan_long.includes(option.code)}
+                                  onCheckedChange={(checked) => 
+                                    handleMultiSelectChange("care_plan_long", option.code, checked as boolean)
+                                  }
+                                />
+                                <Label 
+                                  htmlFor={`long-${option.code}`}
+                                  className="text-sm font-normal cursor-pointer"
+                                >
+                                  {option.name}
+                                </Label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Notas do Plano de Cuidados */}
+                        <div>
+                          <Label>Notas Adicionais do Plano de Cuidados</Label>
+                          <Textarea
+                            value={admissaoData.care_plan_notes}
+                            onChange={(e) => handleAdmissaoChange("care_plan_notes", e.target.value)}
+                            placeholder="Observações adicionais sobre o plano de cuidados, prioridades, considerações especiais..."
+                            rows={4}
                           />
                         </div>
                       </CardContent>
