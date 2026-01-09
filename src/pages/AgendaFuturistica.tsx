@@ -137,6 +137,7 @@ const AgendaFuturistica = () => {
   const [filtroTipo, setFiltroTipo] = useState<string>("todos");
   const [filtroStatus, setFiltroStatus] = useState<string>("todos");
   const [searchTerm, setSearchTerm] = useState("");
+  const [mostrarDadosTeste, setMostrarDadosTeste] = useState(true); // ✅ Novo filtro para dados de teste
 
   // Estados do formulário
   const [novoEvento, setNovoEvento] = useState({
@@ -401,7 +402,11 @@ const AgendaFuturistica = () => {
     const matchesStatus = filtroStatus === 'todos' || evento.status === filtroStatus;
     const matchesTipo = filtroTipo === 'todos' || evento.categoria === filtroTipo;
     
-    return matchesSearch && matchesStatus && matchesTipo;
+    // ✅ Novo filtro para dados de teste
+    const isDadosTeste = evento.observacoes?.includes('DADOS DE TESTE') || false;
+    const matchesDadosTeste = mostrarDadosTeste || !isDadosTeste;
+    
+    return matchesSearch && matchesStatus && matchesTipo && matchesDadosTeste;
   });
 
   if (loading) {
@@ -653,6 +658,22 @@ const AgendaFuturistica = () => {
                         </Select>
                       </div>
                       
+                      {/* ✅ Novo toggle para dados de teste */}
+                      <div className="flex items-center justify-between p-3 bg-orange-500/10 border border-orange-500/30 rounded-lg">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-orange-300">🧪</span>
+                          <Label className="text-white text-sm">Mostrar Dados de Teste</Label>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setMostrarDadosTeste(!mostrarDadosTeste)}
+                          className={`${mostrarDadosTeste ? 'bg-orange-500/20 text-orange-300' : 'bg-gray-500/20 text-gray-400'} hover:bg-orange-500/30`}
+                        >
+                          {mostrarDadosTeste ? 'Ocultar' : 'Mostrar'}
+                        </Button>
+                      </div>
+                      
                       <Button 
                         onClick={loadEventos} 
                         className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
@@ -718,16 +739,25 @@ const AgendaFuturistica = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {filteredEventos.filter(e => e.categoria === 'ativo').map((evento) => {
                       const IconComponent = getIconComponent(evento.icone_evento);
+                      const isDadosTeste = evento.observacoes?.includes('DADOS DE TESTE') || false;
                       return (
-                        <Card key={evento.id} className="bg-white/5 border-white/10 hover:bg-white/10 transition-all cursor-pointer">
+                        <Card key={evento.id} className={`${isDadosTeste ? 'bg-orange-500/10 border-orange-500/30' : 'bg-white/5 border-white/10'} hover:bg-white/10 transition-all cursor-pointer`}>
                           <CardHeader>
                             <div className="flex items-start justify-between">
                               <div className="flex items-center space-x-2">
+                                {isDadosTeste && (
+                                  <div className="bg-orange-500/20 p-1 rounded">
+                                    <span className="text-xs text-orange-300">🧪</span>
+                                  </div>
+                                )}
                                 <IconComponent 
                                   className="h-5 w-5" 
                                   style={{ color: evento.cor_evento }} 
                                 />
-                                <CardTitle className="text-lg text-white">{evento.titulo}</CardTitle>
+                                <CardTitle className="text-lg text-white">
+                                  {evento.titulo}
+                                  {isDadosTeste && <span className="text-xs text-orange-300 ml-2">(TESTE)</span>}
+                                </CardTitle>
                               </div>
                               <Badge className={getStatusColor(evento.status)}>
                                 {evento.status}
@@ -818,6 +848,7 @@ const AgendaFuturistica = () => {
                   <div className="space-y-4">
                     {filteredEventos.filter(e => e.categoria === 'memorial').map((evento, index) => {
                       const IconComponent = getIconComponent(evento.icone_evento);
+                      const isDadosTeste = evento.observacoes?.includes('DADOS DE TESTE') || false;
                       return (
                         <div key={evento.id} className="relative">
                           {/* Timeline Line */}
@@ -825,11 +856,16 @@ const AgendaFuturistica = () => {
                             <div className="absolute left-6 top-12 w-0.5 h-16 bg-gradient-to-b from-purple-400 to-transparent"></div>
                           )}
                           
-                          <div className="flex items-start space-x-4 p-4 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-all">
+                          <div className={`flex items-start space-x-4 p-4 rounded-lg ${isDadosTeste ? 'bg-orange-500/10 border border-orange-500/30' : 'bg-white/5 border border-white/10'} hover:bg-white/10 transition-all`}>
                             <div 
-                              className="p-3 rounded-full flex-shrink-0"
+                              className="p-3 rounded-full flex-shrink-0 relative"
                               style={{ backgroundColor: evento.cor_evento + '20' }}
                             >
+                              {isDadosTeste && (
+                                <div className="absolute -top-1 -right-1 bg-orange-500 rounded-full w-4 h-4 flex items-center justify-center">
+                                  <span className="text-xs">🧪</span>
+                                </div>
+                              )}
                               <IconComponent 
                                 className="h-6 w-6" 
                                 style={{ color: evento.cor_evento }} 
@@ -838,7 +874,10 @@ const AgendaFuturistica = () => {
                             <div className="flex-1">
                               <div className="flex items-start justify-between">
                                 <div>
-                                  <h3 className="font-medium text-white">{evento.titulo}</h3>
+                                  <h3 className="font-medium text-white">
+                                    {evento.titulo}
+                                    {isDadosTeste && <span className="text-xs text-orange-300 ml-2">(TESTE)</span>}
+                                  </h3>
                                   <p className="text-sm text-gray-300 mt-1">{evento.descricao}</p>
                                   <div className="flex items-center space-x-4 mt-2 text-xs text-gray-400">
                                     <span>{formatDateTime(evento.data_evento)}</span>
