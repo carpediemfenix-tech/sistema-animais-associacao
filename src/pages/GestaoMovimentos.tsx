@@ -114,12 +114,12 @@ const GestaoMovimentos = () => {
 
   const loadMovimentos = async () => {
     const { data } = await supabase
-      .from('movimentos_financeiros_2025_12_13_06_00')
+      .from('movimentos_financeiros_2025_12_29_07_00') // ✅ Corrigido: tabela atualizada
       .select(`
         *,
-        categoria:categorias_financeiras_2025_12_13_06_00(nome, cor, icone),
+        categoria:categorias_financeiras_2025_12_29_07_00(nome, cor, icone),
         animal:animais(nome, especie),
-        conta_origem:contas_financeiras_2025_12_13_06_00!movimentos_financeiros_2025_12_13_06_00_conta_origem_id_fkey(nome, codigo)
+        conta_origem:contas_financeiras_2025_12_29_07_00!movimentos_financeiros_2025_12_29_07_00_conta_origem_id_fkey(nome, codigo)
       `)
       .order('created_at', { ascending: false });
 
@@ -130,7 +130,7 @@ const GestaoMovimentos = () => {
 
   const loadCategorias = async () => {
     const { data } = await supabase
-      .from('categorias_financeiras_2025_12_13_06_00')
+      .from('categorias_financeiras_2025_12_29_07_00') // ✅ Corrigido: tabela atualizada
       .select('*')
       .eq('ativo', true)
       .order('ordem');
@@ -142,7 +142,7 @@ const GestaoMovimentos = () => {
 
   const loadContas = async () => {
     const { data } = await supabase
-      .from('contas_financeiras_2025_12_13_06_00')
+      .from('contas_financeiras_2025_12_29_07_00') // ✅ Corrigido: tabela atualizada
       .select('*')
       .eq('ativo', true)
       .order('codigo');

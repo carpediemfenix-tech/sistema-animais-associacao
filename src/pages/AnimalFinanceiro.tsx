@@ -163,10 +163,10 @@ const AnimalFinanceiro: React.FC = () => {
     try {
       // Carregar movimentos financeiros do animal
       const { data: movimentosData, error: movimentosError } = await supabase
-.from('movimentos_financeiros_2025_12_13_06_00')
+        .from('movimentos_financeiros_2025_12_29_07_00') // ✅ Corrigido: tabela atualizada
         .select(`
           *,
-categorias_financeiras_2025_12_13_06_00(nome, icone, cor)
+          categorias_financeiras_2025_12_29_07_00(nome, icone, cor) 
         `)
         .eq('animal_id', id)
         .order('data_movimento', { ascending: false });
@@ -179,7 +179,7 @@ categorias_financeiras_2025_12_13_06_00(nome, icone, cor)
 
       // Carregar categorias financeiras
       const { data: categoriasData, error: categoriasError } = await supabase
-.from('categorias_financeiras_2025_12_13_06_00')
+        .from('categorias_financeiras_2025_12_29_07_00') // ✅ Corrigido: tabela atualizada
         .select('*')
         .in('escopo', ['animal', 'ambos'])
         .eq('ativo', true)
@@ -201,9 +201,9 @@ categorias_financeiras_2025_12_13_06_00(nome, icone, cor)
           .from('intervencoes')
           .select(`
             *,
-            clinicas_veterinarias(nome, tem_protocolo),
-            tipos_intervencoes(nome)
-          `)
+            clinicas_veterinarias!clinica_id(nome, tem_protocolo),
+            tipos_intervencoes!tipo_intervencao_id(nome)
+          `) // ✅ Corrigido: especificar FK explicitamente
           .eq('animal_id', id)
           .not('custo_final', 'is', null)
           .order('data_intervencao', { ascending: false });
@@ -339,13 +339,13 @@ console.log('Campos disponíveis:', intervencoesData?.[0] ? Object.keys(interven
       let error;
       if (editingMovimento) {
         const { error: updateError } = await supabase
-.from('movimentos_financeiros_2025_12_13_06_00')
+          .from('movimentos_financeiros_2025_12_29_07_00') // ✅ Corrigido: tabela atualizada
           .update(movimentoData)
           .eq('id', editingMovimento.id);
         error = updateError;
       } else {
         const { error: insertError } = await supabase
-.from('movimentos_financeiros_2025_12_13_06_00')
+          .from('movimentos_financeiros_2025_12_29_07_00') // ✅ Corrigido: tabela atualizada
           .insert([movimentoData]);
         error = insertError;
       }
@@ -386,7 +386,7 @@ console.log('Campos disponíveis:', intervencoesData?.[0] ? Object.keys(interven
 if (!confirm('Tem certeza que deseja excluir este movimento?')) return;
       
       const { error } = await supabase
-        .from('movimentos_financeiros_2025_12_13_06_00')
+        .from('movimentos_financeiros_2025_12_29_07_00') // ✅ Corrigido: tabela atualizada
         .delete()
         .eq('id', movimentoId);
 
