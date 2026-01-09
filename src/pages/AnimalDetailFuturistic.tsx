@@ -106,7 +106,7 @@ const AnimalDetailFuturistic = () => {
           .from('voluntarios')
           .select('nome')
           .eq('id', data.voluntario_responsavel)
-          .single();
+          .maybeSingle(); // ✅ Corrigido: usar maybeSingle() para evitar erro 406
         
         if (voluntarioData && !voluntarioError) {
           data.voluntario_responsavel_nome = voluntarioData.nome;
@@ -132,11 +132,13 @@ const AnimalDetailFuturistic = () => {
         .select('*')
         .eq('animal_id', id)
         .eq('ativo', true)
-        .single();
+        .maybeSingle(); // ✅ Corrigido: usar maybeSingle() para evitar erro 406
       
       if (localizacaoData && !localizacaoError) {
         // A localização já vem como texto na tabela localizacoes_animal
         setLocalizacaoAtual(localizacaoData);
+      } else if (localizacaoError) {
+        console.warn('Erro ao carregar localização:', localizacaoError);
       }
 
     } catch (error) {

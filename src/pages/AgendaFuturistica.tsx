@@ -216,23 +216,18 @@ const AgendaFuturistica = () => {
       const dataInicio = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1).toISOString().split('T')[0];
       const dataFim = proximoMes.toISOString().split('T')[0];
       
-      console.log('🔍 [AGENDA] Chamando RPC get_agenda_eventos_periodo com parâmetros:', {
-        data_inicio: dataInicio,
-        data_fim: dataFim,
-        categoria_filter: filtroTipo !== 'todos' ? filtroTipo : null,
-        tipo_filter: null,
-        animal_filter: null,
-        voluntario_filter: null
-      });
+      const rpcParams = {
+        p_data_inicio: dataInicio,
+        p_data_fim: dataFim,
+        p_categoria_filter: filtroTipo !== 'todos' ? filtroTipo : null,
+        p_tipo_filter: null,
+        p_animal_filter: null,
+        p_voluntario_filter: null
+      };
       
-      const { data, error } = await supabase.rpc('get_agenda_eventos_periodo', {
-        data_inicio: dataInicio,
-        data_fim: dataFim,
-        categoria_filter: filtroTipo !== 'todos' ? filtroTipo : null,
-        tipo_filter: null,
-        animal_filter: null,
-        voluntario_filter: null
-      });
+      console.log('🔍 [AGENDA] Chamando RPC get_agenda_eventos_periodo com parâmetros:', JSON.stringify(rpcParams, null, 2));
+      
+      const { data, error } = await supabase.rpc('get_agenda_eventos_periodo', rpcParams);
 
       if (error) {
         console.error('❌ [AGENDA] Erro detalhado do Supabase:', {
