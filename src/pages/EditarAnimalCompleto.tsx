@@ -1063,7 +1063,7 @@ const EditarAnimalCompleto = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Carregando dados do animal...</p>
         </div>
       </div>
@@ -1416,9 +1416,9 @@ const EditarAnimalCompleto = () => {
                   <TabsContent value="admissao" className="space-y-6 mt-6">
                     
                     {/* Cabeçalho da Ficha */}
-                    <div className="bg-gradient-to-r from-blue-50 to-green-50 p-4 rounded-lg border border-blue-200">
+                    <div className="bg-gradient-to-r from-emerald-50 to-teal-50 p-4 rounded-lg border border-emerald-200">
                       <div className="flex items-center gap-3">
-                        <Clipboard className="h-6 w-6 text-blue-600" />
+                        <Clipboard className="h-6 w-6 text-emerald-600" />
                         <div>
                           <h3 className="text-lg font-semibold text-gray-800">
                             Ficha de Admissão / Condição à Entrada
@@ -1434,7 +1434,7 @@ const EditarAnimalCompleto = () => {
                     <Card>
                       <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-base">
-                          <FileText className="h-5 w-5 text-blue-600" />
+                          <FileText className="h-5 w-5 text-emerald-600" />
                           Circunstâncias da Admissão
                         </CardTitle>
                       </CardHeader>
@@ -1495,8 +1495,8 @@ const EditarAnimalCompleto = () => {
 
                         {/* CAMPOS CONDICIONAIS BASEADOS NA ORIGEM */}
                         {admissaoData.intake_origin && (
-                          <div className="mt-6 p-4 bg-gradient-to-r from-amber-50 to-yellow-50 rounded-lg border border-amber-200">
-                            <h4 className="font-semibold text-amber-800 mb-3 flex items-center gap-2">
+                          <div className="mt-6 p-4 bg-gradient-to-r from-teal-50 to-emerald-50 rounded-lg border border-teal-200">
+                            <h4 className="font-semibold text-teal-800 mb-3 flex items-center gap-2">
                               📝 Informações Específicas - {intakeOptions.intake_origin?.find(o => o.code === admissaoData.intake_origin)?.name}
                             </h4>
                             
@@ -1691,7 +1691,7 @@ const EditarAnimalCompleto = () => {
                     <Card>
                       <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-base">
-                          <Stethoscope className="h-5 w-5 text-green-600" />
+                          <Stethoscope className="h-5 w-5 text-emerald-600" />
                           Triagem Imediata
                         </CardTitle>
                       </CardHeader>
@@ -1800,7 +1800,7 @@ const EditarAnimalCompleto = () => {
                     <Card>
                       <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-base">
-                          <Activity className="h-5 w-5 text-orange-600" />
+                          <Activity className="h-5 w-5 text-teal-600" />
                           Sinais e Sintomas Observados
                         </CardTitle>
                         <CardDescription>
@@ -1834,7 +1834,7 @@ const EditarAnimalCompleto = () => {
                     <Card>
                       <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-base">
-                          <Heart className="h-5 w-5 text-red-600" />
+                          <Heart className="h-5 w-5 text-emerald-600" />
                           Ações Imediatas Realizadas
                         </CardTitle>
                         <CardDescription>
@@ -1879,7 +1879,7 @@ const EditarAnimalCompleto = () => {
                     <Card>
                       <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-base">
-                          <FileText className="h-5 w-5 text-purple-600" />
+                          <FileText className="h-5 w-5 text-green-600" />
                           Observações Clínicas
                         </CardTitle>
                       </CardHeader>
@@ -2061,7 +2061,7 @@ const EditarAnimalCompleto = () => {
                     <Button
                       type="submit"
                       disabled={loading}
-                      className="bg-green-600 hover:bg-green-700"
+                      className="bg-emerald-600 hover:bg-emerald-700"
                     >
                       {loading ? (
                         <>
@@ -2087,10 +2087,10 @@ const EditarAnimalCompleto = () => {
               <div className="sticky top-8 space-y-6">
                 
                 {/* Resumo do Animal */}
-                <Card className="bg-gradient-to-br from-blue-50 to-purple-50 border-blue-200">
+                <Card className="bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-200">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg flex items-center gap-2">
-                      <Edit className="h-5 w-5 text-blue-600" />
+                      <Edit className="h-5 w-5 text-emerald-600" />
                       Resumo
                     </CardTitle>
                   </CardHeader>
@@ -2163,7 +2163,7 @@ const EditarAnimalCompleto = () => {
 
                     {/* Status do Rascunho */}
                     {draftSaved && (
-                      <div className="flex items-center space-x-2 text-green-600 bg-green-50 p-2 rounded-lg">
+                      <div className="flex items-center space-x-2 text-emerald-600 bg-emerald-50 p-2 rounded-lg">
                         <CheckCircle className="h-4 w-4" />
                         <span className="text-sm font-medium">Rascunho salvo</span>
                       </div>
@@ -2182,7 +2182,7 @@ const EditarAnimalCompleto = () => {
                     <div className="flex items-center space-x-3">
                       <div className={`w-3 h-3 rounded-full ${
                         formData.nome && formData.especie && formData.sexo ? 
-                        'bg-green-500' : 'bg-gray-300'
+                        'bg-emerald-500' : 'bg-gray-300'
                       }`}></div>
                       <span className="text-sm">Informações Básicas</span>
                     </div>
@@ -2191,7 +2191,7 @@ const EditarAnimalCompleto = () => {
                     <div className="flex items-center space-x-3">
                       <div className={`w-3 h-3 rounded-full ${
                         formData.voluntario_responsavel && formData.data_entrada ? 
-                        'bg-green-500' : 'bg-gray-300'
+                        'bg-emerald-500' : 'bg-gray-300'
                       }`}></div>
                       <span className="text-sm">Informações Adicionais</span>
                     </div>
@@ -2200,7 +2200,7 @@ const EditarAnimalCompleto = () => {
                     <div className="flex items-center space-x-3">
                       <div className={`w-3 h-3 rounded-full ${
                         admissaoData.intake_origin || admissaoData.general_condition ? 
-                        'bg-blue-500' : 'bg-gray-300'
+                        'bg-teal-500' : 'bg-gray-300'
                       }`}></div>
                       <span className="text-sm">Ficha de Admissão</span>
                     </div>
@@ -2208,7 +2208,7 @@ const EditarAnimalCompleto = () => {
                     {/* Aba Anexos */}
                     <div className="flex items-center space-x-3">
                       <div className={`w-3 h-3 rounded-full ${
-                        formData.url_fotografia ? 'bg-purple-500' : 'bg-gray-300'
+                        formData.url_fotografia ? 'bg-green-500' : 'bg-gray-300'
                       }`}></div>
                       <span className="text-sm">Anexos</span>
                     </div>
@@ -2216,11 +2216,11 @@ const EditarAnimalCompleto = () => {
                 </Card>
 
                 {/* Dicas Rápidas */}
-                <Card className="bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200">
+                <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-lg text-amber-800">💡 Dicas</CardTitle>
+                    <CardTitle className="text-lg text-green-800">💡 Dicas</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-2 text-sm text-amber-700">
+                  <CardContent className="space-y-2 text-sm text-green-700">
                     <p>• Campos com * são obrigatórios</p>
                     <p>• Alterações são salvas automaticamente</p>
                     <p>• A ficha de admissão pode ser editada</p>
