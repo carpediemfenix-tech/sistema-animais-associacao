@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Save, AlertCircle, AlertTriangle, PawPrint, Archive, User, FileText, Clipboard, Paperclip } from "lucide-react";
+import { ArrowLeft, Save, AlertCircle, AlertTriangle, PawPrint, Archive, User, FileText, Clipboard, Paperclip, Weight, Thermometer } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import VoluntarioSelector from "@/components/VoluntarioSelector";
@@ -1416,6 +1416,51 @@ const EditarAnimal = () => {
                     </div>
                   </div>
 
+                  {/* Medições Físicas */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-purple-800 flex items-center">
+                      <span className="mr-2">📏</span>
+                      Medições Físicas
+                    </h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Peso na Admissão */}
+                      <div className="space-y-2">
+                        <Label className="text-gray-700 font-semibold text-sm uppercase tracking-wide flex items-center gap-2">
+                          <Weight className="h-4 w-4" />
+                          Peso na Admissão (kg)
+                        </Label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          value={admissaoData.weight_kg}
+                          onChange={(e) => handleAdmissaoChange("weight_kg", e.target.value)}
+                          placeholder="Ex: 15.5"
+                          className="h-12 text-lg font-medium border-2 border-gray-300 hover:border-purple-400 focus:border-purple-500 transition-all duration-200"
+                        />
+                      </div>
+
+                      {/* Temperatura */}
+                      <div className="space-y-2">
+                        <Label className="text-gray-700 font-semibold text-sm uppercase tracking-wide flex items-center gap-2">
+                          <Thermometer className="h-4 w-4" />
+                          Temperatura (°C)
+                        </Label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          min="30"
+                          max="45"
+                          value={admissaoData.temperature_celsius}
+                          onChange={(e) => handleAdmissaoChange("temperature_celsius", e.target.value)}
+                          placeholder="Ex: 38.5"
+                          className="h-12 text-lg font-medium border-2 border-gray-300 hover:border-purple-400 focus:border-purple-500 transition-all duration-200"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Observações Clínicas */}
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold text-purple-800 flex items-center">
@@ -1523,6 +1568,60 @@ const EditarAnimal = () => {
                           className="text-lg font-medium border-2 border-gray-300 hover:border-purple-400 focus:border-purple-500 transition-all duration-200 resize-none"
                         />
                       </div>
+                    </div>
+                  </div>
+
+                  {/* Resumo da Ficha de Admissão */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-purple-800 flex items-center">
+                      <span className="mr-2">📋</span>
+                      Resumo da Ficha de Admissão
+                    </h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Prognóstico */}
+                      <div className="space-y-2">
+                        <Label className="text-gray-700 font-semibold text-sm uppercase tracking-wide">Prognóstico</Label>
+                        <Select 
+                          value={admissaoData.prognosis} 
+                          onValueChange={(value) => handleAdmissaoChange("prognosis", value)}
+                        >
+                          <SelectTrigger className="h-12 text-lg border-2 border-gray-300 hover:border-purple-400 focus:border-purple-500">
+                            <SelectValue placeholder="Prognóstico médico" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {(intakeOptions.prognosis || []).map((option) => (
+                              <SelectItem key={option.code} value={option.code} className="text-lg">
+                                {option.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Plano de Tratamento */}
+                      <div className="space-y-2">
+                        <Label className="text-gray-700 font-semibold text-sm uppercase tracking-wide">Plano de Tratamento</Label>
+                        <Textarea
+                          value={admissaoData.treatment_plan}
+                          onChange={(e) => handleAdmissaoChange("treatment_plan", e.target.value)}
+                          placeholder="Plano de tratamento recomendado..."
+                          rows={3}
+                          className="text-lg font-medium border-2 border-gray-300 hover:border-purple-400 focus:border-purple-500 transition-all duration-200 resize-none"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Necessidades Especiais */}
+                    <div className="space-y-2">
+                      <Label className="text-gray-700 font-semibold text-sm uppercase tracking-wide">Necessidades Especiais</Label>
+                      <Textarea
+                        value={admissaoData.special_needs}
+                        onChange={(e) => handleAdmissaoChange("special_needs", e.target.value)}
+                        placeholder="Cuidados especiais necessários..."
+                        rows={3}
+                        className="text-lg font-medium border-2 border-gray-300 hover:border-purple-400 focus:border-purple-500 transition-all duration-200 resize-none"
+                      />
                     </div>
                   </div>
                 </CardContent>
