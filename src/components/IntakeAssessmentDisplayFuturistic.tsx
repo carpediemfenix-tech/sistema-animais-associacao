@@ -76,14 +76,24 @@ const IntakeAssessmentDisplay: React.FC<IntakeAssessmentDisplayProps> = ({
         const assessmentData = data[0];
         console.log('✅ [INTAKE_DISPLAY] Primeira ficha encontrada:', assessmentData);
         
-        // Converter JSONB para arrays com verificação robusta
-        assessmentData.symptoms = Array.isArray(assessmentData.symptoms) 
-          ? assessmentData.symptoms 
-          : (assessmentData.symptoms ? [assessmentData.symptoms] : []);
+        // Converter JSONB para arrays com parse correto
+        const parseJsonField = (field: any) => {
+          if (Array.isArray(field)) {
+            return field;
+          }
+          if (typeof field === 'string') {
+            try {
+              const parsed = JSON.parse(field);
+              return Array.isArray(parsed) ? parsed : [parsed];
+            } catch {
+              return [field];
+            }
+          }
+          return field ? [field] : [];
+        };
         
-        assessmentData.immediate_actions = Array.isArray(assessmentData.immediate_actions) 
-          ? assessmentData.immediate_actions 
-          : (assessmentData.immediate_actions ? [assessmentData.immediate_actions] : []);
+        assessmentData.symptoms = parseJsonField(assessmentData.symptoms);
+        assessmentData.immediate_actions = parseJsonField(assessmentData.immediate_actions);
         
         console.log('🔍 [INTAKE_DISPLAY] Symptoms processados:', assessmentData.symptoms);
         console.log('🔍 [INTAKE_DISPLAY] Immediate actions processadas:', assessmentData.immediate_actions);
@@ -131,7 +141,144 @@ const IntakeAssessmentDisplay: React.FC<IntakeAssessmentDisplayProps> = ({
   const getOptionName = (domain: string, code: string): string => {
     const options = intakeOptions[domain] || [];
     const option = options.find(opt => opt.code === code);
-    return option?.name || code;
+    
+    if (option?.name) {
+      return option.name;
+    }
+    
+    // Fallback local para opções básicas
+    const fallbackOptions: Record<string, Record<string, string>> = {
+      intake_origin: {
+        'owner_surrender': 'Entrega pelo proprietário',
+        'stray_found': 'Encontrado na rua',
+        'rescue_operation': 'Operação de resgate',
+        'transfer': 'Transferência',
+        'birth': 'Nascimento'
+      },
+      general_condition: {
+        'excellent': 'Excelente',
+        'good': 'Bom',
+        'fair': 'Razoável',
+        'poor': 'Mau',
+        'critical': 'Crítico'
+      },
+      behavior: {
+        'friendly': 'Amigável',
+        'shy': 'Tímido',
+        'fearful': 'Medroso',
+        'aggressive': 'Agressivo',
+        'lethargic': 'Letárgico'
+      },
+      symptoms: {
+        'lethargy': 'Letargia',
+        'weakness': 'Fraqueza',
+        'dehydration': 'Desidratação',
+        'fever': 'Febre',
+        'hypothermia': 'Hipotermia',
+        'pale_mucous': 'Mucosas pálidas',
+        'jaundice': 'Icterícia',
+        'shock': 'Estado de choque',
+        'coughing': 'Tosse',
+        'dyspnea': 'Dispneia',
+        'nasal_discharge': 'Corrimento nasal',
+        'sneezing': 'Espirros',
+        'open_mouth_breathing': 'Respiração ofegante',
+        'wheezing': 'Sibilos',
+        'cyanosis': 'Cianose',
+        'vomiting': 'Vómito',
+        'diarrhea': 'Diarreia',
+        'constipation': 'Obstipação',
+        'blood_stool': 'Sangue nas fezes',
+        'blood_vomit': 'Vómito com sangue',
+        'loss_appetite': 'Perda de apetite',
+        'excessive_salivation': 'Salivação excessiva',
+        'abdominal_distension': 'Distensão abdominal',
+        'seizures': 'Convulsões',
+        'ataxia': 'Ataxia',
+        'head_tilt': 'Inclinação da cabeça',
+        'blindness': 'Cegueira',
+        'altered_consciousness': 'Alteração da consciência',
+        'tremors': 'Tremores',
+        'circling': 'Movimento circular',
+        'limping': 'Coxear',
+        'paralysis': 'Paralisia',
+        'joint_swelling': 'Inchaço articular',
+        'muscle_atrophy': 'Atrofia muscular',
+        'fractures': 'Fraturas',
+        'luxations': 'Luxações',
+        'wounds': 'Feridas',
+        'skin_lesions': 'Lesões cutâneas',
+        'hair_loss': 'Perda de pelo',
+        'itching': 'Prurido',
+        'skin_infections': 'Infecções cutâneas',
+        'burns': 'Queimaduras',
+        'abscesses': 'Abcessos',
+        'parasites': 'Parasitas externos',
+        'internal_parasites': 'Parasitas internos',
+        'mange': 'Sarna',
+        'aggression': 'Agressividade',
+        'excessive_fear': 'Medo excessivo',
+        'disorientation': 'Desorientação',
+        'excessive_vocalization': 'Vocalização excessiva',
+        'depression': 'Depressão',
+        'hyperactivity': 'Hiperatividade',
+        'eye_discharge': 'Corrimento ocular',
+        'eye_redness': 'Vermelhidão ocular',
+        'eye_swelling': 'Inchaço ocular',
+        'corneal_opacity': 'Opacidade corneal',
+        'ear_discharge': 'Corrimento auricular',
+        'ear_odor': 'Odor auricular',
+        'head_shaking': 'Balançar a cabeça',
+        'urinary_retention': 'Retenção urinária',
+        'blood_urine': 'Sangue na urina',
+        'frequent_urination': 'Micção frequente'
+      },
+      immediate_actions: {
+        'first_aid': 'Primeiros socorros',
+        'veterinary_exam': 'Exame veterinário',
+        'vital_signs': 'Avaliação de sinais vitais',
+        'physical_restraint': 'Contenção física',
+        'sedation': 'Sedação',
+        'muzzle_application': 'Aplicação de açaime',
+        'isolation': 'Isolamento',
+        'oxygen_therapy': 'Oxigenoterapia',
+        'airway_clearance': 'Desobstrução das vias aéreas',
+        'intubation': 'Entubação',
+        'hemorrhage_control': 'Controlo de hemorragias',
+        'pressure_bandage': 'Penso compressivo',
+        'tourniquet': 'Garrote',
+        'fracture_stabilization': 'Estabilização de fraturas',
+        'splinting': 'Aplicação de tala',
+        'bandaging': 'Enfaixamento',
+        'wound_cleaning': 'Limpeza de feridas',
+        'wound_suturing': 'Sutura de feridas',
+        'burn_treatment': 'Tratamento de queimaduras',
+        'antiseptic_application': 'Aplicação de antisséptico',
+        'pain_relief': 'Alívio da dor',
+        'antibiotic_administration': 'Administração de antibióticos',
+        'anti_inflammatory': 'Anti-inflamatórios',
+        'emergency_drugs': 'Fármacos de emergência',
+        'fluid_therapy': 'Fluidoterapia',
+        'cardiac_massage': 'Massagem cardíaca',
+        'shock_treatment': 'Tratamento de choque',
+        'seizure_control': 'Controlo de convulsões',
+        'head_trauma_care': 'Cuidados de trauma craniano',
+        'decontamination': 'Descontaminação',
+        'eye_irrigation': 'Irrigação ocular',
+        'gastric_lavage': 'Lavagem gástrica',
+        'parasite_treatment': 'Tratamento de parasitas',
+        'flea_treatment': 'Tratamento de pulgas',
+        'tick_removal': 'Remoção de carrapatos',
+        'temperature_regulation': 'Regulação da temperatura',
+        'nutritional_support': 'Suporte nutricional',
+        'hydration': 'Hidratação',
+        'photo_documentation': 'Documentação fotográfica',
+        'emergency_contact': 'Contacto de emergência',
+        'owner_notification': 'Notificação do proprietário'
+      }
+    };
+    
+    return fallbackOptions[domain]?.[code] || code;
   };
 
   const formatDate = (dateString: string) => {
