@@ -68,7 +68,29 @@ const NovoAnimal = () => {
     prognosis: "",
     treatment_plan: "",
     special_needs: "",
-    injuries: [] as any[]
+    injuries: [] as any[],
+    // Campos condicionais para entrega pelo proprietário
+    owner_name: "",
+    owner_contact: "",
+    owner_address: "",
+    surrender_reason: "",
+    // Campos condicionais para encontrado na rua
+    found_location: "",
+    finder_name: "",
+    found_conditions: "",
+    // Campos condicionais para resgate
+    rescue_type: "",
+    authorities_involved: "",
+    rescue_circumstances: "",
+    // Campos condicionais para transferência
+    origin_institution: "",
+    origin_contact: "",
+    transfer_documents: "",
+    transfer_reason: "",
+    // Campos condicionais para nascimento
+    mother_id: "",
+    litter_size: "",
+    birth_conditions: ""
   });
 
   // Auto-save draft quando muda de aba
@@ -285,9 +307,28 @@ const NovoAnimal = () => {
   const fetchIntakeOptions = async () => {
     try {
       const { data, error } = await supabase
-        .rpc('get_intake_config_options');
+        .rpc('get_expanded_intake_options');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao carregar opções expandidas:', error);
+        // Fallback para função antiga se existir
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .rpc('get_intake_config_options');
+        
+        if (fallbackError) throw fallbackError;
+        
+        // Organizar por domínio
+        const optionsByDomain: Record<string, any[]> = {};
+        (fallbackData || []).forEach((option: any) => {
+          if (!optionsByDomain[option.domain]) {
+            optionsByDomain[option.domain] = [];
+          }
+          optionsByDomain[option.domain].push(option);
+        });
+        
+        setIntakeOptions(optionsByDomain);
+        return;
+      }
       
       // Organizar por domínio
       const optionsByDomain: Record<string, any[]> = {};
@@ -301,6 +342,53 @@ const NovoAnimal = () => {
       setIntakeOptions(optionsByDomain);
     } catch (error: any) {
       console.error('Erro ao carregar opções de admissão:', error);
+    }
+  };
+
+  // Função para obter opções condicionais baseadas na origem e razão
+  const fetchConditionalOptions = async (origin: string, reason: string) => {
+    try {
+      const { data, error } = await supabase
+        .rpc('get_conditional_intake_options_2026', {
+          origin_code: origin || null,
+          reason_code: reason || null
+        });
+
+      if (error) {
+        console.error('Erro ao carregar opções condicionais:', error);
+        return;
+      }
+
+      // Organizar opções condicionais por domínio
+      const conditionalOptions: Record<string, any[]> = {};
+      (data || []).forEach((option: any) => {
+        if (option.is_relevant) {
+          if (!conditionalOptions[option.domain]) {
+            conditionalOptions[option.domain] = [];
+          }
+          conditionalOptions[option.domain].push(option);
+        }
+      });
+
+      // Mesclar com opções existentes, priorizando as condicionais
+      const mergedOptions = { ...intakeOptions };
+      Object.keys(conditionalOptions).forEach(domain => {
+        if (mergedOptions[domain]) {
+          // Adicionar opções condicionais no início
+          mergedOptions[domain] = [
+            ...conditionalOptions[domain],
+            ...mergedOptions[domain].filter(existing => 
+              !conditionalOptions[domain].some(conditional => conditional.code === existing.code)
+            )
+          ];
+        } else {
+          mergedOptions[domain] = conditionalOptions[domain];
+        }
+      });
+
+      setIntakeOptions(mergedOptions);
+    } catch (error: any) {
+      console.error('Erro ao processar opções condicionais:', error);
     }
   };
 
@@ -329,6 +417,17 @@ const NovoAnimal = () => {
 
   const handleAdmissaoChange = (field: string, value: string | string[]) => {
     setAdmissaoData(prev => ({ ...prev, [field]: value }));
+    
+    // Atualizar opções condicionais quando origem ou razão mudam
+    if (field === 'intake_origin' || field === 'intake_reason') {
+      const newData = { ...admissaoData, [field]: value };
+      if (newData.intake_origin || newData.intake_reason) {
+        fetchConditionalOptions(
+          newData.intake_origin as string, 
+          newData.intake_reason as string
+        );
+      }
+    }
   };
 
   const handleMultiSelectChange = (field: string, optionCode: string, checked: boolean) => {
@@ -996,6 +1095,198 @@ const NovoAnimal = () => {
                             rows={3}
                           />
                         </div>
+
+                        {/* CAMPOS CONDICIONAIS BASEADOS NA ORIGEM */}
+                        {admissaoData.intake_origin && (
+                          <div className="mt-6 p-4 bg-gradient-to-r from-amber-50 to-yellow-50 rounded-lg border border-amber-200">
+                            <h4 className="font-semibold text-amber-800 mb-3 flex items-center gap-2">
+                              📝 Informações Específicas - {intakeOptions.intake_origin?.find(o => o.code === admissaoData.intake_origin)?.name}
+                            </h4>
+                            
+                            {/* Campos para Entrega pelo Proprietário */}
+                            {admissaoData.intake_origin.includes('owner_surrender') && (
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <Label>Nome do Proprietário</Label>
+                                  <Input
+                                    value={admissaoData.owner_name || ''}
+                                    onChange={(e) => handleAdmissaoChange("owner_name", e.target.value)}
+                                    placeholder="Nome completo do proprietário"
+                                  />
+                                </div>
+                                <div>
+                                  <Label>Contacto do Proprietário</Label>
+                                  <Input
+                                    value={admissaoData.owner_contact || ''}
+                                    onChange={(e) => handleAdmissaoChange("owner_contact", e.target.value)}
+                                    placeholder="Telefone ou email"
+                                  />
+                                </div>
+                                <div className="md:col-span-2">
+                                  <Label>Morada do Proprietário</Label>
+                                  <Input
+                                    value={admissaoData.owner_address || ''}
+                                    onChange={(e) => handleAdmissaoChange("owner_address", e.target.value)}
+                                    placeholder="Morada completa"
+                                  />
+                                </div>
+                                <div className="md:col-span-2">
+                                  <Label>Motivo da Entrega</Label>
+                                  <Textarea
+                                    value={admissaoData.surrender_reason || ''}
+                                    onChange={(e) => handleAdmissaoChange("surrender_reason", e.target.value)}
+                                    placeholder="Explique o motivo da entrega do animal..."
+                                    rows={2}
+                                  />
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Campos para Encontrado na Rua */}
+                            {admissaoData.intake_origin.includes('stray') && (
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <Label>Local Exato do Encontro</Label>
+                                  <Input
+                                    value={admissaoData.found_location || ''}
+                                    onChange={(e) => handleAdmissaoChange("found_location", e.target.value)}
+                                    placeholder="Rua, número, freguesia, concelho"
+                                  />
+                                </div>
+                                <div>
+                                  <Label>Pessoa que Encontrou</Label>
+                                  <Input
+                                    value={admissaoData.finder_name || ''}
+                                    onChange={(e) => handleAdmissaoChange("finder_name", e.target.value)}
+                                    placeholder="Nome e contacto de quem encontrou"
+                                  />
+                                </div>
+                                <div className="md:col-span-2">
+                                  <Label>Condições do Encontro</Label>
+                                  <Textarea
+                                    value={admissaoData.found_conditions || ''}
+                                    onChange={(e) => handleAdmissaoChange("found_conditions", e.target.value)}
+                                    placeholder="Descreva as condições em que o animal foi encontrado..."
+                                    rows={2}
+                                  />
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Campos para Resgate */}
+                            {admissaoData.intake_origin.includes('rescue') && (
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <Label>Tipo de Resgate</Label>
+                                  <Select 
+                                    value={admissaoData.rescue_type || ''} 
+                                    onValueChange={(value) => handleAdmissaoChange("rescue_type", value)}
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Selecionar tipo" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="emergency">Emergência</SelectItem>
+                                      <SelectItem value="planned">Planeado</SelectItem>
+                                      <SelectItem value="seizure">Apreensão</SelectItem>
+                                      <SelectItem value="voluntary">Voluntário</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div>
+                                  <Label>Autoridades Envolvidas</Label>
+                                  <Input
+                                    value={admissaoData.authorities_involved || ''}
+                                    onChange={(e) => handleAdmissaoChange("authorities_involved", e.target.value)}
+                                    placeholder="PSP, GNR, SEPNA, etc."
+                                  />
+                                </div>
+                                <div className="md:col-span-2">
+                                  <Label>Circunstâncias do Resgate</Label>
+                                  <Textarea
+                                    value={admissaoData.rescue_circumstances || ''}
+                                    onChange={(e) => handleAdmissaoChange("rescue_circumstances", e.target.value)}
+                                    placeholder="Descreva as circunstâncias detalhadas do resgate..."
+                                    rows={3}
+                                  />
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Campos para Transferência */}
+                            {admissaoData.intake_origin.includes('transfer') && (
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <Label>Instituição de Origem</Label>
+                                  <Input
+                                    value={admissaoData.origin_institution || ''}
+                                    onChange={(e) => handleAdmissaoChange("origin_institution", e.target.value)}
+                                    placeholder="Nome da instituição de origem"
+                                  />
+                                </div>
+                                <div>
+                                  <Label>Contacto da Instituição</Label>
+                                  <Input
+                                    value={admissaoData.origin_contact || ''}
+                                    onChange={(e) => handleAdmissaoChange("origin_contact", e.target.value)}
+                                    placeholder="Telefone ou email"
+                                  />
+                                </div>
+                                <div className="md:col-span-2">
+                                  <Label>Documentos de Transferência</Label>
+                                  <Textarea
+                                    value={admissaoData.transfer_documents || ''}
+                                    onChange={(e) => handleAdmissaoChange("transfer_documents", e.target.value)}
+                                    placeholder="Liste os documentos recebidos (boletim sanitário, historial médico, etc.)"
+                                    rows={2}
+                                  />
+                                </div>
+                                <div className="md:col-span-2">
+                                  <Label>Motivo da Transferência</Label>
+                                  <Textarea
+                                    value={admissaoData.transfer_reason || ''}
+                                    onChange={(e) => handleAdmissaoChange("transfer_reason", e.target.value)}
+                                    placeholder="Explique o motivo da transferência..."
+                                    rows={2}
+                                  />
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Campos para Nascimento */}
+                            {admissaoData.intake_origin.includes('birth') && (
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <Label>Mãe do Animal</Label>
+                                  <Input
+                                    value={admissaoData.mother_id || ''}
+                                    onChange={(e) => handleAdmissaoChange("mother_id", e.target.value)}
+                                    placeholder="ID ou nome da mãe"
+                                  />
+                                </div>
+                                <div>
+                                  <Label>Tamanho da Ninhada</Label>
+                                  <Input
+                                    type="number"
+                                    min="1"
+                                    value={admissaoData.litter_size || ''}
+                                    onChange={(e) => handleAdmissaoChange("litter_size", e.target.value)}
+                                    placeholder="Número total de crias"
+                                  />
+                                </div>
+                                <div className="md:col-span-2">
+                                  <Label>Condições do Nascimento</Label>
+                                  <Textarea
+                                    value={admissaoData.birth_conditions || ''}
+                                    onChange={(e) => handleAdmissaoChange("birth_conditions", e.target.value)}
+                                    placeholder="Descreva as condições do nascimento e estado da mãe..."
+                                    rows={2}
+                                  />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
 
