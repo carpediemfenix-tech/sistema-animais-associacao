@@ -1012,7 +1012,78 @@ const EditarAnimalCompleto = () => {
             throw new Error(`animal_id inválido: ${id} (tipo: ${typeof id})`);
           }
           
-          const payload = { ...intakeAssessmentData, animal_id: id };
+          // Filtrar payload para incluir APENAS campos que existem na tabela
+          const validFields = [
+            'animal_id', 'assessment_date', 'assessed_by', 'intake_origin', 'intake_reason',
+            'general_condition', 'behavior_entry', 'body_condition', 'symptoms', 'immediate_actions',
+            'clinical_observations', 'intake_summary', 'weight_kg', 'temperature_celsius',
+            // Campos condicionais por origem
+            'authorities_involved', 'rescue_type', 'rescue_circumstances',
+            'owner_name', 'owner_contact', 'owner_address', 'surrender_reason',
+            'found_location', 'finder_name', 'found_conditions',
+            'origin_institution', 'origin_contact', 'transfer_documents', 'transfer_reason',
+            'mother_id', 'litter_size', 'birth_conditions',
+            // Campos de exame físico
+            'physical_exam_notes', 'physical_cardiovascular', 'physical_respiratory',
+            'physical_neurological', 'physical_gastrointestinal', 'physical_musculoskeletal', 'physical_integumentary',
+            // Campos comportamentais
+            'behavioral_notes', 'behavioral_general_temperament', 'behavioral_human_socialization',
+            'behavioral_animal_socialization', 'behavioral_stimulus_reactions',
+            // Campos de plano de cuidados
+            'treatment_plan', 'care_immediate', 'care_medium_term', 'care_long_term', 'care_plan_notes',
+            'special_needs', 'immediate_actions_notes'
+          ];
+          
+          const rawPayload = { ...intakeAssessmentData, animal_id: id };
+          const payload = {};
+          
+          // Filtrar apenas campos válidos
+          validFields.forEach(field => {
+            if (rawPayload.hasOwnProperty(field)) {
+              payload[field] = rawPayload[field];
+            }
+          });
+          
+          console.log('📝 [INTAKE_SAVE] Payload filtrado:', Object.keys(payload).length, 'campos');
+          console.log('📝 [INTAKE_SAVE] Campos:', Object.keys(payload));
+          
+          // Validar e corrigir tipos críticos
+          if (payload.animal_id && typeof payload.animal_id !== 'string') {
+            payload.animal_id = String(payload.animal_id);
+          }
+          
+          // Garantir que arrays JSON sejam strings JSON válidas
+          const jsonFields = ['symptoms', 'immediate_actions', 'physical_cardiovascular', 'physical_respiratory',
+                             'physical_neurological', 'physical_gastrointestinal', 'physical_musculoskeletal', 
+                             'physical_integumentary', 'behavioral_general_temperament', 'behavioral_human_socialization',
+                             'behavioral_animal_socialization', 'behavioral_stimulus_reactions', 'care_immediate', 
+                             'care_medium_term', 'care_long_term'];
+          
+          jsonFields.forEach(field => {
+            if (payload[field]) {
+              if (Array.isArray(payload[field])) {
+                payload[field] = JSON.stringify(payload[field]);
+              } else if (typeof payload[field] !== 'string') {
+                payload[field] = JSON.stringify(payload[field]);
+              }
+            }
+          });
+          
+          // Garantir que campos numéricos sejam números
+          if (payload.weight_kg && typeof payload.weight_kg === 'string') {
+            const weight = parseFloat(payload.weight_kg);
+            payload.weight_kg = isNaN(weight) ? null : weight;
+          }
+          
+          if (payload.temperature_celsius && typeof payload.temperature_celsius === 'string') {
+            const temp = parseFloat(payload.temperature_celsius);
+            payload.temperature_celsius = isNaN(temp) ? null : temp;
+          }
+          
+          // Garantir que assessment_date seja uma data válida
+          if (!payload.assessment_date) {
+            payload.assessment_date = new Date().toISOString();
+          }
           
           const { data: savedIntake, error: intakeUpsertError } = await supabase
             .from('animal_intake_assessments')
@@ -1021,7 +1092,12 @@ const EditarAnimalCompleto = () => {
             .single();
 
           if (intakeUpsertError) {
-            console.error('❌ [INTAKE_SAVE] Erro no upsert:', intakeUpsertError);
+            console.error('❌ [INTAKE_SAVE] Erro detalhado:');
+            console.error('Code:', intakeUpsertError.code);
+            console.error('Message:', intakeUpsertError.message);
+            console.error('Details:', intakeUpsertError.details);
+            console.error('Hint:', intakeUpsertError.hint);
+            console.error('Payload enviado:', payload);
             throw intakeUpsertError;
           }
           
