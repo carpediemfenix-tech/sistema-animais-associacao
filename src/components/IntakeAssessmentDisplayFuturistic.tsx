@@ -76,9 +76,17 @@ const IntakeAssessmentDisplay: React.FC<IntakeAssessmentDisplayProps> = ({
         const assessmentData = data[0];
         console.log('✅ [INTAKE_DISPLAY] Primeira ficha encontrada:', assessmentData);
         
-        // Converter JSONB para arrays
-        assessmentData.symptoms = assessmentData.symptoms || [];
-        assessmentData.immediate_actions = assessmentData.immediate_actions || [];
+        // Converter JSONB para arrays com verificação robusta
+        assessmentData.symptoms = Array.isArray(assessmentData.symptoms) 
+          ? assessmentData.symptoms 
+          : (assessmentData.symptoms ? [assessmentData.symptoms] : []);
+        
+        assessmentData.immediate_actions = Array.isArray(assessmentData.immediate_actions) 
+          ? assessmentData.immediate_actions 
+          : (assessmentData.immediate_actions ? [assessmentData.immediate_actions] : []);
+        
+        console.log('🔍 [INTAKE_DISPLAY] Symptoms processados:', assessmentData.symptoms);
+        console.log('🔍 [INTAKE_DISPLAY] Immediate actions processadas:', assessmentData.immediate_actions);
         
         setAssessment(assessmentData);
         console.log('✅ [INTAKE_DISPLAY] Assessment definido no estado');
@@ -426,7 +434,7 @@ const IntakeAssessmentDisplay: React.FC<IntakeAssessmentDisplayProps> = ({
               </div>
               
               <div className="flex flex-wrap gap-2">
-                {assessment.symptoms.map((symptom: string, index: number) => (
+                {(Array.isArray(assessment.symptoms) ? assessment.symptoms : []).map((symptom: string, index: number) => (
                   <Badge 
                     key={index}
                     className="bg-red-500/20 text-red-300 border border-red-400/30 px-3 py-1"
@@ -451,7 +459,7 @@ const IntakeAssessmentDisplay: React.FC<IntakeAssessmentDisplayProps> = ({
               </div>
               
               <div className="flex flex-wrap gap-2">
-                {assessment.immediate_actions.map((action: string, index: number) => (
+                {(Array.isArray(assessment.immediate_actions) ? assessment.immediate_actions : []).map((action: string, index: number) => (
                   <Badge 
                     key={index}
                     className="bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 px-3 py-1"
