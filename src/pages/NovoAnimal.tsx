@@ -42,7 +42,10 @@ const NovoAnimal = () => {
     url_fotografia: "",
     voluntario_responsavel: "",
     data_entrada: new Date().toISOString().split('T')[0],
-    estado: "" // 🆕 ADICIONADO: Campo estado do animal
+    estado: "", // 🆕 ADICIONADO: Campo estado do animal
+    data_adocao: "", // 🆕 ADICIONADO: Data de adoção
+    adotante_nome: "", // 🆕 ADICIONADO: Nome do adotante
+    adotante_contacto: "" // 🆕 ADICIONADO: Contacto do adotante
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -884,7 +887,10 @@ const NovoAnimal = () => {
         url_fotografia: formData.url_fotografia ? convertGoogleDriveUrl(formData.url_fotografia) : null,
         voluntario_responsavel: formData.voluntario_responsavel,
         data_entrada: formData.data_entrada,
-        estado: formData.estado // 🆕 CORRIGIDO: usar valor do formulário
+        estado: formData.estado, // 🆕 CORRIGIDO: usar valor do formulário
+        data_adocao: formData.data_adocao || null, // 🆕 ADICIONADO: salvar data de adoção
+        adotante_nome: formData.adotante_nome || null, // 🆕 ADICIONADO: salvar nome do adotante
+        adotante_contacto: formData.adotante_contacto || null // 🆕 ADICIONADO: salvar contacto do adotante
       };
 
       const { data, error } = await supabase
@@ -1185,8 +1191,8 @@ const NovoAnimal = () => {
                             <SelectValue placeholder="Selecione o estado" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="disponivel">Disponível para Adoção</SelectItem>
-                            <SelectItem value="adotado">Adotado</SelectItem>
+                            <SelectItem value="Ativo">Ativo</SelectItem>
+                            <SelectItem value="Adotado">Adotado</SelectItem>
                             <SelectItem value="em_tratamento">Em Tratamento</SelectItem>
                             <SelectItem value="quarentena">Em Quarentena</SelectItem>
                             <SelectItem value="resgate">Em Resgate</SelectItem>
@@ -1202,6 +1208,51 @@ const NovoAnimal = () => {
                           </p>
                         )}
                       </div>
+
+                      {/* Campos de Adotante - Aparecem apenas quando Estado = "Adotado" */}
+                      {formData.estado === 'Adotado' && (
+                        <div className="col-span-full p-4 bg-green-50 rounded-lg border border-green-200">
+                          <h4 className="text-green-800 font-semibold mb-3 flex items-center">
+                            <span className="mr-2">🏡</span>
+                            Informações do Adotante
+                          </h4>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <Label htmlFor="data_adocao">Data de Adoção</Label>
+                              <Input
+                                id="data_adocao"
+                                type="date"
+                                value={formData.data_adocao}
+                                onChange={(e) => handleInputChange("data_adocao", e.target.value)}
+                                className="h-12"
+                              />
+                            </div>
+
+                            <div>
+                              <Label htmlFor="adotante_nome">Nome do Adotante</Label>
+                              <Input
+                                id="adotante_nome"
+                                value={formData.adotante_nome}
+                                onChange={(e) => handleInputChange("adotante_nome", e.target.value)}
+                                placeholder="Nome completo do adotante"
+                                className="h-12"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="mt-4">
+                            <Label htmlFor="adotante_contacto">Contacto do Adotante</Label>
+                            <Input
+                              id="adotante_contacto"
+                              value={formData.adotante_contacto}
+                              onChange={(e) => handleInputChange("adotante_contacto", e.target.value)}
+                              placeholder="Telefone ou email do adotante"
+                              className="h-12"
+                            />
+                          </div>
+                        </div>
+                      )}
 
                       {/* Idade Estimada */}
                       <div>
