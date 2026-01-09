@@ -291,10 +291,16 @@ const AnimalDetailFuturistic = () => {
               
               {hasPermission('admin') && (
                 <>
+                  <Link to={`/editar-animal-completo/${id}`}>
+                    <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 h-9">
+                      <Edit className="h-4 w-4 mr-2" />
+                      Editar Completo
+                    </Button>
+                  </Link>
                   <Link to={`/animal/${id}/editar`}>
                     <Button variant="outline" className="h-9">
-                      <Edit className="h-4 w-4 mr-2" />
-                      Editar
+                      <Settings className="h-4 w-4 mr-2" />
+                      Editar Rápido
                     </Button>
                   </Link>
                   <Link to={`/animal/${id}/historico-nomes`}>
@@ -424,10 +430,16 @@ const AnimalDetailFuturistic = () => {
               
               {hasPermission('admin') && (
                 <>
+                  <Link to={`/editar-animal-completo/${id}`}>
+                    <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 h-9 shadow-lg shadow-purple-500/25">
+                      <Edit className="h-4 w-4 mr-2" />
+                      Editar Completo
+                    </Button>
+                  </Link>
                   <Link to={`/animal/${id}/editar`}>
                     <Button variant="outline" className="h-9 border-purple-500/50 text-purple-400 hover:bg-purple-500/10">
-                      <Edit className="h-4 w-4 mr-2" />
-                      Editar
+                      <Settings className="h-4 w-4 mr-2" />
+                      Editar Rápido
                     </Button>
                   </Link>
                   <Link to={`/animal/${id}/historico-nomes`}>

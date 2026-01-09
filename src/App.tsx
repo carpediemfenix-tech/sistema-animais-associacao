@@ -21,6 +21,7 @@ import AnimalFinanceiro from "./pages/AnimalFinanceiro";
 import NovoAnimal from "./pages/NovoAnimal";
 import EditarAnimal from "./pages/EditarAnimal";
 import EditarAnimalFuturisticSimple from "./pages/EditarAnimalFuturisticSimple";
+import EditarAnimalCompleto from "./pages/EditarAnimalCompleto";
 import IntervencoesPage from "./pages/IntervencoesPage";
 import EventosPage from "./pages/EventosPage";
 import GestaoVoluntarios from "./pages/GestaoVoluntarios";
@@ -189,6 +190,7 @@ function App() {
               <Route path="/novo-animal" element={<ProtectedRoute><NovoAnimal /></ProtectedRoute>} />
               <Route path="/editar-animal/:id" element={<ProtectedRoute><EditarAnimalFuturisticSimple /></ProtectedRoute>} />
               <Route path="/editar-animal/:id/classic" element={<ProtectedRoute><EditarAnimal /></ProtectedRoute>} />
+              <Route path="/editar-animal-completo/:id" element={<ProtectedRoute><EditarAnimalCompleto /></ProtectedRoute>} />
               <Route path="/animais-arquivados" element={<ProtectedRoute><AnimaisArquivados /></ProtectedRoute>} />
               <Route path="/animais-adotados" element={<ProtectedRoute><AnimaisAdotados /></ProtectedRoute>} />
               
