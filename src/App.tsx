@@ -67,7 +67,7 @@ import DashboardPontos from "./pages/DashboardPontos";
 import MissoesArquivadas from "./pages/MissoesArquivadas";
 import EditarMissao from "./pages/EditarMissao";
 import ConfiguracaoEspecialidades from "./pages/ConfiguracaoEspecialidades";
-import ModuloAgenda from "./pages/ModuloAgenda";
+import AgendaFuturistica from "./pages/AgendaFuturistica";
 import ModuloEquipamentos from "./pages/ModuloEquipamentos";
 import ModuloClinicas from "./pages/ModuloClinicas";
 import EstatisticasAvancadas from "./pages/EstatisticasAvancadas";
@@ -277,7 +277,7 @@ function App() {
               <Route path="/modulo-clinicas" element={<ProtectedRoute><ModuloClinicas /></ProtectedRoute>} />
               
               {/* Módulo de Agenda */}
-              <Route path="/modulo-agenda" element={<ProtectedRoute><ModuloAgenda /></ProtectedRoute>} />
+              <Route path="/modulo-agenda" element={<ProtectedRoute><AgendaFuturistica /></ProtectedRoute>} />
               
               {/* Módulo Administrador */}
               <Route path="/modulo-administrador" element={<ProtectedRoute><ModuloAdministrador /></ProtectedRoute>} />
