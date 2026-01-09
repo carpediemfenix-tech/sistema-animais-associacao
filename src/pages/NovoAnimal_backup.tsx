@@ -1,0 +1,1 @@
+// Backup da função original antes das alterações
