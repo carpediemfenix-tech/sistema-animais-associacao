@@ -517,6 +517,7 @@ const AnimalAttachments: React.FC<AnimalAttachmentsProps> = ({
             </p>
             
             <Button 
+              type="button"
               onClick={openFileDialog}
               disabled={isUploading}
               className="bg-emerald-600 hover:bg-emerald-700"
@@ -602,6 +603,7 @@ const AnimalAttachments: React.FC<AnimalAttachmentsProps> = ({
                         <CheckCircle className="h-4 w-4 text-green-500" />
                         {anexo.url && (
                           <Button
+                            type="button"
                             size="sm"
                             variant="ghost"
                             onClick={() => window.open(anexo.url, '_blank')}
@@ -622,6 +624,7 @@ const AnimalAttachments: React.FC<AnimalAttachmentsProps> = ({
                     )}
                     
                     <Button
+                      type="button"
                       size="sm"
                       variant="ghost"
                       onClick={() => removeAttachment(anexo.id)}

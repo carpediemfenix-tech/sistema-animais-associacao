@@ -299,16 +299,19 @@ const EditarAnimalCompleto = () => {
 
   // Auto-save quando formData ou admissaoData mudam
   useEffect(() => {
-    if (loadingData) return; // Não salvar durante o carregamento inicial
+    if (loadingData || loading) return; // Não salvar durante carregamento ou submissão
+    
+    // Evitar auto-save se o usuário está interagindo com anexos
+    if (activeTab === 'anexos') return;
     
     const timer = setTimeout(() => {
       if (formData.nome || admissaoData.intake_origin) { // Só salva se tem dados
         saveDraft();
       }
-    }, 2000); // 2 segundos após parar de digitar
+    }, 5000); // 5 segundos para dar mais tempo ao usuário
 
     return () => clearTimeout(timer);
-  }, [formData, admissaoData, loadingData]);
+  }, [formData, admissaoData, loadingData, loading, activeTab]);
 
   // Função para obter ícone da espécie
   const getEspecieIcon = (especie: any) => {
