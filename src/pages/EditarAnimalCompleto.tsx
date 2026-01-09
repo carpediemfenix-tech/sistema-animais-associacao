@@ -177,7 +177,7 @@ const EditarAnimalCompleto = () => {
         .from('animal_intake_assessments')
         .select('*')
         .eq('animal_id', id)
-        .single();
+        .maybeSingle();
 
       if (!intakeError && intakeData) {
         setAdmissaoData({
@@ -1003,25 +1003,31 @@ const EditarAnimalCompleto = () => {
           };
 
           // Verificar se já existe uma ficha de admissão
-          const { data: existingIntake } = await supabase
+          const { data: existingIntake, error: lookupError } = await supabase
             .from('animal_intake_assessments')
             .select('id')
             .eq('animal_id', id)
-            .single();
+            .maybeSingle();
 
-          if (existingIntake) {
+          if (lookupError) throw lookupError;
+
+          if (existingIntake?.id) {
             // Atualizar ficha existente
             const { error: intakeUpdateError } = await supabase
               .from('animal_intake_assessments')
               .update(intakeAssessmentData)
-              .eq('animal_id', id);
+              .eq('id', existingIntake.id)
+              .select()
+              .single();
 
             if (intakeUpdateError) throw intakeUpdateError;
           } else {
             // Criar nova ficha
             const { error: intakeInsertError } = await supabase
               .from('animal_intake_assessments')
-              .insert([intakeAssessmentData]);
+              .insert({ ...intakeAssessmentData, animal_id: id })
+              .select()
+              .single();
 
             if (intakeInsertError) throw intakeInsertError;
           }
