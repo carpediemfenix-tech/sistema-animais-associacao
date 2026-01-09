@@ -95,21 +95,21 @@ const EditarAnimalCompleto = () => {
     litter_size: "",
     birth_conditions: "",
     // Campos para exame físico detalhado
-    physical_exam_cardiovascular: [] as string[],
-    physical_exam_respiratory: [] as string[],
-    physical_exam_neurological: [] as string[],
-    physical_exam_gastrointestinal: [] as string[],
-    physical_exam_musculoskeletal: [] as string[],
-    physical_exam_integumentary: [] as string[],
+    physical_cardiovascular: [] as string[],
+    physical_respiratory: [] as string[],
+    physical_neurological: [] as string[],
+    physical_gastrointestinal: [] as string[],
+    physical_musculoskeletal: [] as string[],
+    physical_integumentary: [] as string[],
     // Campos para avaliação comportamental
-    behavioral_assessment_temperament: [] as string[],
-    behavioral_assessment_human_social: [] as string[],
-    behavioral_assessment_animal_social: [] as string[],
-    behavioral_assessment_stimuli: [] as string[],
+    behavioral_general_temperament: [] as string[],
+    behavioral_human_socialization: [] as string[],
+    behavioral_animal_socialization: [] as string[],
+    behavioral_stimulus_reactions: [] as string[],
     // Campos para plano de cuidados
-    care_plan_immediate: [] as string[],
-    care_plan_medium: [] as string[],
-    care_plan_long: [] as string[],
+    care_immediate: [] as string[],
+    care_medium_term: [] as string[],
+    care_long_term: [] as string[],
     care_plan_notes: ""
   });
 
@@ -217,47 +217,47 @@ const EditarAnimalCompleto = () => {
           litter_size: intakeData.litter_size || "",
           birth_conditions: intakeData.birth_conditions || "",
           // Campos de exame físico - podem ser JSON ou arrays vazios
-          physical_exam_cardiovascular: intakeData.physical_exam_cardiovascular ? 
-            (typeof intakeData.physical_exam_cardiovascular === 'string' ? 
-              JSON.parse(intakeData.physical_exam_cardiovascular) : intakeData.physical_exam_cardiovascular) : [],
-          physical_exam_respiratory: intakeData.physical_exam_respiratory ? 
-            (typeof intakeData.physical_exam_respiratory === 'string' ? 
-              JSON.parse(intakeData.physical_exam_respiratory) : intakeData.physical_exam_respiratory) : [],
-          physical_exam_neurological: intakeData.physical_exam_neurological ? 
-            (typeof intakeData.physical_exam_neurological === 'string' ? 
-              JSON.parse(intakeData.physical_exam_neurological) : intakeData.physical_exam_neurological) : [],
-          physical_exam_gastrointestinal: intakeData.physical_exam_gastrointestinal ? 
-            (typeof intakeData.physical_exam_gastrointestinal === 'string' ? 
-              JSON.parse(intakeData.physical_exam_gastrointestinal) : intakeData.physical_exam_gastrointestinal) : [],
-          physical_exam_musculoskeletal: intakeData.physical_exam_musculoskeletal ? 
-            (typeof intakeData.physical_exam_musculoskeletal === 'string' ? 
-              JSON.parse(intakeData.physical_exam_musculoskeletal) : intakeData.physical_exam_musculoskeletal) : [],
-          physical_exam_integumentary: intakeData.physical_exam_integumentary ? 
-            (typeof intakeData.physical_exam_integumentary === 'string' ? 
-              JSON.parse(intakeData.physical_exam_integumentary) : intakeData.physical_exam_integumentary) : [],
+          physical_cardiovascular: intakeData.physical_cardiovascular ? 
+            (typeof intakeData.physical_cardiovascular === 'string' ? 
+              JSON.parse(intakeData.physical_cardiovascular) : intakeData.physical_cardiovascular) : [],
+          physical_respiratory: intakeData.physical_respiratory ? 
+            (typeof intakeData.physical_respiratory === 'string' ? 
+              JSON.parse(intakeData.physical_respiratory) : intakeData.physical_respiratory) : [],
+          physical_neurological: intakeData.physical_neurological ? 
+            (typeof intakeData.physical_neurological === 'string' ? 
+              JSON.parse(intakeData.physical_neurological) : intakeData.physical_neurological) : [],
+          physical_gastrointestinal: intakeData.physical_gastrointestinal ? 
+            (typeof intakeData.physical_gastrointestinal === 'string' ? 
+              JSON.parse(intakeData.physical_gastrointestinal) : intakeData.physical_gastrointestinal) : [],
+          physical_musculoskeletal: intakeData.physical_musculoskeletal ? 
+            (typeof intakeData.physical_musculoskeletal === 'string' ? 
+              JSON.parse(intakeData.physical_musculoskeletal) : intakeData.physical_musculoskeletal) : [],
+          physical_integumentary: intakeData.physical_integumentary ? 
+            (typeof intakeData.physical_integumentary === 'string' ? 
+              JSON.parse(intakeData.physical_integumentary) : intakeData.physical_integumentary) : [],
           // Campos de avaliação comportamental
-          behavioral_assessment_temperament: intakeData.behavioral_assessment_temperament ? 
-            (typeof intakeData.behavioral_assessment_temperament === 'string' ? 
-              JSON.parse(intakeData.behavioral_assessment_temperament) : intakeData.behavioral_assessment_temperament) : [],
-          behavioral_assessment_human_social: intakeData.behavioral_assessment_human_social ? 
-            (typeof intakeData.behavioral_assessment_human_social === 'string' ? 
-              JSON.parse(intakeData.behavioral_assessment_human_social) : intakeData.behavioral_assessment_human_social) : [],
-          behavioral_assessment_animal_social: intakeData.behavioral_assessment_animal_social ? 
-            (typeof intakeData.behavioral_assessment_animal_social === 'string' ? 
-              JSON.parse(intakeData.behavioral_assessment_animal_social) : intakeData.behavioral_assessment_animal_social) : [],
-          behavioral_assessment_stimuli: intakeData.behavioral_assessment_stimuli ? 
-            (typeof intakeData.behavioral_assessment_stimuli === 'string' ? 
-              JSON.parse(intakeData.behavioral_assessment_stimuli) : intakeData.behavioral_assessment_stimuli) : [],
+          behavioral_general_temperament: intakeData.behavioral_general_temperament ? 
+            (typeof intakeData.behavioral_general_temperament === 'string' ? 
+              JSON.parse(intakeData.behavioral_general_temperament) : intakeData.behavioral_general_temperament) : [],
+          behavioral_human_socialization: intakeData.behavioral_human_socialization ? 
+            (typeof intakeData.behavioral_human_socialization === 'string' ? 
+              JSON.parse(intakeData.behavioral_human_socialization) : intakeData.behavioral_human_socialization) : [],
+          behavioral_animal_socialization: intakeData.behavioral_animal_socialization ? 
+            (typeof intakeData.behavioral_animal_socialization === 'string' ? 
+              JSON.parse(intakeData.behavioral_animal_socialization) : intakeData.behavioral_animal_socialization) : [],
+          behavioral_stimulus_reactions: intakeData.behavioral_stimulus_reactions ? 
+            (typeof intakeData.behavioral_stimulus_reactions === 'string' ? 
+              JSON.parse(intakeData.behavioral_stimulus_reactions) : intakeData.behavioral_stimulus_reactions) : [],
           // Campos de plano de cuidados
-          care_plan_immediate: intakeData.care_plan_immediate ? 
-            (typeof intakeData.care_plan_immediate === 'string' ? 
-              JSON.parse(intakeData.care_plan_immediate) : intakeData.care_plan_immediate) : [],
-          care_plan_medium: intakeData.care_plan_medium ? 
-            (typeof intakeData.care_plan_medium === 'string' ? 
-              JSON.parse(intakeData.care_plan_medium) : intakeData.care_plan_medium) : [],
-          care_plan_long: intakeData.care_plan_long ? 
-            (typeof intakeData.care_plan_long === 'string' ? 
-              JSON.parse(intakeData.care_plan_long) : intakeData.care_plan_long) : [],
+          care_immediate: intakeData.care_immediate ? 
+            (typeof intakeData.care_immediate === 'string' ? 
+              JSON.parse(intakeData.care_immediate) : intakeData.care_immediate) : [],
+          care_medium_term: intakeData.care_medium_term ? 
+            (typeof intakeData.care_medium_term === 'string' ? 
+              JSON.parse(intakeData.care_medium_term) : intakeData.care_medium_term) : [],
+          care_long_term: intakeData.care_long_term ? 
+            (typeof intakeData.care_long_term === 'string' ? 
+              JSON.parse(intakeData.care_long_term) : intakeData.care_long_term) : [],
           care_plan_notes: intakeData.care_plan_notes || ""
         });
       }
@@ -984,21 +984,21 @@ const EditarAnimalCompleto = () => {
             litter_size: admissaoData.litter_size || null,
             birth_conditions: admissaoData.birth_conditions || null,
             // Campos de exame físico
-            physical_exam_cardiovascular: JSON.stringify(admissaoData.physical_exam_cardiovascular),
-            physical_exam_respiratory: JSON.stringify(admissaoData.physical_exam_respiratory),
-            physical_exam_neurological: JSON.stringify(admissaoData.physical_exam_neurological),
-            physical_exam_gastrointestinal: JSON.stringify(admissaoData.physical_exam_gastrointestinal),
-            physical_exam_musculoskeletal: JSON.stringify(admissaoData.physical_exam_musculoskeletal),
-            physical_exam_integumentary: JSON.stringify(admissaoData.physical_exam_integumentary),
+            physical_cardiovascular: JSON.stringify(admissaoData.physical_cardiovascular),
+            physical_respiratory: JSON.stringify(admissaoData.physical_respiratory),
+            physical_neurological: JSON.stringify(admissaoData.physical_neurological),
+            physical_gastrointestinal: JSON.stringify(admissaoData.physical_gastrointestinal),
+            physical_musculoskeletal: JSON.stringify(admissaoData.physical_musculoskeletal),
+            physical_integumentary: JSON.stringify(admissaoData.physical_integumentary),
             // Campos de avaliação comportamental
-            behavioral_assessment_temperament: JSON.stringify(admissaoData.behavioral_assessment_temperament),
-            behavioral_assessment_human_social: JSON.stringify(admissaoData.behavioral_assessment_human_social),
-            behavioral_assessment_animal_social: JSON.stringify(admissaoData.behavioral_assessment_animal_social),
-            behavioral_assessment_stimuli: JSON.stringify(admissaoData.behavioral_assessment_stimuli),
+            behavioral_general_temperament: JSON.stringify(admissaoData.behavioral_general_temperament),
+            behavioral_human_socialization: JSON.stringify(admissaoData.behavioral_human_socialization),
+            behavioral_animal_socialization: JSON.stringify(admissaoData.behavioral_animal_socialization),
+            behavioral_stimulus_reactions: JSON.stringify(admissaoData.behavioral_stimulus_reactions),
             // Campos de plano de cuidados
-            care_plan_immediate: JSON.stringify(admissaoData.care_plan_immediate),
-            care_plan_medium: JSON.stringify(admissaoData.care_plan_medium),
-            care_plan_long: JSON.stringify(admissaoData.care_plan_long),
+            care_immediate: JSON.stringify(admissaoData.care_immediate),
+            care_medium_term: JSON.stringify(admissaoData.care_medium_term),
+            care_long_term: JSON.stringify(admissaoData.care_long_term),
             care_plan_notes: admissaoData.care_plan_notes || null
           };
 
