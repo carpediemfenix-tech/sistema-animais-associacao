@@ -1002,35 +1002,30 @@ const EditarAnimalCompleto = () => {
             care_plan_notes: admissaoData.care_plan_notes || null
           };
 
-          // Verificar se já existe uma ficha de admissão
-          const { data: existingIntake, error: lookupError } = await supabase
-            .from('animal_intake_assessments')
-            .select('id')
-            .eq('animal_id', id)
-            .maybeSingle();
-
-          if (lookupError) throw lookupError;
-
-          if (existingIntake?.id) {
-            // Atualizar ficha existente
-            const { error: intakeUpdateError } = await supabase
-              .from('animal_intake_assessments')
-              .update(intakeAssessmentData)
-              .eq('id', existingIntake.id)
-              .select()
-              .single();
-
-            if (intakeUpdateError) throw intakeUpdateError;
-          } else {
-            // Criar nova ficha
-            const { error: intakeInsertError } = await supabase
-              .from('animal_intake_assessments')
-              .insert({ ...intakeAssessmentData, animal_id: id })
-              .select()
-              .single();
-
-            if (intakeInsertError) throw intakeInsertError;
+          // Usar upsert por animal_id (solução robusta)
+          console.log('🔍 [INTAKE_SAVE] animal_id:', id, 'tipo:', typeof id);
+          console.log('📝 [INTAKE_SAVE] payload keys:', Object.keys(intakeAssessmentData));
+          
+          // Validar se o animal_id é um UUID válido
+          const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+          if (!id || typeof id !== 'string' || !uuidRegex.test(id)) {
+            throw new Error(`animal_id inválido: ${id} (tipo: ${typeof id})`);
           }
+          
+          const payload = { ...intakeAssessmentData, animal_id: id };
+          
+          const { data: savedIntake, error: intakeUpsertError } = await supabase
+            .from('animal_intake_assessments')
+            .upsert(payload, { onConflict: 'animal_id' })
+            .select()
+            .single();
+
+          if (intakeUpsertError) {
+            console.error('❌ [INTAKE_SAVE] Erro no upsert:', intakeUpsertError);
+            throw intakeUpsertError;
+          }
+          
+          console.log('✅ [INTAKE_SAVE] Ficha salva com sucesso:', savedIntake?.id);
 
           toast({
             title: "✅ Animal e Ficha Atualizados!",
