@@ -596,23 +596,24 @@ const NovoAnimal = () => {
       />
 
       <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-7xl mx-auto"> {/* Expandido para aproveitar mais espaço */}
           
-          {/* Resumo Fixo */}
-          <ResumoFixo />
-
-          {/* Sistema de Abas */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Plus className="h-6 w-6" />
-                Registar Novo Animal
-              </CardTitle>
-              <CardDescription>
-                Preencha as informações do animal. A ficha de admissão é opcional e pode ser preenchida posteriormente.
-              </CardDescription>
-            </CardHeader>
+          {/* Layout Responsivo: 2 colunas em desktop, 1 coluna em mobile */}
+          <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
             
+            {/* Coluna Principal - Formulário (3/4 da largura em desktop) */}
+            <div className="xl:col-span-3">
+              {/* Sistema de Abas */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Plus className="h-6 w-6" />
+                    Registar Novo Animal
+                  </CardTitle>
+                  <CardDescription>
+                    Preencha as informações do animal. A ficha de admissão é opcional e pode ser preenchida posteriormente.
+                  </CardDescription>
+                </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit}>
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -638,7 +639,7 @@ const NovoAnimal = () => {
 
                   {/* ABA 1: BÁSICO */}
                   <TabsContent value="basico" className="space-y-6 mt-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"> {/* 3 colunas em desktop */}
                       
                       {/* Nome */}
                       <div>
@@ -793,7 +794,7 @@ const NovoAnimal = () => {
 
                   {/* ABA 2: ADICIONAIS */}
                   <TabsContent value="adicionais" className="space-y-6 mt-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"> {/* 3 colunas em desktop */}
                       
                       {/* Transponder/Chip */}
                       <div>
@@ -1391,6 +1392,156 @@ const NovoAnimal = () => {
               </form>
             </CardContent>
           </Card>
+            </div>
+            
+            {/* Sidebar - Resumo e Informações (1/4 da largura em desktop) */}
+            <div className="xl:col-span-1">
+              <div className="sticky top-8 space-y-6">
+                
+                {/* Resumo do Animal */}
+                <Card className="bg-gradient-to-br from-blue-50 to-purple-50 border-blue-200">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <PawPrint className="h-5 w-5 text-blue-600" />
+                      Resumo
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    
+                    {/* Nome e Espécie */}
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm font-medium text-gray-600">Nome:</span>
+                        <span className="font-semibold text-gray-800">
+                          {formData.nome || "Não definido"}
+                        </span>
+                      </div>
+                      
+                      {formData.especie && (
+                        <div className="flex items-center space-x-2">
+                          <span className="text-lg">
+                            {especies.find(e => e.nome === formData.especie) ? 
+                              getEspecieIcon(especies.find(e => e.nome === formData.especie)) : '🐾'}
+                          </span>
+                          <span className="text-sm text-gray-600">{formData.especie}</span>
+                          {formData.raca && (
+                            <span className="text-xs text-gray-500">({formData.raca})</span>
+                          )}
+                        </div>
+                      )}
+                      
+                      {formData.sexo && (
+                        <div className="flex items-center space-x-2">
+                          <span className="text-lg">
+                            {sexos.find(s => s.nome === formData.sexo) ? 
+                              getSexoIcon(sexos.find(s => s.nome === formData.sexo)) : ''}
+                          </span>
+                          <span className="text-sm text-gray-600">{formData.sexo}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Informações Básicas */}
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Processo:</span>
+                        <span className="font-medium">{numeroProcesso}</span>
+                      </div>
+                      
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Data Entrada:</span>
+                        <span className="font-medium">
+                          {formData.data_entrada ? 
+                            new Date(formData.data_entrada).toLocaleDateString('pt-PT') : 
+                            'Não definida'
+                          }
+                        </span>
+                      </div>
+                      
+                      {formData.peso && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Peso:</span>
+                          <span className="font-medium">{formData.peso} kg</span>
+                        </div>
+                      )}
+                      
+                      {formData.idade_estimada && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Idade:</span>
+                          <span className="font-medium">{formData.idade_estimada} meses</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Status do Rascunho */}
+                    {draftSaved && (
+                      <div className="flex items-center space-x-2 text-green-600 bg-green-50 p-2 rounded-lg">
+                        <CheckCircle className="h-4 w-4" />
+                        <span className="text-sm font-medium">Rascunho salvo</span>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Progresso das Abas */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg">Progresso</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    
+                    {/* Aba Básico */}
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-3 h-3 rounded-full ${
+                        formData.nome && formData.especie && formData.sexo ? 
+                        'bg-green-500' : 'bg-gray-300'
+                      }`}></div>
+                      <span className="text-sm">Informações Básicas</span>
+                    </div>
+                    
+                    {/* Aba Adicionais */}
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-3 h-3 rounded-full ${
+                        formData.voluntario_responsavel && formData.data_entrada ? 
+                        'bg-green-500' : 'bg-gray-300'
+                      }`}></div>
+                      <span className="text-sm">Informações Adicionais</span>
+                    </div>
+                    
+                    {/* Aba Admissão */}
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-3 h-3 rounded-full ${
+                        admissaoData.intake_origin || admissaoData.general_condition ? 
+                        'bg-blue-500' : 'bg-gray-300'
+                      }`}></div>
+                      <span className="text-sm">Ficha de Admissão</span>
+                    </div>
+                    
+                    {/* Aba Anexos */}
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-3 h-3 rounded-full ${
+                        formData.url_fotografia ? 'bg-purple-500' : 'bg-gray-300'
+                      }`}></div>
+                      <span className="text-sm">Anexos</span>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Dicas Rápidas */}
+                <Card className="bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg text-amber-800">💡 Dicas</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2 text-sm text-amber-700">
+                    <p>• Campos com * são obrigatórios</p>
+                    <p>• A ficha de admissão é opcional</p>
+                    <p>• O rascunho é salvo automaticamente</p>
+                    <p>• URLs do Google Drive são convertidos automaticamente</p>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
