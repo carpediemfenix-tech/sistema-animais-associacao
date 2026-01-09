@@ -41,7 +41,8 @@ const NovoAnimal = () => {
     grupo_id: "",
     url_fotografia: "",
     voluntario_responsavel: "",
-    data_entrada: new Date().toISOString().split('T')[0]
+    data_entrada: new Date().toISOString().split('T')[0],
+    estado: "" // 🆕 ADICIONADO: Campo estado do animal
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -793,6 +794,10 @@ const NovoAnimal = () => {
       newErrors.sexo = "Sexo é obrigatório";
     }
 
+    if (!formData.estado) {
+      newErrors.estado = "Estado é obrigatório";
+    }
+
     if (!formData.voluntario_responsavel) {
       newErrors.voluntario_responsavel = "Voluntário responsável é obrigatório";
     }
@@ -879,7 +884,7 @@ const NovoAnimal = () => {
         url_fotografia: formData.url_fotografia ? convertGoogleDriveUrl(formData.url_fotografia) : null,
         voluntario_responsavel: formData.voluntario_responsavel,
         data_entrada: formData.data_entrada,
-        estado: 'Ativo'
+        estado: formData.estado // 🆕 CORRIGIDO: usar valor do formulário
       };
 
       const { data, error } = await supabase
@@ -1168,6 +1173,32 @@ const NovoAnimal = () => {
                           <p className="text-sm text-red-500 mt-1 flex items-center">
                             <AlertCircle className="h-4 w-4 mr-1" />
                             {errors.sexo}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Estado do Animal */}
+                      <div>
+                        <Label htmlFor="estado">Estado *</Label>
+                        <Select value={formData.estado} onValueChange={(value) => handleInputChange("estado", value)}>
+                          <SelectTrigger className={errors.estado ? "border-red-500" : ""}>
+                            <SelectValue placeholder="Selecione o estado" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="disponivel">Disponível para Adoção</SelectItem>
+                            <SelectItem value="adotado">Adotado</SelectItem>
+                            <SelectItem value="em_tratamento">Em Tratamento</SelectItem>
+                            <SelectItem value="quarentena">Em Quarentena</SelectItem>
+                            <SelectItem value="resgate">Em Resgate</SelectItem>
+                            <SelectItem value="transferido">Transferido</SelectItem>
+                            <SelectItem value="obito">Óbito</SelectItem>
+                            <SelectItem value="fugiu">Fugiu</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        {errors.estado && (
+                          <p className="text-sm text-red-500 mt-1 flex items-center">
+                            <AlertCircle className="h-4 w-4 mr-1" />
+                            {errors.estado}
                           </p>
                         )}
                       </div>
