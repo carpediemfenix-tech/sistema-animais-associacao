@@ -163,10 +163,10 @@ const AnimalFinanceiro: React.FC = () => {
     try {
       // Carregar movimentos financeiros do animal
       const { data: movimentosData, error: movimentosError } = await supabase
-        .from('movimentos_financeiros') // 🔄 CORRIGIDO: tabela sem timestamp
+        .from('movimentos_financeiros_2025_12_29_07_00') // 🔄 VOLTANDO: tabela com estrutura correta
         .select(`
           *,
-          categorias_financeiras(nome, icone, cor) 
+          categorias_financeiras_2025_12_29_07_00(nome, icone, cor) 
         `)
         .eq('animal_id', id)
         .order('data_movimento', { ascending: false });
@@ -179,7 +179,7 @@ const AnimalFinanceiro: React.FC = () => {
 
       // Carregar categorias financeiras
       const { data: categoriasData, error: categoriasError } = await supabase
-        .from('categorias_financeiras') // 🔄 CORRIGIDO: tabela sem timestamp
+        .from('categorias_financeiras_2025_12_29_07_00') // 🔄 VOLTANDO: tabela com estrutura correta
         .select('*')
         .in('escopo', ['animal', 'ambos'])
         .eq('ativo', true)
@@ -339,13 +339,13 @@ console.log('Campos disponíveis:', intervencoesData?.[0] ? Object.keys(interven
       let error;
       if (editingMovimento) {
         const { error: updateError } = await supabase
-          .from('movimentos_financeiros') // 🔄 CORRIGIDO: tabela sem timestamp
+          .from('movimentos_financeiros_2025_12_29_07_00') // 🔄 VOLTANDO: tabela com estrutura correta
           .update(movimentoData)
           .eq('id', editingMovimento.id);
         error = updateError;
       } else {
         const { error: insertError } = await supabase
-          .from('movimentos_financeiros') // 🔄 CORRIGIDO: tabela sem timestamp
+          .from('movimentos_financeiros_2025_12_29_07_00') // 🔄 VOLTANDO: tabela com estrutura correta
           .insert([movimentoData]);
         error = insertError;
       }
@@ -386,7 +386,7 @@ console.log('Campos disponíveis:', intervencoesData?.[0] ? Object.keys(interven
 if (!confirm('Tem certeza que deseja excluir este movimento?')) return;
       
       const { error } = await supabase
-        .from('movimentos_financeiros') // 🔄 CORRIGIDO: tabela sem timestamp
+        .from('movimentos_financeiros_2025_12_29_07_00') // 🔄 VOLTANDO: tabela com estrutura correta
         .delete()
         .eq('id', movimentoId);
 
