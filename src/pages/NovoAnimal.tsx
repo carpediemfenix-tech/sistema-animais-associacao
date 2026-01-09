@@ -16,6 +16,7 @@ import EnhancedFooter from "@/components/EnhancedFooter";
 import VoluntarioSelector from "@/components/VoluntarioSelector";
 import { convertGoogleDriveUrl } from "@/lib/utils";
 import PageActionBar from "@/components/PageActionBar";
+import AnimalAttachments from "@/components/AnimalAttachments";
 
 const NovoAnimal = () => {
   const navigate = useNavigate();
@@ -2413,46 +2414,13 @@ const NovoAnimal = () => {
 
                   {/* ABA 4: ANEXOS */}
                   <TabsContent value="anexos" className="space-y-6 mt-6">
-                    <div>
-                      <Label htmlFor="url_fotografia">URL da Fotografia</Label>
-                      <Input
-                        id="url_fotografia"
-                        type="url"
-                        value={formData.url_fotografia}
-                        onChange={(e) => handleInputChange("url_fotografia", e.target.value)}
-                        placeholder="Cole o URL do Google Drive ou link direto da imagem"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        📸 Aceita URLs do Google Drive (serão convertidos automaticamente)
-                      </p>
-                      {formData.url_fotografia && (
-                        <div className="mt-2 space-y-2">
-                          <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
-                            <strong>URL convertido:</strong>
-                            <br />
-                            <code className="text-xs break-all">{convertGoogleDriveUrl(formData.url_fotografia)}</code>
-                          </div>
-                          <img 
-                            src={convertGoogleDriveUrl(formData.url_fotografia)} 
-                            alt="Pré-visualização" 
-                            className="max-w-xs h-32 object-cover rounded border"
-                            onError={(e) => {
-                              e.currentTarget.style.display = 'none';
-                            }}
-                          />
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
-                      <Paperclip className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                        Anexos Adicionais
-                      </h3>
-                      <p className="text-gray-600">
-                        Funcionalidade para múltiplas fotos e documentos será implementada futuramente
-                      </p>
-                    </div>
+                    <AnimalAttachments 
+                      showUrlInput={true}
+                      initialUrl={formData.url_fotografia}
+                      onUrlChange={(url) => handleInputChange("url_fotografia", url)}
+                      maxFiles={15}
+                      maxFileSize={100}
+                    />
                   </TabsContent>
                 </Tabs>
 
