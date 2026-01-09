@@ -180,11 +180,31 @@ const AgendaFuturistica = () => {
 
   const loadEstatisticas = async () => {
     try {
+      console.log('📊 [AGENDA] Carregando estatísticas...');
+      
       const { data, error } = await supabase.rpc('get_agenda_statistics');
-      if (error) throw error;
+      
+      if (error) {
+        console.error('❌ [AGENDA] Erro ao carregar estatísticas:', {
+          code: error?.code,
+          message: error?.message,
+          details: error?.details,
+          hint: error?.hint,
+          error_object: error
+        });
+        throw error;
+      }
+      
+      console.log('✅ [AGENDA] Estatísticas carregadas:', data);
       setEstatisticas(data);
-    } catch (error) {
-      console.error('Erro ao carregar estatísticas:', error);
+    } catch (error: any) {
+      console.error('❌ [AGENDA] Erro ao carregar estatísticas:', {
+        code: error?.code,
+        message: error?.message,
+        details: error?.details,
+        hint: error?.hint,
+        full_error: error
+      });
     }
   };
 
@@ -193,23 +213,57 @@ const AgendaFuturistica = () => {
       const hoje = new Date();
       const proximoMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, hoje.getDate());
       
+      const dataInicio = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1).toISOString().split('T')[0];
+      const dataFim = proximoMes.toISOString().split('T')[0];
+      
+      console.log('🔍 [AGENDA] Chamando RPC get_agenda_eventos_periodo com parâmetros:', {
+        data_inicio: dataInicio,
+        data_fim: dataFim,
+        categoria_filter: filtroTipo !== 'todos' ? filtroTipo : null,
+        tipo_filter: null,
+        animal_filter: null,
+        voluntario_filter: null
+      });
+      
       const { data, error } = await supabase.rpc('get_agenda_eventos_periodo', {
-        data_inicio: new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1).toISOString().split('T')[0],
-        data_fim_periodo: proximoMes.toISOString().split('T')[0],
+        data_inicio: dataInicio,
+        data_fim: dataFim,
         categoria_filter: filtroTipo !== 'todos' ? filtroTipo : null,
         tipo_filter: null,
         animal_filter: null,
         voluntario_filter: null
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ [AGENDA] Erro detalhado do Supabase:', {
+          code: error?.code,
+          message: error?.message,
+          details: error?.details,
+          hint: error?.hint,
+          error_object: error
+        });
+        throw error;
+      }
+      
+      console.log('✅ [AGENDA] Eventos carregados com sucesso:', data?.length || 0, 'eventos');
       
       const eventosData = data || [];
       setEventos(eventosData);
       setEventosAtivos(eventosData.filter((e: AgendaEvento) => e.categoria === 'ativo'));
       setEventosMemorial(eventosData.filter((e: AgendaEvento) => e.categoria === 'memorial'));
-    } catch (error) {
-      console.error('Erro ao carregar eventos:', error);
+    } catch (error: any) {
+      console.error('❌ [AGENDA] Erro ao carregar eventos:', {
+        code: error?.code,
+        message: error?.message,
+        details: error?.details,
+        hint: error?.hint,
+        full_error: error
+      });
+      toast({
+        title: "❌ Erro",
+        description: `Erro ao carregar eventos: ${error?.message || 'Erro desconhecido'}`,
+        variant: "destructive",
+      });
     }
   };
 

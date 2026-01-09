@@ -255,14 +255,22 @@ const AnimalIntervencoes = () => {
         concluida: true // Sempre concluída na data
       };
 
+      console.log('🔍 [INTERVENÇÃO] Dados a serem salvos:', {
+        payload: intervencaoData,
+        operation: editingIntervencao ? 'UPDATE' : 'INSERT',
+        editing_id: editingIntervencao?.id
+      });
+
       let error;
       if (editingIntervencao) {
+        console.log('🔄 [INTERVENÇÃO] Atualizando intervenção ID:', editingIntervencao.id);
         const { error: updateError } = await supabase
           .from('intervencoes')
           .update(intervencaoData)
           .eq('id', editingIntervencao.id);
         error = updateError;
       } else {
+        console.log('➕ [INTERVENÇÃO] Inserindo nova intervenção');
         const { error: insertError } = await supabase
           .from('intervencoes')
           .insert([intervencaoData]);
@@ -270,14 +278,23 @@ const AnimalIntervencoes = () => {
       }
 
       if (error) {
-        console.error('Erro ao salvar intervenção:', error);
+        console.error('❌ [INTERVENÇÃO] Erro detalhado do Supabase:', {
+          code: error?.code,
+          message: error?.message,
+          details: error?.details,
+          hint: error?.hint,
+          error_object: error,
+          payload_sent: intervencaoData
+        });
         toast({
           title: "Erro ao salvar",
-          description: "Não foi possível salvar a intervenção",
+          description: `Não foi possível salvar a intervenção: ${error?.message || 'Erro desconhecido'}`,
           variant: "destructive",
         });
         return;
       }
+
+      console.log('✅ [INTERVENÇÃO] Salva com sucesso!');
 
       toast({
         title: editingIntervencao ? "Intervenção atualizada" : "Intervenção registrada",
