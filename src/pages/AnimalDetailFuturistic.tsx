@@ -535,7 +535,8 @@ const AnimalDetailFuturistic = () => {
                     <div className="bg-slate-800/50 rounded-xl p-4 border border-orange-500/30 inline-block">
                       <div className="flex items-center">
                         <span className="text-2xl mr-3">
-                          {animal.condicao === 'Inteiro' ? '🐾' : '✂️'}
+                          {animal.condicao === 'Inteiro' ? '🐾' : 
+                           animal.condicao === 'Desconhecido' ? '❓' : '✂️'}
                         </span>
                         <div>
                           <div className="text-lg font-bold text-orange-400">{animal.condicao}</div>

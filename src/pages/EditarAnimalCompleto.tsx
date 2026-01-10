@@ -48,7 +48,7 @@ const EditarAnimalCompleto = () => {
     data_adocao: "", // 🆕 ADICIONADO: Data de adoção
     adotante_nome: "", // 🆕 ADICIONADO: Nome do adotante
     adotante_contacto: "", // 🆕 ADICIONADO: Contacto do adotante
-    condicao: "" // 🆕 NOVO: Condição reprodutiva (Inteiro/Castrado/Esterilizado)
+    condicao: "Desconhecido" // 🆕 NOVO: Condição reprodutiva (padrão: Desconhecido)
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -885,6 +885,10 @@ const EditarAnimalCompleto = () => {
       newErrors.estado = "Estado é obrigatório";
     }
 
+    if (!formData.condicao) {
+      newErrors.condicao = "Condição é obrigatória";
+    }
+
     if (!formData.voluntario_responsavel) {
       newErrors.voluntario_responsavel = "Voluntário responsável é obrigatório";
     }
@@ -1326,9 +1330,9 @@ const EditarAnimalCompleto = () => {
 
                       {/* Condição Reprodutiva */}
                       <div>
-                        <Label htmlFor="condicao">Condição</Label>
+                        <Label htmlFor="condicao">Condição *</Label>
                         <Select value={formData.condicao} onValueChange={(value) => handleInputChange("condicao", value)}>
-                          <SelectTrigger>
+                          <SelectTrigger className={errors.condicao ? "border-red-500" : ""}>
                             <SelectValue placeholder="Selecione a condição" />
                           </SelectTrigger>
                           <SelectContent>
@@ -1350,10 +1354,22 @@ const EditarAnimalCompleto = () => {
                                 Esterilizado
                               </div>
                             </SelectItem>
+                            <SelectItem value="Desconhecido">
+                              <div className="flex items-center">
+                                <span className="mr-2">❓</span>
+                                Desconhecido
+                              </div>
+                            </SelectItem>
                           </SelectContent>
                         </Select>
+                        {errors.condicao && (
+                          <p className="text-sm text-red-500 mt-1 flex items-center">
+                            <AlertCircle className="h-4 w-4 mr-1" />
+                            {errors.condicao}
+                          </p>
+                        )}
                         <p className="text-xs text-gray-500 mt-1">
-                          📝 Condição reprodutiva do animal
+                          📝 Condição reprodutiva do animal (obrigatório)
                         </p>
                       </div>
 
