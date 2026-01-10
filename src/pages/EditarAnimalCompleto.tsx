@@ -47,7 +47,8 @@ const EditarAnimalCompleto = () => {
     estado: "", // 🆕 ADICIONADO: Campo estado do animal
     data_adocao: "", // 🆕 ADICIONADO: Data de adoção
     adotante_nome: "", // 🆕 ADICIONADO: Nome do adotante
-    adotante_contacto: "" // 🆕 ADICIONADO: Contacto do adotante
+    adotante_contacto: "", // 🆕 ADICIONADO: Contacto do adotante
+    condicao: "" // 🆕 NOVO: Condição reprodutiva (Inteiro/Castrado/Esterilizado)
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -175,7 +176,8 @@ const EditarAnimalCompleto = () => {
           estado: animalData.estado || "", // 🆕 ADICIONADO: carregar estado existente
           data_adocao: animalData.data_adocao || "", // 🆕 ADICIONADO: carregar data de adoção
           adotante_nome: animalData.adotante_nome || "", // 🆕 ADICIONADO: carregar nome do adotante
-          adotante_contacto: animalData.adotante_contacto || "" // 🆕 ADICIONADO: carregar contacto do adotante
+          adotante_contacto: animalData.adotante_contacto || "", // 🆕 ADICIONADO: carregar contacto do adotante
+          condicao: animalData.condicao || "" // 🆕 NOVO: carregar condição reprodutiva
         });
         setNumeroProcesso(animalData.numero_processo || "");
       }
@@ -939,7 +941,8 @@ const EditarAnimalCompleto = () => {
         estado: formData.estado, // 🆕 ADICIONADO: salvar estado
         data_adocao: formData.data_adocao || null, // 🆕 ADICIONADO: salvar data de adoção
         adotante_nome: formData.adotante_nome || null, // 🆕 ADICIONADO: salvar nome do adotante
-        adotante_contacto: formData.adotante_contacto || null // 🆕 ADICIONADO: salvar contacto do adotante
+        adotante_contacto: formData.adotante_contacto || null, // 🆕 ADICIONADO: salvar contacto do adotante
+        condicao: formData.condicao || null // 🆕 NOVO: salvar condição reprodutiva
       };
 
       // Atualizar dados básicos do animal
@@ -1319,6 +1322,39 @@ const EditarAnimalCompleto = () => {
                             {errors.sexo}
                           </p>
                         )}
+                      </div>
+
+                      {/* Condição Reprodutiva */}
+                      <div>
+                        <Label htmlFor="condicao">Condição</Label>
+                        <Select value={formData.condicao} onValueChange={(value) => handleInputChange("condicao", value)}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione a condição" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Inteiro">
+                              <div className="flex items-center">
+                                <span className="mr-2">🐾</span>
+                                Inteiro
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="Castrado">
+                              <div className="flex items-center">
+                                <span className="mr-2">✂️</span>
+                                Castrado
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="Esterilizado">
+                              <div className="flex items-center">
+                                <span className="mr-2">✂️</span>
+                                Esterilizado
+                              </div>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-gray-500 mt-1">
+                          📝 Condição reprodutiva do animal
+                        </p>
                       </div>
 
                       {/* Estado do Animal */}

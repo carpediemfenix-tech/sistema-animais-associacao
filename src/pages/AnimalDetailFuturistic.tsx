@@ -529,6 +529,23 @@ const AnimalDetailFuturistic = () => {
                   </div>
                 </div>
 
+                {/* Condição Reprodutiva */}
+                {animal.condicao && (
+                  <div className="mb-6">
+                    <div className="bg-slate-800/50 rounded-xl p-4 border border-orange-500/30 inline-block">
+                      <div className="flex items-center">
+                        <span className="text-2xl mr-3">
+                          {animal.condicao === 'Inteiro' ? '🐾' : '✂️'}
+                        </span>
+                        <div>
+                          <div className="text-lg font-bold text-orange-400">{animal.condicao}</div>
+                          <div className="text-sm text-orange-300">Condição Reprodutiva</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Estado Atual e Localização Atual - Seções Destacadas */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                   {/* Estado Atual */}

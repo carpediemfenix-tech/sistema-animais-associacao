@@ -45,7 +45,8 @@ const NovoAnimal = () => {
     estado: "", // 🆕 ADICIONADO: Campo estado do animal
     data_adocao: "", // 🆕 ADICIONADO: Data de adoção
     adotante_nome: "", // 🆕 ADICIONADO: Nome do adotante
-    adotante_contacto: "" // 🆕 ADICIONADO: Contacto do adotante
+    adotante_contacto: "", // 🆕 ADICIONADO: Contacto do adotante
+    condicao: "" // 🆕 NOVO: Condição reprodutiva (Inteiro/Castrado/Esterilizado)
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -890,7 +891,8 @@ const NovoAnimal = () => {
         estado: formData.estado, // 🆕 CORRIGIDO: usar valor do formulário
         data_adocao: formData.data_adocao || null, // 🆕 ADICIONADO: salvar data de adoção
         adotante_nome: formData.adotante_nome || null, // 🆕 ADICIONADO: salvar nome do adotante
-        adotante_contacto: formData.adotante_contacto || null // 🆕 ADICIONADO: salvar contacto do adotante
+        adotante_contacto: formData.adotante_contacto || null, // 🆕 ADICIONADO: salvar contacto do adotante
+        condicao: formData.condicao || null // 🆕 NOVO: salvar condição reprodutiva
       };
 
       const { data, error } = await supabase
@@ -1181,6 +1183,45 @@ const NovoAnimal = () => {
                             {errors.sexo}
                           </p>
                         )}
+                      </div>
+
+                      {/* Condição Reprodutiva */}
+                      <div>
+                        <Label htmlFor="condicao">Condição</Label>
+                        <Select value={formData.condicao} onValueChange={(value) => handleInputChange("condicao", value)}>
+                          <SelectTrigger className={errors.condicao ? "border-red-500" : ""}>
+                            <SelectValue placeholder="Selecione a condição" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Inteiro">
+                              <div className="flex items-center">
+                                <span className="mr-2">🐾</span>
+                                Inteiro
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="Castrado">
+                              <div className="flex items-center">
+                                <span className="mr-2">✂️</span>
+                                Castrado
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="Esterilizado">
+                              <div className="flex items-center">
+                                <span className="mr-2">✂️</span>
+                                Esterilizado
+                              </div>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                        {errors.condicao && (
+                          <p className="text-sm text-red-500 mt-1 flex items-center">
+                            <AlertCircle className="h-4 w-4 mr-1" />
+                            {errors.condicao}
+                          </p>
+                        )}
+                        <p className="text-xs text-gray-500 mt-1">
+                          📝 Condição reprodutiva do animal
+                        </p>
                       </div>
 
                       {/* Estado do Animal */}
