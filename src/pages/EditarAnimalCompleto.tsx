@@ -18,6 +18,38 @@ import { convertGoogleDriveUrl } from "@/lib/utils";
 import PageActionBar from "@/components/PageActionBar";
 import AnimalAttachments from "@/components/AnimalAttachments";
 
+// Função auxiliar para fazer parsing seguro de arrays JSON
+const safeParseArray = (value: any): string[] => {
+  // Se já é um array, retorna como está
+  if (Array.isArray(value)) {
+    return value;
+  }
+  
+  // Se é null ou undefined, retorna array vazio
+  if (value === null || value === undefined) {
+    return [];
+  }
+  
+  // Se é uma string simples (não JSON), coloca num array
+  if (typeof value === 'string' && !value.startsWith('[') && !value.startsWith('"')) {
+    return value ? [value] : [];
+  }
+  
+  // Se é uma string JSON, faz parse
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [parsed];
+    } catch (e) {
+      // Se o parsing falha, trata como string simples
+      return value ? [value] : [];
+    }
+  }
+  
+  // Para qualquer outro caso, converte para string e coloca num array
+  return [String(value)];
+};
+
 const EditarAnimalCompleto = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -177,7 +209,7 @@ const EditarAnimalCompleto = () => {
           data_adocao: animalData.data_adocao || "", // 🆕 ADICIONADO: carregar data de adoção
           adotante_nome: animalData.adotante_nome || "", // 🆕 ADICIONADO: carregar nome do adotante
           adotante_contacto: animalData.adotante_contacto || "", // 🆕 ADICIONADO: carregar contacto do adotante
-          condicao: animalData.condicao || "" // 🆕 NOVO: carregar condição reprodutiva
+          condicao: animalData.condicao || "Desconhecido" // 🆕 NOVO: carregar condição reprodutiva
         });
         setNumeroProcesso(animalData.numero_processo || "");
       }
@@ -199,10 +231,10 @@ const EditarAnimalCompleto = () => {
           body_condition: intakeData.body_condition || "",
           weight_kg: intakeData.weight_kg?.toString() || "",
           temperature_celsius: intakeData.temperature_celsius?.toString() || "",
-          symptoms: intakeData.symptoms ? JSON.parse(intakeData.symptoms) : [],
+          symptoms: safeParseArray(intakeData.symptoms),
           physical_exam_notes: intakeData.physical_exam_notes || "",
           behavioral_notes: intakeData.behavioral_notes || "",
-          immediate_actions: intakeData.immediate_actions ? JSON.parse(intakeData.immediate_actions) : [],
+          immediate_actions: safeParseArray(intakeData.immediate_actions),
           immediate_actions_notes: intakeData.immediate_actions_notes || "",
           prognosis: intakeData.prognosis || "",
           treatment_plan: intakeData.treatment_plan || "",
@@ -227,47 +259,21 @@ const EditarAnimalCompleto = () => {
           litter_size: intakeData.litter_size || "",
           birth_conditions: intakeData.birth_conditions || "",
           // Campos de exame físico - podem ser JSON ou arrays vazios
-          physical_cardiovascular: intakeData.physical_cardiovascular ? 
-            (typeof intakeData.physical_cardiovascular === 'string' ? 
-              JSON.parse(intakeData.physical_cardiovascular) : intakeData.physical_cardiovascular) : [],
-          physical_respiratory: intakeData.physical_respiratory ? 
-            (typeof intakeData.physical_respiratory === 'string' ? 
-              JSON.parse(intakeData.physical_respiratory) : intakeData.physical_respiratory) : [],
-          physical_neurological: intakeData.physical_neurological ? 
-            (typeof intakeData.physical_neurological === 'string' ? 
-              JSON.parse(intakeData.physical_neurological) : intakeData.physical_neurological) : [],
-          physical_gastrointestinal: intakeData.physical_gastrointestinal ? 
-            (typeof intakeData.physical_gastrointestinal === 'string' ? 
-              JSON.parse(intakeData.physical_gastrointestinal) : intakeData.physical_gastrointestinal) : [],
-          physical_musculoskeletal: intakeData.physical_musculoskeletal ? 
-            (typeof intakeData.physical_musculoskeletal === 'string' ? 
-              JSON.parse(intakeData.physical_musculoskeletal) : intakeData.physical_musculoskeletal) : [],
-          physical_integumentary: intakeData.physical_integumentary ? 
-            (typeof intakeData.physical_integumentary === 'string' ? 
-              JSON.parse(intakeData.physical_integumentary) : intakeData.physical_integumentary) : [],
+          physical_cardiovascular: safeParseArray(intakeData.physical_cardiovascular),
+          physical_respiratory: safeParseArray(intakeData.physical_respiratory),
+          physical_neurological: safeParseArray(intakeData.physical_neurological),
+          physical_gastrointestinal: safeParseArray(intakeData.physical_gastrointestinal),
+          physical_musculoskeletal: safeParseArray(intakeData.physical_musculoskeletal),
+          physical_integumentary: safeParseArray(intakeData.physical_integumentary),
           // Campos de avaliação comportamental
-          behavioral_general_temperament: intakeData.behavioral_general_temperament ? 
-            (typeof intakeData.behavioral_general_temperament === 'string' ? 
-              JSON.parse(intakeData.behavioral_general_temperament) : intakeData.behavioral_general_temperament) : [],
-          behavioral_human_socialization: intakeData.behavioral_human_socialization ? 
-            (typeof intakeData.behavioral_human_socialization === 'string' ? 
-              JSON.parse(intakeData.behavioral_human_socialization) : intakeData.behavioral_human_socialization) : [],
-          behavioral_animal_socialization: intakeData.behavioral_animal_socialization ? 
-            (typeof intakeData.behavioral_animal_socialization === 'string' ? 
-              JSON.parse(intakeData.behavioral_animal_socialization) : intakeData.behavioral_animal_socialization) : [],
-          behavioral_stimulus_reactions: intakeData.behavioral_stimulus_reactions ? 
-            (typeof intakeData.behavioral_stimulus_reactions === 'string' ? 
-              JSON.parse(intakeData.behavioral_stimulus_reactions) : intakeData.behavioral_stimulus_reactions) : [],
+          behavioral_general_temperament: safeParseArray(intakeData.behavioral_general_temperament),
+          behavioral_human_socialization: safeParseArray(intakeData.behavioral_human_socialization),
+          behavioral_animal_socialization: safeParseArray(intakeData.behavioral_animal_socialization),
+          behavioral_stimulus_reactions: safeParseArray(intakeData.behavioral_stimulus_reactions),
           // Campos de plano de cuidados
-          care_immediate: intakeData.care_immediate ? 
-            (typeof intakeData.care_immediate === 'string' ? 
-              JSON.parse(intakeData.care_immediate) : intakeData.care_immediate) : [],
-          care_medium_term: intakeData.care_medium_term ? 
-            (typeof intakeData.care_medium_term === 'string' ? 
-              JSON.parse(intakeData.care_medium_term) : intakeData.care_medium_term) : [],
-          care_long_term: intakeData.care_long_term ? 
-            (typeof intakeData.care_long_term === 'string' ? 
-              JSON.parse(intakeData.care_long_term) : intakeData.care_long_term) : [],
+          care_immediate: safeParseArray(intakeData.care_immediate),
+          care_medium_term: safeParseArray(intakeData.care_medium_term),
+          care_long_term: safeParseArray(intakeData.care_long_term),
           care_plan_notes: intakeData.care_plan_notes || ""
         });
       }
