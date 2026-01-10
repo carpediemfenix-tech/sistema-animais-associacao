@@ -300,7 +300,7 @@ function App() {
               <Route path="/configuracoes/clinicas" element={<ProtectedRoute><GestaoClinicas /></ProtectedRoute>} />
               <Route path="/configuracoes/responsabilidades" element={<ProtectedRoute><GestaoResponsabilidades /></ProtectedRoute>} />
               <Route path="/configuracao-especialidades" element={<ProtectedRoute><ConfiguracaoEspecialidades /></ProtectedRoute>} />
-              <Route path="/configuracao-intervencoes" element={<ProtectedRoute><ConfiguracaoIntervencoes /></ProtectedRoute>} />
+              <Route path="/configuracoes/intervencoes" element={<ProtectedRoute><ConfiguracaoIntervencoes /></ProtectedRoute>} />
               <Route path="/configuracoes-notificacoes" element={<ProtectedRoute><ConfiguracoesNotificacoes /></ProtectedRoute>} />
               
               {/* Intervenções e Eventos */}
