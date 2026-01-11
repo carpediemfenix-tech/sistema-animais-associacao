@@ -119,17 +119,18 @@ const NovoEvento = () => {
         data_evento: eventoForm.data_evento,
         descricao: eventoForm.descricao || null,
         observacoes: eventoForm.observacoes || null,
-        responsavel_id: eventoForm.responsavel_id || null,
+        responsavel_id: eventoForm.responsavel_id || "",
         importante: eventoForm.importante
       };
 
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('eventos_animal')
-        .insert([eventoData])
-        .select()
-        .single();
+        .insert([eventoData]);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro detalhado ao inserir evento:', error);
+        throw error;
+      }
 
       toast({
         title: "Evento criado",
