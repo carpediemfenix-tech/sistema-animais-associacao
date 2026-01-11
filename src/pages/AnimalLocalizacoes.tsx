@@ -242,16 +242,16 @@ const AnimalLocalizacoes = () => {
         ativo: editingLocalizacao ? editingLocalizacao.ativo : true
       };
 
-      // Log detalhado do payload para debug
-      console.log('🔍 [LOCALIZACAO] Payload completo:', JSON.stringify(localizacaoData, null, 2));
-      console.log('🔍 [LOCALIZACAO] Valores dos campos:', {
-        animal_id: `${localizacaoData.animal_id} (${typeof localizacaoData.animal_id})`,
-        localizacao_id: `${localizacaoData.localizacao_id} (${typeof localizacaoData.localizacao_id})`,
-        data_inicio: `${localizacaoData.data_inicio} (${typeof localizacaoData.data_inicio})`,
-        responsavel_id: `${localizacaoData.responsavel_id} (${typeof localizacaoData.responsavel_id})`,
-        ativo: `${localizacaoData.ativo} (${typeof localizacaoData.ativo})`
-      });
-      console.log('🔍 [LOCALIZACAO] Operação:', editingLocalizacao ? 'UPDATE' : 'INSERT');
+      // === LOG DETALHADO DO PAYLOAD ===
+      console.group('🔍 [LOCALIZACAO] PAYLOAD PARA ' + (editingLocalizacao ? 'UPDATE' : 'INSERT'));
+      console.table(localizacaoData);
+      console.log('JSON:', JSON.stringify(localizacaoData, null, 2));
+      console.log('animal_id:', localizacaoData.animal_id, '(tipo:', typeof localizacaoData.animal_id, ')');
+      console.log('localizacao_id:', localizacaoData.localizacao_id, '(tipo:', typeof localizacaoData.localizacao_id, ')');
+      console.log('data_inicio:', localizacaoData.data_inicio, '(tipo:', typeof localizacaoData.data_inicio, ')');
+      console.log('responsavel_id:', localizacaoData.responsavel_id, '(tipo:', typeof localizacaoData.responsavel_id, ')');
+      console.log('ativo:', localizacaoData.ativo, '(tipo:', typeof localizacaoData.ativo, ')');
+      console.groupEnd();
 
       let error;
       if (editingLocalizacao) {
@@ -268,17 +268,18 @@ const AnimalLocalizacoes = () => {
       }
 
       if (error) {
-        // Log detalhado do erro para debug
-        console.error('❌ [LOCALIZACAO] ERRO COMPLETO:', error);
-        console.error('❌ [LOCALIZACAO] Erro JSON:', JSON.stringify(error, null, 2));
-        console.error('❌ [LOCALIZACAO] Detalhes do erro:', {
-          code: error.code,
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          status: error.status,
-          statusText: error.statusText
+        // === LOG DETALHADO DO ERRO ===
+        console.group('❌ [LOCALIZACAO] ERRO 400 - DETALHES COMPLETOS');
+        console.error('Erro completo:', error);
+        console.table({
+          'Código': error.code || 'N/A',
+          'Mensagem': error.message || 'N/A',
+          'Detalhes': error.details || 'N/A',
+          'Hint': error.hint || 'N/A',
+          'Status': error.status || 'N/A'
         });
+        console.log('JSON do erro:', JSON.stringify(error, null, 2));
+        console.groupEnd();
         
         toast({
           title: "Erro ao salvar localização",
