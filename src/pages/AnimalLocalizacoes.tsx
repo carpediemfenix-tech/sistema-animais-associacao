@@ -8,6 +8,7 @@ import {
   ArrowLeft, 
   Plus, 
   Edit, 
+  Trash2,
   PawPrint,
   Loader2,
   AlertCircle,
@@ -44,6 +45,7 @@ const AnimalLocalizacoes = () => {
   const [historicoLocalizacoes, setHistoricoLocalizacoes] = useState<LocalizacaoAnimal[]>([]);
   const [tiposLocalizacoes, setTiposLocalizacoes] = useState<any[]>([]);
   const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const { toast } = useToast();
   const { hasPermission } = useAuth();
 
@@ -71,6 +73,58 @@ const AnimalLocalizacoes = () => {
     }
     const anos = Math.floor(diffDays / 365);
     return anos === 1 ? "1 ano" : `${anos} anos`;
+  };
+
+  // Função para eliminar localização histórica
+  const handleEliminarLocalizacao = async (localizacaoId: string) => {
+    if (!hasPermission('admin')) {
+      toast({
+        title: "Sem permissão",
+        description: "Apenas administradores podem eliminar registros de localização",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Confirmação antes de eliminar
+    if (!window.confirm("Tem certeza que deseja eliminar este registro de localização? Esta ação não pode ser desfeita.")) {
+      return;
+    }
+
+    try {
+      setDeletingId(localizacaoId);
+
+      console.log('DEBUG - Eliminando localização:', localizacaoId);
+
+      // Eliminar da base de dados
+      const { error: deleteError } = await supabase
+        .from('localizacoes_animal')
+        .delete()
+        .eq('id', localizacaoId);
+
+      if (deleteError) {
+        console.error('Erro ao eliminar localização:', deleteError);
+        throw deleteError;
+      }
+
+      // Atualizar lista local
+      setHistoricoLocalizacoes(prev => prev.filter(loc => loc.id !== localizacaoId));
+
+      toast({
+        title: "Localização eliminada",
+        description: "O registro de localização foi eliminado com sucesso",
+      });
+
+    } catch (error: any) {
+      console.error('Erro ao eliminar localização:', error);
+      toast({
+        title: "Erro ao eliminar",
+        description: error.message || "Erro inesperado ao eliminar localização",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   // Carregar dados
@@ -408,13 +462,30 @@ const AnimalLocalizacoes = () => {
                     </div>
                     
                     <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-3">
-                        <h3 className="text-lg font-semibold text-gray-300">
-                          {getTipoLocalizacaoInfo(localizacao.localizacao).nome}
-                        </h3>
-                        <Badge className="bg-gray-500/20 text-gray-400 border-gray-500/50">
-                          HISTÓRICO
-                        </Badge>
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center space-x-3">
+                          <h3 className="text-lg font-semibold text-gray-300">
+                            {getTipoLocalizacaoInfo(localizacao.localizacao).nome}
+                          </h3>
+                          <Badge className="bg-gray-500/20 text-gray-400 border-gray-500/50">
+                            HISTÓRICO
+                          </Badge>
+                        </div>
+                        
+                        {/* Botão de Eliminar */}
+                        {hasPermission('admin') && (
+                          <Button
+                            onClick={() => handleEliminarLocalizacao(localizacao.id)}
+                            disabled={deletingId === localizacao.id}
+                            className="bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white shadow-lg shadow-red-500/25 h-8 px-3"
+                          >
+                            {deletingId === localizacao.id ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-3 w-3" />
+                            )}
+                          </Button>
+                        )}
                       </div>
                       
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
