@@ -144,13 +144,13 @@ const EditarLocalizacao = () => {
         endereco_detalhes: localizacaoForm.endereco_detalhes || null,
         responsavel_id: localizacaoForm.responsavel_id || null,
         motivo_transferencia: localizacaoForm.motivo_transferencia || null,
-        observacoes: localizacaoForm.observacoes || null,
-        updated_at: new Date().toISOString()
+        observacoes: localizacaoForm.observacoes || null
       };
 
       console.log('DEBUG - Atualizando localização:', {
         id: localizacaoId,
-        data: updateData
+        data: updateData,
+        formData: localizacaoForm
       });
 
       // Atualizar localização
@@ -174,9 +174,18 @@ const EditarLocalizacao = () => {
 
     } catch (error: any) {
       console.error('Erro ao salvar localização:', error);
+      
+      let errorMessage = "Erro inesperado ao salvar alterações";
+      
+      if (error.code === 'PGRST204') {
+        errorMessage = "Erro de estrutura da base de dados. Contacte o administrador.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Erro ao salvar",
-        description: error.message || "Erro inesperado ao salvar alterações",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
