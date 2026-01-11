@@ -54,6 +54,7 @@ const AnimalDetailFuturistic = () => {
   const { id } = useParams();
   const [animal, setAnimal] = useState<Animal | null>(null);
   const [localizacaoAtual, setLocalizacaoAtual] = useState<any>(null);
+  const [tiposLocalizacoes, setTiposLocalizacoes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [useClassicView, setUseClassicView] = useState(false);
@@ -76,6 +77,15 @@ const AnimalDetailFuturistic = () => {
     }
     
     return idade;
+  };
+
+  // Função para obter informações do tipo de localização
+  const getTipoLocalizacaoInfo = (localizacaoId: string) => {
+    const localizacaoInfo = tiposLocalizacoes.find(t => t.id === localizacaoId);
+    return {
+      emoji: '📍',
+      nome: localizacaoInfo?.nome || 'Localização'
+    };
   };
 
   // Função básica para carregar dados do animal
@@ -125,6 +135,16 @@ const AnimalDetailFuturistic = () => {
       }
 
       setAnimal(data);
+      
+      // Carregar tipos de localizações
+      const { data: tiposLocalizacoesData, error: tiposError } = await supabase
+        .from('localizacoes')
+        .select('*')
+        .order('nome');
+      
+      if (tiposLocalizacoesData && !tiposError) {
+        setTiposLocalizacoes(tiposLocalizacoesData);
+      }
       
       // Carregar localização atual
       const { data: localizacaoData, error: localizacaoError } = await supabase
@@ -612,10 +632,16 @@ const AnimalDetailFuturistic = () => {
                         <div className="w-4 h-4 bg-emerald-400 rounded-full animate-pulse"></div>
                       </div>
                       <div className="text-2xl font-bold mb-2 text-emerald-200 break-words">
-                        {localizacaoAtual?.localizacao?.nome || 'Localização não definida'}
+                        {localizacaoAtual?.localizacao ? 
+                          getTipoLocalizacaoInfo(localizacaoAtual.localizacao).nome : 
+                          'Localização não definida'
+                        }
                       </div>
                       <div className="text-sm text-emerald-200 opacity-90 mb-2">
-                        {localizacaoAtual?.localizacao?.descricao || 'Aguardando atualização de localização'}
+                        {localizacaoAtual?.localizacao ? 
+                          `Tipo: ${getTipoLocalizacaoInfo(localizacaoAtual.localizacao).nome}` : 
+                          'Aguardando atualização de localização'
+                        }
                       </div>
                       {localizacaoAtual?.endereco_detalhes && (
                         <div className="text-xs bg-emerald-500/20 rounded-lg px-3 py-1 border border-emerald-400/30 mb-2">
@@ -749,7 +775,10 @@ const AnimalDetailFuturistic = () => {
                     <div className="flex items-center justify-center lg:justify-start space-x-2">
                       <MapPin className="h-4 w-4 text-green-400" />
                       <span className="text-green-300">
-                        Local: {localizacaoAtual.localizacao?.nome || 'Não especificado'}
+                        Local: {localizacaoAtual.localizacao ? 
+                          getTipoLocalizacaoInfo(localizacaoAtual.localizacao).nome : 
+                          'Não especificado'
+                        }
                       </span>
                     </div>
                   )}
