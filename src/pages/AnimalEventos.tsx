@@ -90,7 +90,7 @@ const AnimalEventos = () => {
   const getVoluntarioNome = (voluntarioId: string) => {
     if (!voluntarioId) return 'Não atribuído';
     const voluntario = voluntarios.find(v => v.id === voluntarioId);
-    return voluntario?.nome || 'Não atribuído';
+    return voluntario?.nome || voluntario?.display_name || 'Não atribuído';
   };
 
   // Carregar dados
@@ -135,15 +135,23 @@ const AnimalEventos = () => {
         if (tiposEventosError) throw tiposEventosError;
         setTiposEventos(tiposEventosData || []);
 
-        // Carregar voluntários
-        const { data: voluntariosData, error: voluntariosError } = await supabase
-          .from('voluntarios')
-          .select('id, nome, email, telefone, especialidade, ativo')
-          .eq('ativo', true)
-          .order('nome');
+        // Carregar voluntários - usando try/catch para tratar possíveis erros de schema
+        try {
+          const { data: voluntariosData, error: voluntariosError } = await supabase
+            .from('voluntarios')
+            .select('id, nome')
+            .order('nome');
 
-        if (voluntariosError) throw voluntariosError;
-        setVoluntarios(voluntariosData || []);
+          if (voluntariosError) {
+            console.warn('Erro ao carregar voluntários:', voluntariosError);
+            setVoluntarios([]);
+          } else {
+            setVoluntarios(voluntariosData || []);
+          }
+        } catch (voluntariosError) {
+          console.warn('Erro ao carregar voluntários:', voluntariosError);
+          setVoluntarios([]);
+        }
 
       } catch (error: any) {
         console.error('Erro ao carregar dados:', error);
@@ -682,14 +690,14 @@ const AnimalEventos = () => {
             <div>
               <Label className="text-cyan-300 font-medium">Responsável</Label>
               <Select 
-                value={eventoForm.responsavel_id || "none"} 
-                onValueChange={(value) => setEventoForm({ ...eventoForm, responsavel_id: value === "none" ? "" : value })}
+                value={eventoForm.responsavel_id} 
+                onValueChange={(value) => setEventoForm({ ...eventoForm, responsavel_id: value })}
               >
                 <SelectTrigger className="bg-slate-700 border-cyan-500/30 text-white">
                   <SelectValue placeholder="Selecionar responsável (opcional)" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-700 border-cyan-500/30">
-                  <SelectItem value="none" className="text-white hover:bg-slate-600">Nenhum responsável</SelectItem>
+                  <SelectItem value="" className="text-white hover:bg-slate-600">Nenhum responsável</SelectItem>
                   {voluntarios.map((voluntario) => (
                     <SelectItem key={voluntario.id} value={voluntario.id} className="text-white hover:bg-slate-600">
                       {voluntario.nome}
