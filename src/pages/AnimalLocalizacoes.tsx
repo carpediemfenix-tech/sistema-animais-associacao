@@ -329,7 +329,16 @@ const AnimalLocalizacoes = () => {
                     </div>
                   )}
 
-                  {/* Botão de editar removido - funcionalidade pode ser implementada depois */}
+
+                  {/* Botão de Editar Localização Atual */}
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <Link to={`/animal/${id}/localizacao/${localizacaoAtual.id}/editar`}>
+                      <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white">
+                        <Edit className="h-4 w-4 mr-2" />
+                        Editar Localização Atual
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
               </div>
             </CardContent>
