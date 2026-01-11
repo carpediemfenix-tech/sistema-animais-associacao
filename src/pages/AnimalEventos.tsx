@@ -134,15 +134,24 @@ const AnimalEventos = () => {
         if (tiposEventosError) throw tiposEventosError;
         setTiposEventos(tiposEventosData || []);
 
-        // Carregar voluntários - LÓGICA ORIGINAL QUE FUNCIONAVA
-        const { data: voluntariosData, error: voluntariosError } = await supabase
-          .from('voluntarios')
-          .select('id, nome, email, telefone, especialidade, ativo')
-          .eq('ativo', true)
-          .order('nome');
+        // Carregar voluntários - com fallback para evitar quebrar a aplicação
+        try {
+          const { data: voluntariosData, error: voluntariosError } = await supabase
+            .from('voluntarios')
+            .select('id, nome, email, telefone, especialidade, ativo')
+            .eq('ativo', true)
+            .order('nome');
 
-        if (voluntariosError) throw voluntariosError;
-        setVoluntarios(voluntariosData || []);
+          if (voluntariosError) {
+            console.warn('Aviso: Não foi possível carregar voluntários:', voluntariosError);
+            setVoluntarios([]);
+          } else {
+            setVoluntarios(voluntariosData || []);
+          }
+        } catch (voluntariosError) {
+          console.warn('Aviso: Erro ao carregar voluntários:', voluntariosError);
+          setVoluntarios([]);
+        }
       } catch (error: any) {
         console.error('Erro ao carregar dados:', error);
         setError('Erro ao carregar dados dos eventos');
