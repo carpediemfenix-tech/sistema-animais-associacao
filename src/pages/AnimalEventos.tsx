@@ -690,14 +690,14 @@ const AnimalEventos = () => {
             <div>
               <Label className="text-cyan-300 font-medium">Responsável</Label>
               <Select 
-                value={eventoForm.responsavel_id} 
-                onValueChange={(value) => setEventoForm({ ...eventoForm, responsavel_id: value })}
+                value={eventoForm.responsavel_id || "none"} 
+                onValueChange={(value) => setEventoForm({ ...eventoForm, responsavel_id: value === "none" ? "" : value })}
               >
                 <SelectTrigger className="bg-slate-700 border-cyan-500/30 text-white">
                   <SelectValue placeholder="Selecionar responsável (opcional)" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-700 border-cyan-500/30">
-                  <SelectItem value="" className="text-white hover:bg-slate-600">Nenhum responsável</SelectItem>
+                  <SelectItem value="none" className="text-white hover:bg-slate-600">Nenhum responsável</SelectItem>
                   {voluntarios.map((voluntario) => (
                     <SelectItem key={voluntario.id} value={voluntario.id} className="text-white hover:bg-slate-600">
                       {voluntario.nome}
