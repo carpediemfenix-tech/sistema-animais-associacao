@@ -88,6 +88,26 @@ const AnimalDetailFuturistic = () => {
     };
   };
 
+  // Função para formatar peso
+  const formatarPeso = (peso: any) => {
+    if (!peso || peso === '' || peso === null || peso === undefined) {
+      return 'N/A';
+    }
+    
+    const pesoNum = parseFloat(peso);
+    if (isNaN(pesoNum)) {
+      return 'N/A';
+    }
+    
+    // Se for um número inteiro, mostra sem casas decimais
+    if (pesoNum % 1 === 0) {
+      return pesoNum.toString();
+    }
+    
+    // Se tiver decimais, mostra com 1 casa decimal
+    return pesoNum.toFixed(1);
+  };
+
   // Função básica para carregar dados do animal
   const fetchAnimalData = async () => {
     if (!id) {
@@ -354,7 +374,7 @@ const AnimalDetailFuturistic = () => {
                 <div>
                   <p><strong>Data de Entrada:</strong> {new Date(animal.data_entrada).toLocaleDateString('pt-PT')}</p>
                   <p><strong>Idade:</strong> {animal.idade}</p>
-                  <p><strong>Peso:</strong> {animal.peso}kg</p>
+                  <p><strong>Peso:</strong> {formatarPeso(animal.peso)}kg</p>
                   <p><strong>Cor:</strong> {animal.cor}</p>
                 </div>
               </div>
@@ -536,7 +556,7 @@ const AnimalDetailFuturistic = () => {
                     <div className="text-sm text-purple-300">Anos</div>
                   </div>
                   <div className="bg-slate-800/50 rounded-xl p-4 border border-cyan-500/30">
-                    <div className="text-2xl font-bold text-cyan-400">{animal.peso}</div>
+                    <div className="text-2xl font-bold text-cyan-400">{formatarPeso(animal.peso)}</div>
                     <div className="text-sm text-cyan-300">Kg</div>
                   </div>
                   <div className="bg-slate-800/50 rounded-xl p-4 border border-pink-500/30">
