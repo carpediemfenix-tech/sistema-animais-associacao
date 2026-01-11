@@ -52,6 +52,7 @@ const NovoEvento = () => {
     descricao: '',
     observacoes: '',
     responsavel_id: '',
+    documento_referencia: '',
     importante: false
   });
 
@@ -119,6 +120,7 @@ const NovoEvento = () => {
         descricao: eventoForm.descricao || null,
         observacoes: eventoForm.observacoes || null,
         responsavel_id: eventoForm.responsavel_id || null,
+        documento_referencia: eventoForm.documento_referencia || null,
         importante: eventoForm.importante
       };
 
@@ -130,6 +132,7 @@ const NovoEvento = () => {
       console.log('tipo_evento_id:', eventoData.tipo_evento_id, '(tipo:', typeof eventoData.tipo_evento_id, ')');
       console.log('data_evento:', eventoData.data_evento, '(tipo:', typeof eventoData.data_evento, ')');
       console.log('responsavel_id:', eventoData.responsavel_id, '(tipo:', typeof eventoData.responsavel_id, ')');
+      console.log('documento_referencia:', eventoData.documento_referencia, '(tipo:', typeof eventoData.documento_referencia, ')');
       console.log('importante:', eventoData.importante, '(tipo:', typeof eventoData.importante, ')');
       console.groupEnd();
 
@@ -397,6 +400,22 @@ const NovoEvento = () => {
               />
             </div>
 
+            {/* Documento de Referência */}
+            <div>
+              <Label className="text-cyan-300 font-medium flex items-center mb-2">
+                <FileText className="h-4 w-4 mr-2" />
+                Documento de Referência
+              </Label>
+              <Input
+                value={eventoForm.documento_referencia}
+                onChange={(e) => setEventoForm({ ...eventoForm, documento_referencia: e.target.value })}
+                placeholder="Número do documento, referência ou código..."
+                className="bg-slate-700 border-cyan-500/30 text-white h-12"
+              />
+              <p className="text-gray-400 text-sm mt-1">
+                Referência a documentos, processos ou códigos relacionados ao evento
+              </p>
+            </div>
             {/* Evento Importante */}
             <div className="bg-yellow-500/10 rounded-lg p-4 border border-yellow-500/30">
               <div className="flex items-center space-x-3">
