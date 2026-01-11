@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import { 
   ArrowLeft, 
   Save,
@@ -98,9 +99,9 @@ const NovaLocalizacao = () => {
       // Carregar voluntários
       const { data: voluntariosData } = await supabase
         .from('voluntarios')
-        .select('*')
+        .select('id, nome, nickname, display_name, email, telefone, especialidade, ativo')
         .eq('ativo', true)
-        .order('nome');
+        .order('display_name'); // Ordenar por display_name em vez de nome
 
       setVoluntarios(voluntariosData || []);
 
@@ -350,22 +351,21 @@ const NovaLocalizacao = () => {
                   <Label htmlFor="responsavel_id" className="text-blue-700 font-medium">
                     Responsável pela Localização
                   </Label>
-                  <Select 
-                    value={localizacaoForm.responsavel_id} 
-                    onValueChange={(value) => setLocalizacaoForm({ ...localizacaoForm, responsavel_id: value === "none" ? "" : value })}
-                  >
-                    <SelectTrigger className="border-blue-200 focus:border-blue-400">
-                      <SelectValue placeholder="Selecionar responsável (opcional)" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Nenhum responsável</SelectItem>
-                      {voluntarios.map((voluntario) => (
-                        <SelectItem key={voluntario.id} value={voluntario.id}>
-                          {voluntario.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Combobox
+                    options={[
+                      { value: "", label: "Nenhum responsável" },
+                      ...voluntarios.map((voluntario) => ({
+                        value: voluntario.id,
+                        label: voluntario.display_name || voluntario.nome || 'Voluntário sem nome'
+                      }))
+                    ]}
+                    value={localizacaoForm.responsavel_id}
+                    onValueChange={(value) => setLocalizacaoForm({ ...localizacaoForm, responsavel_id: value })}
+                    placeholder="Digite para pesquisar responsável..."
+                    searchPlaceholder="Digite o nome ou primeira letra..."
+                    emptyMessage="Nenhum voluntário encontrado."
+                    className="border-blue-200 focus:border-blue-400"
+                  />
                 </div>
 
                 <div>

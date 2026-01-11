@@ -246,6 +246,8 @@ export interface Localizacao {
 export interface Voluntario {
   id: string;
   nome: string;
+  nickname?: string;        // NOVO: Apelido do voluntário
+  display_name?: string;    // NOVO: Nome de exibição (usado nos selects)
   email?: string;
   telefone?: string;
   especialidade: 'Veterinário' | 'Cuidador' | 'Transporte' | 'Administrativo' | 'Geral';

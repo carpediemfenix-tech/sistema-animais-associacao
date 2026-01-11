@@ -133,9 +133,9 @@ const AnimalLocalizacoes = () => {
       // Carregar voluntários
       const { data: voluntariosData } = await supabase
         .from('voluntarios')
-        .select('*')
+        .select('id, nome, nickname, display_name, email, telefone, especialidade, ativo')
         .eq('ativo', true)
-        .order('nome');
+        .order('display_name'); // Ordenar por display_name
 
       setVoluntarios(voluntariosData || []);
 
