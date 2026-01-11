@@ -99,7 +99,10 @@ const AnimalLocalizacoes = () => {
         // Carregar localizações do animal
         const { data: localizacoesData, error: localizacoesError } = await supabase
           .from('localizacoes_animal')
-          .select('*')
+          .select(`
+            *,
+            voluntarios(nome)
+          `)
           .eq('animal_id', id)
           .order('data_inicio', { ascending: false });
 
@@ -259,7 +262,7 @@ const AnimalLocalizacoes = () => {
                   {animal?.nome} - Localizações
                 </h1>
                 <p className="text-xl text-purple-300 font-medium">
-                  {animal?.especie} • Sistema de Rastreamento GPS
+                  {animal?.especie} • Histórico de Localizações Oficiais
                 </p>
                 <div className="flex items-center space-x-4 mt-4">
                   <div className="flex items-center space-x-2">
@@ -329,14 +332,14 @@ const AnimalLocalizacoes = () => {
                       </div>
                     </div>
                     
-                    {localizacaoAtual.responsavel_id && (
+                    {localizacaoAtual.voluntarios?.nome && (
                       <div className="bg-slate-800/30 rounded-xl p-4 border border-purple-500/30">
                         <div className="flex items-center space-x-2 mb-2">
                           <User className="h-4 w-4 text-purple-400" />
                           <span className="text-sm text-purple-300">Responsável</span>
                         </div>
                         <div className="text-lg font-bold text-purple-200">
-                          {voluntarios.find(v => v.id === localizacaoAtual.responsavel_id)?.nome || 'N/A'}
+                          {localizacaoAtual.voluntarios?.nome || 'Não atribuído'}
                         </div>
                       </div>
                     )}
@@ -430,11 +433,11 @@ const AnimalLocalizacoes = () => {
                           </span>
                         </div>
                         
-                        {localizacao.responsavel_id && (
+                        {localizacao.voluntarios?.nome && (
                           <div className="flex items-center space-x-2">
                             <User className="h-4 w-4 text-gray-400" />
                             <span className="text-gray-300">
-                              {voluntarios.find(v => v.id === localizacao.responsavel_id)?.nome || 'N/A'}
+                              {localizacao.voluntarios?.nome || 'Não atribuído'}
                             </span>
                           </div>
                         )}
