@@ -112,24 +112,51 @@ const NovoEvento = () => {
       }
 
       setSaving(true);
-
       const eventoData = {
         animal_id: id,
         tipo_evento_id: eventoForm.tipo_evento_id,
         data_evento: eventoForm.data_evento,
         descricao: eventoForm.descricao || null,
         observacoes: eventoForm.observacoes || null,
-        responsavel_id: eventoForm.responsavel_id || "",
+        responsavel_id: eventoForm.responsavel_id || null,
         importante: eventoForm.importante
       };
+
+      // === LOG DETALHADO DO PAYLOAD ===
+      console.group('🔍 [NOVO_EVENTO] PAYLOAD PARA INSERT');
+      console.table(eventoData);
+      console.log('JSON:', JSON.stringify(eventoData, null, 2));
+      console.log('animal_id:', eventoData.animal_id, '(tipo:', typeof eventoData.animal_id, ')');
+      console.log('tipo_evento_id:', eventoData.tipo_evento_id, '(tipo:', typeof eventoData.tipo_evento_id, ')');
+      console.log('data_evento:', eventoData.data_evento, '(tipo:', typeof eventoData.data_evento, ')');
+      console.log('responsavel_id:', eventoData.responsavel_id, '(tipo:', typeof eventoData.responsavel_id, ')');
+      console.log('importante:', eventoData.importante, '(tipo:', typeof eventoData.importante, ')');
+      console.groupEnd();
 
       const { error } = await supabase
         .from('eventos_animal')
         .insert([eventoData]);
 
       if (error) {
-        console.error('Erro detalhado ao inserir evento:', error);
-        throw error;
+        // === LOG DETALHADO DO ERRO ===
+        console.group('❌ [NOVO_EVENTO] ERRO 400 - DETALHES COMPLETOS');
+        console.error('Erro completo:', error);
+        console.table({
+          'Código': error.code || 'N/A',
+          'Mensagem': error.message || 'N/A',
+          'Detalhes': error.details || 'N/A',
+          'Hint': error.hint || 'N/A',
+          'Status': error.status || 'N/A'
+        });
+        console.log('JSON do erro:', JSON.stringify(error, null, 2));
+        console.groupEnd();
+        
+        toast({
+          title: "Erro ao salvar evento",
+          description: `Erro: ${error.message || 'Erro desconhecido'}`,
+          variant: "destructive",
+        });
+        return;
       }
 
       toast({
