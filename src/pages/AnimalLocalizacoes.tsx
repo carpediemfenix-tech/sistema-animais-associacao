@@ -63,7 +63,7 @@ const AnimalLocalizacoes = () => {
   const [localizacaoForm, setLocalizacaoForm] = useState({
     localizacao_id: '',
     data_inicio: '',
-    endereco_detalhes: '',
+    // endereco_detalhes removido - coluna não existe na tabela
     responsavel_id: '',
     motivo_transferencia: '',
     observacoes: ''
@@ -162,7 +162,7 @@ const AnimalLocalizacoes = () => {
     setLocalizacaoForm({
       localizacao_id: '',
       data_inicio: '',
-      endereco_detalhes: '',
+      // endereco_detalhes removido - coluna não existe na tabela
       responsavel_id: '',
       motivo_transferencia: '',
       observacoes: ''
@@ -175,7 +175,7 @@ const AnimalLocalizacoes = () => {
       setLocalizacaoForm({
         localizacao_id: String(localizacao.localizacao_id || ''),
         data_inicio: localizacao.data_inicio || '',
-        endereco_detalhes: localizacao.endereco_detalhes || '',
+        // endereco_detalhes removido - coluna não existe na tabela
         responsavel_id: localizacao.responsavel_id || '',
         motivo_transferencia: localizacao.motivo_transferencia || '',
         observacoes: localizacao.observacoes || ''
@@ -234,7 +234,7 @@ const AnimalLocalizacoes = () => {
         animal_id: id,
         localizacao_id: localizacaoForm.localizacao_id,
         data_inicio: localizacaoForm.data_inicio,
-        endereco_detalhes: localizacaoForm.endereco_detalhes,
+        // endereco_detalhes removido - coluna não existe na tabela
         responsavel_id: localizacaoForm.responsavel_id || null,
         motivo_transferencia: localizacaoForm.motivo_transferencia,
         observacoes: localizacaoForm.observacoes,
@@ -473,11 +473,7 @@ const AnimalLocalizacoes = () => {
                     </div>
                   </div>
 
-                  {localizacaoAtual.endereco_detalhes && (
-                    <div className="mt-2 p-2 bg-white rounded text-sm">
-                      <strong>Endereço:</strong> {localizacaoAtual.endereco_detalhes}
-                    </div>
-                  )}
+                  {/* Campo endereco_detalhes removido - coluna não existe na tabela */}
 
                   {localizacaoAtual.observacoes && (
                     <div className="mt-2 p-2 bg-white rounded text-sm">
@@ -554,11 +550,7 @@ const AnimalLocalizacoes = () => {
                             </div>
                           </div>
 
-                          {localizacao.endereco_detalhes && (
-                            <div className="mt-2 text-sm text-gray-700">
-                              <strong>Endereço:</strong> {localizacao.endereco_detalhes}
-                            </div>
-                          )}
+                          {/* Campo endereco_detalhes removido - coluna não existe na tabela */}
 
                           {localizacao.motivo_transferencia && (
                             <div className="mt-2 text-sm text-gray-700">
@@ -645,19 +637,7 @@ const AnimalLocalizacoes = () => {
               />
             </div>
             
-            <div>
-              <Label htmlFor="endereco_detalhes" className="text-blue-700 font-medium">
-                Endereço/Detalhes da Localização
-              </Label>
-              <Textarea
-                id="endereco_detalhes"
-                value={localizacaoForm.endereco_detalhes}
-                onChange={(e) => setLocalizacaoForm({ ...localizacaoForm, endereco_detalhes: e.target.value })}
-                className="border-blue-200 focus:border-blue-400"
-                placeholder="Endereço completo, contactos, etc."
-                rows={2}
-              />
-            </div>
+            {/* Campo endereco_detalhes removido - coluna não existe na tabela */}
 
             <div>
               <Label htmlFor="responsavel_id" className="text-blue-700 font-medium">
