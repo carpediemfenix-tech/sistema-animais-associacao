@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Combobox } from "@/components/ui/combobox";
+import VoluntarioSelector from "@/components/VoluntarioSelector";
 import { 
   ArrowLeft, 
   Save,
@@ -35,7 +35,7 @@ const NovaLocalizacao = () => {
 
   // Estados para dados relacionados
   const [tiposLocalizacoes, setTiposLocalizacoes] = useState<any[]>([]);
-  const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
+  // voluntarios removido - agora usa VoluntarioSelector
 
   // Formulário de localização
   const [localizacaoForm, setLocalizacaoForm] = useState({
@@ -96,14 +96,7 @@ const NovaLocalizacao = () => {
 
       setTiposLocalizacoes(tiposLocalizacoesData || []);
 
-      // Carregar voluntários
-      const { data: voluntariosData } = await supabase
-        .from('voluntarios')
-        .select('id, nome, nickname, display_name, email, telefone, especialidade, ativo')
-        .eq('ativo', true)
-        .order('display_name'); // Ordenar por display_name em vez de nome
-
-      setVoluntarios(voluntariosData || []);
+      // Voluntários agora são carregados pelo VoluntarioSelector
 
     } catch (error) {
       console.error('Erro ao carregar dados relacionados:', error);
@@ -348,22 +341,15 @@ const NovaLocalizacao = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <Label htmlFor="responsavel_id" className="text-blue-700 font-medium">
-                    Responsável pela Localização
-                  </Label>
-                  <Combobox
-                    options={[
-                      { value: "", label: "Nenhum responsável" },
-                      ...voluntarios.map((voluntario) => ({
-                        value: voluntario.id,
-                        label: voluntario.display_name || voluntario.nome || 'Voluntário sem nome'
-                      }))
-                    ]}
+                  <VoluntarioSelector
                     value={localizacaoForm.responsavel_id}
-                    onValueChange={(value) => setLocalizacaoForm({ ...localizacaoForm, responsavel_id: value })}
+                    onValueChange={(voluntarioId, voluntario) => {
+                      setLocalizacaoForm({ ...localizacaoForm, responsavel_id: voluntarioId });
+                    }}
+                    label="Responsável pela Localização"
                     placeholder="Digite para pesquisar responsável..."
-                    searchPlaceholder="Digite o nome ou primeira letra..."
-                    emptyMessage="Nenhum voluntário encontrado."
+                    showFullName={true}
+                    required={false}
                     className="border-blue-200 focus:border-blue-400"
                   />
                 </div>
