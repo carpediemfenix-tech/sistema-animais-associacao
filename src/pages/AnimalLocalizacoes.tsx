@@ -61,7 +61,7 @@ const AnimalLocalizacoes = () => {
 
   // Formulário de localização
   const [localizacaoForm, setLocalizacaoForm] = useState({
-    localizacao_id: '',
+    localizacao: '', // Corrigido: tabela usa 'localizacao' não 'localizacao_id'
     data_inicio: '',
     // endereco_detalhes removido - coluna não existe na tabela
     responsavel_id: '',
@@ -160,7 +160,7 @@ const AnimalLocalizacoes = () => {
   // Funções de gestão de localizações
   const resetLocalizacaoForm = () => {
     setLocalizacaoForm({
-      localizacao_id: '',
+      localizacao: '', // Corrigido: tabela usa 'localizacao' não 'localizacao_id'
       data_inicio: '',
       endereco_detalhes: '', // Restaurado - estrutura da tabela foi corrigida
       responsavel_id: '',
@@ -173,7 +173,7 @@ const AnimalLocalizacoes = () => {
     if (localizacao) {
       setEditingLocalizacao(localizacao);
       setLocalizacaoForm({
-        localizacao_id: String(localizacao.localizacao_id || ''),
+        localizacao: String(localizacao.localizacao || ''), // Corrigido: tabela usa 'localizacao' não 'localizacao_id'
         data_inicio: localizacao.data_inicio || '',
         endereco_detalhes: localizacao.endereco_detalhes || '', // Restaurado - estrutura da tabela foi corrigida
         responsavel_id: localizacao.responsavel_id || '',
@@ -232,7 +232,7 @@ const AnimalLocalizacoes = () => {
 
       const localizacaoData = {
         animal_id: id,
-        localizacao_id: localizacaoForm.localizacao_id,
+        localizacao: localizacaoForm.localizacao, // Corrigido: tabela usa 'localizacao' não 'localizacao_id'
         data_inicio: localizacaoForm.data_inicio,
         // endereco_detalhes removido - coluna não existe na tabela
         responsavel_id: localizacaoForm.responsavel_id || null,
@@ -452,12 +452,12 @@ const AnimalLocalizacoes = () => {
             <CardContent>
               <div className="flex items-start space-x-4">
                 <div className="flex-shrink-0 w-16 h-16 rounded-full bg-blue-500 flex items-center justify-center text-white text-2xl">
-                  {getTipoLocalizacaoInfo(localizacaoAtual.localizacao_id).emoji}
+                  {getTipoLocalizacaoInfo(localizacaoAtual.localizacao).emoji}
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center space-x-2 mb-2">
                     <h3 className="text-xl font-semibold text-gray-900">
-                      {getTipoLocalizacaoInfo(localizacaoAtual.localizacao_id).nome}
+                      {getTipoLocalizacaoInfo(localizacaoAtual.localizacao).nome}
                     </h3>
                     <Badge className="bg-green-100 text-green-800">ATUAL</Badge>
                   </div>
@@ -516,7 +516,7 @@ const AnimalLocalizacoes = () => {
             {historicoLocalizacoes.length > 0 ? (
               <div className="space-y-4">
                 {historicoLocalizacoes.map((localizacao) => {
-                  const tipoInfo = getTipoLocalizacaoInfo(localizacao.localizacao_id);
+                  const tipoInfo = getTipoLocalizacaoInfo(localizacao.localizacao); // Corrigido: tabela usa 'localizacao'
                   return (
                     <div key={localizacao.id} className="border rounded-lg p-4 bg-gray-50">
                       <div className="flex items-start space-x-4">
@@ -608,9 +608,9 @@ const AnimalLocalizacoes = () => {
               </Label>
               <Select 
                 key={`select-${localizacaoDialogOpen}`}
-                value={localizacaoForm.localizacao_id || ""} 
+                value={localizacaoForm.localizacao || ""} 
                 onValueChange={(value) => {
-                  setLocalizacaoForm(prev => ({ ...prev, localizacao_id: value }));
+                  setLocalizacaoForm(prev => ({ ...prev, localizacao: value })); // Corrigido: tabela usa 'localizacao'
                 }}
               >
                 <SelectTrigger className="border-blue-200 focus:border-blue-400">
