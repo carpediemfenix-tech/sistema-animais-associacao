@@ -16,6 +16,7 @@ import AnimalBI from "./pages/AnimalBI";
 import AnimalIntervencoes from "./pages/AnimalIntervencoes";
 import AnimalEventos from "./pages/AnimalEventos";
 import AnimalLocalizacoes from "./pages/AnimalLocalizacoes";
+import NovaLocalizacao from "./pages/NovaLocalizacao";
 import AnimalResponsabilidades from "./pages/AnimalResponsabilidades";
 import AnimalFinanceiro from "./pages/AnimalFinanceiro";
 import NovoAnimal from "./pages/NovoAnimal";
@@ -182,6 +183,7 @@ function App() {
               <Route path="/animal/:id/intervencoes" element={<ProtectedRoute><AnimalIntervencoes /></ProtectedRoute>} />
               <Route path="/animal/:id/eventos" element={<ProtectedRoute><AnimalEventos /></ProtectedRoute>} />
               <Route path="/animal/:id/localizacoes" element={<ProtectedRoute><AnimalLocalizacoes /></ProtectedRoute>} />
+              <Route path="/animal/:id/nova-localizacao" element={<ProtectedRoute><NovaLocalizacao /></ProtectedRoute>} />
               <Route path="/animal/:id/responsabilidades" element={<ProtectedRoute><AnimalResponsabilidades /></ProtectedRoute>} />
               <Route path="/animal/:id/financeiro" element={<ProtectedRoute><AnimalFinanceiro /></ProtectedRoute>} />
               <Route path="/animal/:id/estados" element={<ProtectedRoute><AnimalEstados /></ProtectedRoute>} />

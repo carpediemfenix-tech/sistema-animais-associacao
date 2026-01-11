@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+// Dialog removido - agora usa página dedicada
 import { 
   ArrowLeft, 
   Plus, 
@@ -56,18 +56,9 @@ const AnimalLocalizacoes = () => {
   const [localizacoes, setLocalizacoes] = useState<LocalizacaoAnimal[]>([]);
   const [tiposLocalizacoes, setTiposLocalizacoes] = useState<any[]>([]);
   const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
-  const [localizacaoDialogOpen, setLocalizacaoDialogOpen] = useState(false);
   const [editingLocalizacao, setEditingLocalizacao] = useState<LocalizacaoAnimal | null>(null);
 
-  // Formulário de localização
-  const [localizacaoForm, setLocalizacaoForm] = useState({
-    localizacao: '', // Corrigido: tabela usa 'localizacao' não 'localizacao_id'
-    data_inicio: '',
-    // endereco_detalhes removido - coluna não existe na tabela
-    responsavel_id: '',
-    motivo_transferencia: '',
-    observacoes: ''
-  });
+  // Estados do modal removidos - agora usa página dedicada
 
   // Debug do estado do formulário removido para evitar loops
 
@@ -157,156 +148,7 @@ const AnimalLocalizacoes = () => {
     fetchAnimalData();
   }, [id]);
 
-  // Funções de gestão de localizações
-  const resetLocalizacaoForm = () => {
-    setLocalizacaoForm({
-      localizacao: '', // Corrigido: tabela usa 'localizacao' não 'localizacao_id'
-      data_inicio: '',
-      endereco_detalhes: '', // Restaurado - estrutura da tabela foi corrigida
-      responsavel_id: '',
-      motivo_transferencia: '',
-      observacoes: ''
-    });
-  };
-
-  const openLocalizacaoDialog = (localizacao?: LocalizacaoAnimal) => {
-    if (localizacao) {
-      setEditingLocalizacao(localizacao);
-      setLocalizacaoForm({
-        localizacao: String(localizacao.localizacao || ''), // Corrigido: tabela usa 'localizacao' não 'localizacao_id'
-        data_inicio: localizacao.data_inicio || '',
-        endereco_detalhes: localizacao.endereco_detalhes || '', // Restaurado - estrutura da tabela foi corrigida
-        responsavel_id: localizacao.responsavel_id || '',
-        motivo_transferencia: localizacao.motivo_transferencia || '',
-        observacoes: localizacao.observacoes || ''
-      });
-    } else {
-      setEditingLocalizacao(null);
-      resetLocalizacaoForm();
-    }
-    setLocalizacaoDialogOpen(true);
-  };
-
-  const handleLocalizacaoSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    try {
-      // VALIDAÇÃO: Verificar se nova localização não é anterior à atual
-      if (!editingLocalizacao && localizacaoAtual) {
-        const dataNovaLocalizacao = new Date(localizacaoForm.data_inicio);
-        const dataLocalizacaoAtual = new Date(localizacaoAtual.data_inicio);
-        
-        if (dataNovaLocalizacao < dataLocalizacaoAtual) {
-          toast({
-            title: "Data inválida",
-            description: "A nova localização não pode ter data anterior à localização atual",
-            variant: "destructive",
-          });
-          return;
-        }
-      }
-      
-      // NOVA LÓGICA: Desativar localizações anteriores ANTES de inserir nova
-      if (!editingLocalizacao) {
-        // Desativar todas as localizações ativas do animal
-        // CORREÇÃO: Data de fim = data de início da nova localização
-        const dataFimAnterior = localizacaoForm.data_inicio;
-        
-        const { error: updateError } = await supabase
-          .from('localizacoes_animal')
-          .update({ 
-            ativo: false, 
-            data_fim: dataFimAnterior // Data de início da nova localização
-          })
-          .eq('animal_id', id)
-          .eq('ativo', true);
-
-        console.log('DEBUG - Desativando localizações anteriores com data_fim:', dataFimAnterior);
-        
-        if (updateError) {
-          console.error('Erro ao desativar localizações anteriores:', updateError);
-        } else {
-          console.log('DEBUG - Localizações anteriores desativadas com sucesso');
-        }
-      }
-
-      const localizacaoData = {
-        animal_id: id,
-        localizacao: localizacaoForm.localizacao, // Corrigido: tabela usa 'localizacao' não 'localizacao_id'
-        data_inicio: localizacaoForm.data_inicio,
-        // endereco_detalhes removido - coluna não existe na tabela
-        responsavel_id: localizacaoForm.responsavel_id || null,
-        motivo_transferencia: localizacaoForm.motivo_transferencia,
-        observacoes: localizacaoForm.observacoes,
-        // CORREÇÃO: Manter o status ativo quando editando, definir como ativo apenas para novas localizações
-        ativo: editingLocalizacao ? editingLocalizacao.ativo : true
-      };
-
-      // === LOG DETALHADO DO PAYLOAD ===
-      console.group('🔍 [LOCALIZACAO] PAYLOAD PARA ' + (editingLocalizacao ? 'UPDATE' : 'INSERT'));
-      console.table(localizacaoData);
-      console.log('JSON:', JSON.stringify(localizacaoData, null, 2));
-      console.log('animal_id:', localizacaoData.animal_id, '(tipo:', typeof localizacaoData.animal_id, ')');
-      console.log('localizacao_id:', localizacaoData.localizacao_id, '(tipo:', typeof localizacaoData.localizacao_id, ')');
-      console.log('data_inicio:', localizacaoData.data_inicio, '(tipo:', typeof localizacaoData.data_inicio, ')');
-      console.log('responsavel_id:', localizacaoData.responsavel_id, '(tipo:', typeof localizacaoData.responsavel_id, ')');
-      console.log('ativo:', localizacaoData.ativo, '(tipo:', typeof localizacaoData.ativo, ')');
-      console.groupEnd();
-
-      let error;
-      if (editingLocalizacao) {
-        const { error: updateError } = await supabase
-          .from('localizacoes_animal')
-          .update(localizacaoData)
-          .eq('id', editingLocalizacao.id);
-        error = updateError;
-      } else {
-        const { error: insertError } = await supabase
-          .from('localizacoes_animal')
-          .insert([localizacaoData]);
-        error = insertError;
-      }
-
-      if (error) {
-        // === LOG DETALHADO DO ERRO ===
-        console.group('❌ [LOCALIZACAO] ERRO 400 - DETALHES COMPLETOS');
-        console.error('Erro completo:', error);
-        console.table({
-          'Código': error.code || 'N/A',
-          'Mensagem': error.message || 'N/A',
-          'Detalhes': error.details || 'N/A',
-          'Hint': error.hint || 'N/A',
-          'Status': error.status || 'N/A'
-        });
-        console.log('JSON do erro:', JSON.stringify(error, null, 2));
-        console.groupEnd();
-        
-        toast({
-          title: "Erro ao salvar localização",
-          description: `Erro: ${error.message || 'Erro desconhecido'}`,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      toast({
-        title: editingLocalizacao ? "Localização atualizada" : "Localização registrada",
-        description: editingLocalizacao ? "Localização atualizada com sucesso" : "Nova localização registrada com sucesso",
-      });
-
-      setLocalizacaoDialogOpen(false);
-      resetLocalizacaoForm();
-      setEditingLocalizacao(null);
-      await loadRelatedData();
-
-    } catch (error) {
-      toast({
-        title: "Erro inesperado",
-        description: "Ocorreu um erro inesperado",
-        variant: "destructive",
-      });
-    }
-  };
+  // Funções do modal removidas - agora usa página dedicada
 
   const handleDeleteLocalizacao = async (localizacaoId: string) => {
     if (!confirm('Tem certeza que deseja eliminar esta localização?')) {
@@ -429,10 +271,12 @@ const AnimalLocalizacoes = () => {
           { label: 'Localizações', icon: <MapPin className="h-4 w-4" /> }
         ]}
         primaryActions={
-          <Button onClick={() => openLocalizacaoDialog()} className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 h-9">
-            <Plus className="h-4 w-4 mr-2" />
-            Nova Localização
-          </Button>
+          <Link to={`/animal/${id}/nova-localizacao`}>
+            <Button className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 h-9">
+              <Plus className="h-4 w-4 mr-2" />
+              Nova Localização
+            </Button>
+          </Link>
         }
       />
 
@@ -485,16 +329,7 @@ const AnimalLocalizacoes = () => {
                     </div>
                   )}
 
-                  <div className="flex space-x-2 mt-4">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => openLocalizacaoDialog(localizacaoAtual)}
-                    >
-                      <Edit className="h-4 w-4 mr-2" />
-                      Editar
-                    </Button>
-                  </div>
+                  {/* Botão de editar removido - funcionalidade pode ser implementada depois */}
                 </div>
               </div>
             </CardContent>
@@ -536,13 +371,7 @@ const AnimalLocalizacoes = () => {
                               </div>
                             </div>
                             <div className="flex space-x-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openLocalizacaoDialog(localizacao)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
+                              {/* Botão de editar removido - funcionalidade pode ser implementada depois */}
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -589,149 +418,7 @@ const AnimalLocalizacoes = () => {
 
       </div>
 
-      {/* Diálogo de Localização */}
-      <Dialog open={localizacaoDialogOpen} onOpenChange={setLocalizacaoDialogOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="text-blue-800">
-              {editingLocalizacao ? 'Editar Localização' : 'Nova Localização'}
-            </DialogTitle>
-            <DialogDescription className="text-blue-600">
-              {editingLocalizacao ? 'Editar informações da localização' : `Registar nova localização para ${animal?.nome}`}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <form onSubmit={handleLocalizacaoSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="localizacao_id" className="text-blue-700 font-medium">
-                Tipo de Localização *
-              </Label>
-              <Select 
-                key={`select-${localizacaoDialogOpen}`}
-                value={localizacaoForm.localizacao || ""} 
-                onValueChange={(value) => {
-                  setLocalizacaoForm(prev => ({ ...prev, localizacao: value })); // Corrigido: tabela usa 'localizacao'
-                }}
-              >
-                <SelectTrigger className="border-blue-200 focus:border-blue-400">
-                  <SelectValue placeholder="Selecionar tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {tiposLocalizacoes.length === 0 && (
-                    <SelectItem value="loading" disabled>
-                      Carregando localizações...
-                    </SelectItem>
-                  )}
-                  {tiposLocalizacoes.map((localizacao) => (
-                    <SelectItem key={localizacao.id} value={String(localizacao.id)}>
-                      {localizacao.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div>
-              <Label htmlFor="data_inicio" className="text-blue-700 font-medium">
-                Data de Início *
-              </Label>
-              <Input
-                id="data_inicio"
-                type="date"
-                value={localizacaoForm.data_inicio}
-                onChange={(e) => setLocalizacaoForm({ ...localizacaoForm, data_inicio: e.target.value })}
-                className="border-blue-200 focus:border-blue-400"
-                required
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="endereco_detalhes" className="text-blue-700 font-medium">
-                Endereço/Detalhes da Localização
-              </Label>
-              <Textarea
-                id="endereco_detalhes"
-                value={localizacaoForm.endereco_detalhes}
-                onChange={(e) => setLocalizacaoForm({ ...localizacaoForm, endereco_detalhes: e.target.value })}
-                className="border-blue-200 focus:border-blue-400"
-                placeholder="Endereço completo, contactos, etc."
-                rows={2}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="responsavel_id" className="text-blue-700 font-medium">
-                Responsável pela Localização
-              </Label>
-              <Select 
-                value={localizacaoForm.responsavel_id} 
-                onValueChange={(value) => setLocalizacaoForm({ ...localizacaoForm, responsavel_id: value === "none" ? "" : value })}
-              >
-                <SelectTrigger className="border-blue-200 focus:border-blue-400">
-                  <SelectValue placeholder="Selecionar responsável (opcional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Nenhum responsável</SelectItem>
-                  {voluntarios.map((voluntario) => (
-                    <SelectItem key={voluntario.id} value={voluntario.id}>
-                      {voluntario.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="motivo_transferencia" className="text-blue-700 font-medium">
-                Motivo da Transferência
-              </Label>
-              <Input
-                id="motivo_transferencia"
-                value={localizacaoForm.motivo_transferencia}
-                onChange={(e) => setLocalizacaoForm({ ...localizacaoForm, motivo_transferencia: e.target.value })}
-                className="border-blue-200 focus:border-blue-400"
-                placeholder="Ex: Adoção, tratamento médico, etc."
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="observacoes" className="text-blue-700 font-medium">
-                Observações
-              </Label>
-              <Textarea
-                id="observacoes"
-                value={localizacaoForm.observacoes}
-                onChange={(e) => setLocalizacaoForm({ ...localizacaoForm, observacoes: e.target.value })}
-                className="border-blue-200 focus:border-blue-400"
-                placeholder="Informações adicionais sobre a localização..."
-                rows={3}
-              />
-            </div>
-
-            <div className="bg-blue-50 p-3 rounded-lg">
-              <p className="text-sm text-blue-700">
-                <strong>Nota:</strong> Ao registar uma nova localização, ela será automaticamente definida como atual e as anteriores passarão para o histórico.
-              </p>
-            </div>
-            
-            <div className="flex justify-end space-x-3 pt-4">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => {
-                  setLocalizacaoDialogOpen(false);
-                  resetLocalizacaoForm();
-                }}
-              >
-                Cancelar
-              </Button>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                {editingLocalizacao ? 'Atualizar' : 'Registar Localização'}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+      {/* Modal removido - agora usa página dedicada */}
       
       <EnhancedFooter />
     </div>
