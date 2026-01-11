@@ -169,6 +169,13 @@ const IntakeAssessmentDisplay: React.FC<IntakeAssessmentDisplayProps> = ({
         'aggressive': 'Agressivo',
         'lethargic': 'Letárgico'
       },
+      behavior_entry: {
+        'friendly': 'Amigável',
+        'shy': 'Tímido',
+        'fearful': 'Medroso',
+        'aggressive': 'Agressivo',
+        'lethargic': 'Letárgico'
+      },
       symptoms: {
         'lethargy': 'Letargia',
         'weakness': 'Fraqueza',
@@ -275,6 +282,21 @@ const IntakeAssessmentDisplay: React.FC<IntakeAssessmentDisplayProps> = ({
         'photo_documentation': 'Documentação fotográfica',
         'emergency_contact': 'Contacto de emergência',
         'owner_notification': 'Notificação do proprietário'
+      },
+      body_condition: {
+        'emaciated': 'Emaciado',
+        'underweight': 'Abaixo do peso',
+        'ideal': 'Ideal',
+        'overweight': 'Acima do peso',
+        'obese': 'Obeso'
+      },
+      prognosis: {
+        'excellent': 'Excelente',
+        'good': 'Bom',
+        'fair': 'Razoável',
+        'guarded': 'Reservado',
+        'poor': 'Mau',
+        'grave': 'Grave'
       }
     };
     

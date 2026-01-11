@@ -242,6 +242,16 @@ const AnimalLocalizacoes = () => {
         ativo: editingLocalizacao ? editingLocalizacao.ativo : true
       };
 
+      // Log do payload para debug
+      console.log('🔍 [LOCALIZACAO] Payload para INSERT/UPDATE:', localizacaoData);
+      console.log('🔍 [LOCALIZACAO] Tipos dos campos:', {
+        animal_id: typeof localizacaoData.animal_id,
+        localizacao_id: typeof localizacaoData.localizacao_id,
+        data_inicio: typeof localizacaoData.data_inicio,
+        responsavel_id: typeof localizacaoData.responsavel_id,
+        ativo: typeof localizacaoData.ativo
+      });
+
       let error;
       if (editingLocalizacao) {
         const { error: updateError } = await supabase
@@ -257,9 +267,18 @@ const AnimalLocalizacoes = () => {
       }
 
       if (error) {
+        // Log detalhado do erro para debug
+        console.error('❌ [LOCALIZACAO] Erro detalhado do Supabase:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          full_error: error
+        });
+        
         toast({
-          title: "Erro ao salvar",
-          description: "Não foi possível salvar a localização",
+          title: "Erro ao salvar localização",
+          description: `Erro: ${error.message || 'Erro desconhecido'}`,
           variant: "destructive",
         });
         return;
