@@ -22,14 +22,25 @@ import {
   Star,
   Clock,
   User,
-  FileText
+  FileText,
+  Sparkles,
+  Zap,
+  Globe,
+  Signal,
+  Activity,
+  Eye,
+  Layers,
+  Cpu,
+  Wifi,
+  Battery,
+  Navigation,
+  Home
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Animal, EventoAnimal, TipoEvento, Voluntario } from "@/types/animal";
 import { useToast } from "@/hooks/use-toast";
 import EnhancedHeader from "@/components/EnhancedHeader";
 import EnhancedFooter from "@/components/EnhancedFooter";
-import PageActionBar from "@/components/PageActionBar";
 
 const AnimalEventos = () => {
   const { id } = useParams();
@@ -45,272 +56,266 @@ const AnimalEventos = () => {
   const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
   const [eventoDialogOpen, setEventoDialogOpen] = useState(false);
   const [editingEvento, setEditingEvento] = useState<EventoAnimal | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Formulário de evento
   const [eventoForm, setEventoForm] = useState({
-    tipo_evento: '',
+    tipo_evento_id: '',
     data_evento: '',
     descricao: '',
     observacoes: '',
-    voluntario_id: '',
-    documento_referencia: '',
+    responsavel_id: '',
     importante: false
   });
 
-  // Função para carregar dados do animal
-  const fetchAnimalData = async () => {
-    if (!id) {
-      setError("ID do animal não fornecido");
-      setLoading(false);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError(null);
-
-      const { data, error } = await supabase
-        .from('animais')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (error) {
-        console.error('Erro ao carregar animal:', error);
-        setError('Erro ao carregar dados do animal');
-        return;
-      }
-
-      if (!data) {
-        setError('Animal não encontrado');
-        return;
-      }
-
-      setAnimal(data);
-      await loadRelatedData();
-    } catch (error) {
-      console.error('Erro:', error);
-      setError('Erro inesperado ao carregar animal');
-    } finally {
-      setLoading(false);
-    }
+  // Função para formatar data
+  const formatarData = (data: string) => {
+    return new Date(data).toLocaleDateString('pt-PT', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
   };
 
-  // Função para carregar dados relacionados
-  const loadRelatedData = async () => {
-    try {
-      // Carregar eventos com joins robustos
-      const { data: eventosData, error: eventosError } = await supabase
-        .from('eventos_animal')
-        .select(`
-          *,
-          tipos_eventos(id, nome, emoji, descricao),
-          voluntarios(id, nome, email, telefone)
-        `)
-        .eq('animal_id', id)
-        .order('data_evento', { ascending: false });
+  // Função para obter informações do tipo de evento
+  const getTipoEventoInfo = (tipoEventoId: string) => {
+    const tipoEvento = tiposEventos.find(t => t.id === tipoEventoId);
+    return {
+      nome: tipoEvento?.nome || 'Evento',
+      emoji: tipoEvento?.emoji || '📅'
+    };
+  };
 
-      if (eventosError) {
-        console.error('Erro ao carregar eventos:', eventosError);
-        // Fallback: carregar eventos sem joins se houver erro
-        const { data: eventosFallback } = await supabase
+  // Função para obter nome do voluntário
+  const getVoluntarioNome = (voluntarioId: string) => {
+    const voluntario = voluntarios.find(v => v.id === voluntarioId);
+    return voluntario?.nome || 'Não atribuído';
+  };
+
+  // Carregar dados
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!id) {
+        setError("ID do animal não fornecido");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Carregar dados do animal
+        const { data: animalData, error: animalError } = await supabase
+          .from('animais')
+          .select('*')
+          .eq('id', id)
+          .single();
+
+        if (animalError) throw animalError;
+        setAnimal(animalData);
+
+        // Carregar eventos do animal
+        const { data: eventosData, error: eventosError } = await supabase
           .from('eventos_animal')
           .select('*')
           .eq('animal_id', id)
           .order('data_evento', { ascending: false });
-        
-        setEventos(eventosFallback || []);
-      } else {
+
+        if (eventosError) throw eventosError;
         setEventos(eventosData || []);
+
+        // Carregar tipos de eventos
+        const { data: tiposEventosData, error: tiposEventosError } = await supabase
+          .from('tipos_eventos')
+          .select('*')
+          .order('nome');
+
+        if (tiposEventosError) throw tiposEventosError;
+        setTiposEventos(tiposEventosData || []);
+
+        // Carregar voluntários
+        const { data: voluntariosData, error: voluntariosError } = await supabase
+          .from('voluntarios')
+          .select('id, nome, email, telefone, especialidade, ativo')
+          .eq('ativo', true)
+          .order('nome');
+
+        if (voluntariosError) throw voluntariosError;
+        setVoluntarios(voluntariosData || []);
+
+      } catch (error: any) {
+        console.error('Erro ao carregar dados:', error);
+        setError('Erro ao carregar dados dos eventos');
+      } finally {
+        setLoading(false);
       }
+    };
 
-      // Carregar tipos de eventos
-      const { data: tiposEventosData } = await supabase
-        .from('tipos_eventos')
-        .select('*')
-        .eq('ativo', true)
-        .order('nome');
-
-      setTiposEventos(tiposEventosData || []);
-
-      // Carregar voluntários
-      const { data: voluntariosData } = await supabase
-        .from('voluntarios')
-        .select('*')
-        .eq('ativo', true)
-        .order('nome');
-
-      setVoluntarios(voluntariosData || []);
-
-    } catch (error) {
-      console.error('Erro ao carregar dados relacionados:', error);
-    }
-  };
-
-  useEffect(() => {
-    fetchAnimalData();
+    fetchData();
   }, [id]);
 
-  // Funções de gestão de eventos
+  // Função para resetar formulário
   const resetEventoForm = () => {
     setEventoForm({
-      tipo_evento: '',
+      tipo_evento_id: '',
       data_evento: '',
       descricao: '',
       observacoes: '',
-      voluntario_id: '',
-      documento_referencia: '',
+      responsavel_id: '',
       importante: false
     });
+    setEditingEvento(null);
   };
 
+  // Função para abrir dialog de evento
   const openEventoDialog = (evento?: EventoAnimal) => {
     if (evento) {
       setEditingEvento(evento);
       setEventoForm({
-        tipo_evento: evento.tipo_evento?.toString() || '',
-        data_evento: evento.data_evento || '',
+        tipo_evento_id: evento.tipo_evento_id,
+        data_evento: evento.data_evento.split('T')[0],
         descricao: evento.descricao || '',
         observacoes: evento.observacoes || '',
-        voluntario_id: evento.voluntario_id || '',
-        documento_referencia: evento.documento_referencia || '',
+        responsavel_id: evento.responsavel_id || '',
         importante: evento.importante || false
       });
     } else {
-      setEditingEvento(null);
       resetEventoForm();
     }
     setEventoDialogOpen(true);
   };
 
-  const handleEventoSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  // Função para salvar evento
+  const handleEventoSubmit = async () => {
     try {
-      const eventoData = {
-        animal_id: id,
-        tipo_evento: parseInt(eventoForm.tipo_evento),
-        titulo: eventoForm.descricao,
-        data_evento: eventoForm.data_evento,
-        descricao: eventoForm.descricao,
-        observacoes: eventoForm.observacoes,
-        voluntario_id: eventoForm.voluntario_id || null,
-        documento_referencia: eventoForm.documento_referencia,
-        importante: eventoForm.importante
-      };
-
-      let error;
-      if (editingEvento) {
-        const { error: updateError } = await supabase
-          .from('eventos_animal')
-          .update(eventoData)
-          .eq('id', editingEvento.id);
-        error = updateError;
-      } else {
-        const { error: insertError } = await supabase
-          .from('eventos_animal')
-          .insert([eventoData]);
-        error = insertError;
-      }
-
-      if (error) {
-        console.error('Erro ao salvar evento:', error);
+      if (!eventoForm.tipo_evento_id || !eventoForm.data_evento) {
         toast({
-          title: "Erro ao salvar",
-          description: "Não foi possível salvar o evento",
+          title: "Erro de validação",
+          description: "Tipo de evento e data são obrigatórios",
           variant: "destructive",
         });
         return;
       }
 
-      toast({
-        title: editingEvento ? "Evento atualizado" : "Evento registrado",
-        description: editingEvento ? "Evento atualizado com sucesso" : "Novo evento registrado com sucesso",
-      });
+      const eventoData = {
+        animal_id: id,
+        tipo_evento_id: eventoForm.tipo_evento_id,
+        data_evento: eventoForm.data_evento,
+        descricao: eventoForm.descricao || null,
+        observacoes: eventoForm.observacoes || null,
+        responsavel_id: eventoForm.responsavel_id || null,
+        importante: eventoForm.importante
+      };
+
+      if (editingEvento) {
+        // Atualizar evento existente
+        const { error } = await supabase
+          .from('eventos_animal')
+          .update(eventoData)
+          .eq('id', editingEvento.id);
+
+        if (error) throw error;
+
+        setEventos(prev => prev.map(e => 
+          e.id === editingEvento.id 
+            ? { ...e, ...eventoData }
+            : e
+        ));
+
+        toast({
+          title: "Evento atualizado",
+          description: "O evento foi atualizado com sucesso",
+        });
+      } else {
+        // Criar novo evento
+        const { data, error } = await supabase
+          .from('eventos_animal')
+          .insert([eventoData])
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        setEventos(prev => [data, ...prev]);
+
+        toast({
+          title: "Evento criado",
+          description: "O evento foi criado com sucesso",
+        });
+      }
 
       setEventoDialogOpen(false);
       resetEventoForm();
-      setEditingEvento(null);
-      await loadRelatedData();
 
-    } catch (error) {
-      console.error('Erro:', error);
+    } catch (error: any) {
+      console.error('Erro ao salvar evento:', error);
       toast({
-        title: "Erro inesperado",
-        description: "Ocorreu um erro inesperado",
+        title: "Erro ao salvar",
+        description: error.message || "Erro inesperado ao salvar evento",
         variant: "destructive",
       });
     }
   };
 
-  const handleDeleteEvento = async (eventoId: string) => {
-    if (!confirm('Tem certeza que deseja eliminar este evento?')) {
+  // Função para eliminar evento
+  const handleEliminarEvento = async (eventoId: string) => {
+    if (!hasPermission('admin')) {
+      toast({
+        title: "Sem permissão",
+        description: "Apenas administradores podem eliminar eventos",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!window.confirm("Tem certeza que deseja eliminar este evento? Esta ação não pode ser desfeita.")) {
       return;
     }
 
     try {
+      setDeletingId(eventoId);
+
       const { error } = await supabase
         .from('eventos_animal')
         .delete()
         .eq('id', eventoId);
 
-      if (error) {
-        console.error('Erro ao eliminar evento:', error);
-        toast({
-          title: "Erro ao eliminar",
-          description: "Não foi possível eliminar o evento",
-          variant: "destructive",
-        });
-        return;
-      }
+      if (error) throw error;
+
+      setEventos(prev => prev.filter(e => e.id !== eventoId));
 
       toast({
         title: "Evento eliminado",
-        description: "Evento eliminado com sucesso",
+        description: "O evento foi eliminado com sucesso",
       });
 
-      await loadRelatedData();
-
-    } catch (error) {
-      console.error('Erro:', error);
+    } catch (error: any) {
+      console.error('Erro ao eliminar evento:', error);
       toast({
-        title: "Erro inesperado",
-        description: "Ocorreu um erro inesperado",
+        title: "Erro ao eliminar",
+        description: error.message || "Erro inesperado ao eliminar evento",
         variant: "destructive",
       });
+    } finally {
+      setDeletingId(null);
     }
-  };
-
-  // Função para formatar data relativa
-  const getRelativeDate = (dateString: string) => {
-    const eventDate = new Date(dateString);
-    const today = new Date();
-    const diffTime = eventDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) return "Hoje";
-    if (diffDays === 1) return "Amanhã";
-    if (diffDays === -1) return "Ontem";
-    if (diffDays > 0) return `Em ${diffDays} dias`;
-    if (diffDays < 0) return `Há ${Math.abs(diffDays)} dias`;
-    return eventDate.toLocaleDateString('pt-PT');
-  };
-
-  // Função para obter emoji do tipo de evento
-  const getTipoEventoInfo = (tipoId: number) => {
-    const tipo = tiposEventos.find(t => t.id === tipoId);
-    return {
-      emoji: tipo?.emoji || '📅',
-      nome: tipo?.nome || 'Evento'
-    };
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="h-16 w-16 animate-spin mx-auto mb-4 text-green-600" />
-          <p className="text-lg text-gray-600">A carregar eventos...</p>
+          <div className="relative">
+            <div className="w-20 h-20 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <div className="absolute inset-0 w-20 h-20 border-4 border-purple-400 border-b-transparent rounded-full animate-spin mx-auto mb-4 animate-reverse"></div>
+          </div>
+          <p className="text-cyan-400 text-lg font-medium">Carregando eventos...</p>
+          <div className="flex items-center justify-center mt-2 space-x-1">
+            <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></div>
+            <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse delay-75"></div>
+            <div className="w-2 h-2 bg-pink-400 rounded-full animate-pulse delay-150"></div>
+          </div>
         </div>
       </div>
     );
@@ -318,31 +323,14 @@ const AnimalEventos = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="text-center">
-          <AlertCircle className="h-16 w-16 mx-auto mb-4 text-red-600" />
-          <p className="text-lg text-red-600 mb-4">{error}</p>
-          <Link to="/animais">
-            <Button variant="outline">
+      <div className="min-h-screen bg-gradient-to-br from-red-900 via-slate-900 to-red-900 flex items-center justify-center">
+        <div className="text-center p-8 bg-slate-800/50 backdrop-blur-lg rounded-2xl border border-red-500/30">
+          <AlertCircle className="h-16 w-16 mx-auto mb-4 text-red-400" />
+          <p className="text-lg text-red-400 mb-4">{error}</p>
+          <Link to={`/animal/${id}`}>
+            <Button className="bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Voltar aos Animais
-            </Button>
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  if (!animal) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="text-center">
-          <PawPrint className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-          <p className="text-lg text-gray-600 mb-4">Animal não encontrado</p>
-          <Link to="/animais">
-            <Button variant="outline">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Voltar aos Animais
+              Voltar ao Animal
             </Button>
           </Link>
         </div>
@@ -351,228 +339,358 @@ const AnimalEventos = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
-      <EnhancedHeader />
-      
-      <PageActionBar
-        breadcrumbs={[
-          { label: 'Animais', href: '/animais', icon: <PawPrint className="h-4 w-4" /> },
-          { label: animal?.nome || 'Animal', href: `/animal/${id}` },
-          { label: 'Eventos', icon: <Calendar className="h-4 w-4" /> }
-        ]}
-        primaryActions={
-          <Button onClick={() => openEventoDialog()} className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 h-9">
-            <Plus className="h-4 w-4 mr-2" />
-            Novo Evento
-          </Button>
-        }
-      />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-
-        {/* Timeline de Eventos */}
-        <Card className="border-green-200 bg-gradient-to-br from-green-50 to-green-100">
-          <CardHeader>
-            <CardTitle className="flex items-center text-green-800">
-              <Calendar className="h-6 w-6 mr-2" />
-              Timeline de Eventos ({eventos.length})
-            </CardTitle>
-            <CardDescription className="text-green-600">
-              Histórico cronológico de marcos importantes na vida do animal
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {eventos.length > 0 ? (
-              <div className="space-y-6">
-                {eventos.map((evento, index) => {
-                  const tipoInfo = getTipoEventoInfo(evento.tipo_evento);
-                  return (
-                    <div key={evento.id} className="relative">
-                      {/* Linha da timeline */}
-                      {index < eventos.length - 1 && (
-                        <div className="absolute left-6 top-12 w-0.5 h-16 bg-green-200"></div>
-                      )}
-                      
-                      {/* Card do evento */}
-                      <div className="flex items-start space-x-4">
-                        {/* Ícone do evento */}
-                        <div className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-white text-lg ${
-                          evento.importante ? 'bg-red-500' : 'bg-green-500'
-                        }`}>
-                          {tipoInfo.emoji}
-                        </div>
-                        
-                        {/* Conteúdo do evento */}
-                        <div className="flex-1 min-w-0">
-                          <Card className={`${evento.importante ? 'border-red-200 bg-red-50' : 'border-gray-200 bg-white'}`}>
-                            <CardContent className="p-4">
-                              <div className="flex items-start justify-between">
-                                <div className="flex-1">
-                                  <div className="flex items-center space-x-2 mb-2">
-                                    <h3 className="font-semibold text-gray-900">{evento.descricao}</h3>
-                                    {evento.importante && (
-                                      <Badge className="bg-red-100 text-red-800">
-                                        <Star className="h-3 w-3 mr-1" />
-                                        IMPORTANTE
-                                      </Badge>
-                                    )}
-                                  </div>
-                                  
-                                  <div className="flex items-center space-x-4 text-sm text-gray-600 mb-2">
-                                    <div className="flex items-center">
-                                      <Calendar className="h-4 w-4 mr-1" />
-                                      {new Date(evento.data_evento).toLocaleDateString('pt-PT')}
-                                    </div>
-                                    <div className="flex items-center">
-                                      <Clock className="h-4 w-4 mr-1" />
-                                      {getRelativeDate(evento.data_evento)}
-                                    </div>
-                                    <Badge variant="outline" className="text-xs">
-                                      {tipoInfo.nome}
-                                    </Badge>
-                                  </div>
-                                  
-                                  {evento.voluntarios?.nome && (
-                                    <div className="flex items-center text-sm text-gray-600 mb-2">
-                                      <User className="h-4 w-4 mr-1" />
-                                      Responsável: {evento.voluntarios.nome}
-                                    </div>
-                                  )}
-                                  
-                                  {evento.documento_referencia && (
-                                    <div className="flex items-center text-sm text-gray-600 mb-2">
-                                      <FileText className="h-4 w-4 mr-1" />
-                                      Documento: {evento.documento_referencia}
-                                    </div>
-                                  )}
-                                  
-                                  {evento.observacoes && (
-                                    <p className="text-sm text-gray-700 mt-2 p-2 bg-gray-50 rounded">
-                                      {evento.observacoes}
-                                    </p>
-                                  )}
-                                </div>
-                                
-                                <div className="flex space-x-2 ml-4">
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => openEventoDialog(evento)}
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleDeleteEvento(evento.id)}
-                                    className="text-red-600 hover:text-red-700"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-gray-500">
-                <Calendar className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p className="text-lg font-medium mb-2">Nenhum evento registrado</p>
-                <p className="text-sm">Clique em "Novo Evento" para registrar o primeiro marco importante.</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white overflow-hidden">
+      {/* Background Effects */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-cyan-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl opacity-10 animate-pulse delay-500"></div>
       </div>
 
-      {/* Diálogo de Evento */}
+      {/* Grid Pattern Overlay */}
+      <div className="fixed inset-0 opacity-5 pointer-events-none">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `
+            linear-gradient(rgba(0,255,255,0.1) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0,255,255,0.1) 1px, transparent 1px)
+          `,
+          backgroundSize: '50px 50px'
+        }}></div>
+      </div>
+
+      <EnhancedHeader />
+      
+      {/* Futuristic Navigation Bar */}
+      <div className="relative z-10 bg-slate-800/30 backdrop-blur-lg border-b border-cyan-500/30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center space-x-4">
+              <Link to={`/animal/${id}`}>
+                <Button variant="ghost" className="text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  {animal?.nome}
+                </Button>
+              </Link>
+              <div className="h-6 w-px bg-cyan-500/30"></div>
+              <div className="flex items-center space-x-2">
+                <Calendar className="h-5 w-5 text-purple-400" />
+                <span className="text-lg font-semibold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+                  Sistema de Eventos
+                </span>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-3">
+              <Button 
+                onClick={() => openEventoDialog()}
+                className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 h-9 shadow-lg shadow-green-500/25"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Novo Evento
+              </Button>
+              
+              <div className="flex items-center space-x-2 bg-slate-800/50 rounded-lg px-3 py-1 border border-cyan-500/30">
+                <Signal className="h-4 w-4 text-cyan-400" />
+                <span className="text-cyan-400 text-sm">Sistema Online</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        {/* Hero Section - Animal Info */}
+        <div className="mb-8">
+          <div className="bg-gradient-to-r from-slate-800/50 to-slate-700/50 backdrop-blur-lg rounded-3xl border border-cyan-500/30 p-8 shadow-2xl shadow-purple-500/20">
+            <div className="flex items-center space-x-6">
+              <div className="relative">
+                <div className="w-20 h-20 bg-gradient-to-br from-purple-600 to-cyan-600 rounded-full flex items-center justify-center border-4 border-cyan-400/50 shadow-2xl shadow-purple-500/30">
+                  <PawPrint className="h-10 w-10 text-white/80" />
+                </div>
+                <div className="absolute -top-2 -right-2 w-6 h-6 bg-green-500 rounded-full border-2 border-slate-800 animate-pulse"></div>
+              </div>
+              
+              <div className="flex-1">
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-2">
+                  {animal?.nome} - Eventos
+                </h1>
+                <p className="text-xl text-purple-300 font-medium">
+                  {animal?.especie} • Timeline de Marcos Importantes
+                </p>
+                <div className="flex items-center space-x-4 mt-4">
+                  <div className="flex items-center space-x-2">
+                    <Wifi className="h-4 w-4 text-cyan-400" />
+                    <span className="text-cyan-400 text-sm">Conectado</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Battery className="h-4 w-4 text-green-400" />
+                    <span className="text-green-400 text-sm">100%</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Globe className="h-4 w-4 text-purple-400" />
+                    <span className="text-purple-400 text-sm">Sincronizado</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Timeline de Eventos */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent mb-6 flex items-center">
+            <Layers className="h-6 w-6 mr-3 text-orange-400" />
+            Timeline de Eventos ({eventos.length})
+          </h2>
+          
+          {eventos.length === 0 ? (
+            <div className="bg-slate-800/30 backdrop-blur-lg rounded-2xl border border-gray-500/30 p-8 text-center">
+              <Calendar className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+              <p className="text-xl text-gray-400 mb-2">Nenhum evento registrado</p>
+              <p className="text-gray-500">Este animal ainda não possui eventos registrados.</p>
+              <Button 
+                onClick={() => openEventoDialog()}
+                className="mt-4 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Criar Primeiro Evento
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {eventos.map((evento, index) => (
+                <div key={evento.id} className="bg-gradient-to-br from-slate-800/40 to-slate-700/40 backdrop-blur-lg rounded-2xl border border-gray-500/30 p-6 shadow-xl">
+                  <div className="flex items-start space-x-6">
+                    <div className="relative">
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center border ${
+                        evento.importante 
+                          ? 'bg-yellow-500/20 border-yellow-400/30' 
+                          : 'bg-blue-500/20 border-blue-400/30'
+                      }`}>
+                        {evento.importante ? (
+                          <Star className="h-6 w-6 text-yellow-400" />
+                        ) : (
+                          <Calendar className="h-6 w-6 text-blue-400" />
+                        )}
+                      </div>
+                      <div className="absolute -top-1 -right-1 w-4 h-4 bg-gray-500 rounded-full text-xs flex items-center justify-center text-white font-bold">
+                        {eventos.length - index}
+                      </div>
+                    </div>
+                    
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center space-x-3">
+                          <h3 className="text-lg font-semibold text-gray-300">
+                            {getTipoEventoInfo(evento.tipo_evento_id).emoji} {getTipoEventoInfo(evento.tipo_evento_id).nome}
+                          </h3>
+                          {evento.importante && (
+                            <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/50">
+                              <Star className="h-3 w-3 mr-1" />
+                              IMPORTANTE
+                            </Badge>
+                          )}
+                        </div>
+                        
+                        {/* Botões de Ação */}
+                        <div className="flex items-center space-x-2">
+                          <Button
+                            onClick={() => openEventoDialog(evento)}
+                            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg shadow-blue-500/25 h-8 px-3"
+                          >
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                          
+                          {hasPermission('admin') && (
+                            <Button
+                              onClick={() => handleEliminarEvento(evento.id)}
+                              disabled={deletingId === evento.id}
+                              className="bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white shadow-lg shadow-red-500/25 h-8 px-3"
+                            >
+                              {deletingId === evento.id ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-3 w-3" />
+                              )}
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm mb-4">
+                        <div className="flex items-center space-x-2">
+                          <Clock className="h-4 w-4 text-gray-400" />
+                          <span className="text-gray-300">
+                            {formatarData(evento.data_evento)}
+                          </span>
+                        </div>
+                        
+                        {evento.responsavel_id && (
+                          <div className="flex items-center space-x-2">
+                            <User className="h-4 w-4 text-gray-400" />
+                            <span className="text-gray-300">
+                              {getVoluntarioNome(evento.responsavel_id)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {evento.descricao && (
+                        <div className="mb-3 p-3 bg-blue-500/10 rounded-lg border border-blue-400/20">
+                          <div className="flex items-center space-x-2 mb-1">
+                            <FileText className="h-3 w-3 text-blue-400" />
+                            <span className="text-xs font-medium text-blue-400">Descrição</span>
+                          </div>
+                          <p className="text-sm text-blue-300">{evento.descricao}</p>
+                        </div>
+                      )}
+
+                      {evento.observacoes && (
+                        <div className="p-3 bg-slate-800/30 rounded-lg border border-gray-500/20">
+                          <div className="flex items-center space-x-2 mb-1">
+                            <FileText className="h-3 w-3 text-gray-400" />
+                            <span className="text-xs font-medium text-gray-400">Observações</span>
+                          </div>
+                          <p className="text-sm text-gray-300">{evento.observacoes}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Sistema de Monitoramento */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent mb-6 flex items-center">
+            <Cpu className="h-6 w-6 mr-3 text-cyan-400" />
+            Sistema de Monitoramento
+          </h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-gradient-to-br from-cyan-600/20 to-blue-600/20 backdrop-blur-lg rounded-2xl border border-cyan-500/30 p-6">
+              <div className="flex items-center space-x-4 mb-4">
+                <div className="bg-cyan-500/20 p-3 rounded-xl border border-cyan-400/30">
+                  <Zap className="h-6 w-6 text-cyan-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-cyan-300">Timeline Ativa</h3>
+                  <p className="text-cyan-400/70 text-sm">Cronologia em tempo real</p>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Signal className="h-4 w-4 text-cyan-400" />
+                  <span className="text-cyan-300 text-sm">Sincronizado</span>
+                </div>
+                <div className="w-3 h-3 bg-cyan-400 rounded-full animate-pulse"></div>
+              </div>
+            </div>
+            
+            <div className="bg-gradient-to-br from-green-600/20 to-emerald-600/20 backdrop-blur-lg rounded-2xl border border-green-500/30 p-6">
+              <div className="flex items-center space-x-4 mb-4">
+                <div className="bg-green-500/20 p-3 rounded-xl border border-green-400/30">
+                  <Activity className="h-6 w-6 text-green-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-green-300">Eventos</h3>
+                  <p className="text-green-400/70 text-sm">Marcos registrados</p>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <FileText className="h-4 w-4 text-green-400" />
+                  <span className="text-green-300 text-sm">{eventos.length} Registros</span>
+                </div>
+                <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+              </div>
+            </div>
+            
+            <div className="bg-gradient-to-br from-purple-600/20 to-pink-600/20 backdrop-blur-lg rounded-2xl border border-purple-500/30 p-6">
+              <div className="flex items-center space-x-4 mb-4">
+                <div className="bg-purple-500/20 p-3 rounded-xl border border-purple-400/30">
+                  <Eye className="h-6 w-6 text-purple-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-purple-300">Importantes</h3>
+                  <p className="text-purple-400/70 text-sm">Eventos destacados</p>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Star className="h-4 w-4 text-purple-400" />
+                  <span className="text-purple-300 text-sm">{eventos.filter(e => e.importante).length} Marcados</span>
+                </div>
+                <div className="w-3 h-3 bg-purple-400 rounded-full animate-pulse"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Dialog para Criar/Editar Evento */}
       <Dialog open={eventoDialogOpen} onOpenChange={setEventoDialogOpen}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="bg-slate-800 border-cyan-500/30 text-white max-w-2xl">
           <DialogHeader>
-            <DialogTitle className="text-green-800">
+            <DialogTitle className="text-cyan-400 text-xl">
               {editingEvento ? 'Editar Evento' : 'Novo Evento'}
             </DialogTitle>
-            <DialogDescription className="text-green-600">
-              {editingEvento ? 'Editar informações do evento' : `Registar novo evento para ${animal?.nome}`}
+            <DialogDescription className="text-gray-300">
+              {editingEvento ? 'Atualize as informações do evento' : 'Registre um novo marco na vida do animal'}
             </DialogDescription>
           </DialogHeader>
           
-          <form onSubmit={handleEventoSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="tipo_evento" className="text-green-700 font-medium">
-                Tipo de Evento *
-              </Label>
-              <Select 
-                value={eventoForm.tipo_evento} 
-                onValueChange={(value) => setEventoForm({ ...eventoForm, tipo_evento: value })}
-              >
-                <SelectTrigger className="border-green-200 focus:border-green-400">
-                  <SelectValue placeholder="Selecionar tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {tiposEventos.length === 0 && (
-                    <SelectItem value="loading" disabled>
-                      Carregando tipos...
-                    </SelectItem>
-                  )}
-                  {tiposEventos.map((tipo) => (
-                    <SelectItem key={tipo.id} value={tipo.id.toString()}>
-                      {tipo.emoji} {tipo.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div>
-              <Label htmlFor="data_evento" className="text-green-700 font-medium">
-                Data do Evento *
-              </Label>
-              <Input
-                id="data_evento"
-                type="date"
-                value={eventoForm.data_evento}
-                onChange={(e) => setEventoForm({ ...eventoForm, data_evento: e.target.value })}
-                className="border-green-200 focus:border-green-400"
-                required
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="descricao" className="text-green-700 font-medium">
-                Descrição do Evento *
-              </Label>
-              <Input
-                id="descricao"
-                value={eventoForm.descricao}
-                onChange={(e) => setEventoForm({ ...eventoForm, descricao: e.target.value })}
-                className="border-green-200 focus:border-green-400"
-                placeholder="Breve descrição do evento"
-                required
-              />
+          <div className="space-y-6 py-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Tipo de Evento */}
+              <div>
+                <Label className="text-cyan-300 font-medium">Tipo de Evento *</Label>
+                <Select 
+                  value={eventoForm.tipo_evento_id} 
+                  onValueChange={(value) => setEventoForm({ ...eventoForm, tipo_evento_id: value })}
+                >
+                  <SelectTrigger className="bg-slate-700 border-cyan-500/30 text-white">
+                    <SelectValue placeholder="Selecionar tipo" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-700 border-cyan-500/30">
+                    {tiposEventos.map((tipo) => (
+                      <SelectItem key={tipo.id} value={tipo.id} className="text-white hover:bg-slate-600">
+                        {tipo.emoji} {tipo.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Data do Evento */}
+              <div>
+                <Label className="text-cyan-300 font-medium">Data do Evento *</Label>
+                <Input
+                  type="date"
+                  value={eventoForm.data_evento}
+                  onChange={(e) => setEventoForm({ ...eventoForm, data_evento: e.target.value })}
+                  className="bg-slate-700 border-cyan-500/30 text-white"
+                />
+              </div>
             </div>
 
+            {/* Responsável */}
             <div>
-              <Label htmlFor="voluntario_id" className="text-green-700 font-medium">
-                Voluntário Responsável
-              </Label>
+              <Label className="text-cyan-300 font-medium">Responsável</Label>
               <Select 
-                value={eventoForm.voluntario_id} 
-                onValueChange={(value) => setEventoForm({ ...eventoForm, voluntario_id: value === "none" ? "" : value })}
+                value={eventoForm.responsavel_id} 
+                onValueChange={(value) => setEventoForm({ ...eventoForm, responsavel_id: value })}
               >
-                <SelectTrigger className="border-green-200 focus:border-green-400">
-                  <SelectValue placeholder="Selecionar voluntário (opcional)" />
+                <SelectTrigger className="bg-slate-700 border-cyan-500/30 text-white">
+                  <SelectValue placeholder="Selecionar responsável (opcional)" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Nenhum voluntário</SelectItem>
+                <SelectContent className="bg-slate-700 border-cyan-500/30">
+                  <SelectItem value="" className="text-white hover:bg-slate-600">Nenhum responsável</SelectItem>
                   {voluntarios.map((voluntario) => (
-                    <SelectItem key={voluntario.id} value={voluntario.id}>
+                    <SelectItem key={voluntario.id} value={voluntario.id} className="text-white hover:bg-slate-600">
                       {voluntario.nome}
                     </SelectItem>
                   ))}
@@ -580,66 +698,57 @@ const AnimalEventos = () => {
               </Select>
             </div>
 
+            {/* Descrição */}
             <div>
-              <Label htmlFor="documento_referencia" className="text-green-700 font-medium">
-                Documento de Referência
-              </Label>
-              <Input
-                id="documento_referencia"
-                value={eventoForm.documento_referencia}
-                onChange={(e) => setEventoForm({ ...eventoForm, documento_referencia: e.target.value })}
-                className="border-green-200 focus:border-green-400"
-                placeholder="Ex: Certificado, Relatório, etc."
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="observacoes" className="text-green-700 font-medium">
-                Observações
-              </Label>
+              <Label className="text-cyan-300 font-medium">Descrição</Label>
               <Textarea
-                id="observacoes"
-                value={eventoForm.observacoes}
-                onChange={(e) => setEventoForm({ ...eventoForm, observacoes: e.target.value })}
-                className="border-green-200 focus:border-green-400"
-                placeholder="Detalhes adicionais sobre o evento..."
-                rows={3}
+                value={eventoForm.descricao}
+                onChange={(e) => setEventoForm({ ...eventoForm, descricao: e.target.value })}
+                placeholder="Descreva o evento..."
+                className="bg-slate-700 border-cyan-500/30 text-white min-h-[80px]"
               />
             </div>
 
+            {/* Observações */}
+            <div>
+              <Label className="text-cyan-300 font-medium">Observações</Label>
+              <Textarea
+                value={eventoForm.observacoes}
+                onChange={(e) => setEventoForm({ ...eventoForm, observacoes: e.target.value })}
+                placeholder="Observações adicionais..."
+                className="bg-slate-700 border-cyan-500/30 text-white min-h-[80px]"
+              />
+            </div>
+
+            {/* Evento Importante */}
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="importante"
                 checked={eventoForm.importante}
                 onCheckedChange={(checked) => setEventoForm({ ...eventoForm, importante: !!checked })}
+                className="border-cyan-500/30"
               />
-              <Label htmlFor="importante" className="text-green-700 font-medium">
+              <Label htmlFor="importante" className="text-cyan-300 font-medium cursor-pointer">
                 Marcar como evento importante
               </Label>
             </div>
+          </div>
 
-            <div className="bg-green-50 p-3 rounded-lg">
-              <p className="text-sm text-green-700">
-                <strong>Dica:</strong> Eventos importantes aparecem destacados na timeline e são úteis para marcos significativos.
-              </p>
-            </div>
-            
-            <div className="flex justify-end space-x-3 pt-4">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => {
-                  setEventoDialogOpen(false);
-                  resetEventoForm();
-                }}
-              >
-                Cancelar
-              </Button>
-              <Button type="submit" className="bg-green-600 hover:bg-green-700">
-                {editingEvento ? 'Atualizar' : 'Registar Evento'}
-              </Button>
-            </div>
-          </form>
+          <div className="flex justify-end space-x-4 pt-4 border-t border-cyan-500/30">
+            <Button 
+              variant="outline" 
+              onClick={() => setEventoDialogOpen(false)}
+              className="border-gray-500 text-gray-300 hover:bg-gray-700"
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleEventoSubmit}
+              className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+            >
+              {editingEvento ? 'Atualizar' : 'Criar'} Evento
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
       
