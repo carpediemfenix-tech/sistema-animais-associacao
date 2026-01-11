@@ -88,8 +88,9 @@ const AnimalEventos = () => {
 
   // Função para obter nome do voluntário
   const getVoluntarioNome = (voluntarioId: string) => {
+    if (!voluntarioId) return 'Não atribuído';
     const voluntario = voluntarios.find(v => v.id === voluntarioId);
-    return voluntario?.nome || 'Não atribuído';
+    return voluntario?.nome || voluntario?.display_name || 'Não atribuído';
   };
 
   // Carregar dados
@@ -134,15 +135,20 @@ const AnimalEventos = () => {
         if (tiposEventosError) throw tiposEventosError;
         setTiposEventos(tiposEventosData || []);
 
-        // Carregar voluntários
+        // Carregar voluntários usando RPC
         const { data: voluntariosData, error: voluntariosError } = await supabase
-          .from('voluntarios')
-          .select('id, nome, email, telefone, especialidade, ativo')
-          .eq('ativo', true)
-          .order('nome');
+          .rpc('buscar_voluntarios', {
+            termo_busca: '',
+            limite: 100
+          });
 
-        if (voluntariosError) throw voluntariosError;
-        setVoluntarios(voluntariosData || []);
+        if (voluntariosError) {
+          console.warn('Erro ao carregar voluntários:', voluntariosError);
+          setVoluntarios([]);
+        } else {
+          console.log('Voluntários carregados:', voluntariosData);
+          setVoluntarios(voluntariosData || []);
+        }
 
       } catch (error: any) {
         console.error('Erro ao carregar dados:', error);
