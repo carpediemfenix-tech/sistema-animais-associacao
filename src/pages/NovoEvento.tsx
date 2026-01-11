@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import VoluntarioSelector from "@/components/VoluntarioSelector";
 import { Checkbox } from "@/components/ui/checkbox";
 import { 
   ArrowLeft, 
@@ -43,7 +44,6 @@ const NovoEvento = () => {
 
   // Estados para dados
   const [tiposEventos, setTiposEventos] = useState<TipoEvento[]>([]);
-  const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
 
   // Formulário de evento
   const [eventoForm, setEventoForm] = useState({
@@ -87,24 +87,6 @@ const NovoEvento = () => {
         if (tiposEventosError) throw tiposEventosError;
         setTiposEventos(tiposEventosData || []);
 
-        // Carregar voluntários - com fallback
-        try {
-          const { data: voluntariosData, error: voluntariosError } = await supabase
-            .from('voluntarios')
-            .select('id, nome, email, telefone, especialidade, ativo')
-            .eq('ativo', true)
-            .order('nome');
-
-          if (voluntariosError) {
-            console.warn('Aviso: Não foi possível carregar voluntários:', voluntariosError);
-            setVoluntarios([]);
-          } else {
-            setVoluntarios(voluntariosData || []);
-          }
-        } catch (voluntariosError) {
-          console.warn('Aviso: Erro ao carregar voluntários:', voluntariosError);
-          setVoluntarios([]);
-        }
 
       } catch (error: any) {
         console.error('Erro ao carregar dados:', error);
@@ -348,31 +330,14 @@ const NovoEvento = () => {
 
             {/* Responsável */}
             <div>
-              <Label className="text-cyan-300 font-medium flex items-center mb-2">
-                <User className="h-4 w-4 mr-2" />
-                Responsável pelo Evento
-              </Label>
-              <Select 
-                value={eventoForm.responsavel_id || "none"} 
-                onValueChange={(value) => setEventoForm({ ...eventoForm, responsavel_id: value === "none" ? "" : value })}
-              >
-                <SelectTrigger className="bg-slate-700 border-cyan-500/30 text-white h-12">
-                  <SelectValue placeholder="Selecionar responsável (opcional)" />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-700 border-cyan-500/30">
-                  <SelectItem value="none" className="text-white hover:bg-slate-600">Nenhum responsável</SelectItem>
-                  {voluntarios.map((voluntario) => (
-                    <SelectItem key={voluntario.id} value={voluntario.id} className="text-white hover:bg-slate-600">
-                      {voluntario.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {voluntarios.length === 0 && (
-                <p className="text-yellow-400 text-sm mt-1">
-                  ⚠️ Não foi possível carregar a lista de voluntários
-                </p>
-              )}
+              <VoluntarioSelector
+                value={eventoForm.responsavel_id}
+                onValueChange={(voluntarioId, voluntario) => {
+                  setEventoForm({ ...eventoForm, responsavel_id: voluntarioId });
+                }}
+                label="Responsável pelo Evento"
+                placeholder="Digite para pesquisar responsável..."
+              />
             </div>
 
             {/* Descrição */}
