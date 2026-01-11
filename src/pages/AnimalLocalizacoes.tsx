@@ -242,15 +242,16 @@ const AnimalLocalizacoes = () => {
         ativo: editingLocalizacao ? editingLocalizacao.ativo : true
       };
 
-      // Log do payload para debug
-      console.log('🔍 [LOCALIZACAO] Payload para INSERT/UPDATE:', localizacaoData);
-      console.log('🔍 [LOCALIZACAO] Tipos dos campos:', {
-        animal_id: typeof localizacaoData.animal_id,
-        localizacao_id: typeof localizacaoData.localizacao_id,
-        data_inicio: typeof localizacaoData.data_inicio,
-        responsavel_id: typeof localizacaoData.responsavel_id,
-        ativo: typeof localizacaoData.ativo
+      // Log detalhado do payload para debug
+      console.log('🔍 [LOCALIZACAO] Payload completo:', JSON.stringify(localizacaoData, null, 2));
+      console.log('🔍 [LOCALIZACAO] Valores dos campos:', {
+        animal_id: `${localizacaoData.animal_id} (${typeof localizacaoData.animal_id})`,
+        localizacao_id: `${localizacaoData.localizacao_id} (${typeof localizacaoData.localizacao_id})`,
+        data_inicio: `${localizacaoData.data_inicio} (${typeof localizacaoData.data_inicio})`,
+        responsavel_id: `${localizacaoData.responsavel_id} (${typeof localizacaoData.responsavel_id})`,
+        ativo: `${localizacaoData.ativo} (${typeof localizacaoData.ativo})`
       });
+      console.log('🔍 [LOCALIZACAO] Operação:', editingLocalizacao ? 'UPDATE' : 'INSERT');
 
       let error;
       if (editingLocalizacao) {
@@ -268,12 +269,15 @@ const AnimalLocalizacoes = () => {
 
       if (error) {
         // Log detalhado do erro para debug
-        console.error('❌ [LOCALIZACAO] Erro detalhado do Supabase:', {
+        console.error('❌ [LOCALIZACAO] ERRO COMPLETO:', error);
+        console.error('❌ [LOCALIZACAO] Erro JSON:', JSON.stringify(error, null, 2));
+        console.error('❌ [LOCALIZACAO] Detalhes do erro:', {
           code: error.code,
           message: error.message,
           details: error.details,
           hint: error.hint,
-          full_error: error
+          status: error.status,
+          statusText: error.statusText
         });
         
         toast({
