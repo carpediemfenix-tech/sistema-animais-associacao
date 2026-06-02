@@ -16,7 +16,9 @@ import {
   Edit,
   AlertCircle,
   CheckCircle,
-  Clock
+  Clock,
+  AlertTriangle,
+  TestTube
 } from 'lucide-react';
 import { AnimalIntakeAssessment, IntakeConfigOption } from '@/types/animal';
 import { supabase } from '@/integrations/supabase/client';
@@ -454,7 +456,6 @@ export { IntakeAssessmentDisplay };
 
 // ===== COMPONENTE ORIGINAL MOCK DATA INDICATOR =====
 
-import { AlertTriangle, TestTube } from 'lucide-react';
 import { isMockData, getMockDataClassName } from '@/lib/mockUtils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 

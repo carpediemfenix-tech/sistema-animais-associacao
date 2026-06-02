@@ -16,8 +16,7 @@ import {
   List,
   Grid3X3,
   Stethoscope,
-  Target,
-  Heart
+  Target
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";

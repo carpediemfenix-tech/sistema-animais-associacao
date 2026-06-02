@@ -30,11 +30,9 @@ import {
   UserPlus,
   Trash2,
   Star,
-  Award,
   FileText,
   GraduationCap as GradIcon,
   History,
-  Edit,
   Settings
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
