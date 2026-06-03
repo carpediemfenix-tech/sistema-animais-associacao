@@ -203,44 +203,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return () => clearInterval(intervalId);
   }, []);
 
-  // Função de fallback para autenticação local
-  const tryLocalAuth = async (username: string, password: string) => {
-    try {
-      console.log('🔄 [FALLBACK] Tentando autenticação local para:', username);
-      
-      // Credenciais hardcoded para fallback - MAIS PERMISSIVO
-      const isValidAdmin = (user: string, pass: string) => {
-        const validUsers = ['admin', 'admin@valentaoresgate.pt'];
-        const validPasswords = ['admin', 'password', '123456'];
-        
-        return validUsers.includes(user.toLowerCase()) && validPasswords.includes(pass);
-      };
-      
-      if (isValidAdmin(username, password)) {
-        console.log('✅ [FALLBACK] Autenticação local bem-sucedida para:', username);
-        return {
-          success: true,
-          user: {
-            id: 'admin-fallback',
-            username: username,
-            nome: 'Administrador',
-            email: 'admin@valentaoresgate.pt',
-            tipo_utilizador: 'administrador',
-            perfil_acesso: 'administrador',
-            ativo: true
-          }
-        };
-      }
-      
-      console.log('❌ [FALLBACK] Credenciais inválidas');
-      return { success: false, error: 'Credenciais inválidas' };
-      
-    } catch (error) {
-      console.error('❌ [FALLBACK] Erro:', error);
-      return { success: false, error: 'Erro interno' };
-    }
-  };
-
   // Função de login
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
@@ -260,29 +222,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       console.log('🔍 [AUTH] Resposta da Edge Function:', { data, error });
       if (error) {
-        console.error('❌ [AUTH] Erro na Edge Function, usando fallback:', error);
-        
-        // FALLBACK IMEDIATO - sem complicações
-        const fallbackResult = await tryLocalAuth(username, password);
-        if (fallbackResult.success) {
-          const userData = fallbackResult.user;
-          setUser(userData);
-          localStorage.setItem('valentao_user', JSON.stringify(userData));
-          
-          toast({
-            title: "✅ Login realizado",
-            description: `Bem-vindo, ${userData.username}!`,
-          });
-          
-          return true;
-        } else {
-          toast({
-            title: "❌ Login falhado",
-            description: 'Credenciais inválidas',
-            variant: "destructive",
-          });
-          return false;
-        }
+        console.error('❌ [AUTH] Erro na Edge Function de autenticação:', error);
+        toast({
+          title: "❌ Login falhado",
+          description: "Não foi possível validar as credenciais neste momento.",
+          variant: "destructive",
+        });
+        return false;
       }
 
       // Verificar se houve erro na resposta
