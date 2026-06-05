@@ -56,7 +56,7 @@
 
 ### APÓS QUALQUER ALTERAÇÃO:
 - [ ] Testar funcionalidade alterada
-- [ ] Testar login (admin/admin)
+- [ ] Validar login apenas com utilizador ativo autorizado
 - [ ] Testar navegação principal
 - [ ] Verificar console por erros
 - [ ] Confirmar que outros módulos não quebraram

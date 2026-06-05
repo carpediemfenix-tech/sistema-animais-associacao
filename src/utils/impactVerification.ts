@@ -30,7 +30,7 @@ export const CRITICAL_MODULES = {
 
 export const PRE_DEPLOY_CHECKLIST = [
   '✅ Verificar se alterações afetam módulos críticos',
-  '✅ Testar login com admin/admin',
+  '✅ Validar login com utilizador ativo autorizado',
   '✅ Testar navegação principal',
   '✅ Verificar se Edge Functions existem',
   '✅ Confirmar que não há erros de console',
