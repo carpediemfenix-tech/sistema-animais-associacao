@@ -80,7 +80,7 @@ const GestaoUtilizadores = () => {
   };
 
   const invokeUserManagement = async (
-    method: 'GET' | 'POST' | 'PUT' | 'PATCH',
+    method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
     body?: Record<string, unknown>
   ) => {
     const sessionToken = getSessionToken();
@@ -348,14 +348,13 @@ const GestaoUtilizadores = () => {
       setLoading(true);
       console.log('🗑️ [USER_MGMT] Eliminando utilizador:', userToDelete.username);
 
-      const { error } = await supabase
-        .from('users')
-        .delete()
-        .eq('id', userToDelete.id);
+      const { data, error } = await invokeUserManagement('DELETE', {
+        id: userToDelete.id
+      });
 
-      if (error) {
+      if (error || !data?.success) {
         console.error('❌ [USER_MGMT] Erro ao eliminar utilizador:', error);
-        throw new Error('Erro ao eliminar utilizador');
+        throw new Error(data?.error || 'Erro ao eliminar utilizador');
       }
 
       toast({

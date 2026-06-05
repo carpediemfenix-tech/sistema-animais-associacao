@@ -37,6 +37,10 @@ const getBearerToken = (req: Request): string | null => {
   return token
 }
 
+const isUuid = (value: unknown): value is string =>
+  typeof value === 'string' &&
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
+
 const requireAdminSession = async (
   req: Request,
   supabase: ReturnType<typeof createClient>
@@ -77,7 +81,7 @@ const requireAdminSession = async (
       return { authorized: false, status: 403 }
     }
 
-    return { authorized: true, status: 200 }
+    return { authorized: true, status: 200, userId: adminUser.id }
   } catch {
     return { authorized: false, status: 401 }
   }
@@ -106,11 +110,12 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
     const method = req.method
+    let authResult: { authorized: boolean; status: number; userId?: string } | null = null
     
     console.log('📥 [USER_SIMPLE] Método:', method)
 
     if (protectedMethods.has(method)) {
-      const authResult = await requireAdminSession(req, supabase)
+      authResult = await requireAdminSession(req, supabase)
       if (!authResult.authorized) {
         console.log('[USER_SIMPLE] Pedido nao autorizado')
         return unauthorizedResponse(authResult.status)
@@ -210,8 +215,7 @@ serve(async (req) => {
         return new Response(
           JSON.stringify({ 
             success: false, 
-            error: 'Erro ao criar utilizador',
-            details: insertError.message 
+            error: 'Erro ao criar utilizador'
           }),
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
@@ -332,6 +336,57 @@ serve(async (req) => {
       )
     }
 
+    // DELETE - Eliminar utilizador
+    if (method === 'DELETE') {
+      let body: { id?: unknown } | null = null
+
+      try {
+        body = await req.json()
+      } catch {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Pedido invalido' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      const id = body?.id
+
+      if (!isUuid(id)) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Pedido invalido' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      if (authResult?.userId === id) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Operacao nao permitida' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      const { error: deleteError } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', id)
+
+      if (deleteError) {
+        console.error('[USER_SIMPLE] Erro ao eliminar utilizador')
+        return new Response(
+          JSON.stringify({ success: false, error: 'Erro ao eliminar utilizador' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'Utilizador eliminado com sucesso'
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     return new Response(
       JSON.stringify({ success: false, error: 'Método não permitido' }),
       { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -343,8 +398,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: 'Erro interno do servidor',
-        details: error.message
+        error: 'Erro interno do servidor'
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
