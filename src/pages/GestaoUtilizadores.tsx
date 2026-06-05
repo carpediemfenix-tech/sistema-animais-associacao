@@ -70,6 +70,30 @@ const GestaoUtilizadores = () => {
   const { user, hasPermission, logout } = useAuth();
   const { toast } = useToast();
 
+  const getSessionToken = () => {
+    const sessionToken = localStorage.getItem('valentao_session_token');
+    if (!sessionToken) {
+      throw new Error('Sessao invalida ou expirada');
+    }
+
+    return sessionToken;
+  };
+
+  const invokeUserManagement = async (
+    method: 'GET' | 'POST' | 'PUT' | 'PATCH',
+    body?: Record<string, unknown>
+  ) => {
+    const sessionToken = getSessionToken();
+
+    return supabase.functions.invoke('user_management_simple_2025_11_19_05_00', {
+      method,
+      body,
+      headers: {
+        Authorization: `Bearer ${sessionToken}`
+      }
+    });
+  };
+
   // Verificar se tem permissão de administrador
   if (!hasPermission('admin')) {
     return (
@@ -99,26 +123,20 @@ const GestaoUtilizadores = () => {
       setLoading(true);
       console.log('👥 [USER_MGMT] Carregando utilizadores...');
 
-      // SOLUÇÃO SIMPLES: Buscar diretamente da base de dados
-      const { data: users, error } = await supabase
-        .from('users')
-        .select('id, username, email, nome_completo, perfil_acesso, ativo, ultimo_login, tentativas_login, created_at')
-        .order('created_at', { ascending: false });
-      
-      // Simular resposta da Edge Function para compatibilidade
-      const data = { success: true, users };
+      const { data, error } = await invokeUserManagement('GET');
 
       if (error) {
         console.error('❌ [USER_MGMT] Erro na Edge Function:', error);
         throw new Error('Erro ao carregar utilizadores');
       }
 
-      if (!data.success) {
-        throw new Error(data.error);
+      if (!data?.success) {
+        throw new Error(data?.error || 'Erro ao carregar utilizadores');
       }
 
-      console.log('✅ [USER_MGMT] Utilizadores carregados:', data.users.length);
-      setUsers(data.users);
+      const fetchedUsers = data.users || [];
+      console.log('✅ [USER_MGMT] Utilizadores carregados:', fetchedUsers.length);
+      setUsers(fetchedUsers);
     } catch (error: any) {
       console.error('💥 [USER_MGMT] Erro:', error);
       toast({
@@ -227,19 +245,16 @@ const GestaoUtilizadores = () => {
         // Atualizar utilizador
         console.log('✏️ [USER_MGMT] Atualizando utilizador:', editingUser.username);
         
-        const { data, error } = await supabase.functions.invoke('user_management_simple_2025_11_19_05_00', {
-          method: 'PUT',
-          body: {
-            id: editingUser.id,
-            username: formData.username,
-            email: formData.email,
-            nome_completo: formData.nome_completo,
-            perfil_acesso: formData.perfil_acesso,
-            ativo: formData.ativo
-          }
+        const { data, error } = await invokeUserManagement('PUT', {
+          id: editingUser.id,
+          username: formData.username,
+          email: formData.email,
+          nome_completo: formData.nome_completo,
+          perfil_acesso: formData.perfil_acesso,
+          ativo: formData.ativo
         });
 
-        if (error || !data.success) {
+        if (error || !data?.success) {
           throw new Error(data?.error || 'Erro ao atualizar utilizador');
         }
 
@@ -249,88 +264,18 @@ const GestaoUtilizadores = () => {
         });
       } else {
         // Criar novo utilizador
-        console.log('➕ [USER_MGMT] Criando utilizador:', formData.username);
-        console.log('📝 [USER_MGMT] Dados do formulário:', formData);
-        
-        // SOLUÇÃO SIMPLES: Inserção direta na base de dados
-        console.log('💾 [USER_MGMT] Inserindo diretamente na base de dados...');
-        
-        // SOLUÇÃO TEMPORÁRIA: Pular verificação de duplicados
-        console.log('🔍 [USER_MGMT] Pulando verificação de duplicados temporariamente...');
-        const existingUsers = [];
-        const checkError = null;
-        
-        if (checkError) {
-          console.error('❌ [USER_MGMT] Erro ao verificar duplicados:', checkError);
-          throw new Error('Erro ao verificar duplicados');
-        }
-        
-        if (existingUsers && existingUsers.length > 0) {
-          console.log('❌ [USER_MGMT] Duplicado encontrado:', existingUsers);
-          const duplicateField = existingUsers[0].username === formData.username ? 'Username' : 'Email';
-          throw new Error(`${duplicateField} já existe`);
-        }
-        
-        console.log('✅ [USER_MGMT] Nenhum duplicado encontrado');
-        
-        // SISTEMA TEMPORÁRIO DE HASHES PRÉ-DEFINIDOS PARA CRIAÇÃO
-        console.log('🔐 [USER_MGMT] Definindo hash para password:', formData.password);
-        
-        let passwordHash;
-        
-        // Hashes pré-definidos para passwords comuns
-        const commonHashes = {
-          'password': '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
-          'V@ngelis1973': '$2b$10$rBV2HLmv5Fgegfudu2f0/.6IKBOaVjLQlFtjNhHnUPb5s2uDlbvBG',
-          'V@ngelis': '$2b$10$rBV2HLmv5Fgegfudu2f0/.6IKBOaVjLQlFtjNhHnUPb5s2uDlbvBG',
-          '123456': '$2b$10$N9qo8uLOickgx2ZMRZoMye.IjPeGvGzjYwjUeOz7OGtlxphI8YK8S',
-          'admin': '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi'
-        };
-        
-        if (commonHashes[formData.password]) {
-          passwordHash = commonHashes[formData.password];
-          console.log('✅ [USER_MGMT] Hash encontrado para password conhecida');
-        } else {
-          // Para passwords desconhecidas, usar hash genérico + sufixo
-          passwordHash = `$2b$10$generic_hash_${btoa(formData.password).replace(/[^a-zA-Z0-9]/g, '').substring(0, 22)}`;
-          console.log('⚠️ [USER_MGMT] Hash genérico criado para password personalizada');
-        }
-        
-        console.log('🔐 [USER_MGMT] Hash definido para criação');
-        
-        // Inserir utilizador diretamente
-        const { data: newUser, error: insertError } = await supabase
-          .from('users')
-          .insert({
-            username: formData.username,
-            email: formData.email,
-            password_hash: passwordHash,
-            nome_completo: formData.nome_completo,
-            perfil_acesso: formData.perfil_acesso,
-            ativo: formData.ativo ?? true,
-            tentativas_login: 0,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          })
-          .select('id, username, email, nome_completo, perfil_acesso, ativo')
-          .single();
-        
-        console.log('📊 [USER_MGMT] Resultado da inserção:', { newUser, insertError });
-        
-        if (insertError) {
-          console.error('❌ [USER_MGMT] Erro ao inserir:', insertError);
-          throw new Error(`Erro ao criar utilizador: ${insertError.message}`);
-        }
-        
-        console.log('✅ [USER_MGMT] Utilizador criado com sucesso:', newUser.id);
-        
-        // Simular resposta da Edge Function para compatibilidade
-        const data = { success: true, user: newUser };
-        const error = null;
-        
-        console.log('📊 [USER_MGMT] Resposta simulada:', { data, error });
+        console.log('➕ [USER_MGMT] Criando utilizador');
 
-        if (error || !data.success) {
+        const { data, error } = await invokeUserManagement('POST', {
+          username: formData.username,
+          email: formData.email,
+          password: formData.password,
+          nome_completo: formData.nome_completo,
+          perfil_acesso: formData.perfil_acesso,
+          ativo: formData.ativo ?? true
+        });
+
+        if (error || !data?.success) {
           throw new Error(data?.error || 'Erro ao criar utilizador');
         }
 
@@ -361,47 +306,15 @@ const GestaoUtilizadores = () => {
 
     try {
       setSubmitting(true);
-      console.log('🔑 [USER_MGMT] Atualizando password para:', selectedUserForReset.username);
+      console.log('[USER_MGMT] Atualizando credenciais para:', selectedUserForReset.username);
 
-      // SISTEMA TEMPORÁRIO DE HASHES PRÉ-DEFINIDOS
-      console.log('🔐 [USER_MGMT] Definindo hash para password:', newPassword);
-      
-      let passwordHash;
-      
-      // Hashes pré-definidos para passwords comuns
-      const commonHashes = {
-        'password': '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
-        'V@ngelis1973': '$2b$10$rBV2HLmv5Fgegfudu2f0/.6IKBOaVjLQlFtjNhHnUPb5s2uDlbvBG',
-        'V@ngelis': '$2b$10$rBV2HLmv5Fgegfudu2f0/.6IKBOaVjLQlFtjNhHnUPb5s2uDlbvBG', // mesmo hash
-        '123456': '$2b$10$N9qo8uLOickgx2ZMRZoMye.IjPeGvGzjYwjUeOz7OGtlxphI8YK8S',
-        'admin': '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi'
-      };
-      
-      if (commonHashes[newPassword]) {
-        passwordHash = commonHashes[newPassword];
-        console.log('✅ [USER_MGMT] Hash encontrado para password conhecida');
-      } else {
-        // Para passwords desconhecidas, usar hash genérico + sufixo
-        passwordHash = `$2b$10$generic_hash_${btoa(newPassword).replace(/[^a-zA-Z0-9]/g, '').substring(0, 22)}`;
-        console.log('⚠️ [USER_MGMT] Hash genérico criado para password personalizada');
-      }
-      
-      console.log('🔐 [USER_MGMT] Hash definido com sucesso');
-      
-      console.log('🔍 [USER_MGMT] Tentando atualizar utilizador ID:', selectedUserForReset.id);
-      
-      const { data, error } = await supabase
-        .from('users')
-        .update({ 
-          password_hash: passwordHash
-        })
-        .eq('id', selectedUserForReset.id)
-        .select();
-        
-      console.log('🔍 [USER_MGMT] Resultado da atualização:', { data, error });
+      const { data, error } = await invokeUserManagement('PATCH', {
+        user_id: selectedUserForReset.id,
+        new_password: newPassword
+      });
 
-      if (error) {
-        console.error('❌ [USER_MGMT] Erro ao atualizar password:', error);
+      if (error || !data?.success) {
+        console.error('❌ [USER_MGMT] Erro ao atualizar credenciais:', error);
         throw new Error('Erro ao atualizar password');
       }
 
