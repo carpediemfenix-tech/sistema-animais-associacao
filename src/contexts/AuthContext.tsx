@@ -38,6 +38,26 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
+const BACKEND_SESSION_TOKEN_KEY = 'valentao_session_token';
+const BACKEND_SESSION_EXPIRES_AT_KEY = 'valentao_session_expires_at';
+
+const clearStoredBackendSession = () => {
+  localStorage.removeItem(BACKEND_SESSION_TOKEN_KEY);
+  localStorage.removeItem(BACKEND_SESSION_EXPIRES_AT_KEY);
+};
+
+const clearStoredAuthSession = () => {
+  localStorage.removeItem('valentao_user');
+  localStorage.removeItem('valentao_sessao_id');
+  localStorage.removeItem('valentao_login_time');
+  clearStoredBackendSession();
+};
+
+const isBackendSessionExpired = (expiresAt: string) => {
+  const expiresAtTime = new Date(expiresAt).getTime();
+  return Number.isNaN(expiresAtTime) || expiresAtTime <= Date.now();
+};
+
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -110,11 +130,45 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           console.log('🔐 [AUTH] Utilizador encontrado no localStorage:', userData.username);
           
           // Verificar se a sessão não excedeu 12 horas
-          const loginTime = localStorage.getItem('valentao_login_time');
-          if (loginTime) {
-            const loginDate = new Date(loginTime);
-            const currentDate = new Date();
-            const hoursElapsed = (currentDate.getTime() - loginDate.getTime()) / (1000 * 60 * 60);
+          const sessionExpiresAt = localStorage.getItem(BACKEND_SESSION_EXPIRES_AT_KEY);
+          if (sessionExpiresAt && isBackendSessionExpired(sessionExpiresAt)) {
+            console.log('[AUTH] Sessao backend expirada, fazendo logout automatico');
+            toast({
+              title: "Sessao expirada",
+              description: "A sua sessao expirou. Por favor, faca login novamente.",
+              variant: "destructive",
+            });
+
+            const sessaoId = localStorage.getItem('valentao_sessao_id');
+            const loginTime = localStorage.getItem('valentao_login_time');
+            let duracaoSessao: number | undefined;
+
+            if (loginTime) {
+              const loginDate = new Date(loginTime);
+              duracaoSessao = Math.floor((Date.now() - loginDate.getTime()) / (1000 * 60));
+            }
+
+            registarLogAcesso(userData.username, 'logout', sessaoId || undefined, duracaoSessao);
+
+            criarNotificacaoAutomatica(
+              'Sessao Expirada',
+              `A sessao do utilizador ${userData.username} expirou.`,
+              'alta',
+              userData.username
+            );
+
+            clearStoredAuthSession();
+            setUser(null);
+            setLoading(false);
+            return;
+          }
+
+          if (!sessionExpiresAt) {
+            const loginTime = localStorage.getItem('valentao_login_time');
+            if (loginTime) {
+              const loginDate = new Date(loginTime);
+              const currentDate = new Date();
+              const hoursElapsed = (currentDate.getTime() - loginDate.getTime()) / (1000 * 60 * 60);
             
             if (hoursElapsed >= 12) {
               console.log('⏰ [AUTH] Sessão expirada (>12h), fazendo logout automático');
@@ -138,12 +192,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               );
               
               // Limpar dados
-              localStorage.removeItem('valentao_user');
-              localStorage.removeItem('valentao_sessao_id');
-              localStorage.removeItem('valentao_login_time');
+              clearStoredAuthSession();
               setUser(null);
               setLoading(false);
               return;
+            }
             }
           }
           
@@ -151,9 +204,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
       } catch (error) {
         console.error('❌ [AUTH] Erro ao ler localStorage:', error);
-        localStorage.removeItem('valentao_user');
-        localStorage.removeItem('valentao_sessao_id');
-        localStorage.removeItem('valentao_login_time');
+        clearStoredAuthSession();
       } finally {
         setLoading(false);
       }
@@ -165,13 +216,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const intervalId = setInterval(() => {
       const loginTime = localStorage.getItem('valentao_login_time');
       const storedUser = localStorage.getItem('valentao_user');
+      const sessionExpiresAt = localStorage.getItem(BACKEND_SESSION_EXPIRES_AT_KEY);
       
-      if (loginTime && storedUser) {
-        const loginDate = new Date(loginTime);
-        const currentDate = new Date();
-        const hoursElapsed = (currentDate.getTime() - loginDate.getTime()) / (1000 * 60 * 60);
+      if (storedUser) {
+        let hoursElapsed = 0;
+
+        if (loginTime) {
+          const loginDate = new Date(loginTime);
+          const currentDate = new Date();
+          hoursElapsed = (currentDate.getTime() - loginDate.getTime()) / (1000 * 60 * 60);
+        }
+
+        const backendSessionExpired = sessionExpiresAt ? isBackendSessionExpired(sessionExpiresAt) : false;
+        const legacySessionExpired = !sessionExpiresAt && !!loginTime && hoursElapsed >= 12;
         
-        if (hoursElapsed >= 12) {
+        if (backendSessionExpired || legacySessionExpired) {
           console.log('⏰ [AUTH] Logout automático por sessão longa');
           
           try {
@@ -192,9 +251,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           }
           
           // Limpar dados
-          localStorage.removeItem('valentao_user');
-          localStorage.removeItem('valentao_sessao_id');
-          localStorage.removeItem('valentao_login_time');
+          clearStoredAuthSession();
           setUser(null);
         }
       }
@@ -220,7 +277,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
       });
 
-      console.log('🔍 [AUTH] Resposta da Edge Function:', { data, error });
+      console.log('[AUTH] Resposta da Edge Function:', {
+        success: data?.success,
+        hasUser: Boolean(data?.user),
+        hasBackendSession: Boolean(data?.session_token && data?.expires_at),
+        error,
+      });
       if (error) {
         console.error('❌ [AUTH] Erro na Edge Function de autenticação:', error);
         toast({
@@ -261,6 +323,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const sessaoId = `sess_${Date.now()}_${userData.username}`;
       localStorage.setItem('valentao_sessao_id', sessaoId);
       localStorage.setItem('valentao_login_time', new Date().toISOString());
+
+      if (typeof data.session_token === 'string' && data.session_token && typeof data.expires_at === 'string' && data.expires_at) {
+        localStorage.setItem(BACKEND_SESSION_TOKEN_KEY, data.session_token);
+        localStorage.setItem(BACKEND_SESSION_EXPIRES_AT_KEY, data.expires_at);
+      } else {
+        clearStoredBackendSession();
+      }
+
       await registarLogAcesso(userData.username, 'login', sessaoId);
       
       // Criar notificação de login bem-sucedido
@@ -316,9 +386,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // ✅ Eko: Aguardar a mensagem antes de limpar o estado - aumentado para 4.3 segundos
     setTimeout(() => {
       setUser(null);
-      localStorage.removeItem('valentao_user');
-      localStorage.removeItem('valentao_sessao_id');
-      localStorage.removeItem('valentao_login_time');
+      clearStoredAuthSession();
       setShowGoodbyeMessage(false);
     }, 4300); // Aumentado de 2300ms para 4300ms para sincronizar com a mensagem de 4 segundos
   };
