@@ -8,6 +8,81 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'Authorization, X-Client-Info, apikey, Content-Type, X-Application-Name',
 }
 
+const protectedMethods = new Set(['GET', 'POST', 'PUT', 'PATCH', 'DELETE'])
+
+const unauthorizedResponse = (status = 401) =>
+  new Response(
+    JSON.stringify({ success: false, error: 'Nao autorizado' }),
+    { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  )
+
+const sha256Hex = async (value: string): Promise<string> => {
+  const encoded = new TextEncoder().encode(value)
+  const digest = await crypto.subtle.digest('SHA-256', encoded)
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('')
+}
+
+const getBearerToken = (req: Request): string | null => {
+  const authorization = req.headers.get('Authorization')
+  if (!authorization) return null
+
+  const match = authorization.match(/^Bearer\s+(.+)$/i)
+  if (!match) return null
+
+  const token = match[1].trim()
+  if (!token || token.length > 512) return null
+
+  return token
+}
+
+const requireAdminSession = async (
+  req: Request,
+  supabase: ReturnType<typeof createClient>
+) => {
+  try {
+    const token = getBearerToken(req)
+    if (!token) {
+      return { authorized: false, status: 401 }
+    }
+
+    const tokenHash = await sha256Hex(token)
+    const nowIso = new Date().toISOString()
+
+    const { data: session, error: sessionError } = await supabase
+      .from('user_sessions')
+      .select('user_id')
+      .eq('token_hash', tokenHash)
+      .is('revoked_at', null)
+      .gt('expires_at', nowIso)
+      .maybeSingle()
+
+    if (sessionError || !session?.user_id) {
+      return { authorized: false, status: 401 }
+    }
+
+    const { data: adminUser, error: userError } = await supabase
+      .from('users')
+      .select('id, ativo, perfil_acesso')
+      .eq('id', session.user_id)
+      .eq('ativo', true)
+      .maybeSingle()
+
+    if (userError || !adminUser) {
+      return { authorized: false, status: 401 }
+    }
+
+    if (adminUser.perfil_acesso !== 'administrador') {
+      return { authorized: false, status: 403 }
+    }
+
+    return { authorized: true, status: 200 }
+  } catch {
+    return { authorized: false, status: 401 }
+  }
+}
+
 serve(async (req) => {
   // Handle CORS
   if (req.method === 'OPTIONS') {
@@ -33,6 +108,14 @@ serve(async (req) => {
     const method = req.method
     
     console.log('📥 [USER_SIMPLE] Método:', method)
+
+    if (protectedMethods.has(method)) {
+      const authResult = await requireAdminSession(req, supabase)
+      if (!authResult.authorized) {
+        console.log('[USER_SIMPLE] Pedido nao autorizado')
+        return unauthorizedResponse(authResult.status)
+      }
+    }
 
     // GET - Listar utilizadores
     if (method === 'GET') {
@@ -197,7 +280,7 @@ serve(async (req) => {
     // PATCH - Reset password
     if (method === 'PATCH') {
       const body = await req.json()
-      console.log('🔑 [USER_SIMPLE] Reset password:', body.user_id)
+      console.log('[USER_SIMPLE] Reset de credenciais:', body.user_id)
 
       const { user_id, new_password } = body
 
@@ -238,7 +321,7 @@ serve(async (req) => {
         )
       }
 
-      console.log('✅ [USER_SIMPLE] Password resetada')
+      console.log('[USER_SIMPLE] Credenciais atualizadas')
 
       return new Response(
         JSON.stringify({ 
