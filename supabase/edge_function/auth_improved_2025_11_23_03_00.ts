@@ -17,9 +17,42 @@ const invalidCredentialsResponse = (status = 401) =>
     },
   );
 
+const SESSION_DURATION_HOURS = 12;
+const SESSION_TOKEN_BYTES = 32;
+
 const isValidBcryptHash = (value: unknown): value is string => {
   if (typeof value !== "string") return false;
   return /^\$2[aby]\$(0[4-9]|[12][0-9]|3[01])\$[./A-Za-z0-9]{53}$/.test(value);
+};
+
+const base64UrlEncode = (bytes: Uint8Array): string =>
+  btoa(String.fromCharCode(...bytes))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "");
+
+const generateSessionToken = (): string => {
+  const bytes = new Uint8Array(SESSION_TOKEN_BYTES);
+  crypto.getRandomValues(bytes);
+  return base64UrlEncode(bytes);
+};
+
+const sha256Hex = async (value: string): Promise<string> => {
+  const encoded = new TextEncoder().encode(value);
+  const digest = await crypto.subtle.digest("SHA-256", encoded);
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+};
+
+const getClientIpAddress = (req: Request): string | null => {
+  const forwardedFor = req.headers.get("x-forwarded-for");
+  if (forwardedFor) {
+    const firstIp = forwardedFor.split(",")[0]?.trim();
+    if (firstIp) return firstIp;
+  }
+
+  return req.headers.get("cf-connecting-ip") ?? req.headers.get("x-real-ip");
 };
 
 serve(async (req) => {
@@ -73,6 +106,29 @@ serve(async (req) => {
 
     console.log("[AUTH] Login bem-sucedido.");
 
+    const now = new Date();
+    const expiresAt = new Date(
+      now.getTime() + SESSION_DURATION_HOURS * 60 * 60 * 1000,
+    ).toISOString();
+    const sessionToken = generateSessionToken();
+    const tokenHash = await sha256Hex(sessionToken);
+
+    const { error: sessionError } = await supabase
+      .from("user_sessions")
+      .insert({
+        user_id: user.id,
+        token_hash: tokenHash,
+        created_at: now.toISOString(),
+        expires_at: expiresAt,
+        user_agent: req.headers.get("user-agent"),
+        ip_address: getClientIpAddress(req),
+      });
+
+    if (sessionError) {
+      console.error("[AUTH] Erro ao criar sessao.");
+      return invalidCredentialsResponse(500);
+    }
+
     await supabase
       .from("users")
       .update({ ultimo_login: new Date().toISOString() })
@@ -89,6 +145,8 @@ serve(async (req) => {
           perfil_acesso: user.perfil_acesso,
           ativo: user.ativo,
         },
+        session_token: sessionToken,
+        expires_at: expiresAt,
       }),
       {
         status: 200,
